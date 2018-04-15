@@ -1,0 +1,8 @@
+.vs/
+build/Debug/intermediate/
+*.ilk
+*.pdb
+*.exe
+build/Release/intermediate/
+*.ipdb
+*.iobj
