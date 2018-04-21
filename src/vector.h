@@ -2,9 +2,9 @@
 
 #include <cmath>
 
-class Vector
-{
-public:
+struct Vector {
+    float x, y, z;
+
     Vector() {}
 
     explicit Vector(float v)
@@ -75,8 +75,6 @@ public:
     Vector normalized() const {
         return *this / length();
     }
-
-    float x, y, z;
 };
 
 inline Vector operator+(const Vector& v1, const Vector& v2) {
@@ -99,11 +97,11 @@ inline Vector operator*(float t, const Vector& v) {
     return v * t;
 }
 
-inline float dot_product(const Vector& v1, const Vector& v2) {
+inline float dot(const Vector& v1, const Vector& v2) {
     return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
 }
 
-inline Vector cross_product(const Vector& v1, const Vector& v2) {
+inline Vector cross(const Vector& v1, const Vector& v2) {
     return Vector(
         v1.y*v2.z - v1.z*v2.y,
         v1.z*v2.x - v1.x*v2.z,

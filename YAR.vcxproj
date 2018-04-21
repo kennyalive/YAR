@@ -73,7 +73,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\kdtree.cpp" />
+    <ClCompile Include="src\kdtree_builder.cpp" />
     <ClCompile Include="src\playground.cpp" />
+    <ClCompile Include="src\triangle.cpp" />
+    <ClCompile Include="src\triangle_mesh.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\bounding_box.h" />
+    <ClInclude Include="src\common.h" />
+    <ClInclude Include="src\kdtree.h" />
+    <ClInclude Include="src\kdtree_builder.h" />
+    <ClInclude Include="src\matrix.h" />
+    <ClInclude Include="src\ray.h" />
+    <ClInclude Include="src\triangle.h" />
+    <ClInclude Include="src\triangle_mesh.h" />
+    <ClInclude Include="src\vector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
