@@ -57,6 +57,9 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -70,12 +73,15 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\common.cpp" />
     <ClCompile Include="src\kdtree.cpp" />
     <ClCompile Include="src\kdtree_builder.cpp" />
     <ClCompile Include="src\playground.cpp" />
+    <ClCompile Include="src\test_triangle_intersection.cpp" />
     <ClCompile Include="src\triangle.cpp" />
     <ClCompile Include="src\triangle_mesh.cpp" />
   </ItemGroup>

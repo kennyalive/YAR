@@ -21,6 +21,8 @@ void write_ppm_image(const char* file_name, const Vector* pixels, int w, int h) 
     fclose(file);
 }
 
+void test_triangle_intersection();
+
 int main() {
     const int w = 1280;
     const int h = 720;
@@ -36,5 +38,7 @@ int main() {
     }
 
     write_ppm_image("image.ppm", image.data(), w, h);
+
+    test_triangle_intersection();
     return 0;
 }

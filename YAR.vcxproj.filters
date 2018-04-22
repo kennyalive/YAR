@@ -6,6 +6,8 @@
     <ClCompile Include="src\kdtree_builder.cpp" />
     <ClCompile Include="src\triangle_mesh.cpp" />
     <ClCompile Include="src\triangle.cpp" />
+    <ClCompile Include="src\test_triangle_intersection.cpp" />
+    <ClCompile Include="src\common.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\vector.h" />
