@@ -8,6 +8,10 @@
     <ClCompile Include="src\triangle.cpp" />
     <ClCompile Include="src\test_triangle_intersection.cpp" />
     <ClCompile Include="src\common.cpp" />
+    <ClCompile Include="src\test_kdtree.cpp" />
+    <ClCompile Include="src\triangle_mesh_loader.cpp" />
+    <ClCompile Include="src\test_ray_generator.cpp" />
+    <ClCompile Include="src\sampling.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\vector.h" />
@@ -19,5 +23,9 @@
     <ClInclude Include="src\kdtree_builder.h" />
     <ClInclude Include="src\triangle.h" />
     <ClInclude Include="src\triangle_mesh.h" />
+    <ClInclude Include="src\rng.h" />
+    <ClInclude Include="src\triangle_mesh_loader.h" />
+    <ClInclude Include="src\test_ray_generator.h" />
+    <ClInclude Include="src\sampling.h" />
   </ItemGroup>
 </Project>

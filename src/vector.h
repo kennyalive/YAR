@@ -13,6 +13,14 @@ struct Vector {
     Vector(float x, float y, float z)
         : x(x), y(y), z(z) {}
 
+    bool operator==(Vector v) const {
+        return x == v.x && y == v.y && z == v.z;
+    }
+
+    bool operator!=(Vector v) const {
+        return !(*this == v);
+    }
+
     Vector operator-() const {
         return Vector(-x, -y, -z);
     }
@@ -74,6 +82,20 @@ struct Vector {
 
     Vector normalized() const {
         return *this / length();
+    }
+};
+
+struct Vector2 {
+    float x, y;
+
+    Vector2() {}
+
+    float operator[](int index) const {
+        return (&x)[index];
+    }
+
+    float& operator[](int index) {
+        return (&x)[index];
     }
 };
 

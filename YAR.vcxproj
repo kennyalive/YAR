@@ -81,9 +81,13 @@
     <ClCompile Include="src\kdtree.cpp" />
     <ClCompile Include="src\kdtree_builder.cpp" />
     <ClCompile Include="src\playground.cpp" />
+    <ClCompile Include="src\sampling.cpp" />
+    <ClCompile Include="src\test_kdtree.cpp" />
+    <ClCompile Include="src\test_ray_generator.cpp" />
     <ClCompile Include="src\test_triangle_intersection.cpp" />
     <ClCompile Include="src\triangle.cpp" />
     <ClCompile Include="src\triangle_mesh.cpp" />
+    <ClCompile Include="src\triangle_mesh_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bounding_box.h" />
@@ -92,8 +96,12 @@
     <ClInclude Include="src\kdtree_builder.h" />
     <ClInclude Include="src\matrix.h" />
     <ClInclude Include="src\ray.h" />
+    <ClInclude Include="src\rng.h" />
+    <ClInclude Include="src\sampling.h" />
+    <ClInclude Include="src\test_ray_generator.h" />
     <ClInclude Include="src\triangle.h" />
     <ClInclude Include="src\triangle_mesh.h" />
+    <ClInclude Include="src\triangle_mesh_loader.h" />
     <ClInclude Include="src\vector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

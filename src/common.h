@@ -5,6 +5,8 @@
 #include <limits>
 #include <string>
 
+constexpr float Pi = 3.14159265f;
+
 constexpr float Infinity = std::numeric_limits<float>::infinity();
 
 inline void error(const std::string& message) {
