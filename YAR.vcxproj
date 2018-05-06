@@ -77,9 +77,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\common.cpp" />
     <ClCompile Include="src\kdtree.cpp" />
     <ClCompile Include="src\kdtree_builder.cpp" />
+    <ClCompile Include="src\matrix.cpp" />
     <ClCompile Include="src\playground.cpp" />
     <ClCompile Include="src\sampling.cpp" />
     <ClCompile Include="src\test_kdtree.cpp" />
@@ -91,6 +93,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bounding_box.h" />
+    <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\common.h" />
     <ClInclude Include="src\kdtree.h" />
     <ClInclude Include="src\kdtree_builder.h" />

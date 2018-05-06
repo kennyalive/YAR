@@ -12,6 +12,8 @@
     <ClCompile Include="src\triangle_mesh_loader.cpp" />
     <ClCompile Include="src\test_ray_generator.cpp" />
     <ClCompile Include="src\sampling.cpp" />
+    <ClCompile Include="src\camera.cpp" />
+    <ClCompile Include="src\matrix.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\vector.h" />
@@ -27,5 +29,6 @@
     <ClInclude Include="src\triangle_mesh_loader.h" />
     <ClInclude Include="src\test_ray_generator.h" />
     <ClInclude Include="src\sampling.h" />
+    <ClInclude Include="src\camera.h" />
   </ItemGroup>
 </Project>

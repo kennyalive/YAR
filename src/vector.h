@@ -90,6 +90,12 @@ struct Vector2 {
 
     Vector2() {}
 
+    explicit Vector2(float v)
+        : x(v), y(v) {}
+
+    Vector2(float x, float y)
+        : x(x), y(y) {}
+
     float operator[](int index) const {
         return (&x)[index];
     }
