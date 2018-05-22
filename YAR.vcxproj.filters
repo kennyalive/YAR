@@ -14,6 +14,12 @@
     <ClCompile Include="src\sampling.cpp" />
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\matrix.cpp" />
+    <ClCompile Include="3rdparty\half\half.cpp">
+      <Filter>3rdparty\half</Filter>
+    </ClCompile>
+    <ClCompile Include="3rdparty\miniexr.cpp">
+      <Filter>3rdparty</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\vector.h" />
@@ -30,5 +36,16 @@
     <ClInclude Include="src\test_ray_generator.h" />
     <ClInclude Include="src\sampling.h" />
     <ClInclude Include="src\camera.h" />
+    <ClInclude Include="3rdparty\half\half.h">
+      <Filter>3rdparty\half</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="3rdparty">
+      <UniqueIdentifier>{da7df377-dbdc-4a52-9b76-66f110655e5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty\half">
+      <UniqueIdentifier>{a7d8540c-cd99-4e5b-bf6a-73cab783f933}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
