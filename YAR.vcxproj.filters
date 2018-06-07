@@ -20,6 +20,7 @@
     <ClCompile Include="3rdparty\miniexr.cpp">
       <Filter>3rdparty</Filter>
     </ClCompile>
+    <ClCompile Include="src\colorimetry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\vector.h" />
