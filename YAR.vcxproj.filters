@@ -21,6 +21,7 @@
       <Filter>3rdparty</Filter>
     </ClCompile>
     <ClCompile Include="src\colorimetry.cpp" />
+    <ClCompile Include="src\spectrum.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\vector.h" />
@@ -37,9 +38,11 @@
     <ClInclude Include="src\test_ray_generator.h" />
     <ClInclude Include="src\sampling.h" />
     <ClInclude Include="src\camera.h" />
+    <ClInclude Include="src\spectrum.h" />
     <ClInclude Include="3rdparty\half\half.h">
       <Filter>3rdparty\half</Filter>
     </ClInclude>
+    <ClInclude Include="src\colorimetry.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">

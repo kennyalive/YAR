@@ -89,6 +89,7 @@
     <ClCompile Include="src\matrix.cpp" />
     <ClCompile Include="src\playground.cpp" />
     <ClCompile Include="src\sampling.cpp" />
+    <ClCompile Include="src\spectrum.cpp" />
     <ClCompile Include="src\test_kdtree.cpp" />
     <ClCompile Include="src\test_ray_generator.cpp" />
     <ClCompile Include="src\test_triangle_intersection.cpp" />
@@ -100,6 +101,7 @@
     <ClInclude Include="3rdparty\half\half.h" />
     <ClInclude Include="src\bounding_box.h" />
     <ClInclude Include="src\camera.h" />
+    <ClInclude Include="src\colorimetry.h" />
     <ClInclude Include="src\common.h" />
     <ClInclude Include="src\kdtree.h" />
     <ClInclude Include="src\kdtree_builder.h" />
@@ -107,6 +109,7 @@
     <ClInclude Include="src\ray.h" />
     <ClInclude Include="src\rng.h" />
     <ClInclude Include="src\sampling.h" />
+    <ClInclude Include="src\spectrum.h" />
     <ClInclude Include="src\test_ray_generator.h" />
     <ClInclude Include="src\triangle.h" />
     <ClInclude Include="src\triangle_mesh.h" />

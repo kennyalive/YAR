@@ -1,9 +1,13 @@
+#include "common.h"
+#include "spectrum.h"
+#include <vector>
+
 //
 // Data is obtained from 'Colour & Vision Research Laboratory': http://www.cvrl.org
 //
 
 //CIE 1931 2 Degree Standard Observer.
-double CIE_1931_2_Degree[471][3] = {
+static double CIE_1931_2_Degree[471][3] = {
     /*360*/ {0.000129900000,0.000003917000,0.000606100000},
     /*361*/ {0.000145847000,0.000004393581,0.000680879200},
     /*362*/ {0.000163802100,0.000004929604,0.000765145600},
@@ -476,3 +480,21 @@ double CIE_1931_2_Degree[471][3] = {
     /*829*/ {0.000001341977,0.000000484612,0.000000000000},
     /*830*/ {0.000001251141,0.000000451810,0.000000000000},
 };
+
+// Converts given Color Matching Function to Sampled_Spectrum representation.
+Sampled_Spectrum compute_CIE_sampled_spectrum(int cmf_index) {
+    const size_t n = array_size(CIE_1931_2_Degree);
+    std::vector<float> l(n);
+    std::vector<float> v(n);
+
+    for (size_t i = 0; i < n; i++) {
+        l[i] = 360.f + i;
+        v[i] = float(CIE_1931_2_Degree[i][cmf_index]);
+    }
+
+    return Sampled_Spectrum::from_tabulated_data(l.data(), v.data(), int(l.size()));
+}
+
+const Sampled_Spectrum CIE_X = compute_CIE_sampled_spectrum(0);
+const Sampled_Spectrum CIE_Y = compute_CIE_sampled_spectrum(1);
+const Sampled_Spectrum CIE_Z = compute_CIE_sampled_spectrum(2);

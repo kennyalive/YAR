@@ -11,6 +11,11 @@ constexpr float Pi = 3.14159265f;
 
 constexpr float Infinity = std::numeric_limits<float>::infinity();
 
+template<class T, size_t N>
+constexpr size_t array_size(T (&)[N]) {
+    return N;
+}
+
 inline void error(const std::string& message) {
     printf("error: %s\n", message.c_str());
     exit(1);
@@ -35,4 +40,8 @@ inline float Radians(float degrees) {
 inline float Degrees(float radians) {
     constexpr float rad_2_deg = 180.f / Pi;
     return radians * rad_2_deg;
+}
+
+inline float lerp(float t, float a, float b) {
+    return a + (b - a)*t;
 }
