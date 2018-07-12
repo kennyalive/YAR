@@ -482,7 +482,7 @@ static double CIE_1931_2_Degree[471][3] = {
 };
 
 // Converts given Color Matching Function to Sampled_Spectrum representation.
-Sampled_Spectrum compute_CIE_sampled_spectrum(int cmf_index) {
+static Sampled_Spectrum compute_CIE_sampled_spectrum(int cmf_index) {
     const size_t n = array_size(CIE_1931_2_Degree);
     std::vector<float> l(n);
     std::vector<float> v(n);
@@ -495,6 +495,16 @@ Sampled_Spectrum compute_CIE_sampled_spectrum(int cmf_index) {
     return Sampled_Spectrum::from_tabulated_data(l.data(), v.data(), int(l.size()));
 }
 
-const Sampled_Spectrum CIE_X = compute_CIE_sampled_spectrum(0);
-const Sampled_Spectrum CIE_Y = compute_CIE_sampled_spectrum(1);
-const Sampled_Spectrum CIE_Z = compute_CIE_sampled_spectrum(2);
+static float compute_CIE_Y_integral() {
+    Sampled_Spectrum y = compute_CIE_sampled_spectrum(1);
+    float sum = 0.f;
+    for (int i = 0; i < Sampled_Spectrum::Sample_Count; i++) {
+        sum += y.c[i];
+    }
+    return sum * Sampled_Spectrum::Interval_Length;
+}
+
+extern const Sampled_Spectrum CIE_X = compute_CIE_sampled_spectrum(0);
+extern const Sampled_Spectrum CIE_Y = compute_CIE_sampled_spectrum(1);
+extern const Sampled_Spectrum CIE_Z = compute_CIE_sampled_spectrum(2);
+extern const float CIE_Y_integral = compute_CIE_Y_integral();
