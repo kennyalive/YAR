@@ -24,7 +24,6 @@
     <ClCompile Include="src\spectrum.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\vector.h" />
     <ClInclude Include="src\matrix.h" />
     <ClInclude Include="src\bounding_box.h" />
     <ClInclude Include="src\ray.h" />
@@ -38,11 +37,13 @@
     <ClInclude Include="src\test_ray_generator.h" />
     <ClInclude Include="src\sampling.h" />
     <ClInclude Include="src\camera.h" />
+    <ClInclude Include="src\light.h" />
     <ClInclude Include="src\spectrum.h" />
     <ClInclude Include="3rdparty\half\half.h">
       <Filter>3rdparty\half</Filter>
     </ClInclude>
     <ClInclude Include="src\colorimetry.h" />
+    <ClInclude Include="src\vector.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">

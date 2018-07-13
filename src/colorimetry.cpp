@@ -508,3 +508,4 @@ extern const Sampled_Spectrum CIE_X = compute_CIE_sampled_spectrum(0);
 extern const Sampled_Spectrum CIE_Y = compute_CIE_sampled_spectrum(1);
 extern const Sampled_Spectrum CIE_Z = compute_CIE_sampled_spectrum(2);
 extern const float CIE_Y_integral = compute_CIE_Y_integral();
+extern const float CIE_Y_integral_inverse = 1.f / compute_CIE_Y_integral();

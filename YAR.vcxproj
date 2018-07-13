@@ -105,6 +105,7 @@
     <ClInclude Include="src\common.h" />
     <ClInclude Include="src\kdtree.h" />
     <ClInclude Include="src\kdtree_builder.h" />
+    <ClInclude Include="src\light.h" />
     <ClInclude Include="src\matrix.h" />
     <ClInclude Include="src\ray.h" />
     <ClInclude Include="src\rng.h" />

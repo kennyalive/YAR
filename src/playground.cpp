@@ -1,9 +1,15 @@
 #include "camera.h"
+#include "colorimetry.h"
+#include "light.h"
+#include "spectrum.h"
 #include "triangle.h"
 #include "vector.h"
 
+#include <cassert>
 #include <cstdio>
 #include <vector>
+
+#include "3rdparty/half/half.h"
 
 void write_ppm_image(const char* file_name, const Vector* pixels, int w, int h) {
     FILE* file;
@@ -21,6 +27,36 @@ void write_ppm_image(const char* file_name, const Vector* pixels, int w, int h) 
             pixels++;
         }
     }
+    fclose(file);
+}
+
+unsigned char* miniexr_write(unsigned width, unsigned height, unsigned channels, const void* rgba16f, size_t* outSize);
+
+void write_exr_image(const char* file_name, const Vector* pixels, int w, int h) {
+    FILE* file;
+    if (fopen_s(&file, file_name, "wb") != 0)
+        return;
+
+    std::vector<unsigned short> rgb16f(w * h * 3);
+
+    unsigned short* p = rgb16f.data();
+    const Vector* pixel = pixels;
+    for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+            *p++ = float_to_half(pixel->x);
+            *p++ = float_to_half(pixel->y);
+            *p++ = float_to_half(pixel->z);
+            pixel++;
+        }
+    }
+
+    size_t exr_size;
+    unsigned char* exr_data = miniexr_write(w, h, 3, rgb16f.data(), &exr_size);
+
+    size_t bytes_written = fwrite(exr_data, 1, exr_size, file);
+    assert(bytes_written == exr_size);
+
+    free(exr_data);
     fclose(file);
 }
 
@@ -43,6 +79,16 @@ int main() {
     tri[1] = Vector( 2, 5, -1);
     tri[2] = Vector( 0, 5,  2);
 
+    // Uniform spectrum that produces luminous flux of 1600Lm.
+    float P = 1600; // Lm
+    float C = P / (683.f * CIE_Y_integral); // [W/m]
+    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(C);
+
+    XYZ xyz = s.emission_spectrum_to_XYZ();
+
+    Point_Light light;
+    light.intensity = RGB(xyz);
+
     std::vector<Vector> image(w * h);
 
     Vector* pixel = image.data();
@@ -52,6 +98,7 @@ int main() {
             *pixel = Vector(0);
             Triangle_Intersection hit;
             if (intersect_triangle(ray, tri, hit)) {
+
                 *pixel = Vector(1.f);
             }
 
@@ -60,6 +107,7 @@ int main() {
     }
 
     write_ppm_image("image.ppm", image.data(), w, h);
+    write_exr_image("image.exr", image.data(), w, h);
 
     //test_triangle_intersection();
     return 0;

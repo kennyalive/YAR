@@ -1,6 +1,14 @@
+#include "colorimetry.h"
 #include "common.h"
 #include "spectrum.h"
 #include <cassert>
+
+// XYZ->sRGB conversion coefficients are from http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+RGB::RGB(const XYZ& xyz) {
+    c[0] =  3.2404542f * xyz[0] + -1.5371385f * xyz[1] + -0.4985314f * xyz[2];
+    c[1] = -0.9692660f * xyz[0] +  1.8760108f * xyz[1] +  0.0415560f * xyz[2];
+    c[2] =  0.0556434f * xyz[0] + -0.2040259f * xyz[1] +  1.0572252f * xyz[2];
+}
 
 static float compute_average_value_for_range(const float* lambdas, const float* values, int n, float range_start, float range_end) {
     assert(n >= 2);
@@ -61,4 +69,31 @@ Sampled_Spectrum Sampled_Spectrum::from_tabulated_data(const float* lambdas, con
         s.c[i] = compute_average_value_for_range(lambdas, values, n, interval_start, interval_end);
     }
     return s;
+}
+
+Sampled_Spectrum Sampled_Spectrum::constant_spectrum(float c) {
+    Sampled_Spectrum s;
+    for (int i = 0; i < Sample_Count; i++) {
+        s.c[i] = c;
+    }
+    return s;
+}
+
+XYZ Sampled_Spectrum::emission_spectrum_to_XYZ() const {
+    XYZ xyz;
+    for (int i = 0; i < Sample_Count; i++) {
+        xyz[0] += c[i] * CIE_X.c[i];
+        xyz[1] += c[i] * CIE_Y.c[i];
+        xyz[2] += c[i] * CIE_Z.c[i];
+    }
+    xyz *= (float)Interval_Length;
+    return xyz;
+}
+
+// This implementation assumes a reference light with constant SPD.
+// One possible extension is to specify reference light explicitly.
+XYZ Sampled_Spectrum::reflectance_spectrum_to_XYZ() const {
+    XYZ xyz = emission_spectrum_to_XYZ();
+    xyz *= CIE_Y_integral_inverse;
+    return xyz;
 }
