@@ -1,5 +1,6 @@
 #include "camera.h"
 #include "colorimetry.h"
+#include "common.h"
 #include "light.h"
 #include "spectrum.h"
 #include "triangle.h"
@@ -79,6 +80,8 @@ int main() {
     tri[1] = Vector( 2, 5, -1);
     tri[2] = Vector( 0, 5,  2);
 
+    Vector normal(0, -1, 0);
+
     // Uniform spectrum that produces luminous flux of 1600Lm.
     float P = 1600; // Lm
     float C = P / (683.f * CIE_Y_integral); // [W/m]
@@ -88,6 +91,9 @@ int main() {
 
     Point_Light light;
     light.intensity = RGB(xyz);
+    light.world_position = Vector(0, 4, 0);
+
+    float albedo = 1.0f;
 
     std::vector<Vector> image(w * h);
 
@@ -98,8 +104,11 @@ int main() {
             *pixel = Vector(0);
             Triangle_Intersection hit;
             if (intersect_triangle(ray, tri, hit)) {
-
-                *pixel = Vector(1.f);
+                Vector p = ray.get_point(hit.t);
+                Vector light_dir = (light.world_position - p).normalized();
+                float dd = (light.world_position - p).squared_length();
+                RGB L = light.intensity * (albedo / (Pi * dd) * dot(normal, light_dir));
+                *pixel = Vector(L[0], L[1], L[2]);
             }
 
             pixel++;

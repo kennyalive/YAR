@@ -68,6 +68,14 @@ struct RGB {
     }
 };
 
+inline RGB operator*(const RGB& rgb, float v) {
+    return RGB(rgb[0] * v, rgb[1] * v, rgb[2] * v);
+}
+
+inline RGB operator*(float v, const RGB& rgb) {
+    return rgb * v;
+}
+
 // Sampled_Spectrum approximates spectrum function as a sequence of samples where each sample
 // represents an average of the spectrum function over the interval of a fixed length.
 struct Sampled_Spectrum {
