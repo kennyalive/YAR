@@ -1,7 +1,6 @@
 #include "common.h"
+#include "intersection.h"
 #include "kdtree.h"
-#include "triangle.h"
-
 #include <cassert>
 #include <fstream>
 #include <map>
@@ -78,12 +77,12 @@ void KdTree::save_to_file(const std::string& file_name) const
         error("failed to write kdTree triangle indices: " + file_name);
 }
 
-bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
+float KdTree::intersect(const Ray& ray, Local_Geometry& local_geom) const
 {
     float t_min, t_max;
 
     if (!mesh_bounds.intersect_by_ray(ray, t_min, t_max))
-        return false;
+        return Infinity;
 
     struct Traversal_Info {
         const KdNode* node;
@@ -117,7 +116,7 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
                 }
 
                 // t_split != 0 (since distance_to_split_plane != 0)
-                float t_split = distance_to_split_plane / ray.o[axis];
+                float t_split = distance_to_split_plane / ray.d[axis];
 
                 if (t_split >= t_max || t_split < 0.0)
                     node = firstChild;
@@ -179,30 +178,24 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
         }
     } // while (t_min < closest_intersection.t)
 
-    if (closest_intersection.t == std::numeric_limits<float>::infinity())
-        return false;
+    if (closest_intersection.t != Infinity)
+        local_geom = Local_Geometry(ray, closest_intersection);
 
-    intersection.t = closest_intersection.t;
-    intersection.epsilon = closest_intersection.t * 1e-3f;
-    return true;
+    return closest_intersection.t;
 }
 
 void KdTree::intersect_leaf_triangles(const Ray& ray, KdNode leaf, Triangle_Intersection& closestIntersection) const
 {
     if (leaf.get_triangle_count() == 1) {
-        Triangle t = mesh.get_triangle(leaf.get_index());
-        Triangle_Intersection intersection;
-        bool hitFound = intersect_triangle(ray, t, intersection);
-        if (hitFound && intersection.t < closestIntersection.t) {
+        Triangle_Intersection intersection = intersect_triangle(ray, &mesh, leaf.get_index());
+        if (intersection.t < closestIntersection.t) {
             closestIntersection = intersection;
         }
     } else {
         for (int32_t i = 0; i < leaf.get_triangle_count(); i++) {
             int32_t triangleIndex = triangle_indices[leaf.get_index() + i];
-            Triangle triangle = mesh.get_triangle(triangleIndex);
-            Triangle_Intersection intersection;
-            bool hitFound = intersect_triangle(ray, triangle, intersection);
-            if (hitFound && intersection.t < closestIntersection.t) {
+            Triangle_Intersection intersection = intersect_triangle(ray, &mesh, triangleIndex);
+            if (intersection.t < closestIntersection.t) {
                 closestIntersection = intersection;
             }
         }

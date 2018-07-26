@@ -3,13 +3,15 @@
 #include "common.h"
 #include "bounding_box.h"
 #include "ray.h"
-#include "triangle.h"
 #include "triangle_mesh.h"
 #include "vector.h"
 
 #include <cassert>
 #include <cstdint>
 #include <vector>
+
+struct Local_Geometry;
+struct Triangle_Intersection;
 
 struct KdTree_Stats {
     int64_t nodes_size = 0;
@@ -101,18 +103,12 @@ struct KdNode {
 
 class KdTree {
 public:
-    struct Intersection {
-        float t = Infinity;
-        float epsilon = 0.0;
-    };
-
-public:
     KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& triangle_indices, const Triangle_Mesh& mesh);
     KdTree(const std::string& file_name, const Triangle_Mesh& mesh);
 
     void save_to_file(const std::string& file_name) const;
 
-    bool intersect(const Ray& ray, Intersection& intersection) const;
+    float intersect(const Ray& ray, Local_Geometry& local_geom) const;
 
     const Triangle_Mesh& get_mesh() const { return mesh; }
     KdTree_Stats calculate_stats() const;

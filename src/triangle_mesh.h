@@ -1,8 +1,7 @@
 #pragma once
 
 #include "bounding_box.h"
-#include "triangle.h"
-
+#include <array>
 #include <vector>
 
 struct Indexed_Triangle_Mesh {
@@ -17,13 +16,11 @@ struct Indexed_Triangle_Mesh {
       return static_cast<int32_t>(vertices.size());
   }
 
-  Triangle get_triangle(int32_t triangle_index) const {
-      Triangle t;
+  void get_triangle(int32_t triangle_index, Vector& p0, Vector& p1, Vector& p2) const {
       auto& indices = face_indices[triangle_index];
-      t[0] = vertices[indices[0]];
-      t[1] = vertices[indices[1]];
-      t[2] = vertices[indices[2]];
-      return t;
+      p0 = vertices[indices[0]];
+      p1 = vertices[indices[1]];
+      p2 = vertices[indices[2]];
   }
 
   Bounding_Box get_triangle_bounds(int32_t triangle_index) const;
@@ -32,14 +29,19 @@ struct Indexed_Triangle_Mesh {
 };
 
 struct Simple_Triangle_Mesh {
-    std::vector<Triangle> triangles;
+    std::vector<Vector> triangles; // 3*triangle_count vertices
 
     int32_t get_triangle_count() const {
-        return static_cast<int32_t>(triangles.size());
+        assert(triangles.size() % 3 == 0);
+        return static_cast<int32_t>(triangles.size() / 3);
     }
 
-    Triangle get_triangle(int32_t triangle_index) const {
-        return triangles[triangle_index];
+    void get_triangle(int32_t triangle_index, Vector& p0, Vector& p1, Vector& p2) const {
+        assert(triangle_index < get_triangle_count());
+        const Vector* p = &triangles[3*triangle_index];
+        p0 = p[0];
+        p1 = p[1];
+        p2 = p[2];
     }
 
     Bounding_Box get_triangle_bounds(int32_t triangle_index) const;
@@ -48,7 +50,3 @@ struct Simple_Triangle_Mesh {
 
     static Simple_Triangle_Mesh from_indexed_mesh(const Indexed_Triangle_Mesh& mesh);
 };
-
-using Triangle_Mesh = Simple_Triangle_Mesh;
-//using Triangle_Mesh = Indexed_Triangle_Mesh;
-

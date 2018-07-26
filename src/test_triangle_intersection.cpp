@@ -1,12 +1,12 @@
 #include "common.h"
+#include "intersection.h"
 #include "ray.h"
-#include "triangle.h"
 
 void test_triangle_intersection()
 {
     Ray ray(Vector(0, 0, 0), Vector(0, 1, 0));
 
-    Triangle triangle {
+    Vector p[3] = {
         Vector(-0.5f, 0, -0.5f),
         Vector( 0.5f, 0, -0.5f),
         Vector( 0, 0, 0.5f)
@@ -17,8 +17,9 @@ void test_triangle_intersection()
 
     Timestamp t;
 
+    float b1, b2;
     for (int i = 0; i < N; i++) {
-        intersect_triangle(ray, triangle, isect);
+        intersect_triangle_moller_trumbore(ray, p[0], p[1], p[2], b1, b2);
     }
 
     int64_t ns = elapsed_nanoseconds(t);

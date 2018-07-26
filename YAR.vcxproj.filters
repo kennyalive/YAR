@@ -5,7 +5,6 @@
     <ClCompile Include="src\kdtree.cpp" />
     <ClCompile Include="src\kdtree_builder.cpp" />
     <ClCompile Include="src\triangle_mesh.cpp" />
-    <ClCompile Include="src\triangle.cpp" />
     <ClCompile Include="src\test_triangle_intersection.cpp" />
     <ClCompile Include="src\common.cpp" />
     <ClCompile Include="src\test_kdtree.cpp" />
@@ -22,6 +21,7 @@
     </ClCompile>
     <ClCompile Include="src\colorimetry.cpp" />
     <ClCompile Include="src\spectrum.cpp" />
+    <ClCompile Include="src\intersection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\matrix.h" />
@@ -30,7 +30,6 @@
     <ClInclude Include="src\common.h" />
     <ClInclude Include="src\kdtree.h" />
     <ClInclude Include="src\kdtree_builder.h" />
-    <ClInclude Include="src\triangle.h" />
     <ClInclude Include="src\triangle_mesh.h" />
     <ClInclude Include="src\rng.h" />
     <ClInclude Include="src\triangle_mesh_loader.h" />
@@ -44,6 +43,7 @@
     </ClInclude>
     <ClInclude Include="src\colorimetry.h" />
     <ClInclude Include="src\vector.h" />
+    <ClInclude Include="src\intersection.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="3rdparty">

@@ -133,7 +133,7 @@ KdTree KdTree_Builder::build()
 // Implements clipping algorithm described in this article:
 //      Alexei Soupikov, Maxim Shevtsov, Alexander Kapustin, 2008. Improving Kd-tree Quality at a Reasonable Construction Cost
 //
-void clip_bounds(const Triangle& tri, float split_position, int axis, bool left, Bounding_Box& bounds)
+void clip_bounds(const Triangle_Mesh& mesh, int32_t triangle_index, float split_position, int axis, bool left, Bounding_Box& bounds)
 {
     assert(split_position > bounds.min_p[axis] && split_position < bounds.max_p[axis]);
 
@@ -143,7 +143,8 @@ void clip_bounds(const Triangle& tri, float split_position, int axis, bool left,
         bounds.min_p[axis] = split_position;
 
     // sort triangle vertices along the split dimension
-    Vector p[3] = { tri[0], tri[1], tri[2] };
+    Vector p[3];
+    mesh.get_triangle(triangle_index, p[0], p[1], p[2]);
 
     if (p[1][axis] < p[0][axis])
         std::swap(p[1], p[0]);
@@ -232,8 +233,7 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, int32_t triangl
 
             if (build_params.split_clipping) {
                 if (triangle_info.bounds.max_p[split.axis] > split_position) {
-                    const Triangle& triangle = mesh.get_triangle(triangle_info.triangle);
-                    clip_bounds(triangle, split_position, split.axis, true, triangle_info.bounds);
+                    clip_bounds(mesh, triangle_info.triangle, split_position, split.axis, true, triangle_info.bounds);
                 }
             }
 
@@ -249,8 +249,7 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, int32_t triangl
 
             if (build_params.split_clipping) {
                 if (triangle_info.bounds.min_p[split.axis] < split_position) {
-                    const Triangle& triangle = mesh.get_triangle(triangle_info.triangle);
-                    clip_bounds(triangle, split_position, split.axis, false, triangle_info.bounds);
+                    clip_bounds(mesh, triangle_info.triangle, split_position, split.axis, false, triangle_info.bounds);
                 }
             }
 

@@ -1,9 +1,12 @@
 #include "camera.h"
 #include "colorimetry.h"
 #include "common.h"
+#include "intersection.h"
+#include "kdtree.h"
 #include "light.h"
 #include "spectrum.h"
-#include "triangle.h"
+#include "triangle_mesh.h"
+#include "triangle_mesh_loader.h"
 #include "vector.h"
 
 #include <cassert>
@@ -62,6 +65,7 @@ void write_exr_image(const char* file_name, const Vector* pixels, int w, int h) 
 }
 
 void test_triangle_intersection();
+void test_kdtree();
 
 int main() {
     const int w = 1280;
@@ -73,17 +77,18 @@ int main() {
     camera_to_world.a[2][1] = -1;
     camera_to_world.a[1][2] = 1;
 
+    camera_to_world.a[1][3] = -55;
+    camera_to_world.a[2][3] =  15;
+
     Camera camera(camera_to_world, Vector2(float(w), float(h)), 60.f);
 
-    Triangle tri;
-    tri[0] = Vector(-2, 5, -1);
-    tri[1] = Vector( 2, 5, -1);
-    tri[2] = Vector( 0, 5,  2);
+    Simple_Triangle_Mesh mesh = Simple_Triangle_Mesh::from_indexed_mesh(*LoadTriangleMesh("teapot.stl"));
+    KdTree kdtree("teapot.kdtree", mesh);
 
     Vector normal(0, -1, 0);
 
     // Uniform spectrum that produces luminous flux of 1600Lm.
-    float P = 1600; // Lm
+    float P = 1600 * 200; // Lm
     float C = P / (683.f * CIE_Y_integral); // [W/m]
     Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(C);
 
@@ -91,7 +96,7 @@ int main() {
 
     Point_Light light;
     light.intensity = RGB(xyz);
-    light.world_position = Vector(0, 4, 0);
+    light.world_position = Vector(0, -50, 10);
 
     float albedo = 1.0f;
 
@@ -102,12 +107,11 @@ int main() {
         for (int j = 0; j < w; j++) {
             Ray ray = camera.generate_ray(Vector2(j + 0.5f, i + 0.5f));
             *pixel = Vector(0);
-            Triangle_Intersection hit;
-            if (intersect_triangle(ray, tri, hit)) {
-                Vector p = ray.get_point(hit.t);
-                Vector light_dir = (light.world_position - p).normalized();
-                float dd = (light.world_position - p).squared_length();
-                RGB L = light.intensity * (albedo / (Pi * dd) * dot(normal, light_dir));
+            Local_Geometry local_geom;
+            if (kdtree.intersect(ray, local_geom) != Infinity) {
+                Vector light_dir = (light.world_position - local_geom.position).normalized();
+                float dd = (light.world_position - local_geom.position).squared_length();
+                RGB L = light.intensity * (albedo / (Pi * dd) * dot(local_geom.normal, light_dir));
                 *pixel = Vector(L[0], L[1], L[2]);
             }
 
@@ -118,6 +122,7 @@ int main() {
     write_ppm_image("image.ppm", image.data(), w, h);
     write_exr_image("image.exr", image.data(), w, h);
 
-    //test_triangle_intersection();
+    test_triangle_intersection();
+    test_kdtree();
     return 0;
 }

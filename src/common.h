@@ -45,3 +45,8 @@ inline float Degrees(float radians) {
 inline float lerp(float t, float a, float b) {
     return a + (b - a)*t;
 }
+
+struct Simple_Triangle_Mesh;
+
+using Triangle_Mesh = Simple_Triangle_Mesh;
+//using Triangle_Mesh = Indexed_Triangle_Mesh;

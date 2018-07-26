@@ -1,4 +1,5 @@
 #include "common.h"
+#include "intersection.h"
 #include "kdtree.h"
 #include "kdtree_builder.h"
 #include "rng.h"
@@ -22,13 +23,13 @@ enum { debug_ray_count = 4 };
 //const std::string kdtree_path = "data/soccer_ball.kdtree";
 //const int validation_ray_count = 32768;
 
-//const std::string model_path = "data/teapot.stl";
-//const std::string kdtree_path = "data/teapot.kdtree";
-//const int validation_ray_count = 1'000'000;
+const std::string model_path = "data/teapot.stl";
+const std::string kdtree_path = "data/teapot.kdtree";
+const int validation_ray_count = 1'000'000;
 
-const std::string model_path = "data/bunny.stl";
-const std::string kdtree_path = "data/bunny.kdtree";
-const int validation_ray_count = 10'000;
+//const std::string model_path = "data/bunny.stl";
+//const std::string kdtree_path = "data/bunny.kdtree";
+//const int validation_ray_count = 10'000;
 
 //const std::string model_path = "data/dragon.stl";
 //const std::string kdtree_path = "data/dragon.kdtree";
@@ -52,14 +53,15 @@ int benchmark_kd_tree(const KdTree& kdtree) {
 
         Timestamp t2;
 
-        KdTree::Intersection intersection;
-        bool hitFound = kdtree.intersect(ray, intersection);
+        Local_Geometry local_geom;
+        float hit_distance = kdtree.intersect(ray, local_geom);
+        bool hitFound = hit_distance != Infinity;
 
         time_ns += elapsed_nanoseconds(t2);
 
         if (hitFound) {
-            last_hit = ray.get_point(intersection.t);
-            last_hit_epsilon = intersection.epsilon;
+            last_hit = local_geom.position;
+            last_hit_epsilon = hit_distance * 1e-3f;
         }
 
         if (debug_rays && i < debug_ray_count) {
@@ -90,48 +92,39 @@ void validate_kdtree(const KdTree& kdtree, int ray_count) {
     for (int i = 0; i < ray_count; i++) {
         const Ray ray = ray_generator.generate_ray(last_hit, last_hit_epsilon);
 
-        KdTree::Intersection kdtree_intersection;
-        bool kdtree_hit = kdtree.intersect(ray, kdtree_intersection);
+        Local_Geometry kdtree_intersection;
+        float kdtree_hit_distance = kdtree.intersect(ray, kdtree_intersection);
 
-        KdTree::Intersection brute_force_intersection;
-        bool brute_force_hit = false;
+        Triangle_Intersection brute_force_intersection;
 
         int hit_k = -1;
-
         for (int32_t k = 0; k < kdtree.get_mesh().get_triangle_count(); k++) {
-            Triangle triangle = kdtree.get_mesh().get_triangle(k);
+            Triangle_Intersection intersection = intersect_triangle(ray, &kdtree.get_mesh(), k);
 
-            Triangle_Intersection intersection;
-            bool hit = intersect_triangle(ray, triangle, intersection);
-
-            if (hit && intersection.t < brute_force_intersection.t) {
+            if (intersection.t < brute_force_intersection.t) {
                 brute_force_intersection.t = intersection.t;
-                brute_force_hit = true;
                 hit_k = k;
             }
         }
 
-        if (kdtree_hit != brute_force_hit || kdtree_intersection.t != brute_force_intersection.t) {
+        if (kdtree_hit_distance != brute_force_intersection.t) {
             printf("KdTree accelerator test failure:\n"
                 "Rays validated so far: %d (%.2f%%)\n"
-                "KdTree hit: %s\n"
-                "actual hit: %s\n"
                 "KdTree T %.16g [%a]\n"
                 "actual T %.16g [%a]\n"
                 "ray origin: (%a, %a, %a)\n"
                 "ray direction: (%a, %a, %a)\n",
                 i, float(i) / float(ray_count),
-                kdtree_hit ? "true" : "false",
-                brute_force_hit ? "true" : "false", kdtree_intersection.t,
-                kdtree_intersection.t, brute_force_intersection.t,
-                brute_force_intersection.t, ray.o.x, ray.o.y, ray.o.z, ray.d.x, ray.d.y, ray.d.z
+                kdtree_hit_distance, kdtree_hit_distance,
+                brute_force_intersection.t, brute_force_intersection.t,
+                ray.o.x, ray.o.y, ray.o.z, ray.d.x, ray.d.y, ray.d.z
             );
             error("KdTree traversal error detected");
         }
 
-        if (kdtree_hit) {
-            last_hit = ray.get_point(kdtree_intersection.t);
-            last_hit_epsilon = kdtree_intersection.epsilon;
+        if (kdtree_hit_distance != Infinity) {
+            last_hit = kdtree_intersection.position;
+            last_hit_epsilon = kdtree_hit_distance * 1e-3f;
         }
     }
 
@@ -177,8 +170,8 @@ void test_kdtree() {
         printf("\n");
         return;
     }
-    //auto kdtree = std::unique_ptr<KdTree>(new KdTree(kdtree_path, mesh));
-    auto kdtree = std::unique_ptr<KdTree>(new KdTree("test.kdtree", mesh));
+    auto kdtree = std::unique_ptr<KdTree>(new KdTree(kdtree_path, mesh));
+    //auto kdtree = std::unique_ptr<KdTree>(new KdTree("test.kdtree", mesh));
 
     mesh.print_info();
     kdtree->calculate_stats().print();

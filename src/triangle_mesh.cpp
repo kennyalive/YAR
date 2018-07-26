@@ -28,18 +28,18 @@ void Indexed_Triangle_Mesh::print_info() const {
 
 Simple_Triangle_Mesh Simple_Triangle_Mesh::from_indexed_mesh(const Indexed_Triangle_Mesh& indexed_mesh) {
     Simple_Triangle_Mesh mesh;
-    mesh.triangles.resize(indexed_mesh.face_indices.size());
+    mesh.triangles.resize(3*indexed_mesh.face_indices.size());
     for (size_t i = 0; i < indexed_mesh.face_indices.size(); i++) {
         const auto& indices = indexed_mesh.face_indices[i];
         for (int k = 0; k < 3; k++) {
-            mesh.triangles[i][k] = indexed_mesh.vertices[indices[k]];
+            mesh.triangles[3*i + k] = indexed_mesh.vertices[indices[k]];
         }
     }
     return mesh;
 }
 
 Bounding_Box Simple_Triangle_Mesh::get_triangle_bounds(int32_t triangle_index) const {
-    const auto& p = triangles[triangle_index];
+    const Vector* p = &triangles[3*triangle_index];
     auto bounds = Bounding_Box(p[0]);
     bounds.add_point(p[1]);
     bounds.add_point(p[2]);
@@ -57,7 +57,7 @@ Bounding_Box Simple_Triangle_Mesh::get_bounds() const {
 void Simple_Triangle_Mesh::print_info() const {
     printf("[mesh]\n");
     printf("triangle count = %d\n", get_triangle_count());
-    size_t triangles_size = get_triangle_count() * sizeof(triangles[0]) / 1024;
+    size_t triangles_size = get_triangle_count() * sizeof(Vector) * 3 / 1024;
     printf("mesh size = %zdK\n", triangles_size);
     printf("\n");
 }
