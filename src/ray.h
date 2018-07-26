@@ -3,14 +3,14 @@
 #include "vector.h"
 
 struct Ray {
-    Vector o; // origin
-    Vector d; // direction
+    Vector origin;
+    Vector direction;
 
     Ray() {}
     Ray(Vector origin, Vector direction)
-        : o(origin), d(direction) {}
+        : origin(origin), direction(direction) {}
 
     Vector get_point(float t) const {
-        return o + d * t;
+        return origin + direction * t;
     }
 };

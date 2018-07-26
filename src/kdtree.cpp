@@ -99,7 +99,7 @@ float KdTree::intersect(const Ray& ray, Local_Geometry& local_geom) const
         if (node->is_interior_node()) {
             int axis = node->get_split_axis();
 
-            float distance_to_split_plane = node->get_split_position() - ray.o[axis];
+            float distance_to_split_plane = node->get_split_position() - ray.origin[axis];
 
             auto belowChild = node + 1;
             auto aboveChild = &nodes[node->get_above_child()];
@@ -116,7 +116,7 @@ float KdTree::intersect(const Ray& ray, Local_Geometry& local_geom) const
                 }
 
                 // t_split != 0 (since distance_to_split_plane != 0)
-                float t_split = distance_to_split_plane / ray.d[axis];
+                float t_split = distance_to_split_plane / ray.direction[axis];
 
                 if (t_split >= t_max || t_split < 0.0)
                     node = firstChild;
@@ -130,7 +130,7 @@ float KdTree::intersect(const Ray& ray, Local_Geometry& local_geom) const
                 }
             }
             else { // special case, distanceToSplitPlane == 0.0
-                if (ray.d[axis] > 0.0) {
+                if (ray.direction[axis] > 0.0) {
                     if (t_min > 0.0)
                         node = aboveChild;
                     else { // t_min == 0.0
@@ -141,7 +141,7 @@ float KdTree::intersect(const Ray& ray, Local_Geometry& local_geom) const
                         t_max = 0.0;
                     }
                 }
-                else if (ray.d[axis] < 0.0) {
+                else if (ray.direction[axis] < 0.0) {
                     if (t_min > 0.0)
                         node = belowChild;
                     else { // t_min == 0.0

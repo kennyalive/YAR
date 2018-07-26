@@ -10,7 +10,7 @@ float intersect_triangle_moller_trumbore(const Ray& ray, const Vector& p0, const
     Vector edge1 = p1 - p0;
     Vector edge2 = p2 - p0;
 
-    Vector p = cross(ray.d, edge2);
+    Vector p = cross(ray.direction, edge2);
     float divisor = dot(edge1, p);
 
     // todo: do we need to check against epsilon for better numeric stability?
@@ -20,14 +20,14 @@ float intersect_triangle_moller_trumbore(const Ray& ray, const Vector& p0, const
     const float inv_divisor = 1.0f / divisor;
 
     // compute barycentric coordinate b1
-    Vector t = ray.o - p0;
+    Vector t = ray.origin - p0;
     b1 = inv_divisor * dot(t, p);
     if (b1 < 0.0 || b1 > 1.0)
         return Infinity;
 
     // compute barycentric coordnate b2
     Vector q = cross(t, edge1);
-    b2 = inv_divisor * dot(ray.d, q);
+    b2 = inv_divisor * dot(ray.direction, q);
     if (b2 < 0.0 || b1 + b2 > 1.0)
         return Infinity;
 

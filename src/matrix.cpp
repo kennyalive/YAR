@@ -39,7 +39,7 @@ Vector transform_vector(const Matrix3x4& m, Vector v) {
 
 Ray transform_ray(const Matrix3x4& m, const Ray& ray) {
     Ray ray2;
-    ray2.o = transform_point(m, ray.o);
-    ray2.d = transform_vector(m, ray.d);
+    ray2.origin = transform_point(m, ray.origin);
+    ray2.direction = transform_vector(m, ray.direction);
     return ray2;
 }

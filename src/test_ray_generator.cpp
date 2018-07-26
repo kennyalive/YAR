@@ -37,6 +37,6 @@ Ray Ray_Generator::generate_ray(const Vector& last_hit, float last_hit_epsilon) 
     direction = direction.normalized();
 
     auto ray = Ray(origin, direction);
-    ray.o = ray.get_point(use_last_hit ? last_hit_epsilon : 1e-3f);
+    ray.origin = ray.get_point(use_last_hit ? last_hit_epsilon : 1e-3f);
     return ray;
 }

@@ -108,6 +108,8 @@ void validate_kdtree(const KdTree& kdtree, int ray_count) {
         }
 
         if (kdtree_hit_distance != brute_force_intersection.t) {
+            const auto& o = ray.origin;
+            const auto& d = ray.direction;
             printf("KdTree accelerator test failure:\n"
                 "Rays validated so far: %d (%.2f%%)\n"
                 "KdTree T %.16g [%a]\n"
@@ -117,7 +119,7 @@ void validate_kdtree(const KdTree& kdtree, int ray_count) {
                 i, float(i) / float(ray_count),
                 kdtree_hit_distance, kdtree_hit_distance,
                 brute_force_intersection.t, brute_force_intersection.t,
-                ray.o.x, ray.o.y, ray.o.z, ray.d.x, ray.d.y, ray.d.z
+                o.x, o.y, o.z, d.x, d.y, d.z
             );
             error("KdTree traversal error detected");
         }

@@ -41,9 +41,9 @@ struct Bounding_Box {
         t_max = Infinity;
 
         for (int i = 0; i < 3; i++) {
-            float inv_dir = 1.f / ray.d[i];
-            float t0 = (min_p[i] - ray.o[i]) * inv_dir;
-            float t1 = (max_p[i] - ray.o[i]) * inv_dir;
+            float inv_dir = 1.f / ray.direction[i];
+            float t0 = (min_p[i] - ray.origin[i]) * inv_dir;
+            float t1 = (max_p[i] - ray.origin[i]) * inv_dir;
 
             if (inv_dir < 0.f)
                 std::swap(t0, t1);
