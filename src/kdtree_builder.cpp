@@ -46,10 +46,11 @@ struct Triangle_Info {
 	Bounding_Box bounds;
 };
 
+template <typename Primitive_Source>
 class KdTree_Builder {
 public:
-    KdTree_Builder(const Triangle_Mesh& mesh, const KdTree_Build_Params& build_params);
-    KdTree build();
+    KdTree_Builder(const Primitive_Source& primitive_source, const KdTree_Build_Params& build_params);
+    KdTree<Primitive_Source> build();
 
 private:
     void build_node(const Bounding_Box& node_bounds, int32_t triangles_offset, int32_t triangle_count,
@@ -60,7 +61,7 @@ private:
     Split select_split_for_axis(const Bounding_Box& node_bounds, int32_t triangle_count, int axis) const;
 
 private:
-    const Triangle_Mesh& mesh;
+    const Primitive_Source& primitive_source;
     KdTree_Build_Params build_params;
 
     std::vector<Edge> edges[3]; // edges for each axis
@@ -71,50 +72,63 @@ private:
     std::vector<int32_t> triangle_indices;
 };
 
-KdTree build_kdtree(const Triangle_Mesh& mesh, const KdTree_Build_Params& build_params) {
-    KdTree_Builder builder(mesh, build_params);
+Mesh_KdTree build_kdtree(const Triangle_Mesh& mesh, const KdTree_Build_Params& build_params) {
+    Mesh_Source primitive_source {&mesh};
+    KdTree_Builder<Mesh_Source> builder(primitive_source, build_params);
+    return builder.build();
+}
+
+TwoLevel_KdTree build_kdtree(const std::vector<Mesh_KdTree>& kdtrees, const KdTree_Build_Params& build_params) {
+    KdTree_Source primitive_source;
+    primitive_source.mesh_kdtrees.resize(kdtrees.size());
+    for (size_t i = 0; i < kdtrees.size(); i++) {
+        primitive_source.mesh_kdtrees[i] = &kdtrees[i];
+    }
+    KdTree_Builder<KdTree_Source> builder(primitive_source, build_params);
     return builder.build();
 }
 
 enum {
   // max count is chosen such that maxTrianglesCount * 2 is still an int32_t,
   // this simplifies implementation.
-  max_triangle_count = 0x3fffffff // max ~ 1 billion triangles
+  max_primitive_count = 0x3fffffff // max ~ 1 billion primitives
 };
 
-KdTree_Builder::KdTree_Builder(const Triangle_Mesh& mesh, const KdTree_Build_Params& build_params)
-: mesh(mesh)
+template <typename Primitive_Source>
+KdTree_Builder<Primitive_Source>::KdTree_Builder(const Primitive_Source& primitive_source, const KdTree_Build_Params& build_params)
+: primitive_source(primitive_source)
 , build_params(build_params)
 {
-    if (mesh.get_triangle_count() > max_triangle_count) {
-        error("exceeded the maximum number of mesh triangles: " + std::to_string(max_triangle_count));
+    if (primitive_source.get_primitive_count() > max_primitive_count) {
+        error("exceeded the maximum number of primitives: " + std::to_string(max_primitive_count));
     }
 
     if (this->build_params.max_depth <= 0) {
-        this->build_params.max_depth = std::lround(8.0 + 1.3 * std::floor(std::log2(mesh.get_triangle_count())));
+        this->build_params.max_depth = std::lround(8.0 + 1.3 * std::floor(std::log2(primitive_source.get_primitive_count())));
     }
-    this->build_params.max_depth = std::min(this->build_params.max_depth, static_cast<int>(KdTree::max_traversal_depth));
+    this->build_params.max_depth = std::min(this->build_params.max_depth, static_cast<int>(KdTree<Primitive_Source>::max_traversal_depth));
 }
 
-KdTree KdTree_Builder::build()
+template <typename Primitive_Source>
+KdTree<Primitive_Source> KdTree_Builder<Primitive_Source>::build()
 {
-    const int32_t triangle_count = mesh.get_triangle_count();
+    const int32_t primitive_count = primitive_source.get_primitive_count();
 
     //
     // Prepare working structures.
     //
     for (int i = 0; i < 3; i++)
-        edges[i].resize(2 * triangle_count);
+        edges[i].resize(2 * primitive_count);
 
     // Maximum theoretical size of triangle_buffer is [triangle_count*(build_params.max_depth + 1)] elements.
     // Algorithm starts with the following initial size and resizes later if necessary.
-    triangle_buffer.resize(static_cast<size_t>(triangle_count * 2.5));
+    triangle_buffer.resize(static_cast<size_t>(primitive_count * 2.5));
 
-    triangle_buffer2.resize(triangle_count);
+    triangle_buffer2.resize(primitive_count);
 
     Bounding_Box mesh_bounds;
-    for (int32_t i = 0; i < triangle_count; i++) {
-        Bounding_Box bounds = mesh.get_triangle_bounds(i);
+    for (int32_t i = 0; i < primitive_count; i++) {
+        Bounding_Box bounds = primitive_source.get_primitive_bounds(i);
         triangle_buffer[i] = { i, bounds };
         mesh_bounds = Bounding_Box::get_union(mesh_bounds, bounds);
     }
@@ -122,9 +136,9 @@ KdTree KdTree_Builder::build()
     //
     // Recursively build all nodes.
     //
-    build_node(mesh_bounds, 0, triangle_count, build_params.max_depth, triangle_count);
+    build_node(mesh_bounds, 0, primitive_count, build_params.max_depth, primitive_count);
 
-    return KdTree(std::move(nodes), std::move(triangle_indices), mesh);
+    return KdTree<Primitive_Source>(std::move(nodes), std::move(triangle_indices), primitive_source);
 }
 
 //
@@ -133,7 +147,7 @@ KdTree KdTree_Builder::build()
 // Implements clipping algorithm described in this article:
 //      Alexei Soupikov, Maxim Shevtsov, Alexander Kapustin, 2008. Improving Kd-tree Quality at a Reasonable Construction Cost
 //
-void clip_bounds(const Triangle_Mesh& mesh, int32_t triangle_index, float split_position, int axis, bool left, Bounding_Box& bounds)
+void clip_bounds(const Mesh_Source& mesh_source, int32_t triangle_index, float split_position, int axis, bool left, Bounding_Box& bounds)
 {
     assert(split_position > bounds.min_p[axis] && split_position < bounds.max_p[axis]);
 
@@ -144,7 +158,7 @@ void clip_bounds(const Triangle_Mesh& mesh, int32_t triangle_index, float split_
 
     // sort triangle vertices along the split dimension
     Vector p[3];
-    mesh.get_triangle(triangle_index, p[0], p[1], p[2]);
+    mesh_source.mesh->get_triangle(triangle_index, p[0], p[1], p[2]);
 
     if (p[1][axis] < p[0][axis])
         std::swap(p[1], p[0]);
@@ -200,7 +214,17 @@ void clip_bounds(const Triangle_Mesh& mesh, int32_t triangle_index, float split_
     bounds = Bounding_Box::get_intersection(bounds, bounds2);
 }
 
-void KdTree_Builder::build_node(const Bounding_Box& node_bounds, int32_t triangles_offset, int32_t triangle_count, int depth, int32_t above_triangles_offset)
+void clip_bounds(const KdTree_Source& mesh_source, int32_t primitive_index, float split_position, int axis, bool left, Bounding_Box& bounds) {
+    assert(split_position > bounds.min_p[axis] && split_position < bounds.max_p[axis]);
+
+    if (left)
+        bounds.max_p[axis] = split_position;
+    else
+        bounds.min_p[axis] = split_position;
+}
+
+template <typename Primitive_Source>
+void KdTree_Builder<Primitive_Source>::build_node(const Bounding_Box& node_bounds, int32_t triangles_offset, int32_t triangle_count, int depth, int32_t above_triangles_offset)
 {
     if (nodes.size() >= KdNode::max_node_count)
         error("maximum number of KdTree nodes has been reached: " + std::to_string(KdNode::max_node_count));
@@ -222,7 +246,7 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, int32_t triangl
     memcpy(triangle_buffer2.data(), &triangle_buffer[triangles_offset], triangle_count * sizeof(Triangle_Info));
 
     if (triangle_buffer.size() < above_triangles_offset + triangle_count)
-        triangle_buffer.resize(triangle_buffer.size() + mesh.get_triangle_count());
+        triangle_buffer.resize(triangle_buffer.size() + primitive_source.get_primitive_count());
 
     // classify triangles with respect to split
     int32_t n0 = 0;
@@ -233,7 +257,7 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, int32_t triangl
 
             if (build_params.split_clipping) {
                 if (triangle_info.bounds.max_p[split.axis] > split_position) {
-                    clip_bounds(mesh, triangle_info.triangle, split_position, split.axis, true, triangle_info.bounds);
+                    clip_bounds(primitive_source, triangle_info.triangle, split_position, split.axis, true, triangle_info.bounds);
                 }
             }
 
@@ -249,7 +273,7 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, int32_t triangl
 
             if (build_params.split_clipping) {
                 if (triangle_info.bounds.min_p[split.axis] < split_position) {
-                    clip_bounds(mesh, triangle_info.triangle, split_position, split.axis, false, triangle_info.bounds);
+                    clip_bounds(primitive_source, triangle_info.triangle, split_position, split.axis, false, triangle_info.bounds);
                 }
             }
 
@@ -273,7 +297,8 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, int32_t triangl
     build_node(bounds1, above_triangles_offset, n1, depth - 1, above_triangles_offset);
 }
 
-void KdTree_Builder::create_leaf(const Triangle_Info* triangles, int32_t triangle_count)
+template <typename Primitive_Source>
+void KdTree_Builder<Primitive_Source>::create_leaf(const Triangle_Info* triangles, int32_t triangle_count)
 {
     KdNode node;
     if (triangle_count == 0) {
@@ -291,7 +316,8 @@ void KdTree_Builder::create_leaf(const Triangle_Info* triangles, int32_t triangl
     nodes.push_back(node);
 }
 
-Split KdTree_Builder::select_split(const Bounding_Box& node_bounds, const Triangle_Info* triangles, int32_t triangle_count)
+template <typename Primitive_Source>
+Split KdTree_Builder<Primitive_Source>::select_split(const Bounding_Box& node_bounds, const Triangle_Info* triangles, int32_t triangle_count)
 {
     // Determine axes iteration order.
     int axes[3];
@@ -344,7 +370,8 @@ Split KdTree_Builder::select_split(const Bounding_Box& node_bounds, const Triang
     return best_split;
 }
 
-Split KdTree_Builder::select_split_for_axis(const Bounding_Box& node_bounds, int32_t triangle_count, int axis) const
+template <typename Primitive_Source>
+Split KdTree_Builder<Primitive_Source>::select_split_for_axis(const Bounding_Box& node_bounds, int32_t triangle_count, int axis) const
 {
     static const int other_axis[3][2] = { {1, 2}, {0, 2}, {0, 1} };
     const int other_axis0 = other_axis[axis][0];

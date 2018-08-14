@@ -37,10 +37,10 @@ const int validation_ray_count = 1'000'000;
 
 const double cpu_ghz = 4.5; // get_base_cpu_frequency_ghz();
 
-int benchmark_kd_tree(const KdTree& kdtree) {
+int benchmark_kd_tree(const Mesh_KdTree& kdtree) {
     Timestamp tx;
 
-    auto bounds = kdtree.get_mesh().get_bounds();
+    auto bounds = kdtree.get_bounds();
 
     Vector last_hit = (bounds.min_p + bounds.max_p) * 0.5f;
     float last_hit_epsilon = 0.0;
@@ -81,9 +81,9 @@ int benchmark_kd_tree(const KdTree& kdtree) {
     return (int)(time_ns / 1'000'000);
 }
 
-void validate_kdtree(const KdTree& kdtree, int ray_count) {
+void validate_kdtree(const Mesh_KdTree& kdtree, int ray_count) {
     printf("Running kdtree validation... ");
-    auto bounds = kdtree.get_mesh().get_bounds();
+    auto bounds = kdtree.get_bounds();
     Vector last_hit = (bounds.min_p + bounds.max_p) * 0.5;
     float last_hit_epsilon = 0.0f;
 
@@ -98,11 +98,12 @@ void validate_kdtree(const KdTree& kdtree, int ray_count) {
         Triangle_Intersection brute_force_intersection;
 
         int hit_k = -1;
-        for (int32_t k = 0; k < kdtree.get_mesh().get_triangle_count(); k++) {
-            Triangle_Intersection intersection = intersect_triangle(ray, &kdtree.get_mesh(), k);
+        for (int32_t k = 0; k < kdtree.get_primitive_source().get_primitive_count(); k++) {
+            float old_t = brute_force_intersection.t;
 
-            if (intersection.t < brute_force_intersection.t) {
-                brute_force_intersection.t = intersection.t;
+            intersect_triangle(ray, kdtree.get_primitive_source().mesh, k, brute_force_intersection);
+
+            if (brute_force_intersection.t != old_t) {
                 hit_k = k;
             }
         }
@@ -133,20 +134,6 @@ void validate_kdtree(const KdTree& kdtree, int ray_count) {
     printf("DONE\n");
 }
 
-template <typename T> struct Triangle_Mesh_Selector;
-
-template <>
-struct Triangle_Mesh_Selector<Indexed_Triangle_Mesh> {
-    Triangle_Mesh_Selector(Indexed_Triangle_Mesh& indexed_mesh) : mesh(indexed_mesh) {}
-    Indexed_Triangle_Mesh& mesh;
-};
-
-template <>
-struct Triangle_Mesh_Selector<Simple_Triangle_Mesh> {
-    Triangle_Mesh_Selector(Indexed_Triangle_Mesh& indexed_mesh) : mesh(Simple_Triangle_Mesh::from_indexed_mesh(indexed_mesh)) {}
-    Simple_Triangle_Mesh mesh;
-};
-
 const bool build_tree = false;
 
 void test_kdtree() {
@@ -155,15 +142,12 @@ void test_kdtree() {
     
     RNG rng;
 
-    std::unique_ptr<Indexed_Triangle_Mesh> indexed_mesh = LoadTriangleMesh(model_path);
-
-    Triangle_Mesh_Selector<Triangle_Mesh> mesh_selector(*indexed_mesh);
-    Triangle_Mesh& mesh = mesh_selector.mesh;
+    std::unique_ptr<Triangle_Mesh> mesh = LoadTriangleMesh(model_path);
 
     if (build_tree) {
         KdTree_Build_Params params;
         Timestamp t;
-        KdTree kdtree = build_kdtree(mesh, params);
+        Mesh_KdTree kdtree = build_kdtree(*mesh, params);
         int time = int(elapsed_milliseconds(t));
         printf("KdTree build time = %dms\n", time);
 		kdtree.calculate_stats().print();
@@ -172,18 +156,18 @@ void test_kdtree() {
         printf("\n");
         return;
     }
-    auto kdtree = std::unique_ptr<KdTree>(new KdTree(kdtree_path, mesh));
+    auto kdtree = load_mesh_kdtree(kdtree_path, *mesh);
     //auto kdtree = std::unique_ptr<KdTree>(new KdTree("test.kdtree", mesh));
 
-    mesh.print_info();
-    kdtree->calculate_stats().print();
+    mesh->print_info();
+    kdtree.calculate_stats().print();
     printf("\n");
     printf("=========================\n");
     printf("shooting rays (kdtree)...\n");
 
-    int timeMsec = benchmark_kd_tree(*kdtree);
+    int timeMsec = benchmark_kd_tree(kdtree);
     double speed = (benchmark_ray_count / 1000000.0) / (timeMsec / 1000.0);
     printf("raycast performance [%-6s]: %.2f MRays/sec, (rnd = %d)\n", model_path.c_str(), speed, rng.random_uint32());
 
-    validate_kdtree(*kdtree, validation_ray_count);
+    validate_kdtree(kdtree, validation_ray_count);
 }

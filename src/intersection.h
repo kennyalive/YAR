@@ -4,6 +4,7 @@
 #include "vector.h"
 
 struct Ray;
+struct Triangle_Mesh;
 
 float intersect_triangle_moller_trumbore(const Ray& ray, const Vector& p0, const Vector& p1, const Vector& p2, float& b1, float& b2);
 
@@ -15,7 +16,7 @@ struct Triangle_Intersection {
     int32_t                 triangle_index;
 };
 
-Triangle_Intersection intersect_triangle(const Ray& ray, const Triangle_Mesh* mesh, int32_t triangle_index);
+void intersect_triangle(const Ray& ray, const Triangle_Mesh* mesh, int32_t triangle_index, Triangle_Intersection& intersection);
 
 struct Local_Geometry {
     Vector                  position;

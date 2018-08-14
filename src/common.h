@@ -46,7 +46,9 @@ inline float lerp(float t, float a, float b) {
     return a + (b - a)*t;
 }
 
-struct Simple_Triangle_Mesh;
-
-using Triangle_Mesh = Simple_Triangle_Mesh;
-//using Triangle_Mesh = Indexed_Triangle_Mesh;
+// Boost hash combine.
+template <typename T>
+inline void hash_combine(std::size_t& seed, T value) {
+    std::hash<T> hasher;
+    seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}

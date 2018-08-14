@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "bounding_box.h"
+#include "intersection.h"
 #include "ray.h"
 #include "triangle_mesh.h"
 #include "vector.h"
@@ -12,7 +13,15 @@
 
 struct Local_Geometry;
 struct Triangle_Intersection;
+struct Mesh_Source;
+struct KdTree_Source;
 
+template <typename Primitive_Source> class KdTree;
+
+using Mesh_KdTree       = KdTree<Mesh_Source>;
+using TwoLevel_KdTree   = KdTree<KdTree_Source>;
+
+// Contains data collected by KdTree::calculate_stats() function.
 struct KdTree_Stats {
     int64_t nodes_size = 0;
     int64_t triangle_indices_size = 0;
@@ -34,6 +43,8 @@ struct KdTree_Stats {
     void print();
 };
 
+// 8 byte kd-tree node.
+// KdTree is a linear array of nodes + an array of triangle indices referenced by the nodes.
 struct KdNode {
     uint32_t word0;
     uint32_t word1;
@@ -101,30 +112,87 @@ struct KdNode {
     }
 };
 
+// KdTree acceleration structure.
+// Template parameter specifies the object that provides primitives to build kdtree from.
+template <typename Primitive_Source>
 class KdTree {
 public:
-    KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& triangle_indices, const Triangle_Mesh& mesh);
-    KdTree(const std::string& file_name, const Triangle_Mesh& mesh);
-
-    void save_to_file(const std::string& file_name) const;
+    KdTree() = default;
+    KdTree(KdTree&& other) = default;
+    KdTree& operator=(KdTree&& other) = default;
 
     float intersect(const Ray& ray, Local_Geometry& local_geom) const;
 
-    const Triangle_Mesh& get_mesh() const { return mesh; }
+    const Primitive_Source& get_primitive_source() const { return primitive_source; }
+    const Bounding_Box& get_bounds() const { return bounds; }
+
     KdTree_Stats calculate_stats() const;
     std::vector<int32_t> calculate_path_to_node(int32_t node_index) const;
 
-private:
-    void intersect_leaf_triangles(const Ray& ray, KdNode leaf, Triangle_Intersection& closest_intersection) const;
+    void save_to_file(const std::string& file_name) const;
 
 private:
-    friend class KdTree_Builder;
+    void intersect(const Ray& ray, Triangle_Intersection& intersection) const;
+    void intersect_leaf(const Ray& ray, KdNode leaf, Triangle_Intersection& intersection) const;
+
+private:
+    KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& triangle_indices, const Primitive_Source& primitive_source);
+
+    template <typename Primitive_Source> friend class KdTree_Builder;
+    friend struct KdTree_Source;
+    friend KdTree<Mesh_Source> load_mesh_kdtree(const std::string& file_name, const Triangle_Mesh& mesh);
 
     enum { max_traversal_depth = 64 };
 
 private:
-    const std::vector<KdNode>   nodes;
-    const std::vector<int32_t>  triangle_indices;
-    const Triangle_Mesh&        mesh;
-    const Bounding_Box          mesh_bounds;
+    std::vector<KdNode>   nodes;
+    std::vector<int32_t>  triangle_indices;
+    Primitive_Source      primitive_source;
+    Bounding_Box          bounds;
+};
+
+Mesh_KdTree load_mesh_kdtree(const std::string& file_name, const Triangle_Mesh& mesh);
+
+struct Mesh_Source {
+    const Triangle_Mesh* mesh;
+
+    Mesh_Source() {}
+    Mesh_Source(const Triangle_Mesh* mesh) : mesh(mesh) {}
+
+    int32_t get_primitive_count() const {
+        return mesh->get_triangle_count();
+    }
+    Bounding_Box get_primitive_bounds(int32_t primitive_index) const {
+        return mesh->get_triangle_bounds(primitive_index);
+    }
+    Bounding_Box calculate_bounds() const {
+        return mesh->get_bounds();
+    }
+    void intersect(const Ray& ray, int32_t primitive_index, Triangle_Intersection& intersection) const {
+        return intersect_triangle(ray, mesh, primitive_index, intersection);
+    }
+};
+
+struct KdTree_Source {
+    std::vector<const Mesh_KdTree*> mesh_kdtrees;
+
+    int32_t get_primitive_count()  const {
+        return (int32_t)mesh_kdtrees.size();
+    }
+    Bounding_Box get_primitive_bounds(int32_t primitive_index) const {
+        assert(primitive_index >= 0 && primitive_index < mesh_kdtrees.size());
+        return mesh_kdtrees[primitive_index]->get_bounds();
+    }
+    Bounding_Box calculate_bounds() const {
+        Bounding_Box bounds;
+        for (auto kdtree : mesh_kdtrees) {
+            bounds = Bounding_Box::get_union(bounds, kdtree->get_bounds());
+        }
+        return bounds;
+    }
+    void intersect(const Ray& ray, int32_t primitive_index, Triangle_Intersection& intersection) const {
+        assert(primitive_index >= 0 && primitive_index < mesh_kdtrees.size());
+        mesh_kdtrees[primitive_index]->intersect(ray, intersection);
+
+    }
 };

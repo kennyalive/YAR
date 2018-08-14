@@ -39,15 +39,20 @@ float intersect_triangle_moller_trumbore(const Ray& ray, const Vector& p0, const
     return distance;
 }
 
-Triangle_Intersection intersect_triangle(const Ray& ray, const Triangle_Mesh* mesh, int32_t triangle_index) {
+void intersect_triangle(const Ray& ray, const Triangle_Mesh* mesh, int32_t triangle_index, Triangle_Intersection& intersection) {
     Vector p0, p1, p2;
     mesh->get_triangle(triangle_index, p0, p1, p2);
 
-    Triangle_Intersection isect;
-    isect.t = intersect_triangle_moller_trumbore(ray, p0, p1,p2, isect.b1, isect.b2);
-    isect.mesh = mesh;
-    isect.triangle_index = triangle_index;
-    return isect;
+    float b1, b2;
+    float t = intersect_triangle_moller_trumbore(ray, p0, p1, p2, b1, b2);
+
+    if (t < intersection.t) {
+        intersection.t = t;
+        intersection.b1 = b1;
+        intersection.b2 = b2;
+        intersection.mesh = mesh;
+        intersection.triangle_index = triangle_index;
+    }
 }
 
 Local_Geometry::Local_Geometry(const Ray& ray, const Triangle_Intersection& triangle_intersection) {

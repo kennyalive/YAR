@@ -11,12 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
-// Boost hash combine.
-static uint64_t hash_combine(uint64_t hash, uint64_t value) {
-    return hash ^ (value + 0x9e3779b9 + (hash << 6) + (hash >> 2));
-}
-
-std::unique_ptr<Indexed_Triangle_Mesh> LoadTriangleMesh(const std::string& fileName) {
+std::unique_ptr<Triangle_Mesh> LoadTriangleMesh(const std::string& fileName) {
     enum {
         headerSize = 80,
         facetSize = 50,
@@ -26,10 +21,11 @@ std::unique_ptr<Indexed_Triangle_Mesh> LoadTriangleMesh(const std::string& fileN
 
     struct VectorHash {
         std::size_t operator()(const Vector& v) const {
-            size_t h1 = std::hash<float>()(v.x);
-            size_t h2 = std::hash<float>()(v.y);
-            size_t h3 = std::hash<float>()(v.z);
-            return hash_combine(h1, hash_combine(h2, h3));
+            size_t hash = 0;
+            hash_combine(hash, v.x);
+            hash_combine(hash, v.y);
+            hash_combine(hash, v.z);
+            return hash;
         }
     };
 
@@ -72,8 +68,8 @@ std::unique_ptr<Indexed_Triangle_Mesh> LoadTriangleMesh(const std::string& fileN
         error("incorrect size of binary stl file: " + fileName);
 
     // read mesh data
-    auto mesh = std::unique_ptr<Indexed_Triangle_Mesh>(new Indexed_Triangle_Mesh());
-    mesh->face_indices.resize(numTriangles);
+    auto mesh = std::make_unique<Triangle_Mesh>();
+    mesh->face_indices.resize(numTriangles * 3);
 
     std::unordered_map<Vector, int32_t, VectorHash> uniqueVertices;
     uint8_t* dataPtr = fileContent.data() + headerSize + 4;
@@ -99,7 +95,7 @@ std::unique_ptr<Indexed_Triangle_Mesh> LoadTriangleMesh(const std::string& fileN
             else {
                 vertexIndex = iterator->second;
             }
-            mesh->face_indices[i][k] = vertexIndex;
+            mesh->face_indices[3*i + k] = vertexIndex;
         }
         dataPtr += facetSize;
     }

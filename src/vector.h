@@ -5,9 +5,7 @@
 struct Vector {
     float x, y, z;
 
-    Vector() {}
-
-    explicit Vector(float v)
+    explicit Vector(float v = 0.f)
         : x(v), y(v), z(v) {}
 
     Vector(float x, float y, float z)
@@ -88,13 +86,19 @@ struct Vector {
 struct Vector2 {
     float x, y;
 
-    Vector2() {}
-
-    explicit Vector2(float v)
+    explicit Vector2(float v = 0.f)
         : x(v), y(v) {}
 
     Vector2(float x, float y)
         : x(x), y(y) {}
+
+    bool operator==(Vector2 v) const {
+        return x == v.x && y == v.y;
+    }
+
+    bool operator!=(Vector2 v) const {
+        return !(*this == v);
+    }
 
     float operator[](int index) const {
         return (&x)[index];

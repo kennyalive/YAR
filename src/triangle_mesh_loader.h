@@ -3,5 +3,5 @@
 #include <memory>
 #include <string>
 
-struct Indexed_Triangle_Mesh;
-std::unique_ptr<Indexed_Triangle_Mesh> LoadTriangleMesh(const std::string& fileName);
+struct Triangle_Mesh;
+std::unique_ptr<Triangle_Mesh> LoadTriangleMesh(const std::string& fileName);

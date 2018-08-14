@@ -12,4 +12,5 @@ struct KdTree_Build_Params {
     bool    split_clipping = true;
 };
 
-KdTree build_kdtree(const Triangle_Mesh& mesh, const KdTree_Build_Params& build_params);
+Mesh_KdTree build_kdtree(const Triangle_Mesh& mesh, const KdTree_Build_Params& build_params = KdTree_Build_Params());
+TwoLevel_KdTree build_kdtree(const std::vector<Mesh_KdTree>& kdtrees, const KdTree_Build_Params& build_params = KdTree_Build_Params());
