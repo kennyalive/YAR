@@ -79,8 +79,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="3rdparty\half\half.cpp" />
-    <ClCompile Include="3rdparty\miniexr.cpp" />
+    <ClCompile Include="third_party\half\half.cpp" />
+    <ClCompile Include="third_party\miniexr.cpp" />
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\colorimetry.cpp" />
     <ClCompile Include="src\common.cpp" />
@@ -98,7 +98,7 @@
     <ClCompile Include="src\triangle_mesh_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="3rdparty\half\half.h" />
+    <ClInclude Include="third_party\half\half.h" />
     <ClInclude Include="src\bounding_box.h" />
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\colorimetry.h" />

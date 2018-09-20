@@ -13,11 +13,11 @@
     <ClCompile Include="src\sampling.cpp" />
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\matrix.cpp" />
-    <ClCompile Include="3rdparty\half\half.cpp">
-      <Filter>3rdparty\half</Filter>
+    <ClCompile Include="third_party\half\half.cpp">
+      <Filter>third_party\half</Filter>
     </ClCompile>
-    <ClCompile Include="3rdparty\miniexr.cpp">
-      <Filter>3rdparty</Filter>
+    <ClCompile Include="third_party\miniexr.cpp">
+      <Filter>third_party</Filter>
     </ClCompile>
     <ClCompile Include="src\colorimetry.cpp" />
     <ClCompile Include="src\spectrum.cpp" />
@@ -38,18 +38,18 @@
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\light.h" />
     <ClInclude Include="src\spectrum.h" />
-    <ClInclude Include="3rdparty\half\half.h">
-      <Filter>3rdparty\half</Filter>
+    <ClInclude Include="third_party\half\half.h">
+      <Filter>third_party\half</Filter>
     </ClInclude>
     <ClInclude Include="src\colorimetry.h" />
     <ClInclude Include="src\vector.h" />
     <ClInclude Include="src\intersection.h" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="3rdparty">
+    <Filter Include="third_party">
       <UniqueIdentifier>{da7df377-dbdc-4a52-9b76-66f110655e5d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="3rdparty\half">
+    <Filter Include="third_party\half">
       <UniqueIdentifier>{a7d8540c-cd99-4e5b-bf6a-73cab783f933}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
