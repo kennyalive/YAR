@@ -1,4 +1,4 @@
-#include "common.h"
+#include "../common.h"
 #include "demo.h"
 #include "debug.h"
 #include "geometry.h"
@@ -8,7 +8,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#include "glm/gtc/matrix_transform.hpp"
+#include "glm/glm/gtc/matrix_transform.hpp"
 
 #include "imgui/imgui.h"
 #include "imgui/impl/imgui_impl_vulkan.h"
@@ -69,7 +69,7 @@ void Vk_Demo::upload_textures() {
         return texture;
     };
 
-    texture = load_texture("../../data/model.jpg");
+    texture = load_texture("data/model.jpg");
 
     // create sampler
     VkSamplerCreateInfo desc { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
@@ -89,7 +89,7 @@ void Vk_Demo::upload_textures() {
 }
 
 void Vk_Demo::upload_geometry() {
-    Model model = load_obj_model("../../data/model.obj");
+    Model model = load_obj_model("data/model.obj");
     model_index_count = static_cast<uint32_t>(model.indices.size());
 
     {
@@ -180,7 +180,7 @@ void Vk_Demo::create_framebuffers() {
     desc.layers = 1;
 
     VkImageView attachments[] = {VK_NULL_HANDLE, vk.depth_info.image_view};
-    desc.attachmentCount = array_length(attachments);
+    desc.attachmentCount = array_size32(attachments);
     desc.pAttachments    = attachments;
     desc.renderPass      = render_pass;
 
@@ -213,7 +213,7 @@ void Vk_Demo::create_descriptor_sets() {
 
         VkDescriptorPoolCreateInfo desc{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
         desc.maxSets        = 32;
-        desc.poolSizeCount  = array_length(pool_sizes);
+        desc.poolSizeCount  = array_size32(pool_sizes);
         desc.pPoolSizes     = pool_sizes;
 
         descriptor_pool = get_resource_manager()->create_descriptor_pool(desc, "global descriptor pool");
@@ -316,8 +316,8 @@ void Vk_Demo::create_shader_modules() {
 
         return get_resource_manager()->create_shader_module(desc, debug_name);
     };
-    model_vs = create_shader_module("../../data/spirv/model.vb", "vertex shader");
-    model_fs = create_shader_module("../../data/spirv/model.fb", "fragment shader");
+    model_vs = create_shader_module("data/spirv/model.vb", "vertex shader");
+    model_fs = create_shader_module("data/spirv/model.fb", "fragment shader");
 }
 
 void Vk_Demo::create_pipelines() {

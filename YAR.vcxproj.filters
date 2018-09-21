@@ -22,6 +22,48 @@
     <ClCompile Include="src\colorimetry.cpp" />
     <ClCompile Include="src\spectrum.cpp" />
     <ClCompile Include="src\intersection.cpp" />
+    <ClCompile Include="src\vk\debug.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vk\demo.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vk\geometry.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vk\resource_manager.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vk\vk.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vk\vma_impl.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\volk\volk.c">
+      <Filter>third_party\volk</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\impl\imgui_impl_sdl.cpp">
+      <Filter>third_party\imgui\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\impl\imgui_impl_vulkan.cpp">
+      <Filter>third_party\imgui\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui.cpp">
+      <Filter>third_party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_demo.cpp">
+      <Filter>third_party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_draw.cpp">
+      <Filter>third_party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_widgets.cpp">
+      <Filter>third_party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vk\demo_main.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\matrix.h" />
@@ -44,6 +86,48 @@
     <ClInclude Include="src\colorimetry.h" />
     <ClInclude Include="src\vector.h" />
     <ClInclude Include="src\intersection.h" />
+    <ClInclude Include="src\vk\debug.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vk\demo.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vk\geometry.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vk\resource_manager.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vk\vk.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\volk\volk.h">
+      <Filter>third_party\volk</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\impl\imgui_impl_sdl.h">
+      <Filter>third_party\imgui\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\impl\imgui_impl_vulkan.h">
+      <Filter>third_party\imgui\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imconfig.h">
+      <Filter>third_party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imgui.h">
+      <Filter>third_party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imgui_internal.h">
+      <Filter>third_party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imstb_rectpack.h">
+      <Filter>third_party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imstb_textedit.h">
+      <Filter>third_party\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imstb_truetype.h">
+      <Filter>third_party\imgui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="third_party">
@@ -51,6 +135,18 @@
     </Filter>
     <Filter Include="third_party\half">
       <UniqueIdentifier>{a7d8540c-cd99-4e5b-bf6a-73cab783f933}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\imgui">
+      <UniqueIdentifier>{71980fe2-d83a-4d94-9ba9-ac790ba10703}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vk">
+      <UniqueIdentifier>{b43256a7-264a-4880-8561-be09a4a1a371}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\volk">
+      <UniqueIdentifier>{7538e2a3-0eec-4546-a785-d375e0c0ca4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\imgui\impl">
+      <UniqueIdentifier>{e6558c84-f354-41bf-8a7f-d49b05ea4647}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -6,6 +6,7 @@
 #include <cmath>
 #include <limits>
 #include <string>
+#include <vector>
 
 constexpr float Pi = 3.14159265f;
 
@@ -16,14 +17,17 @@ constexpr size_t array_size(T (&)[N]) {
     return N;
 }
 
-inline void error(const std::string& message) {
-    printf("error: %s\n", message.c_str());
-    exit(1);
+template <class T, uint32_t N>
+constexpr uint32_t array_size32(T(&)[N]) {
+    return N;
 }
+
+void error(const std::string& message);
+std::vector<uint8_t> read_binary_file(const std::string& file_name);
 
 struct Timestamp {
     Timestamp() : t(std::chrono::steady_clock::now()) {}
-    const std::chrono::time_point<std::chrono::steady_clock> t;
+    std::chrono::time_point<std::chrono::steady_clock> t;
 };
 
 double get_base_cpu_frequency_ghz();
@@ -52,3 +56,17 @@ inline void hash_combine(std::size_t& seed, T value) {
     std::hash<T> hasher;
     seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
+
+#if 1
+#define START_TIMER { Timestamp t;
+#define STOP_TIMER(message) \
+	auto d = elapsed_nanoseconds(t); \
+	static Timestamp t0; \
+	if (elapsed_milliseconds(t0) > 1000) { \
+		t0 = Timestamp(); \
+		printf(message ## " time = %lld  microseconds\n", d / 1000); } }
+
+#else
+#define START_TIMER
+#define STOP_TIMER(...)
+#endif

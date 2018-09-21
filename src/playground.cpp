@@ -15,10 +15,10 @@
 #include <vector>
 #include <unordered_map>
 
-#include "third_party/half/half.h"
+#include "half/half.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "third_party/tiny_obj_loader.h"
+#include "tiny_obj_loader.h"
 
 void write_ppm_image(const char* file_name, const Vector* pixels, int w, int h) {
     FILE* file;
@@ -147,7 +147,11 @@ Scene load_conference_scene() {
     return scene;
 }
 
-int main() {
+int run_vk_demo(int argc, char** argv);
+
+int main(int argc, char** argv) {
+    run_vk_demo(argc, argv);
+
     const int w = 1280;
     const int h = 720;
 

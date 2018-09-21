@@ -56,10 +56,12 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)third_party;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\sdl</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>$(ProjectDir)third_party\sdl\lib\SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -70,16 +72,31 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)third_party;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\sdl</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>$(ProjectDir)third_party\sdl\lib\SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\vk\debug.cpp" />
+    <ClCompile Include="src\vk\demo.cpp" />
+    <ClCompile Include="src\vk\geometry.cpp" />
+    <ClCompile Include="src\vk\demo_main.cpp" />
+    <ClCompile Include="src\vk\resource_manager.cpp" />
+    <ClCompile Include="src\vk\vk.cpp" />
+    <ClCompile Include="src\vk\vma_impl.cpp" />
     <ClCompile Include="third_party\half\half.cpp" />
+    <ClCompile Include="third_party\imgui\imgui.cpp" />
+    <ClCompile Include="third_party\imgui\imgui_demo.cpp" />
+    <ClCompile Include="third_party\imgui\imgui_draw.cpp" />
+    <ClCompile Include="third_party\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="third_party\imgui\impl\imgui_impl_sdl.cpp" />
+    <ClCompile Include="third_party\imgui\impl\imgui_impl_vulkan.cpp" />
     <ClCompile Include="third_party\miniexr.cpp" />
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\colorimetry.cpp" />
@@ -96,8 +113,17 @@
     <ClCompile Include="src\intersection.cpp" />
     <ClCompile Include="src\triangle_mesh.cpp" />
     <ClCompile Include="src\triangle_mesh_loader.cpp" />
+    <ClCompile Include="third_party\volk\volk.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\vk\debug.h" />
+    <ClInclude Include="src\vk\demo.h" />
+    <ClInclude Include="src\vk\geometry.h" />
+    <ClInclude Include="src\vk\resource_manager.h" />
+    <ClInclude Include="src\vk\vk.h" />
     <ClInclude Include="third_party\half\half.h" />
     <ClInclude Include="src\bounding_box.h" />
     <ClInclude Include="src\camera.h" />
@@ -116,6 +142,15 @@
     <ClInclude Include="src\triangle_mesh.h" />
     <ClInclude Include="src\triangle_mesh_loader.h" />
     <ClInclude Include="src\vector.h" />
+    <ClInclude Include="third_party\imgui\imconfig.h" />
+    <ClInclude Include="third_party\imgui\imgui.h" />
+    <ClInclude Include="third_party\imgui\imgui_internal.h" />
+    <ClInclude Include="third_party\imgui\impl\imgui_impl_sdl.h" />
+    <ClInclude Include="third_party\imgui\impl\imgui_impl_vulkan.h" />
+    <ClInclude Include="third_party\imgui\imstb_rectpack.h" />
+    <ClInclude Include="third_party\imgui\imstb_textedit.h" />
+    <ClInclude Include="third_party\imgui\imstb_truetype.h" />
+    <ClInclude Include="third_party\volk\volk.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

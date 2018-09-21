@@ -1,5 +1,5 @@
 #include "vk.h"
-#include "common.h"
+#include "../common.h"
 #include "debug.h"
 #include "geometry.h"
 #include "resource_manager.h"
@@ -145,7 +145,7 @@ static void create_instance() {
         static const char* layer_names[] = {
             "VK_LAYER_LUNARG_standard_validation"
         };
-        desc.enabledLayerCount = array_length(layer_names);
+        desc.enabledLayerCount = array_size32(layer_names);
         desc.ppEnabledLayerNames = layer_names;
     }    
 
@@ -831,7 +831,7 @@ static VkPipeline create_pipeline(const Vk_Pipeline_Def& def) {
     // Finally create graphics pipeline.
     //
     VkGraphicsPipelineCreateInfo desc { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
-    desc.stageCount             = array_length(shader_stages_state);
+    desc.stageCount             = array_size32(shader_stages_state);
     desc.pStages                = shader_stages_state;
     desc.pVertexInputState      = &vertex_input_state;
     desc.pInputAssemblyState    = &input_assembly_state;

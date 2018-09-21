@@ -1,8 +1,6 @@
 #include "geometry.h"
 
-#include <glm/gtx/hash.hpp>
-
-#define TINYOBJLOADER_IMPLEMENTATION
+#include <glm/glm/gtx/hash.hpp>
 #include <tiny_obj_loader.h>
 
 #include <unordered_map>

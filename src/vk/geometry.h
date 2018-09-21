@@ -2,7 +2,7 @@
 
 #include "vk.h"
 
-#include <glm/glm.hpp>
+#include <glm/glm/glm.hpp>
 #include <array>
 #include <vector>
 
