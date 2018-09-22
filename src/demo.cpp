@@ -1,4 +1,4 @@
-#include "../common.h"
+#include "common.h"
 #include "demo.h"
 #include "debug.h"
 #include "geometry.h"

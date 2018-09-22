@@ -1,5 +1,5 @@
 #include "vk.h"
-#include "../common.h"
+#include "common.h"
 #include "debug.h"
 #include "geometry.h"
 #include "resource_manager.h"

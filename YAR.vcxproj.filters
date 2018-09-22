@@ -2,43 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="src\playground.cpp" />
-    <ClCompile Include="src\kdtree.cpp" />
-    <ClCompile Include="src\kdtree_builder.cpp" />
-    <ClCompile Include="src\triangle_mesh.cpp" />
-    <ClCompile Include="src\test_triangle_intersection.cpp" />
-    <ClCompile Include="src\common.cpp" />
-    <ClCompile Include="src\test_kdtree.cpp" />
-    <ClCompile Include="src\triangle_mesh_loader.cpp" />
-    <ClCompile Include="src\test_ray_generator.cpp" />
-    <ClCompile Include="src\sampling.cpp" />
-    <ClCompile Include="src\camera.cpp" />
-    <ClCompile Include="src\matrix.cpp" />
     <ClCompile Include="third_party\half\half.cpp">
       <Filter>third_party\half</Filter>
     </ClCompile>
     <ClCompile Include="third_party\miniexr.cpp">
       <Filter>third_party</Filter>
-    </ClCompile>
-    <ClCompile Include="src\colorimetry.cpp" />
-    <ClCompile Include="src\spectrum.cpp" />
-    <ClCompile Include="src\intersection.cpp" />
-    <ClCompile Include="src\vk\debug.cpp">
-      <Filter>vk</Filter>
-    </ClCompile>
-    <ClCompile Include="src\vk\demo.cpp">
-      <Filter>vk</Filter>
-    </ClCompile>
-    <ClCompile Include="src\vk\geometry.cpp">
-      <Filter>vk</Filter>
-    </ClCompile>
-    <ClCompile Include="src\vk\resource_manager.cpp">
-      <Filter>vk</Filter>
-    </ClCompile>
-    <ClCompile Include="src\vk\vk.cpp">
-      <Filter>vk</Filter>
-    </ClCompile>
-    <ClCompile Include="src\vk\vma_impl.cpp">
-      <Filter>vk</Filter>
     </ClCompile>
     <ClCompile Include="third_party\volk\volk.c">
       <Filter>third_party\volk</Filter>
@@ -61,45 +29,73 @@
     <ClCompile Include="third_party\imgui\imgui_widgets.cpp">
       <Filter>third_party\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="src\vk\demo_main.cpp">
+    <ClCompile Include="src\camera.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\colorimetry.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\debug.cpp">
       <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\demo.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\demo_main.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\geometry.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\intersection.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\kdtree.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\kdtree_builder.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\spectrum.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sampling.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vk.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\triangle_mesh.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\triangle_mesh_loader.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\matrix.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vma_impl.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\resource_manager.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_kdtree.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_ray_generator.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\test_triangle_intersection.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common.cpp">
+      <Filter>lib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\matrix.h" />
-    <ClInclude Include="src\bounding_box.h" />
-    <ClInclude Include="src\ray.h" />
-    <ClInclude Include="src\common.h" />
-    <ClInclude Include="src\kdtree.h" />
-    <ClInclude Include="src\kdtree_builder.h" />
-    <ClInclude Include="src\triangle_mesh.h" />
-    <ClInclude Include="src\rng.h" />
-    <ClInclude Include="src\triangle_mesh_loader.h" />
-    <ClInclude Include="src\test_ray_generator.h" />
-    <ClInclude Include="src\sampling.h" />
-    <ClInclude Include="src\camera.h" />
-    <ClInclude Include="src\light.h" />
-    <ClInclude Include="src\spectrum.h" />
     <ClInclude Include="third_party\half\half.h">
       <Filter>third_party\half</Filter>
-    </ClInclude>
-    <ClInclude Include="src\colorimetry.h" />
-    <ClInclude Include="src\vector.h" />
-    <ClInclude Include="src\intersection.h" />
-    <ClInclude Include="src\vk\debug.h">
-      <Filter>vk</Filter>
-    </ClInclude>
-    <ClInclude Include="src\vk\demo.h">
-      <Filter>vk</Filter>
-    </ClInclude>
-    <ClInclude Include="src\vk\geometry.h">
-      <Filter>vk</Filter>
-    </ClInclude>
-    <ClInclude Include="src\vk\resource_manager.h">
-      <Filter>vk</Filter>
-    </ClInclude>
-    <ClInclude Include="src\vk\vk.h">
-      <Filter>vk</Filter>
     </ClInclude>
     <ClInclude Include="third_party\volk\volk.h">
       <Filter>third_party\volk</Filter>
@@ -128,6 +124,72 @@
     <ClInclude Include="third_party\imgui\imstb_truetype.h">
       <Filter>third_party\imgui</Filter>
     </ClInclude>
+    <ClInclude Include="src\bounding_box.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\camera.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\colorimetry.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\debug.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\demo.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\geometry.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\intersection.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\kdtree.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\kdtree_builder.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\light.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\spectrum.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sampling.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vector.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\vk.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ray.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\triangle_mesh_loader.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\triangle_mesh.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\matrix.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rng.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resource_manager.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\test_ray_generator.h">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common.h">
+      <Filter>lib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="third_party">
@@ -139,14 +201,23 @@
     <Filter Include="third_party\imgui">
       <UniqueIdentifier>{71980fe2-d83a-4d94-9ba9-ac790ba10703}</UniqueIdentifier>
     </Filter>
-    <Filter Include="vk">
-      <UniqueIdentifier>{b43256a7-264a-4880-8561-be09a4a1a371}</UniqueIdentifier>
-    </Filter>
     <Filter Include="third_party\volk">
       <UniqueIdentifier>{7538e2a3-0eec-4546-a785-d375e0c0ca4a}</UniqueIdentifier>
     </Filter>
     <Filter Include="third_party\imgui\impl">
       <UniqueIdentifier>{e6558c84-f354-41bf-8a7f-d49b05ea4647}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="reference">
+      <UniqueIdentifier>{8769c619-a495-443c-a77a-e511cb8f1b86}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib">
+      <UniqueIdentifier>{7687bc7b-702a-4f46-8552-cbb16b501aeb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vk">
+      <UniqueIdentifier>{a0def918-0c9a-4c48-995c-f820b0e1b908}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tests">
+      <UniqueIdentifier>{97c12ab2-4f91-46ec-8a74-3615f4161031}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
