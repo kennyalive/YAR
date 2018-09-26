@@ -5,7 +5,7 @@ Camera::Camera(const Matrix3x4 & camera_to_world, Vector2 image_extent, float fo
     : camera_to_world(camera_to_world)
     , image_extent(image_extent)
 {
-    float tan_fovy_over_2 = std::tan(Radians(fovy/2.f));
+    float tan_fovy_over_2 = std::tan(radians(fovy/2.f));
 
     // Here we assume that distance to virtual film plane is 1.0 along Z axis in camera space.
     horz_half_dist = (image_extent.x / image_extent.y) * tan_fovy_over_2;

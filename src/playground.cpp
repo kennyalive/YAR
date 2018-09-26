@@ -76,6 +76,7 @@ struct Scene {
     std::vector<Triangle_Mesh> meshes;
 };
 
+namespace {
 struct Vertex {
     Vector p;
     Vector2 uv;
@@ -84,6 +85,7 @@ struct Vertex {
         return p == other.p && uv == other.uv;
     }
 };
+}
 
 
 namespace std {

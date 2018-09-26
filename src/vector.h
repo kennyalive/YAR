@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common.h"
+
 #include <cmath>
 
 struct Vector {
@@ -81,6 +83,10 @@ struct Vector {
     Vector normalized() const {
         return *this / length();
     }
+
+    bool is_normalized(float epsilon = 1e-3f) const {
+        return std::abs(length() - 1.f) < epsilon;
+    }
 };
 
 struct Vector2 {
@@ -99,6 +105,27 @@ struct Vector2 {
     bool operator!=(Vector2 v) const {
         return !(*this == v);
     }
+
+    float operator[](int index) const {
+        return (&x)[index];
+    }
+
+    float& operator[](int index) {
+        return (&x)[index];
+    }
+};
+
+struct Vector4 {
+    float x, y, z, w;
+
+    explicit Vector4(float v = 0.f)
+        : x(v), y(v), z(v), w(v) {}
+
+    Vector4(float x, float y, float z, float w)
+        : x(x), y(y), z(z), w(w) {}
+
+    Vector4(Vector xyz, float w)
+        : x(xyz.x), y(xyz.y), z(xyz.z), w(w) {}
 
     float operator[](int index) const {
         return (&x)[index];
@@ -138,4 +165,25 @@ inline Vector cross(const Vector& v1, const Vector& v2) {
         v1.y*v2.z - v1.z*v2.y,
         v1.z*v2.x - v1.x*v2.z,
         v1.x*v2.y - v1.y*v2.x);
+}
+
+namespace std {
+template<> struct hash<Vector> {
+    size_t operator()(Vector v) const {
+        size_t hash = 0;
+        hash_combine(hash, v.x);
+        hash_combine(hash, v.y);
+        hash_combine(hash, v.z);
+        return hash;
+    }
+};
+
+template<> struct hash<Vector2> {
+    size_t operator()(Vector2 v) const {
+        size_t hash = 0;
+        hash_combine(hash, v.x);
+        hash_combine(hash, v.y);
+        return hash;
+    }
+};
 }

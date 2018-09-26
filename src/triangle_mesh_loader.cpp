@@ -19,16 +19,6 @@ std::unique_ptr<Triangle_Mesh> LoadTriangleMesh(const std::string& fileName) {
         maxTrianglesCount = static_cast<size_t>(std::numeric_limits<int32_t>::max())
     };
 
-    struct VectorHash {
-        std::size_t operator()(const Vector& v) const {
-            size_t hash = 0;
-            hash_combine(hash, v.x);
-            hash_combine(hash, v.y);
-            hash_combine(hash, v.z);
-            return hash;
-        }
-    };
-
     std::ifstream file(fileName, std::ios_base::in | std::ios_base::binary);
     if (!file)
         error("failed to open file: " + fileName);
@@ -71,7 +61,7 @@ std::unique_ptr<Triangle_Mesh> LoadTriangleMesh(const std::string& fileName) {
     auto mesh = std::make_unique<Triangle_Mesh>();
     mesh->face_indices.resize(numTriangles * 3);
 
-    std::unordered_map<Vector, int32_t, VectorHash> uniqueVertices;
+    std::unordered_map<Vector, int32_t> uniqueVertices;
     uint8_t* dataPtr = fileContent.data() + headerSize + 4;
     for (uint32_t i = 0; i < numTriangles; i++) {
         float* f = reinterpret_cast<float*>(dataPtr);

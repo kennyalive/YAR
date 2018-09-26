@@ -4,6 +4,8 @@
 
 #ifdef _WIN32
 #define VK_USE_PLATFORM_WIN32_KHR
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
 #endif
 #include "volk/volk.h"
 #include "vk_enum_string_helper.h"

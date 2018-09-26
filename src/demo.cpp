@@ -2,13 +2,12 @@
 #include "demo.h"
 #include "debug.h"
 #include "geometry.h"
+#include "matrix.h"
 #include "resource_manager.h"
 #include "vk.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
-#include "glm/glm/gtc/matrix_transform.hpp"
 
 #include "imgui/imgui.h"
 #include "imgui/impl/imgui_impl_vulkan.h"
@@ -19,7 +18,7 @@
 #include <chrono>
 
 struct Uniform_Buffer {
-    glm::mat4 mvp;
+    Matrix4x4 mvp;
 };
 
 Vk_Demo::Vk_Demo(const Demo_Create_Info& create_info)
@@ -422,20 +421,13 @@ void Vk_Demo::update_uniform_buffer() {
     time += time_delta;
 
     // Update mvp matrix.
+    Matrix3x4 model = rotate_y(Matrix3x4::identity, (float)time * radians(30.f));
+    Matrix3x4 view = look_at_transform(Vector(0, 0.f, 3.0), Vector(0), Vector(0, 1, 0));
+    float aspect_ratio = (float)vk.surface_size.width / (float)vk.surface_size.height;
+    Matrix4x4 perspective = perspective_transform_opengl_z01(radians(45.f), aspect_ratio, 0.1f, 50.0f);
+
     Uniform_Buffer ubo;
-    glm::mat4x4 model = glm::rotate(glm::mat4(), (float)time * glm::radians(30.0f), glm::vec3(0, 1, 0));
-    glm::mat4x4 view = glm::lookAt(glm::vec3(0, 0.5, 3.0), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-
-    // Vulkan clip space has inverted Y and half Z.
-    const glm::mat4 clip(
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, -1.0f, 0.0f, 0.0f,
-        0.0f, 0.0f, 0.5f, 0.0f,
-        0.0f, 0.0f, 0.5f, 1.0f);
-
-    glm::mat4x4 proj = clip * glm::perspective(glm::radians(45.0f), (float)vk.surface_size.width / (float)vk.surface_size.height, 0.1f, 50.0f);
-
-    ubo.mvp = proj * view * model;
+    ubo.mvp = perspective * view * model;
     memcpy(uniform_buffer_ptr, &ubo, sizeof(ubo));
 }
 
