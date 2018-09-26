@@ -127,6 +127,14 @@ struct Vector4 {
     Vector4(Vector xyz, float w)
         : x(xyz.x), y(xyz.y), z(xyz.z), w(w) {}
 
+    bool operator==(Vector4 v) const {
+        return x == v.x && y == v.y && z == v.z && w == v.w;
+    }
+
+    bool operator!=(Vector4 v) const {
+        return !(*this == v);
+    }
+
     float operator[](int index) const {
         return (&x)[index];
     }
@@ -183,6 +191,17 @@ template<> struct hash<Vector2> {
         size_t hash = 0;
         hash_combine(hash, v.x);
         hash_combine(hash, v.y);
+        return hash;
+    }
+};
+
+template<> struct hash<Vector4> {
+    size_t operator()(Vector4 v) const {
+        size_t hash = 0;
+        hash_combine(hash, v.x);
+        hash_combine(hash, v.y);
+        hash_combine(hash, v.z);
+        hash_combine(hash, v.w);
         return hash;
     }
 };
