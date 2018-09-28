@@ -93,6 +93,7 @@
     <ClCompile Include="src\demo.cpp" />
     <ClCompile Include="src\geometry.cpp" />
     <ClCompile Include="src\demo_main.cpp" />
+    <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\resource_manager.cpp" />
     <ClCompile Include="src\vk.cpp" />
     <ClCompile Include="src\vma_impl.cpp" />

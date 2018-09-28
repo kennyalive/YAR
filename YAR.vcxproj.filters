@@ -92,6 +92,7 @@
     <ClCompile Include="src\common.cpp">
       <Filter>lib</Filter>
     </ClCompile>
+    <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third_party\half\half.h">

@@ -87,7 +87,6 @@ struct Vertex {
 };
 }
 
-
 namespace std {
 template<> struct hash<Vertex> {
     size_t operator()(const Vertex& vertex) const {
@@ -109,7 +108,7 @@ Scene load_conference_scene() {
     std::vector<tinyobj::material_t> materials;
     std::string err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, "data/conference/conference.obj", "data/conference/")) {
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, get_resource_path("conference/conference.obj").c_str(), get_resource_path("conference/").c_str())) {
         error("failed to load obj file");
     }
 
@@ -149,11 +148,7 @@ Scene load_conference_scene() {
     return scene;
 }
 
-int run_vk_demo(int argc, char** argv);
-
-int main(int argc, char** argv) {
-    run_vk_demo(argc, argv);
-
+int run_playground() {
     const int w = 1280;
     const int h = 720;
 

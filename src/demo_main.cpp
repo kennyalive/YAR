@@ -11,17 +11,6 @@ static SDL_Window* the_window   = nullptr;
 static bool toogle_fullscreen   = false;
 static bool handle_resize       = false;
 
-static void parse_command_line(int argc, char** argv, Demo_Create_Info& demo_create_info) {
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--validation-layers") == 0) {
-            demo_create_info.vk_create_info.enable_validation_layers = true;
-        }
-        if (strcmp(argv[i], "--debug-names") == 0) {
-            demo_create_info.vk_create_info.use_debug_names = true;
-        }
-    }
-}
-
 static bool process_events() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -46,7 +35,7 @@ static bool process_events() {
     return true;
 }
 
-int run_vk_demo(int argc, char** argv) {
+int run_vk_demo(bool enable_validation_layers, bool use_debug_names) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
         error("SDL_Init error");
 
@@ -69,7 +58,9 @@ int run_vk_demo(int argc, char** argv) {
     Demo_Create_Info demo_info{};
     demo_info.vk_create_info.windowing_system_info = windowing_system_info;
     demo_info.window = the_window;
-    parse_command_line(argc, argv, demo_info);
+    demo_info.vk_create_info.enable_validation_layers = enable_validation_layers;
+    demo_info.vk_create_info.use_debug_names = use_debug_names;
+
     Vk_Demo demo(demo_info);
 
     // Run main loop.

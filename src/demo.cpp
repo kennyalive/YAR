@@ -60,7 +60,7 @@ void Vk_Demo::upload_textures() {
         int w, h;
         int component_count;
 
-        auto rgba_pixels = stbi_load(path.c_str(), &w, &h, &component_count,STBI_rgb_alpha);
+        auto rgba_pixels = stbi_load(get_resource_path(path).c_str(), &w, &h, &component_count,STBI_rgb_alpha);
         if (rgba_pixels == nullptr)
             error("failed to load image file: " + path);
         Vk_Image texture = vk_create_texture(w, h, VK_FORMAT_R8G8B8A8_SRGB, true, rgba_pixels, 4, path.c_str());
@@ -68,7 +68,7 @@ void Vk_Demo::upload_textures() {
         return texture;
     };
 
-    texture = load_texture("data/model.jpg");
+    texture = load_texture("iron-man/model.jpg");
 
     // create sampler
     VkSamplerCreateInfo desc { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
@@ -88,7 +88,7 @@ void Vk_Demo::upload_textures() {
 }
 
 void Vk_Demo::upload_geometry() {
-    Model model = load_obj_model("data/model.obj");
+    Model model = load_obj_model("iron-man/model.obj");
     model_index_count = static_cast<uint32_t>(model.indices.size());
 
     {
@@ -301,7 +301,7 @@ void Vk_Demo::create_pipeline_layouts() {
 
 void Vk_Demo::create_shader_modules() {
     auto create_shader_module = [](const char* file_name, const char* debug_name) {
-        std::vector<uint8_t> bytes = read_binary_file(file_name);
+        std::vector<uint8_t> bytes = read_binary_file(get_resource_path(file_name));
 
         if (bytes.size() % 4 != 0) {
             error("Vulkan: SPIR-V binary buffer size is not multiple of 4");
@@ -315,8 +315,8 @@ void Vk_Demo::create_shader_modules() {
 
         return get_resource_manager()->create_shader_module(desc, debug_name);
     };
-    model_vs = create_shader_module("data/spirv/model.vb", "vertex shader");
-    model_fs = create_shader_module("data/spirv/model.fb", "fragment shader");
+    model_vs = create_shader_module("spirv/model.vb", "vertex shader");
+    model_fs = create_shader_module("spirv/model.fb", "fragment shader");
 }
 
 void Vk_Demo::create_pipelines() {

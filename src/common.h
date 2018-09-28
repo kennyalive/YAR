@@ -22,20 +22,6 @@ constexpr uint32_t array_size32(T(&)[N]) {
     return N;
 }
 
-void error(const std::string& message);
-std::vector<uint8_t> read_binary_file(const std::string& file_name);
-
-struct Timestamp {
-    Timestamp() : t(std::chrono::steady_clock::now()) {}
-    std::chrono::time_point<std::chrono::steady_clock> t;
-};
-
-double get_base_cpu_frequency_ghz();
-double get_cpu_frequency_ghz();
-
-int64_t elapsed_milliseconds(Timestamp timestamp);
-int64_t elapsed_nanoseconds(Timestamp timestamp);
-
 inline float radians(float degrees) {
     constexpr float deg_2_rad = Pi / 180.f;
     return degrees * deg_2_rad;
@@ -49,6 +35,21 @@ inline float degrees(float radians) {
 inline float lerp(float t, float a, float b) {
     return a + (b - a)*t;
 }
+
+void error(const std::string& message);
+std::string get_resource_path(const std::string& resource_relative_path);
+std::vector<uint8_t> read_binary_file(const std::string& file_name);
+
+struct Timestamp {
+    Timestamp() : t(std::chrono::steady_clock::now()) {}
+    std::chrono::time_point<std::chrono::steady_clock> t;
+};
+
+double get_base_cpu_frequency_ghz();
+double get_cpu_frequency_ghz();
+
+int64_t elapsed_milliseconds(Timestamp timestamp);
+int64_t elapsed_nanoseconds(Timestamp timestamp);
 
 // Boost hash combine.
 template <typename T>

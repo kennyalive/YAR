@@ -21,8 +21,10 @@ Model load_obj_model(const std::string& path) {
     std::vector<tinyobj::material_t> materials;
     std::string err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, path.c_str()))
-        error("failed to load obj model: " + path);
+    std::string resource_path = get_resource_path(path);
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, resource_path.c_str()))
+        error("failed to load obj model: " + resource_path);
 
     Vector model_min(std::numeric_limits<float>::infinity());
     Vector model_max(-std::numeric_limits<float>::infinity());
