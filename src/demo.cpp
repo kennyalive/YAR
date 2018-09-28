@@ -348,6 +348,7 @@ void Vk_Demo::setup_imgui() {
         ImGui_ImplVulkan_CreateFontsTexture(cb);
     });
     ImGui_ImplVulkan_InvalidateFontUploadObjects();
+    ImGui::GetIO().IniFilename = nullptr;
 }
 
 void Vk_Demo::release_imgui() {
