@@ -1,4 +1,8 @@
 .vs/
 build/
-third_party/dxc/
-data/
+
+data/*
+!data/links/
+
+third_party/dxc/*
+!third_party/dxc/dxc-compiler.url
