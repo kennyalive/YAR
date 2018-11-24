@@ -6,7 +6,7 @@
 struct Ray;
 struct Triangle_Mesh;
 
-float intersect_triangle_moller_trumbore(const Ray& ray, const Vector& p0, const Vector& p1, const Vector& p2, float& b1, float& b2);
+float intersect_triangle_moller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2);
 
 struct Triangle_Intersection {
     float                   t = Infinity; // If no intersection is found only this field is initialized and it is set to Infinity.
@@ -19,8 +19,8 @@ struct Triangle_Intersection {
 void intersect_triangle(const Ray& ray, const Triangle_Mesh* mesh, int32_t triangle_index, Triangle_Intersection& intersection);
 
 struct Local_Geometry {
-    Vector                  position;
-    Vector                  normal;
+    Vector3                  position;
+    Vector3                  normal;
 
     Local_Geometry() {}
     explicit Local_Geometry(const Ray& ray, const Triangle_Intersection& triangle_intersection);

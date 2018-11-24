@@ -4,7 +4,7 @@
 #include <vector>
 
 struct Triangle_Mesh {
-  std::vector<Vector> vertices;
+  std::vector<Vector3> vertices;
   std::vector<Vector2> texcoords;
   std::vector<int32_t> face_indices;
 
@@ -17,7 +17,7 @@ struct Triangle_Mesh {
       return static_cast<int32_t>(vertices.size());
   }
 
-  void get_triangle(int32_t triangle_index, Vector& p0, Vector& p1, Vector& p2) const {
+  void get_triangle(int32_t triangle_index, Vector3& p0, Vector3& p1, Vector3& p2) const {
       const int32_t* indices = &face_indices[triangle_index * 3];
       p0 = vertices[indices[0]];
       p1 = vertices[indices[1]];

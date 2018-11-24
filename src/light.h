@@ -4,6 +4,6 @@
 #include "spectrum.h"
 
 struct Point_Light {
-    Vector  world_position;
+    Vector3  world_position;
     RGB     intensity;
 };

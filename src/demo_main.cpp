@@ -6,8 +6,6 @@
 #include "imgui/imgui.h"
 #include "imgui/impl/imgui_impl_sdl.h"
 
-static SDL_Window* the_window   = nullptr;
-
 static bool toogle_fullscreen   = false;
 static bool handle_resize       = false;
 
@@ -41,33 +39,31 @@ int run_vk_demo(bool enable_validation_layers, bool use_debug_names) {
 
     struct On_Exit {~On_Exit() { SDL_Quit(); }} exit_action;
 
+    Vk_Create_Info vk_create_info{};
+    vk_create_info.enable_validation_layers = enable_validation_layers;
+    vk_create_info.use_debug_names = use_debug_names;
+
     // Create window.
-    the_window = SDL_CreateWindow("Vulkan demo",
+    SDL_Window* the_window = SDL_CreateWindow("Vulkan demo",
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 720, 720,
         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-
     if (the_window == nullptr)
         error("failed to create SDL window");
 
-    SDL_SysWMinfo windowing_system_info;
-    SDL_VERSION(&windowing_system_info.version);
-    if (SDL_GetWindowWMInfo(the_window, &windowing_system_info) == SDL_FALSE)
+    SDL_VERSION(&vk_create_info.windowing_system_info.version);
+    if (SDL_GetWindowWMInfo(the_window, &vk_create_info.windowing_system_info) == SDL_FALSE)
         error("failed to get platform specific window information");
 
     // Initialize demo.
-    Demo_Create_Info demo_info{};
-    demo_info.vk_create_info.windowing_system_info = windowing_system_info;
-    demo_info.window = the_window;
-    demo_info.vk_create_info.enable_validation_layers = enable_validation_layers;
-    demo_info.vk_create_info.use_debug_names = use_debug_names;
+    Vk_Demo demo{};
+    demo.initialize(vk_create_info, the_window);
 
-    Vk_Demo demo(demo_info);
+    bool prev_vsync = demo.vsync_enabled();
+    bool handle_vsync_toggle = false;
 
     // Run main loop.
     while (process_events()) {
         if (toogle_fullscreen) {
-            demo.run_frame(true); // draw only background during fullscreen toggle to prevent image stretching
-
             if (SDL_GetWindowFlags(the_window) & SDL_WINDOW_FULLSCREEN_DESKTOP)
                 SDL_SetWindowFullscreen(the_window, 0);
             else
@@ -77,20 +73,32 @@ int run_vk_demo(bool enable_validation_layers, bool use_debug_names) {
             toogle_fullscreen = false;
         }
 
-        if (handle_resize) {
+        if (handle_resize || handle_vsync_toggle) {
             if (vk.swapchain_info.handle != VK_NULL_HANDLE) {
+                VK_CHECK(vkDeviceWaitIdle(vk.device));
                 demo.release_resolution_dependent_resources();
+                vk_release_resolution_dependent_resources();
             }
             handle_resize = false;
+            handle_vsync_toggle = false;
         }
 
         if ((SDL_GetWindowFlags(the_window) & SDL_WINDOW_MINIMIZED) == 0) {
             if (vk.swapchain_info.handle == VK_NULL_HANDLE) {
+                vk_restore_resolution_dependent_resources(demo.vsync_enabled());
                 demo.restore_resolution_dependent_resources();
             }
+
             demo.run_frame();
+
+            if (prev_vsync != demo.vsync_enabled()) {
+                prev_vsync = demo.vsync_enabled();
+                handle_vsync_toggle = true;
+            }
         }
         SDL_Delay(1);
     }
+
+    demo.shutdown();
     return 0;
 }

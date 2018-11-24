@@ -8,6 +8,7 @@ static bool enable_validation_layers = false;
 static bool use_debug_names = false;
 
 static bool parse_command_line(int argc, char** argv) {
+    bool found_unknown_option = false;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--validation-layers") == 0) {
             enable_validation_layers = true;
@@ -31,8 +32,11 @@ static bool parse_command_line(int argc, char** argv) {
             printf("%-25s Shows this information.\n", "--help");
             return false;
         }
+        else
+            found_unknown_option = true;
     }
-    printf("Use --help to list all options.\n");
+    if (found_unknown_option)
+        printf("Use --help to list all options.\n");
     return true;
 }
 
@@ -40,7 +44,6 @@ int run_vk_demo(bool enable_validation_layers, bool use_debug_names);
 int run_playground();
 
 int main(int argc, char** argv) {
-    Demo_Create_Info demo_info{};
     if (!parse_command_line(argc, argv))
         return 0;
 

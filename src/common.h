@@ -49,6 +49,7 @@ double get_base_cpu_frequency_ghz();
 double get_cpu_frequency_ghz();
 
 int64_t elapsed_milliseconds(Timestamp timestamp);
+int64_t elapsed_microseconds(Timestamp timestamp);
 int64_t elapsed_nanoseconds(Timestamp timestamp);
 
 // Boost hash combine.
@@ -56,6 +57,23 @@ template <typename T>
 inline void hash_combine(std::size_t& seed, T value) {
     std::hash<T> hasher;
     seed ^= hasher(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+template <typename T>
+T& index_array_with_stride(T* base_ptr, size_t stride, size_t index) {
+    return *(T*)((uint8_t*)base_ptr + stride * index);
+}
+
+template <typename T>
+const T& index_array_with_stride(const T* base_ptr, size_t stride, size_t index) {
+    return *(const T*)((uint8_t*)base_ptr + stride * index);
+}
+
+inline float srgb_encode(float f) {
+    if (f <= 0.0031308f)
+        return 12.92f * f;
+    else
+        return 1.055f * std::pow(f, 1.f/2.4f) - 0.055f;
 }
 
 #if 1

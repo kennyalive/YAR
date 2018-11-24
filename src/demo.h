@@ -1,69 +1,80 @@
 #pragma once
 
+#include "copy_to_swapchain.h"
+#include "matrix.h"
+#include "raster_resources.h"
+#include "rt_resources.h"
+#include "utils.h"
 #include "vk.h"
+
 #include "sdl/SDL_syswm.h"
 #include <vector>
 
-struct Demo_Create_Info {
-    Vk_Create_Info  vk_create_info;
-    SDL_Window*     window;
-};
-
 class Vk_Demo {
 public:
-    Vk_Demo(const Demo_Create_Info& create_info);
-    ~Vk_Demo();
-
-    void run_frame(bool draw_only_background = false);
+    void initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window);
+    void shutdown();
 
     void release_resolution_dependent_resources();
     void restore_resolution_dependent_resources();
+    bool vsync_enabled() const { return vsync; }
+
+    void run_frame();
 
 private:
-    void upload_textures();
-    void upload_geometry();
-
-    void create_render_passes();
-
-    void create_framebuffers();
-    void destroy_framebuffers();
-
-    void create_descriptor_sets();
-    void create_pipeline_layouts();
-    void create_shader_modules();
-    void create_pipelines();
-
-    void setup_imgui();
-    void release_imgui();
+    void draw_frame();
+    void draw_rasterized_image();
+    void draw_raytraced_image();
+    void draw_imgui();
+    void copy_output_image_to_swapchain();
     void do_imgui();
 
-    void update_uniform_buffer();
-
 private:
-    const Demo_Create_Info      create_info;
+    struct UI_Result {
+        bool raytracing_toggled;
+    };
+
+    using Clock = std::chrono::high_resolution_clock;
+    using Time  = std::chrono::time_point<Clock>;
+
+    SDL_Window*                 sdl_window;
+
     bool                        show_ui                 = true;
     bool                        vsync                   = true;
+    bool                        animate                 = false;
+    bool                        raytracing              = false;
+    bool                        show_texture_lod        = false;
+    bool                        spp4                    = false;
 
-    VkSampler                   sampler                 = VK_NULL_HANDLE;
+    Time                        last_frame_time;
+    double                      sim_time;
+
+    UI_Result                   ui_result;
+
+    VkRenderPass                ui_render_pass;
+    VkFramebuffer               ui_framebuffer;
+    Vk_Image                    output_image;
+    Copy_To_Swapchain           copy_to_swapchain;
+
+    Vk_Buffer                   vertex_buffer;
+    Vk_Buffer                   index_buffer;
+    uint32_t                    model_vertex_count;
+    uint32_t                    model_index_count;
     Vk_Image                    texture;
+    VkSampler                   sampler;
 
-    VkBuffer                    uniform_buffer          = VK_NULL_HANDLE;
-    void*                       uniform_buffer_ptr      = nullptr;
+    Vector3                     camera_pos = Vector3(0, 0.5, 3.0);
+    Matrix3x4                   model_transform;
+    Matrix3x4                   view_transform;
 
-    VkBuffer                    vertex_buffer           = VK_NULL_HANDLE;
-    VkBuffer                    index_buffer            = VK_NULL_HANDLE;
-    uint32_t                    model_index_count       = 0;
+    Rasterization_Resources     raster;
+    Raytracing_Resources        rt;
 
-    VkRenderPass                render_pass             = VK_NULL_HANDLE;
-    std::vector<VkFramebuffer>  swapchain_framebuffers;
-
-    VkDescriptorPool            descriptor_pool         = VK_NULL_HANDLE;
-    VkDescriptorSetLayout       descriptor_set_layout   = VK_NULL_HANDLE;
-    VkDescriptorSet             descriptor_set          = VK_NULL_HANDLE;
-
-    VkShaderModule              model_vs                = VK_NULL_HANDLE;
-    VkShaderModule              model_fs                = VK_NULL_HANDLE;
-
-    VkPipelineLayout            pipeline_layout         = VK_NULL_HANDLE;
-    VkPipeline                  pipeline                = VK_NULL_HANDLE;
+    GPU_Time_Keeper             time_keeper;
+    struct {
+        GPU_Time_Interval*      frame;
+        GPU_Time_Interval*      draw;
+        GPU_Time_Interval*      ui;
+        GPU_Time_Interval*      compute_copy;
+    } gpu_times;
 };

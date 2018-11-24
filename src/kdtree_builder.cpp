@@ -157,7 +157,7 @@ void clip_bounds(const Mesh_Source& mesh_source, int32_t triangle_index, float s
         bounds.min_p[axis] = split_position;
 
     // sort triangle vertices along the split dimension
-    Vector p[3];
+    Vector3 p[3];
     mesh_source.mesh->get_triangle(triangle_index, p[0], p[1], p[2]);
 
     if (p[1][axis] < p[0][axis])
@@ -175,8 +175,8 @@ void clip_bounds(const Mesh_Source& mesh_source, int32_t triangle_index, float s
     // C is the remaining third vertex
     bool middle_on_the_left = p[1][axis] < split_position;
 
-    Vector a, c;
-    Vector b = p[1];
+    Vector3 a, c;
+    Vector3 b = p[1];
     if (middle_on_the_left) {
         a = p[2];
         c = p[0];
@@ -186,16 +186,16 @@ void clip_bounds(const Mesh_Source& mesh_source, int32_t triangle_index, float s
     }
 
     // find insersection points of two edges with a splitting plane
-    Vector isect_ab;
+    Vector3 isect_ab;
     if (b[axis] == split_position) {
         isect_ab = b;
     } else {
-        Vector ab = b - a;
+        Vector3 ab = b - a;
         isect_ab = a + ab * ((split_position - a[axis]) / ab[axis]);
     }
 
-    Vector ac = c - a;
-    Vector isect_ac = a + ac * ((split_position - a[axis]) / ac[axis]);
+    Vector3 ac = c - a;
+    Vector3 isect_ac = a + ac * ((split_position - a[axis]) / ac[axis]);
 
     // construct bounding box
     Bounding_Box bounds2;
@@ -322,7 +322,7 @@ Split KdTree_Builder<Primitive_Source>::select_split(const Bounding_Box& node_bo
     // Determine axes iteration order.
     int axes[3];
     if (build_params.split_along_the_longest_axis) {
-        Vector diag = node_bounds.max_p - node_bounds.min_p;
+        Vector3 diag = node_bounds.max_p - node_bounds.min_p;
         if (diag.x >= diag.y && diag.x >= diag.z) {
             axes[0] = 0;
             axes[1] = diag.y >= diag.z ? 1 : 2;
@@ -376,7 +376,7 @@ Split KdTree_Builder<Primitive_Source>::select_split_for_axis(const Bounding_Box
     static const int other_axis[3][2] = { {1, 2}, {0, 2}, {0, 1} };
     const int other_axis0 = other_axis[axis][0];
     const int other_axis1 = other_axis[axis][1];
-    const Vector diag = node_bounds.max_p - node_bounds.min_p;
+    const Vector3 diag = node_bounds.max_p - node_bounds.min_p;
 
     const float s0 = 2.0f * (diag[other_axis0] * diag[other_axis1]);
     const float d0 = 2.0f * (diag[other_axis0] + diag[other_axis1]);

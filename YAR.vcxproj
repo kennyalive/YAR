@@ -66,6 +66,18 @@
     <Manifest>
       <AdditionalManifestFiles>DeclareDPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
+    <CustomBuild>
+      <Command>$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V --target-env vulkan1.1 -o $(ProjectDir)data\spirv\%(Filename).spv &amp;&amp; $(VULKAN_SDK)\Bin\spirv-opt $(ProjectDir)data\spirv\%(Filename).spv -O --strip-debug -o $(ProjectDir)data\spirv\%(Filename).spv</Command>
+    </CustomBuild>
+    <CustomBuild>
+      <Outputs>$(ProjectDir)data\spirv\%(Filename).spv</Outputs>
+    </CustomBuild>
+    <CustomBuild>
+      <AdditionalInputs>$(ProjectDir)src\shaders\rt_utils.glsl;$(ProjectDir)src\shaders\common.glsl</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild>
+      <LinkObjects>false</LinkObjects>
+    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -87,16 +99,29 @@
     <Manifest>
       <AdditionalManifestFiles>DeclareDPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
+    <CustomBuild>
+      <Command>$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V --target-env vulkan1.1 -o $(ProjectDir)data\spirv\%(Filename).spv &amp;&amp; $(VULKAN_SDK)\Bin\spirv-opt $(ProjectDir)data\spirv\%(Filename).spv -O --strip-debug -o $(ProjectDir)data\spirv\%(Filename).spv</Command>
+    </CustomBuild>
+    <CustomBuild>
+      <Outputs>$(ProjectDir)data\spirv\%(Filename).spv</Outputs>
+    </CustomBuild>
+    <CustomBuild>
+      <AdditionalInputs>$(ProjectDir)src\shaders\rt_utils.glsl;$(ProjectDir)src\shaders\common.glsl</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild>
+      <LinkObjects>false</LinkObjects>
+    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\debug.cpp" />
+    <ClCompile Include="src\copy_to_swapchain.cpp" />
     <ClCompile Include="src\demo.cpp" />
-    <ClCompile Include="src\geometry.cpp" />
     <ClCompile Include="src\demo_main.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\resource_manager.cpp" />
+    <ClCompile Include="src\mesh.cpp" />
+    <ClCompile Include="src\raster_resources.cpp" />
+    <ClCompile Include="src\rt_resources.cpp" />
+    <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="src\vk.cpp" />
-    <ClCompile Include="src\vma_impl.cpp" />
     <ClCompile Include="third_party\half\half.cpp" />
     <ClCompile Include="third_party\imgui\imgui.cpp" />
     <ClCompile Include="third_party\imgui\imgui_demo.cpp" />
@@ -126,10 +151,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\debug.h" />
+    <ClInclude Include="src\copy_to_swapchain.h" />
     <ClInclude Include="src\demo.h" />
-    <ClInclude Include="src\geometry.h" />
-    <ClInclude Include="src\resource_manager.h" />
+    <ClInclude Include="src\mesh.h" />
+    <ClInclude Include="src\raster_resources.h" />
+    <ClInclude Include="src\rt_resources.h" />
+    <ClInclude Include="src\utils.h" />
     <ClInclude Include="src\vk.h" />
     <ClInclude Include="third_party\half\half.h" />
     <ClInclude Include="src\bounding_box.h" />
@@ -158,6 +185,42 @@
     <ClInclude Include="third_party\imgui\imstb_textedit.h" />
     <ClInclude Include="third_party\imgui\imstb_truetype.h" />
     <ClInclude Include="third_party\volk\volk.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\shaders\common.glsl" />
+    <CustomBuild Include="src\shaders\copy_to_swapchain.comp.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CustomBuild>
+    <CustomBuild Include="src\shaders\raster_mesh.frag.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CustomBuild>
+    <CustomBuild Include="src\shaders\raster_mesh.vert.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CustomBuild>
+    <CustomBuild Include="src\shaders\rt_mesh.rchit.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CustomBuild>
+    <CustomBuild Include="src\shaders\rt_mesh.rgen.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V -o $(ProjectDir)data/spirv/%(Filename).spv</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V -o $(ProjectDir)data/spirv/%(Filename).spv</Command>
+    </CustomBuild>
+    <CustomBuild Include="src\shaders\rt_mesh.rmiss.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CustomBuild>
+    <None Include="src\shaders\rt_utils.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

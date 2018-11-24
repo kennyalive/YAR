@@ -17,10 +17,9 @@
 
 #include "half/half.h"
 
-#define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
-void write_ppm_image(const char* file_name, const Vector* pixels, int w, int h) {
+void write_ppm_image(const char* file_name, const Vector3* pixels, int w, int h) {
     FILE* file;
     if (fopen_s(&file, file_name, "w") != 0)
         return;
@@ -41,7 +40,7 @@ void write_ppm_image(const char* file_name, const Vector* pixels, int w, int h) 
 
 unsigned char* miniexr_write(unsigned width, unsigned height, unsigned channels, const void* rgba16f, size_t* outSize);
 
-void write_exr_image(const char* file_name, const Vector* pixels, int w, int h) {
+void write_exr_image(const char* file_name, const Vector3* pixels, int w, int h) {
     FILE* file;
     if (fopen_s(&file, file_name, "wb") != 0)
         return;
@@ -49,7 +48,7 @@ void write_exr_image(const char* file_name, const Vector* pixels, int w, int h) 
     std::vector<unsigned short> rgb16f(w * h * 3);
 
     unsigned short* p = rgb16f.data();
-    const Vector* pixel = pixels;
+    const Vector3* pixel = pixels;
     for (int i = 0; i < h; i++) {
         for (int j = 0; j < w; j++) {
             *p++ = float_to_half(pixel->x);
@@ -78,7 +77,7 @@ struct Scene {
 
 namespace {
 struct Vertex {
-    Vector p;
+    Vector3 p;
     Vector2 uv;
 
     bool operator==(const Vertex& other) const {
@@ -129,7 +128,7 @@ Scene load_conference_scene() {
             Vertex v;
 
             const float* p = &attrib.vertices[3 * index.vertex_index];
-            v.p = Vector(p[0], p[1], p[2]);
+            v.p = Vector3(p[0], p[1], p[2]);
 
             if (index.texcoord_index != -1) {
                 const float* uv = &attrib.texcoords[2 * index.texcoord_index];
@@ -205,26 +204,26 @@ int run_playground() {
 
     Point_Light light;
     light.intensity = RGB(xyz);
-    light.world_position = Vector(0, -50, 10);
+    light.world_position = Vector3(0, -50, 10);
 
     float albedo = 1.0f;
 
-    std::vector<Vector> image(w * h);
+    std::vector<Vector3> image(w * h);
 
 
     Timestamp t;
-    Vector* pixel = image.data();
+    Vector3* pixel = image.data();
     for (int i = 0; i < h; i++) {
         for (int j = 0; j < w; j++) {
             Ray ray = camera.generate_ray(Vector2(j + 0.5f, i + 0.5f));
-            *pixel = Vector(0);
+            *pixel = Vector3(0);
             Local_Geometry local_geom;
             if (kdtree.intersect(ray, local_geom) != Infinity) {
-                Vector light_dir = (light.world_position - local_geom.position).normalized();
+                Vector3 light_dir = (light.world_position - local_geom.position).normalized();
                 float dd = (light.world_position - local_geom.position).squared_length();
                 RGB L = light.intensity * (albedo / (Pi * dd) * dot(local_geom.normal, light_dir));
-                *pixel = Vector(L[0], L[1], L[2]);
-                //*pixel = Vector(100, 100, 100);
+                *pixel = Vector3(L[0], L[1], L[2]);
+                //*pixel = Vector3(100, 100, 100);
             }
 
             pixel++;

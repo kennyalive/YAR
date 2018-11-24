@@ -17,7 +17,7 @@ Bounding_Box Triangle_Mesh::get_bounds() const {
 }
 
 void Triangle_Mesh::print_info() const {
-    size_t mesh_size = vertices.size() * sizeof(Vector) + texcoords.size() * sizeof(Vector2) +
+    size_t mesh_size = vertices.size() * sizeof(Vector3) + texcoords.size() * sizeof(Vector2) +
         face_indices.size() * sizeof(int32_t);
 
     printf("[mesh]\n");

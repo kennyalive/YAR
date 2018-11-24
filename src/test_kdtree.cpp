@@ -42,7 +42,7 @@ int benchmark_kd_tree(const Mesh_KdTree& kdtree) {
 
     auto bounds = kdtree.get_bounds();
 
-    Vector last_hit = (bounds.min_p + bounds.max_p) * 0.5f;
+    Vector3 last_hit = (bounds.min_p + bounds.max_p) * 0.5f;
     float last_hit_epsilon = 0.0;
     auto ray_generator = Ray_Generator(bounds);
 
@@ -84,7 +84,7 @@ int benchmark_kd_tree(const Mesh_KdTree& kdtree) {
 void validate_kdtree(const Mesh_KdTree& kdtree, int ray_count) {
     printf("Running kdtree validation... ");
     auto bounds = kdtree.get_bounds();
-    Vector last_hit = (bounds.min_p + bounds.max_p) * 0.5;
+    Vector3 last_hit = (bounds.min_p + bounds.max_p) * 0.5;
     float last_hit_epsilon = 0.0f;
 
     auto ray_generator = Ray_Generator(bounds);

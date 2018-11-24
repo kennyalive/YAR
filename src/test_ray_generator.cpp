@@ -8,14 +8,14 @@ Ray_Generator::Ray_Generator(const Bounding_Box& mesh_bounds) {
     auto diagonal = mesh_bounds.max_p - mesh_bounds.min_p;
     float delta = 2.0f * diagonal.length();
 
-    auto p_min = mesh_bounds.min_p - Vector(delta);
-    auto p_max = mesh_bounds.max_p + Vector(delta);
+    auto p_min = mesh_bounds.min_p - Vector3(delta);
+    auto p_max = mesh_bounds.max_p + Vector3(delta);
     ray_bounds = Bounding_Box(p_min, p_max);
 }
 
-Ray Ray_Generator::generate_ray(const Vector& last_hit, float last_hit_epsilon) {
+Ray Ray_Generator::generate_ray(const Vector3& last_hit, float last_hit_epsilon) {
     // Ray origin.
-    Vector origin;
+    Vector3 origin;
     origin.x = rng.random_from_range(ray_bounds.min_p.x, ray_bounds.max_p.x);
     origin.y = rng.random_from_range(ray_bounds.min_p.y, ray_bounds.max_p.y);
     origin.z = rng.random_from_range(ray_bounds.min_p.z, ray_bounds.max_p.z);

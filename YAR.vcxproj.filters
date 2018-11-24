@@ -35,16 +35,7 @@
     <ClCompile Include="src\colorimetry.cpp">
       <Filter>reference</Filter>
     </ClCompile>
-    <ClCompile Include="src\debug.cpp">
-      <Filter>vk</Filter>
-    </ClCompile>
     <ClCompile Include="src\demo.cpp">
-      <Filter>vk</Filter>
-    </ClCompile>
-    <ClCompile Include="src\demo_main.cpp">
-      <Filter>vk</Filter>
-    </ClCompile>
-    <ClCompile Include="src\geometry.cpp">
       <Filter>vk</Filter>
     </ClCompile>
     <ClCompile Include="src\intersection.cpp">
@@ -74,12 +65,6 @@
     <ClCompile Include="src\matrix.cpp">
       <Filter>lib</Filter>
     </ClCompile>
-    <ClCompile Include="src\vma_impl.cpp">
-      <Filter>vk</Filter>
-    </ClCompile>
-    <ClCompile Include="src\resource_manager.cpp">
-      <Filter>vk</Filter>
-    </ClCompile>
     <ClCompile Include="src\test_kdtree.cpp">
       <Filter>tests</Filter>
     </ClCompile>
@@ -93,6 +78,24 @@
       <Filter>lib</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\demo_main.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\raster_resources.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rt_resources.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\copy_to_swapchain.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mesh.cpp">
+      <Filter>vk</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third_party\half\half.h">
@@ -134,13 +137,7 @@
     <ClInclude Include="src\colorimetry.h">
       <Filter>reference</Filter>
     </ClInclude>
-    <ClInclude Include="src\debug.h">
-      <Filter>vk</Filter>
-    </ClInclude>
     <ClInclude Include="src\demo.h">
-      <Filter>vk</Filter>
-    </ClInclude>
-    <ClInclude Include="src\geometry.h">
       <Filter>vk</Filter>
     </ClInclude>
     <ClInclude Include="src\intersection.h">
@@ -182,14 +179,26 @@
     <ClInclude Include="src\rng.h">
       <Filter>lib</Filter>
     </ClInclude>
-    <ClInclude Include="src\resource_manager.h">
-      <Filter>vk</Filter>
-    </ClInclude>
     <ClInclude Include="src\test_ray_generator.h">
       <Filter>tests</Filter>
     </ClInclude>
     <ClInclude Include="src\common.h">
       <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\raster_resources.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rt_resources.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\copy_to_swapchain.h">
+      <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mesh.h">
+      <Filter>vk</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -220,5 +229,34 @@
     <Filter Include="tests">
       <UniqueIdentifier>{97c12ab2-4f91-46ec-8a74-3615f4161031}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{1be3d33b-ac0d-4df7-ad63-48c4e7b89b7b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\shaders\common.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\copy_to_swapchain.comp.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\raster_mesh.frag.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\raster_mesh.vert.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\rt_mesh.rchit.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\rt_mesh.rgen.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\rt_mesh.rmiss.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\rt_utils.glsl">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
