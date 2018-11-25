@@ -1,4 +1,4 @@
-#include "common.h"
+#include "lib/common.h"
 
 #define VMA_IMPLEMENTATION
 #include "vk.h"
@@ -246,10 +246,10 @@ static void create_device() {
             if (!is_extension_supported(required_extension))
                 error("Vulkan: required device extension is not available: " + std::string(required_extension));
         }
-        if (is_extension_supported(VK_NVX_RAYTRACING_EXTENSION_NAME)) {
+        /*if (is_extension_supported(VK_NVX_RAYTRACING_EXTENSION_NAME)) {
             device_extensions.push_back(VK_NVX_RAYTRACING_EXTENSION_NAME);
             vk.raytracing_supported = true;
-        }
+        }*/
 
         const float priority = 1.0;
         VkDeviceQueueCreateInfo queue_desc { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };

@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "lib/bounding_box.h"
 
 #include <algorithm>
 #include <unordered_map>
@@ -22,22 +23,28 @@ static inline bool operator==(const Vertex& v1, const Vertex& v2) {
     return v1.pos == v2.pos && v1.normal == v2.normal && v1.uv == v2.uv;
 }
 
-Mesh load_obj_mesh(const std::string& path, float additional_scale) {
+std::vector<Mesh_Data> load_obj(const std::string& obj_file, float additional_scale) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string err;
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, path.c_str()))
-        error("failed to load obj model: " + path);
+    std::string obj_path = get_resource_path(obj_file).c_str();
+    std::string mtl_dir = get_directory(obj_path);
 
-    std::unordered_map<Vertex, std::size_t> unique_vertices;
-    Vector3 mesh_min(Infinity);
-    Vector3 mesh_max(-Infinity);
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, obj_path.c_str(), mtl_dir.c_str()))
+        error("failed to load obj model: " + obj_file);
 
-    Mesh mesh;
+    std::vector<Mesh_Data> meshes(shapes.size());
+    Bounding_Box bounds;
 
-    for (const auto& shape : shapes) {
+    for (size_t i = 0; i < shapes.size(); i++) {
+        tinyobj::shape_t& shape = shapes[i];
+        Mesh_Data& mesh = meshes[i];
+
+        std::unordered_map<Vertex, std::size_t> unique_vertices;
+        bool has_normals = true;
+
         for (const auto& index : shape.mesh.indices) {
             Vertex vertex;
 
@@ -47,7 +54,7 @@ Mesh load_obj_mesh(const std::string& path, float additional_scale) {
                 attrib.vertices[3 * index.vertex_index + 2]
             };
 
-            if (!attrib.normals.empty()) {
+            if (!attrib.normals.empty() && index.normal_index != -1) {
                 assert(index.normal_index != -1);
                 vertex.normal = {
                     attrib.normals[3 * index.normal_index + 0],
@@ -56,9 +63,10 @@ Mesh load_obj_mesh(const std::string& path, float additional_scale) {
                 };
             } else {
                 vertex.normal = Vector3_Zero;
+                has_normals = false;
             }
 
-            if (!attrib.texcoords.empty()) {
+            if (!attrib.texcoords.empty() && index.texcoord_index != -1) {
                 vertex.uv = {
                     attrib.texcoords[2 * index.texcoord_index + 0],
                     1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
@@ -70,33 +78,38 @@ Mesh load_obj_mesh(const std::string& path, float additional_scale) {
             if (unique_vertices.count(vertex) == 0) {
                 unique_vertices[vertex] = mesh.vertices.size();
                 mesh.vertices.push_back(vertex);
-
-                // update mesh bounds
-                mesh_min.x = std::min(mesh_min.x, vertex.pos.x);
-                mesh_min.y = std::min(mesh_min.y, vertex.pos.y);
-                mesh_min.z = std::min(mesh_min.z, vertex.pos.z);
-                mesh_max.x = std::max(mesh_max.x, vertex.pos.x);
-                mesh_max.y = std::max(mesh_max.y, vertex.pos.y);
-                mesh_max.z = std::max(mesh_max.z, vertex.pos.z);
+                bounds.add_point(vertex.pos);
             }
             mesh.indices.push_back((uint32_t)unique_vertices[vertex]);
         }
+
+        if (!has_normals)
+            compute_normals(&mesh.vertices[0].pos, (int)mesh.vertices.size(), (int)sizeof(Vertex), mesh.indices.data(), (int)mesh.indices.size(), &mesh.vertices[0].normal);
+
+        if (!shape.mesh.material_ids.empty() && shape.mesh.material_ids[0] != -1) {
+            for (int face_material_id : shape.mesh.material_ids)
+                assert(face_material_id == shape.mesh.material_ids[0]);
+
+            const tinyobj::material_t& material = materials[shape.mesh.material_ids[0]];
+            mesh.k_diffuse = Vector3(material.diffuse[0], material.diffuse[1], material.diffuse[2]);
+            mesh.k_specular = Vector3(material.specular[0], material.specular[1], material.specular[2]);
+        }
     }
 
-    if (attrib.normals.empty())
-        compute_normals(&mesh.vertices[0].pos, (int)mesh.vertices.size(), (int)sizeof(Vertex), mesh.indices.data(), (int)mesh.indices.size(), &mesh.vertices[0].normal);
-
     // scale and center the mesh
-    Vector3 diag = mesh_max - mesh_min;
+    Vector3 diag = bounds.max_p - bounds.min_p;
     float max_size = std::max(diag.x, std::max(diag.y, diag.z));
     float scale = (2.f / max_size) * additional_scale;
 
-    Vector3 center = (mesh_min + mesh_max) * 0.5f;
-    for (auto& v : mesh.vertices) {
-        v.pos -= center;
-        v.pos *= scale;
+    Vector3 center = (bounds.max_p + bounds.min_p) * 0.5f;
+    for (Mesh_Data& mesh : meshes) {
+        for (Vertex& v : mesh.vertices) {
+            v.pos -= center;
+            v.pos *= scale;
+        }
     }
-    return mesh;
+   
+    return meshes;
 }
 
 void compute_normals(const Vector3* vertex_positions, uint32_t vertex_count, uint32_t vertex_stride, const uint32_t* indices, uint32_t index_count, Vector3* normals) {

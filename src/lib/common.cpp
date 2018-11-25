@@ -23,6 +23,25 @@ static std::string join_paths(std::string path1, std::string path2) {
   return path1 + '/' + path2;
 }
 
+size_t get_last_slash_pos(const std::string& path) {
+    size_t pos1 = path.rfind('/');
+    size_t pos2 = path.rfind('\\');
+
+    if (pos1 == std::string::npos && pos2 == std::string::npos)
+        return std::string::npos;
+    else if (pos1 == std::string::npos)
+        return pos2;
+    else if (pos2 == std::string::npos)
+        return pos1;
+    else
+        return std::max(pos1, pos2);
+}
+
+std::string get_directory(const std::string& path) {
+    size_t slash_pos = get_last_slash_pos(path);
+    return (slash_pos == std::string::npos) ? path : path.substr(0, slash_pos + 1);
+}
+
 std::string get_resource_path(const std::string& resource_relative_path) {
     return join_paths(g_data_dir, resource_relative_path);
 }

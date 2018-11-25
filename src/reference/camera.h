@@ -1,7 +1,7 @@
 #pragma once
 
-#include "matrix.h"
-#include "ray.h"
+#include "lib/matrix.h"
+#include "lib/ray.h"
 
 /*
 Camera space:

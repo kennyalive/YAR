@@ -1,5 +1,5 @@
-#include "common.h"
 #include "camera.h"
+#include "lib/common.h"
 
 Camera::Camera(const Matrix3x4 & camera_to_world, Vector2 image_extent, float fovy)
     : camera_to_world(camera_to_world)

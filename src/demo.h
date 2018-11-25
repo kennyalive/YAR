@@ -11,6 +11,21 @@
 #include "sdl/SDL_syswm.h"
 #include <vector>
 
+struct Mesh_Material {
+    Vector3 k_diffuse;
+    float   padding0;
+    Vector3 k_specular;
+    float   padding1;
+};
+
+struct Mesh {
+    Vk_Buffer                   vertex_buffer;
+    Vk_Buffer                   index_buffer;
+    uint32_t                    model_vertex_count;
+    uint32_t                    model_index_count;
+    Mesh_Material               material;
+};
+
 class Vk_Demo {
 public:
     void initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window);
@@ -57,14 +72,13 @@ private:
     Vk_Image                    output_image;
     Copy_To_Swapchain           copy_to_swapchain;
 
-    Vk_Buffer                   vertex_buffer;
-    Vk_Buffer                   index_buffer;
-    uint32_t                    model_vertex_count;
-    uint32_t                    model_index_count;
+    std::vector<Mesh>           meshes;
     Vk_Image                    texture;
     VkSampler                   sampler;
 
-    Vector3                     camera_pos = Vector3(0, 0.5, 3.0);
+    Vector3                     camera_pos = Vector3(0, 0.0, 3.0);
+    float                       camera_yaw = Pi;
+    Vector3                     camera_dir = Vector3(0, 0, -1);
     Matrix3x4                   model_transform;
     Matrix3x4                   view_transform;
 

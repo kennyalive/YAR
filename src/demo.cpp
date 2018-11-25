@@ -49,37 +49,48 @@ void Vk_Demo::initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window) 
 
     // Geometry buffers.
     {
-        Mesh mesh = load_obj_mesh(get_resource_path("model/mesh.obj"), 1.25f);
+        std::vector<Mesh_Data> mesh_data_array = load_obj("conference/conference.obj", 1.25f);
+        meshes.resize(mesh_data_array.size());
 
-        model_vertex_count = static_cast<uint32_t>(mesh.vertices.size());
-        model_index_count = static_cast<uint32_t>(mesh.indices.size());
-        {
-            const VkDeviceSize size = mesh.vertices.size() * sizeof(mesh.vertices[0]);
-            vertex_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "vertex_buffer");
-            vk_ensure_staging_buffer_allocation(size);
-            memcpy(vk.staging_buffer_ptr, mesh.vertices.data(), size);
+        for (size_t i = 0; i < mesh_data_array.size(); i++) {
+            const Mesh_Data& mesh_data = mesh_data_array[i];
+            Mesh& mesh  = meshes[i];
+            
+            mesh.model_vertex_count = static_cast<uint32_t>(mesh_data.vertices.size());
+            mesh.model_index_count = static_cast<uint32_t>(mesh_data.indices.size());
+            {
+                const VkDeviceSize size = mesh_data.vertices.size() * sizeof(mesh_data.vertices[0]);
+                mesh.vertex_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "vertex_buffer");
+                vk_ensure_staging_buffer_allocation(size);
+                memcpy(vk.staging_buffer_ptr, mesh_data.vertices.data(), size);
 
-            vk_execute(vk.command_pool, vk.queue, [&size, this](VkCommandBuffer command_buffer) {
-                VkBufferCopy region;
-                region.srcOffset = 0;
-                region.dstOffset = 0;
-                region.size = size;
-                vkCmdCopyBuffer(command_buffer, vk.staging_buffer, vertex_buffer.handle, 1, &region);
-            });
-        }
-        {
-            const VkDeviceSize size = mesh.indices.size() * sizeof(mesh.indices[0]);
-            index_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "index_buffer");
-            vk_ensure_staging_buffer_allocation(size);
-            memcpy(vk.staging_buffer_ptr, mesh.indices.data(), size);
+                vk_execute(vk.command_pool, vk.queue, [&size, &mesh](VkCommandBuffer command_buffer) {
+                    VkBufferCopy region;
+                    region.srcOffset = 0;
+                    region.dstOffset = 0;
+                    region.size = size;
+                    vkCmdCopyBuffer(command_buffer, vk.staging_buffer, mesh.vertex_buffer.handle, 1, &region);
+                });
+            }
+            {
+                const VkDeviceSize size = mesh_data.indices.size() * sizeof(mesh_data.indices[0]);
+                mesh.index_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "index_buffer");
+                vk_ensure_staging_buffer_allocation(size);
+                memcpy(vk.staging_buffer_ptr, mesh_data.indices.data(), size);
 
-            vk_execute(vk.command_pool, vk.queue, [&size, this](VkCommandBuffer command_buffer) {
-                VkBufferCopy region;
-                region.srcOffset = 0;
-                region.dstOffset = 0;
-                region.size = size;
-                vkCmdCopyBuffer(command_buffer, vk.staging_buffer, index_buffer.handle, 1, &region);
-            });
+                vk_execute(vk.command_pool, vk.queue, [&size, &mesh](VkCommandBuffer command_buffer) {
+                    VkBufferCopy region;
+                    region.srcOffset = 0;
+                    region.dstOffset = 0;
+                    region.size = size;
+                    vkCmdCopyBuffer(command_buffer, vk.staging_buffer, mesh.index_buffer.handle, 1, &region);
+                });
+            }
+
+            mesh.material.k_diffuse = mesh_data.k_diffuse;
+            mesh.material.padding0 = 0;
+            mesh.material.k_specular = mesh_data.k_specular;
+            mesh.material.padding1 = 0;
         }
     }
 
@@ -135,21 +146,22 @@ void Vk_Demo::initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window) 
         vk_set_debug_name(ui_render_pass, "ui_render_pass");
     }
 
-    raster.create(texture.view, sampler);
+    raster.create();
 
     if (vk.raytracing_supported) {
-        VkGeometryTrianglesNVX model_triangles { VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NVX };
-        model_triangles.vertexData    = vertex_buffer.handle;
+        assert(!"fix raytracing code");
+        /*VkGeometryTrianglesNVX model_triangles { VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NVX };
+        model_triangles.vertexData    = mesh.vertex_buffer.handle;
         model_triangles.vertexOffset  = 0;
-        model_triangles.vertexCount   = model_vertex_count;
+        model_triangles.vertexCount   = mesh.model_vertex_count;
         model_triangles.vertexStride  = sizeof(Vertex);
         model_triangles.vertexFormat  = VK_FORMAT_R32G32B32_SFLOAT;
-        model_triangles.indexData     = index_buffer.handle;
+        model_triangles.indexData     = mesh.index_buffer.handle;
         model_triangles.indexOffset   = 0;
-        model_triangles.indexCount    = model_index_count;
+        model_triangles.indexCount    = mesh.model_index_count;
         model_triangles.indexType     = VK_INDEX_TYPE_UINT32;
 
-        rt.create(model_triangles, texture.view, sampler);
+        rt.create(model_triangles, texture.view, sampler);*/
     }
 
     copy_to_swapchain.create();
@@ -191,8 +203,12 @@ void Vk_Demo::shutdown() {
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
-    vertex_buffer.destroy();
-    index_buffer.destroy();
+    for (Mesh& mesh : meshes) {
+        mesh.vertex_buffer.destroy();
+        mesh.index_buffer.destroy();
+    }
+    meshes.clear();
+
     texture.destroy();
     copy_to_swapchain.destroy();
     vkDestroySampler(vk.device, sampler, nullptr);
@@ -261,7 +277,7 @@ void Vk_Demo::run_frame() {
     last_frame_time = current_time;
 
     model_transform = rotate_y(Matrix3x4::identity, (float)sim_time * radians(20.0f));
-    view_transform = look_at_transform(camera_pos, Vector3(0), Vector3(0, 1, 0));
+    view_transform = look_at_transform(camera_pos, camera_pos + camera_dir, Vector3(0, 1, 0));
     raster.update(model_transform, view_transform);
 
     Matrix3x4 camera_to_world_transform;
@@ -329,14 +345,17 @@ void Vk_Demo::draw_rasterized_image() {
     render_pass_begin_info.pClearValues      = clear_values;
 
     vkCmdBeginRenderPass(vk.command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-    const VkDeviceSize zero_offset = 0;
-    vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &vertex_buffer.handle, &zero_offset);
-    vkCmdBindIndexBuffer(vk.command_buffer, index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, raster.pipeline_layout, 0, 1, &raster.descriptor_set, 0, nullptr);
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, raster.pipeline);
-    uint32_t show_texture_lod_uint = show_texture_lod;
-    vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 4, &show_texture_lod_uint);
-    vkCmdDrawIndexed(vk.command_buffer, model_index_count, 1, 0, 0, 0);
+
+    const VkDeviceSize zero_offset = 0;
+    for (const Mesh& mesh : meshes) {
+        vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &mesh.vertex_buffer.handle, &zero_offset);
+        vkCmdBindIndexBuffer(vk.command_buffer, mesh.index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Mesh_Material), &mesh.material);
+        vkCmdDrawIndexed(vk.command_buffer, mesh.model_index_count, 1, 0, 0, 0);
+    }
+
     vkCmdEndRenderPass(vk.command_buffer);
 }
 
@@ -471,12 +490,27 @@ void Vk_Demo::do_imgui() {
         if (ImGui::IsKeyPressed(SDL_SCANCODE_F10)) {
             show_ui = !show_ui;
         }
-        if (ImGui::IsKeyPressed(SDL_SCANCODE_W) || ImGui::IsKeyPressed(SDL_SCANCODE_UP)) {
-            camera_pos.z -= 0.2f;
+        if (ImGui::IsKeyPressed(SDL_SCANCODE_W)) {
+            camera_pos += 0.2f * camera_dir;
         }
-        if (ImGui::IsKeyPressed(SDL_SCANCODE_S) || ImGui::IsKeyPressed(SDL_SCANCODE_DOWN)) {
-            camera_pos.z += 0.2f;
+        if (ImGui::IsKeyPressed(SDL_SCANCODE_S)) {
+            camera_pos -= 0.2f * camera_dir;
         }
+        if (ImGui::IsKeyPressed(SDL_SCANCODE_A)) {
+            camera_pos -= 0.2f * Vector3(-camera_dir.z, 0, camera_dir.x);
+        }
+        if (ImGui::IsKeyPressed(SDL_SCANCODE_D)) {
+            camera_pos += 0.2f * Vector3(-camera_dir.z, 0, camera_dir.x);
+        }
+        if (ImGui::IsKeyPressed(SDL_SCANCODE_LEFT)) {
+            camera_yaw += radians(5.f);
+            camera_dir = Vector3(std::sin(camera_yaw), 0, std::cos(camera_yaw));
+        }
+        if (ImGui::IsKeyPressed(SDL_SCANCODE_RIGHT)) {
+            camera_yaw -= radians(5.f);
+            camera_dir = Vector3(std::sin(camera_yaw), 0, std::cos(camera_yaw));
+        }
+
     }
 
     if (show_ui) {

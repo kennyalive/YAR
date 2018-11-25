@@ -16,7 +16,7 @@ struct Rasterization_Resources {
     Vk_Buffer                   uniform_buffer;
     void*                       mapped_uniform_buffer;
 
-    void create(VkImageView texture_view, VkSampler sample);
+    void create();
     void destroy();
     void create_framebuffer(VkImageView output_image_view);
     void destroy_framebuffer();

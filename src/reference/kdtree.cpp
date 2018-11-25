@@ -1,6 +1,6 @@
-#include "common.h"
 #include "intersection.h"
 #include "kdtree.h"
+#include "lib/common.h"
 #include <cassert>
 #include <fstream>
 #include <map>

@@ -4,20 +4,18 @@
 #include "lib/matrix.h"
 
 namespace {
-struct Uniform_Buffer {
+struct Global_Uniform_Buffer {
     Matrix4x4   model_view_proj;
     Matrix4x4   model_view;
 };
 }
 
-void Rasterization_Resources::create(VkImageView texture_view, VkSampler sampler) {
-    uniform_buffer = vk_create_host_visible_buffer(static_cast<VkDeviceSize>(sizeof(Uniform_Buffer)),
+void Rasterization_Resources::create() {
+    uniform_buffer = vk_create_host_visible_buffer(static_cast<VkDeviceSize>(sizeof(Global_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &mapped_uniform_buffer, "raster_uniform_buffer");
 
     descriptor_set_layout = Descriptor_Set_Layout()
-        .uniform_buffer (0, VK_SHADER_STAGE_VERTEX_BIT)
-        .sampled_image  (1, VK_SHADER_STAGE_FRAGMENT_BIT)
-        .sampler        (2, VK_SHADER_STAGE_FRAGMENT_BIT)
+        .uniform_buffer (0, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
         .create         ("raster_set_layout");
 
     // Pipeline layout.
@@ -25,7 +23,7 @@ void Rasterization_Resources::create(VkImageView texture_view, VkSampler sampler
         VkPushConstantRange push_constant_range; // show_texture_lods value
         push_constant_range.stageFlags  = VK_SHADER_STAGE_FRAGMENT_BIT;
         push_constant_range.offset      = 0;
-        push_constant_range.size        = 4;
+        push_constant_range.size        = 32;
 
         VkPipelineLayoutCreateInfo create_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         create_info.setLayoutCount          = 1;
@@ -129,9 +127,7 @@ void Rasterization_Resources::create(VkImageView texture_view, VkSampler sampler
         VK_CHECK(vkAllocateDescriptorSets(vk.device, &desc, &descriptor_set));
 
         Descriptor_Writes(descriptor_set)
-            .uniform_buffer (0, uniform_buffer.handle, 0, sizeof(Uniform_Buffer))
-            .sampled_image  (1, texture_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-            .sampler        (2, sampler);
+            .uniform_buffer (0, uniform_buffer.handle, 0, sizeof(Global_Uniform_Buffer));
     }
 }
 
@@ -169,6 +165,8 @@ void Rasterization_Resources::update(const Matrix3x4& model_transform, const Mat
     Matrix4x4 proj = perspective_transform_opengl_z01(radians(45.0f), aspect_ratio, 0.1f, 50.0f);
     Matrix4x4 model_view = Matrix4x4::identity * view_transform * model_transform;
     Matrix4x4 model_view_proj = proj * view_transform * model_transform;
-    static_cast<Uniform_Buffer*>(mapped_uniform_buffer)->model_view_proj = model_view_proj;
-    static_cast<Uniform_Buffer*>(mapped_uniform_buffer)->model_view = model_view;
+
+    Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
+    buf.model_view_proj = model_view_proj;
+    buf.model_view = model_view;
 }
