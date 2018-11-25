@@ -1,7 +1,7 @@
 #pragma once
 
-#include "common.h"
-#include "vector.h"
+#include "lib/common.h"
+#include "lib/vector.h"
 
 struct Ray;
 struct Triangle_Mesh;

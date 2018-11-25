@@ -1,5 +1,5 @@
-#include "common.h"
 #include "spectrum.h"
+#include "lib/common.h"
 #include <vector>
 
 //

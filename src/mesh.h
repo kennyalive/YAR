@@ -1,7 +1,8 @@
 #pragma once
 
-#include "vector.h"
+#include "lib/vector.h"
 #include <vector>
+
 
 struct Vertex {
     Vector3 pos;

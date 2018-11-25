@@ -1,9 +1,10 @@
-#include "common.h"
 #include "demo.h"
-#include "matrix.h"
 #include "mesh.h"
 #include "vk.h"
 #include "utils.h"
+
+#include "lib/common.h"
+#include "lib/matrix.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"

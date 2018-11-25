@@ -1,12 +1,12 @@
-#include "common.h"
 #include "intersection.h"
 #include "kdtree.h"
 #include "kdtree_builder.h"
-#include "rng.h"
 #include "test_ray_generator.h"
 #include "triangle_mesh.h"
 #include "triangle_mesh_loader.h"
-#include "vector.h"
+#include "lib/common.h"
+#include "lib/rng.h"
+#include "lib/vector.h"
 
 #ifdef _WIN32
 #include <pmmintrin.h>

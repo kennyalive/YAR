@@ -29,53 +29,11 @@
     <ClCompile Include="third_party\imgui\imgui_widgets.cpp">
       <Filter>third_party\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="src\camera.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\colorimetry.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
     <ClCompile Include="src\demo.cpp">
       <Filter>vk</Filter>
     </ClCompile>
-    <ClCompile Include="src\intersection.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\kdtree.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\kdtree_builder.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\spectrum.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\sampling.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
     <ClCompile Include="src\vk.cpp">
       <Filter>vk</Filter>
-    </ClCompile>
-    <ClCompile Include="src\triangle_mesh.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\triangle_mesh_loader.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\matrix.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\test_kdtree.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
-    <ClCompile Include="src\test_ray_generator.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
-    <ClCompile Include="src\test_triangle_intersection.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
-    <ClCompile Include="src\common.cpp">
-      <Filter>lib</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\demo_main.cpp">
@@ -95,6 +53,48 @@
     </ClCompile>
     <ClCompile Include="src\mesh.cpp">
       <Filter>vk</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\camera.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\colorimetry.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\intersection.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\kdtree.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\kdtree_builder.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\sampling.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\spectrum.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\triangle_mesh.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\triangle_mesh_loader.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\test_kdtree.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\test_ray_generator.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\test_triangle_intersection.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\common.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\matrix.cpp">
+      <Filter>lib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -128,62 +128,11 @@
     <ClInclude Include="third_party\imgui\imstb_truetype.h">
       <Filter>third_party\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\bounding_box.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\camera.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\colorimetry.h">
-      <Filter>reference</Filter>
-    </ClInclude>
     <ClInclude Include="src\demo.h">
       <Filter>vk</Filter>
     </ClInclude>
-    <ClInclude Include="src\intersection.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\kdtree.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\kdtree_builder.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\light.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\spectrum.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\sampling.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\vector.h">
-      <Filter>lib</Filter>
-    </ClInclude>
     <ClInclude Include="src\vk.h">
       <Filter>vk</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ray.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\triangle_mesh_loader.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\triangle_mesh.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\matrix.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\rng.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\test_ray_generator.h">
-      <Filter>tests</Filter>
-    </ClInclude>
-    <ClInclude Include="src\common.h">
-      <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="src\raster_resources.h">
       <Filter>vk</Filter>
@@ -199,6 +148,57 @@
     </ClInclude>
     <ClInclude Include="src\mesh.h">
       <Filter>vk</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\camera.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\colorimetry.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\intersection.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\kdtree.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\kdtree_builder.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\light.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\ray.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\sampling.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\spectrum.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\triangle_mesh.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\triangle_mesh_loader.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference\test_ray_generator.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\matrix.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\bounding_box.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\common.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\rng.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\vector.h">
+      <Filter>lib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -226,9 +226,6 @@
     <Filter Include="vk">
       <UniqueIdentifier>{a0def918-0c9a-4c48-995c-f820b0e1b908}</UniqueIdentifier>
     </Filter>
-    <Filter Include="tests">
-      <UniqueIdentifier>{97c12ab2-4f91-46ec-8a74-3615f4161031}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders">
       <UniqueIdentifier>{1be3d33b-ac0d-4df7-ad63-48c4e7b89b7b}</UniqueIdentifier>
     </Filter>
@@ -237,26 +234,28 @@
     <None Include="src\shaders\common.glsl">
       <Filter>shaders</Filter>
     </None>
-    <None Include="src\shaders\copy_to_swapchain.comp.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="src\shaders\raster_mesh.frag.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="src\shaders\raster_mesh.vert.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="src\shaders\rt_mesh.rchit.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="src\shaders\rt_mesh.rgen.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="src\shaders\rt_mesh.rmiss.glsl">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="src\shaders\rt_utils.glsl">
       <Filter>shaders</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="src\shaders\raster_mesh.frag.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\shaders\raster_mesh.vert.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\shaders\rt_mesh.rchit.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\shaders\rt_mesh.rgen.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\shaders\rt_mesh.rmiss.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="src\shaders\copy_to_swapchain.comp.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

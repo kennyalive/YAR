@@ -1,7 +1,7 @@
 #pragma once
 
-#include "matrix.h"
 #include "vk.h"
+#include "lib/matrix.h"
 
 struct Rt_Uniform_Buffer;
 

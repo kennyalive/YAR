@@ -1,11 +1,11 @@
 #pragma once
 
-#include "common.h"
-#include "bounding_box.h"
 #include "intersection.h"
-#include "ray.h"
 #include "triangle_mesh.h"
-#include "vector.h"
+#include "lib/bounding_box.h"
+#include "lib/common.h"
+#include "lib/ray.h"
+#include "lib/vector.h"
 
 #include <cassert>
 #include <cstdint>

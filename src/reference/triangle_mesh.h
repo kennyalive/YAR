@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bounding_box.h"
+#include "lib/bounding_box.h"
 #include <vector>
 
 struct Triangle_Mesh {

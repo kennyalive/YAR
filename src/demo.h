@@ -1,11 +1,12 @@
 #pragma once
 
 #include "copy_to_swapchain.h"
-#include "matrix.h"
 #include "raster_resources.h"
 #include "rt_resources.h"
 #include "utils.h"
 #include "vk.h"
+
+#include "lib/matrix.h"
 
 #include "sdl/SDL_syswm.h"
 #include <vector>

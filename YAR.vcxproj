@@ -56,7 +56,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)third_party;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\sdl</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\sdl</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -87,7 +87,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)third_party;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\sdl</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party;$(ProjectDir)third_party\imgui;$(ProjectDir)third_party\sdl</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -130,21 +130,21 @@
     <ClCompile Include="third_party\imgui\impl\imgui_impl_sdl.cpp" />
     <ClCompile Include="third_party\imgui\impl\imgui_impl_vulkan.cpp" />
     <ClCompile Include="third_party\miniexr.cpp" />
-    <ClCompile Include="src\camera.cpp" />
-    <ClCompile Include="src\colorimetry.cpp" />
-    <ClCompile Include="src\common.cpp" />
-    <ClCompile Include="src\kdtree.cpp" />
-    <ClCompile Include="src\kdtree_builder.cpp" />
-    <ClCompile Include="src\matrix.cpp" />
+    <ClCompile Include="src\reference\camera.cpp" />
+    <ClCompile Include="src\reference\colorimetry.cpp" />
+    <ClCompile Include="src\lib\common.cpp" />
+    <ClCompile Include="src\reference\kdtree.cpp" />
+    <ClCompile Include="src\reference\kdtree_builder.cpp" />
+    <ClCompile Include="src\lib\matrix.cpp" />
     <ClCompile Include="src\playground.cpp" />
-    <ClCompile Include="src\sampling.cpp" />
-    <ClCompile Include="src\spectrum.cpp" />
-    <ClCompile Include="src\test_kdtree.cpp" />
-    <ClCompile Include="src\test_ray_generator.cpp" />
-    <ClCompile Include="src\test_triangle_intersection.cpp" />
-    <ClCompile Include="src\intersection.cpp" />
-    <ClCompile Include="src\triangle_mesh.cpp" />
-    <ClCompile Include="src\triangle_mesh_loader.cpp" />
+    <ClCompile Include="src\reference\sampling.cpp" />
+    <ClCompile Include="src\reference\spectrum.cpp" />
+    <ClCompile Include="src\reference\test_kdtree.cpp" />
+    <ClCompile Include="src\reference\test_ray_generator.cpp" />
+    <ClCompile Include="src\reference\test_triangle_intersection.cpp" />
+    <ClCompile Include="src\reference\intersection.cpp" />
+    <ClCompile Include="src\reference\triangle_mesh.cpp" />
+    <ClCompile Include="src\reference\triangle_mesh_loader.cpp" />
     <ClCompile Include="third_party\volk\volk.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -159,23 +159,23 @@
     <ClInclude Include="src\utils.h" />
     <ClInclude Include="src\vk.h" />
     <ClInclude Include="third_party\half\half.h" />
-    <ClInclude Include="src\bounding_box.h" />
-    <ClInclude Include="src\camera.h" />
-    <ClInclude Include="src\colorimetry.h" />
-    <ClInclude Include="src\common.h" />
-    <ClInclude Include="src\kdtree.h" />
-    <ClInclude Include="src\kdtree_builder.h" />
-    <ClInclude Include="src\light.h" />
-    <ClInclude Include="src\matrix.h" />
-    <ClInclude Include="src\ray.h" />
-    <ClInclude Include="src\rng.h" />
-    <ClInclude Include="src\sampling.h" />
-    <ClInclude Include="src\spectrum.h" />
-    <ClInclude Include="src\test_ray_generator.h" />
-    <ClInclude Include="src\intersection.h" />
-    <ClInclude Include="src\triangle_mesh.h" />
-    <ClInclude Include="src\triangle_mesh_loader.h" />
-    <ClInclude Include="src\vector.h" />
+    <ClInclude Include="src\lib\bounding_box.h" />
+    <ClInclude Include="src\reference\camera.h" />
+    <ClInclude Include="src\reference\colorimetry.h" />
+    <ClInclude Include="src\lib\common.h" />
+    <ClInclude Include="src\reference\kdtree.h" />
+    <ClInclude Include="src\reference\kdtree_builder.h" />
+    <ClInclude Include="src\reference\light.h" />
+    <ClInclude Include="src\lib\matrix.h" />
+    <ClInclude Include="src\reference\ray.h" />
+    <ClInclude Include="src\lib\rng.h" />
+    <ClInclude Include="src\reference\sampling.h" />
+    <ClInclude Include="src\reference\spectrum.h" />
+    <ClInclude Include="src\reference\test_ray_generator.h" />
+    <ClInclude Include="src\reference\intersection.h" />
+    <ClInclude Include="src\reference\triangle_mesh.h" />
+    <ClInclude Include="src\reference\triangle_mesh_loader.h" />
+    <ClInclude Include="src\lib\vector.h" />
     <ClInclude Include="third_party\imgui\imconfig.h" />
     <ClInclude Include="third_party\imgui\imgui.h" />
     <ClInclude Include="third_party\imgui\imgui_internal.h" />

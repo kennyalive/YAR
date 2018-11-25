@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vector.h"
+#include "lib/vector.h"
 
 // Uniformly samples uniform sphere.
 // u0, u1 - uniformly distributed random variables.

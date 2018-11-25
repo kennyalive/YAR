@@ -1,8 +1,8 @@
-#include "common.h"
-#include "rng.h"
 #include "sampling.h"
 #include "test_ray_generator.h"
-#include "vector.h"
+#include "lib/common.h"
+#include "lib/rng.h"
+#include "lib/vector.h"
 
 Ray_Generator::Ray_Generator(const Bounding_Box& mesh_bounds) {
     auto diagonal = mesh_bounds.max_p - mesh_bounds.min_p;

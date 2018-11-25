@@ -1,7 +1,7 @@
 #pragma once
 
-#include "bounding_box.h"
-#include "rng.h"
+#include "lib/bounding_box.h"
+#include "lib/rng.h"
 
 struct Vector3;
 

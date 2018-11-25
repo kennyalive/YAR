@@ -1,6 +1,6 @@
 #include "colorimetry.h"
-#include "common.h"
 #include "spectrum.h"
+#include "lib/common.h"
 #include <cassert>
 
 // XYZ->sRGB conversion coefficients are from http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html

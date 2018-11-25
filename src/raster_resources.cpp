@@ -1,7 +1,7 @@
-#include "matrix.h"
 #include "mesh.h"
 #include "raster_resources.h"
 #include "utils.h"
+#include "lib/matrix.h"
 
 namespace {
 struct Uniform_Buffer {
