@@ -109,19 +109,12 @@ uint32_t vk_allocate_timestamp_queries(uint32_t count);
 
 template <typename Vk_Object_Type>
 void vk_set_debug_name(Vk_Object_Type object, const char* name) {
-    if (!vk.create_info.use_debug_names)
-        return;
-
-    VkDebugUtilsObjectNameInfoEXT name_info { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
-    /*char buf[128];
-    snprintf(buf, sizeof(buf), "%s 0x%llx", name, (uint64_t)object);*/
-    name_info.objectHandle = (uint64_t)object;
-    name_info.pObjectName = name;
+    VkObjectType object_type;
 
 #define IF_TYPE_THEN_ENUM(vk_type, vk_object_type_enum) \
-    if constexpr (std::is_same<Vk_Object_Type, vk_type>::value) name_info.objectType = vk_object_type_enum;
+    if constexpr (std::is_same<Vk_Object_Type, vk_type>::value) object_type = vk_object_type_enum;
 
-    IF_TYPE_THEN_ENUM(VkInstance,                  VK_OBJECT_TYPE_INSTANCE                     )
+    IF_TYPE_THEN_ENUM(VkInstance,                       VK_OBJECT_TYPE_INSTANCE                     )
     else IF_TYPE_THEN_ENUM(VkPhysicalDevice,            VK_OBJECT_TYPE_PHYSICAL_DEVICE              )
     else IF_TYPE_THEN_ENUM(VkDevice,                    VK_OBJECT_TYPE_DEVICE                       )
     else IF_TYPE_THEN_ENUM(VkQueue,                     VK_OBJECT_TYPE_QUEUE                        )
@@ -154,7 +147,8 @@ void vk_set_debug_name(Vk_Object_Type object, const char* name) {
     else static_assert(false, "Unknown Vulkan object type");
 #undef IF_TYPE_THEN_ENUM
 
-    VK_CHECK(vkSetDebugUtilsObjectNameEXT(vk.device, &name_info));
+    void set_debug_name_impl(VkObjectType object_type, uint64_t object_handle, const char* name);
+    set_debug_name_impl(object_type, (uint64_t)object, name);
 }
 
 struct Swapchain_Info {
