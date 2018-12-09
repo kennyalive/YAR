@@ -18,9 +18,16 @@ layout(push_constant) uniform Push_Constants {
     float   padding1;
 };
 
+layout(std140, binding=0) uniform Global_Uniform_Block {
+    mat4x4 model_view_proj;
+    mat4x4 model_view;
+    mat4x4 view;
+};
+
 void main() {
+    const vec3 light_dir = vec3(view * vec4(normalize(vec3(0, 1, 2)), 0));
     vec3 n = normalize(frag_in.normal);
-    float i = max(0, n.z);
+    float i = max(0.f, dot(light_dir, n));
     vec3 color = k_diffuse * i;
     color_attachment0 = vec4(srgb_encode(color), 1);
 }

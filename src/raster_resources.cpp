@@ -7,6 +7,7 @@ namespace {
 struct Global_Uniform_Buffer {
     Matrix4x4   model_view_proj;
     Matrix4x4   model_view;
+    Matrix4x4   view;
 };
 }
 
@@ -169,4 +170,5 @@ void Rasterization_Resources::update(const Matrix3x4& model_transform, const Mat
     Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
     buf.model_view_proj = model_view_proj;
     buf.model_view = model_view;
+    buf.view = Matrix4x4::identity * view_transform;
 }
