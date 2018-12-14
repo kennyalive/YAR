@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="src\playground.cpp" />
     <ClCompile Include="third_party\half\half.cpp">
       <Filter>third_party\half</Filter>
     </ClCompile>
@@ -51,9 +50,6 @@
     <ClCompile Include="src\copy_to_swapchain.cpp">
       <Filter>vk</Filter>
     </ClCompile>
-    <ClCompile Include="src\mesh.cpp">
-      <Filter>vk</Filter>
-    </ClCompile>
     <ClCompile Include="src\reference\camera.cpp">
       <Filter>reference</Filter>
     </ClCompile>
@@ -94,6 +90,12 @@
       <Filter>lib</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\matrix.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference\playground.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\mesh.cpp">
       <Filter>lib</Filter>
     </ClCompile>
   </ItemGroup>
@@ -146,9 +148,6 @@
     <ClInclude Include="src\copy_to_swapchain.h">
       <Filter>vk</Filter>
     </ClInclude>
-    <ClInclude Include="src\mesh.h">
-      <Filter>vk</Filter>
-    </ClInclude>
     <ClInclude Include="src\reference\camera.h">
       <Filter>reference</Filter>
     </ClInclude>
@@ -198,6 +197,9 @@
       <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\vector.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\mesh.h">
       <Filter>lib</Filter>
     </ClInclude>
   </ItemGroup>

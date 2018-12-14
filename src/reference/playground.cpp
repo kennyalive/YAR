@@ -1,12 +1,12 @@
-#include "reference/camera.h"
-#include "reference/colorimetry.h"
-#include "reference/intersection.h"
-#include "reference/kdtree.h"
-#include "reference/kdtree_builder.h"
-#include "reference/light.h"
-#include "reference/spectrum.h"
-#include "reference/triangle_mesh.h"
-#include "reference/triangle_mesh_loader.h"
+#include "camera.h"
+#include "colorimetry.h"
+#include "intersection.h"
+#include "kdtree.h"
+#include "kdtree_builder.h"
+#include "light.h"
+#include "spectrum.h"
+#include "triangle_mesh.h"
+#include "triangle_mesh_loader.h"
 #include "lib/common.h"
 #include "lib/vector.h"
 
@@ -129,6 +129,9 @@ Scene load_conference_scene() {
 
             const float* p = &attrib.vertices[3 * index.vertex_index];
             v.p = Vector3(p[0], p[1], p[2]);
+            float tmp = v.p.y;
+            v.p.y = -v.p.z;
+            v.p.z = tmp;
 
             if (index.texcoord_index != -1) {
                 const float* uv = &attrib.texcoords[2 * index.texcoord_index];
@@ -147,29 +150,20 @@ Scene load_conference_scene() {
     return scene;
 }
 
-int run_playground() {
+int run_playground(const Matrix3x4& camera_to_world_vk, bool* active) {
     const int w = 1280;
     const int h = 720;
 
-    Matrix3x4 camera_to_world;
-    memset(&camera_to_world, 0, sizeof(Matrix3x4));
-  /*  camera_to_world.a[0][0] = 1;
-    camera_to_world.a[2][1] = -1;
-    camera_to_world.a[1][2] = 1;*/
-
-    camera_to_world.a[0][0] = -1;
-
-    camera_to_world.a[0][1] = 0;
-    camera_to_world.a[1][1] = -0.6f;
-    camera_to_world.a[2][1] = -0.8f;
-
-    camera_to_world.a[0][2] = 0;
-    camera_to_world.a[1][2] = -0.8f;
-    camera_to_world.a[2][2] = 0.6f;
-
-    camera_to_world.a[0][3] = 1;
-    camera_to_world.a[1][3] = 1.8f;
-    camera_to_world.a[2][3] = -0.5f;
+    Matrix3x4 camera_to_world = camera_to_world_vk;
+    for (int i = 0; i < 3; i++) {
+        camera_to_world.a[i][1] = -camera_to_world.a[i][1];
+        camera_to_world.a[i][2] = -camera_to_world.a[i][2];
+    }
+    for (int i = 0; i < 4; i++) {
+        float tmp = camera_to_world.a[1][i];
+        camera_to_world.a[1][i] = -camera_to_world.a[2][i];
+        camera_to_world.a[2][i] = tmp;
+    }
 
     Camera camera(camera_to_world, Vector2(float(w), float(h)), 60.f);
 
@@ -238,5 +232,6 @@ int run_playground() {
 
     //test_triangle_intersection();
     //test_kdtree();
+    *active = false;
     return 0;
 }

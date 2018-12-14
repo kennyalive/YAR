@@ -1,10 +1,10 @@
 #include "demo.h"
-#include "mesh.h"
 #include "vk.h"
 #include "utils.h"
 
 #include "lib/common.h"
 #include "lib/matrix.h"
+#include "lib/mesh.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
@@ -280,7 +280,6 @@ void Vk_Demo::run_frame() {
     view_transform = look_at_transform(camera_pos, camera_pos + camera_dir, Vector3(0, 1, 0));
     raster.update(model_transform, view_transform);
 
-    Matrix3x4 camera_to_world_transform;
     camera_to_world_transform.set_column(0, Vector3(view_transform.get_row(0)));
     camera_to_world_transform.set_column(1, Vector3(view_transform.get_row(1)));
     camera_to_world_transform.set_column(2, Vector3(view_transform.get_row(2)));
@@ -552,6 +551,23 @@ void Vk_Demo::do_imgui() {
                 ImGui::PopItemFlag();
                 ImGui::PopStyleVar();
             }
+
+            bool disable_button = reference_render_active;
+            if (disable_button)
+                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+
+            if (ImGui::Button("Render reference image"))
+            {
+                extern int run_playground(const Matrix3x4& camera_to_world, bool* active);
+                reference_render_active = true;
+                reference_render_thread = std::thread(run_playground, camera_to_world_transform, &reference_render_active);
+            }
+
+            if (disable_button)
+                ImGui::PopItemFlag();
+
+            if (!reference_render_active && reference_render_thread.joinable())
+                reference_render_thread.join();
 
             if (ImGui::BeginPopupContextWindow()) {
                 if (ImGui::MenuItem("Custom",       NULL, corner == -1)) corner = -1;

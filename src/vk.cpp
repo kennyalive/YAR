@@ -978,9 +978,9 @@ VkPipeline vk_create_graphics_pipeline(
 }
 
 void vk_begin_frame() {
-    START_TIMER
+    //START_TIMER
     VK_CHECK(vkAcquireNextImageKHR(vk.device, vk.swapchain_info.handle, UINT64_MAX, vk.image_acquired, VK_NULL_HANDLE, &vk.swapchain_image_index));
-    STOP_TIMER("vkAcquireNextImageKHR")
+    //STOP_TIMER("vkAcquireNextImageKHR")
 
     VK_CHECK(vkWaitForFences(vk.device, 1, &vk.rendering_finished_fence, VK_FALSE, std::numeric_limits<uint64_t>::max()));
     VK_CHECK(vkResetFences(vk.device, 1, &vk.rendering_finished_fence));
@@ -1004,9 +1004,9 @@ void vk_end_frame() {
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores    = &vk.rendering_finished;
 
-    START_TIMER
+    //START_TIMER
     VK_CHECK(vkQueueSubmit(vk.queue, 1, &submit_info, vk.rendering_finished_fence));
-    STOP_TIMER("vkQueueSubmit")
+    //STOP_TIMER("vkQueueSubmit")
 
     VkPresentInfoKHR present_info { VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };
     present_info.waitSemaphoreCount = 1;
@@ -1015,9 +1015,9 @@ void vk_end_frame() {
     present_info.pSwapchains        = &vk.swapchain_info.handle;
     present_info.pImageIndices      = &vk.swapchain_image_index;
 
-    START_TIMER
+    //START_TIMER
     VK_CHECK(vkQueuePresentKHR(vk.queue, &present_info));
-    STOP_TIMER("vkQueuePresentKHR")
+    //STOP_TIMER("vkQueuePresentKHR")
 }
 
 void vk_execute(VkCommandPool command_pool, VkQueue queue, std::function<void(VkCommandBuffer)> recorder) {

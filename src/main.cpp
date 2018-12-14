@@ -41,13 +41,11 @@ static bool parse_command_line(int argc, char** argv) {
 }
 
 int run_vk_demo(bool enable_validation_layers, bool use_debug_names);
-int run_playground();
 
 int main(int argc, char** argv) {
     if (!parse_command_line(argc, argv))
         return 0;
 
     run_vk_demo(enable_validation_layers, use_debug_names);
-    run_playground();
     return 0;
 }

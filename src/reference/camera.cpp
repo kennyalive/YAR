@@ -7,12 +7,12 @@ Camera::Camera(const Matrix3x4 & camera_to_world, Vector2 image_extent, float fo
 {
     float tan_fovy_over_2 = std::tan(radians(fovy/2.f));
 
-    // Here we assume that distance to virtual film plane is 1.0 along Z axis in camera space.
     horz_half_dist = (image_extent.x / image_extent.y) * tan_fovy_over_2;
     vert_half_dist = tan_fovy_over_2;
 }
 
 Ray Camera::generate_ray(Vector2 film_position) const {
+    // film_position (0, 0) corresponds to upper left corner
     assert(film_position.x >= 0.f && film_position.x <= image_extent.x);
     assert(film_position.y >= 0.f && film_position.y <= image_extent.y);
 

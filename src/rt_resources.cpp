@@ -1,6 +1,6 @@
-#include "mesh.h"
 #include "rt_resources.h"
 #include "utils.h"
+#include "lib/mesh.h"
 
 #include <algorithm>
 #include <cassert>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lib/vector.h"
+#include "vector.h"
 #include <vector>
 
 struct Vertex {

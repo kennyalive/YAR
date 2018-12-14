@@ -9,6 +9,8 @@
 #include "lib/matrix.h"
 
 #include "sdl/SDL_syswm.h"
+
+#include <thread>
 #include <vector>
 
 struct Mesh_Material {
@@ -61,6 +63,10 @@ private:
     bool                        raytracing              = false;
     bool                        show_texture_lod        = false;
     bool                        spp4                    = false;
+    bool                        reference_render_active = false;
+
+    std::thread                 reference_render_thread;
+    Matrix3x4                   camera_to_world_transform;
 
     Time                        last_frame_time;
     double                      sim_time;
@@ -76,7 +82,7 @@ private:
     Vk_Image                    texture;
     VkSampler                   sampler;
 
-    Vector3                     camera_pos = Vector3(0, 0.0, 3.0);
+    Vector3                     camera_pos = Vector3(0, 1.0, 3.0);
     float                       camera_yaw = Pi;
     Vector3                     camera_dir = Vector3(0, 0, -1);
     Matrix3x4                   model_transform;

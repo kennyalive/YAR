@@ -1,5 +1,5 @@
+#include "bounding_box.h"
 #include "mesh.h"
-#include "lib/bounding_box.h"
 
 #include <algorithm>
 #include <unordered_map>
@@ -314,18 +314,10 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, float additional_sc
         }
     }
 
-    // scale and center the mesh
-    Vector3 diag = bounds.max_p - bounds.min_p;
-    float max_size = std::max(diag.x, std::max(diag.y, diag.z));
-    float scale = (2.f / max_size) * additional_scale;
-
-    Vector3 center = (bounds.max_p + bounds.min_p) * 0.5f;
     for (Mesh_Data& mesh : meshes) {
         for (Vertex& v : mesh.vertices) {
-            v.pos -= center;
-            v.pos *= scale;
+            v.pos *= 0.003f;
         }
     }
-
     return meshes;
 }
