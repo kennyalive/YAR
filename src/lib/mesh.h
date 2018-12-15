@@ -4,18 +4,18 @@
 #include "vector.h"
 #include <vector>
 
-struct Vertex {
+struct Mesh_Vertex {
     Vector3 pos;
     Vector3 normal;
     Vector2 uv;
 
-    bool operator==(const Vertex& other) const {
+    bool operator==(const Mesh_Vertex& other) const {
         return pos == other.pos && normal == other.normal && uv == other.uv;
     }
 };
 
 struct Mesh_Data {
-    std::vector<Vertex> vertices;
+    std::vector<Mesh_Vertex> vertices;
     std::vector<uint32_t> indices;
     Vector3 k_diffuse;
     Vector3 k_specular;

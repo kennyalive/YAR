@@ -90,7 +90,7 @@ void Rasterization_Resources::create() {
 
         // VkVertexInputBindingDescription
         state.vertex_bindings[0].binding = 0;
-        state.vertex_bindings[0].stride = sizeof(Vertex);
+        state.vertex_bindings[0].stride = sizeof(Mesh_Vertex);
         state.vertex_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         state.vertex_binding_count = 1;
 

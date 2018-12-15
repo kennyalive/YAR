@@ -97,11 +97,11 @@ static void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, st
             int uv_count = 0;
 
             for (int face : grouped_faces) {
-                Vertex a = mesh.vertices[mesh.indices[face*3 + 0]];
-                Vertex b = mesh.vertices[mesh.indices[face*3 + 1]];
-                Vertex c = mesh.vertices[mesh.indices[face*3 + 2]];
+                Mesh_Vertex a = mesh.vertices[mesh.indices[face*3 + 0]];
+                Mesh_Vertex b = mesh.vertices[mesh.indices[face*3 + 1]];
+                Mesh_Vertex c = mesh.vertices[mesh.indices[face*3 + 2]];
 
-                Vertex v;
+                Mesh_Vertex v;
                 int v_index_index;
                 if (a.pos == pos) {
                     v = a;
@@ -229,7 +229,7 @@ void compute_normals(
 std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& transform)
 {
     struct Vertex_Hasher {
-        size_t operator()(const Vertex& v) const {
+        size_t operator()(const Mesh_Vertex& v) const {
             size_t hash = 0;
             hash_combine(hash, v.pos);
             hash_combine(hash, v.normal);
@@ -256,11 +256,11 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& tr
         tinyobj::shape_t& shape = shapes[i];
         Mesh_Data& mesh = meshes[i];
 
-        std::unordered_map<Vertex, std::size_t, Vertex_Hasher> unique_vertices;
+        std::unordered_map<Mesh_Vertex, std::size_t, Vertex_Hasher> unique_vertices;
         bool has_normals = true;
 
         for (const auto& index : shape.mesh.indices) {
-            Vertex vertex;
+            Mesh_Vertex vertex;
 
             vertex.pos = {
                 attrib.vertices[3 * index.vertex_index + 0],
@@ -301,7 +301,7 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& tr
             std::vector<uint64_t> vertex_normal_groups;
             duplicate_vertices_due_to_crease_angle_threshold(mesh, vertex_normal_groups);
             assert(vertex_normal_groups.size() == mesh.vertices.size());
-            compute_normals(&mesh.vertices[0].pos, vertex_normal_groups.data(), (int)mesh.vertices.size(), (int)sizeof(Vertex), mesh.indices.data(), (int)mesh.indices.size(), &mesh.vertices[0].normal);
+            compute_normals(&mesh.vertices[0].pos, vertex_normal_groups.data(), (int)mesh.vertices.size(), (int)sizeof(Mesh_Vertex), mesh.indices.data(), (int)mesh.indices.size(), &mesh.vertices[0].normal);
         }
 
         if (!shape.mesh.material_ids.empty() && shape.mesh.material_ids[0] != -1) {
@@ -316,7 +316,7 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& tr
 
     if (!transform.is_identity()) {
         for (Mesh_Data& mesh : meshes) {
-            for (Vertex& v : mesh.vertices) {
+            for (Mesh_Vertex& v : mesh.vertices) {
                 v.pos = transform_point(transform, v.pos);
             }
         }

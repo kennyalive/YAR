@@ -295,7 +295,7 @@ void Raytracing_Resources::create_pipeline(const VkGeometryTrianglesNVX& model_t
                                model_triangles.indexCount * (model_triangles.indexType == VK_INDEX_TYPE_UINT16 ? 2 : 4))
             .storage_buffer(4, model_triangles.vertexData,
                                model_triangles.vertexOffset, /* assume that position is the first vertex attribute */
-                               model_triangles.vertexCount * sizeof(Vertex))
+                               model_triangles.vertexCount * sizeof(Mesh_Vertex))
             .sampled_image(5, texture_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
             .sampler(6, sampler);
     }
