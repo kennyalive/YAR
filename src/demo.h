@@ -7,6 +7,7 @@
 #include "vk.h"
 
 #include "lib/matrix.h"
+#include "lib/mesh.h"
 
 #include "sdl/SDL_syswm.h"
 
@@ -78,13 +79,14 @@ private:
     Vk_Image                    output_image;
     Copy_To_Swapchain           copy_to_swapchain;
 
+    std::vector<Mesh_Data> mesh_data_array;
     std::vector<Mesh>           meshes;
     Vk_Image                    texture;
     VkSampler                   sampler;
 
-    Vector3                     camera_pos = Vector3(0, 1.0, 3.0);
-    float                       camera_yaw = Pi;
-    Vector3                     camera_dir = Vector3(0, 0, -1);
+    Vector3                     camera_pos = Vector3(0, -3, 1);
+    float                       camera_yaw = Pi/2; // relative to x axis
+    Vector3                     camera_dir = Vector3(0, 1, 0);
     Matrix3x4                   model_transform;
     Matrix3x4                   view_transform;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "matrix.h"
 #include "vector.h"
 #include <vector>
 
@@ -29,4 +30,4 @@ void compute_normals(
     uint32_t index_count,
     Vector3* normals);
 
-std::vector<Mesh_Data> load_obj(const std::string& obj_file, float additional_scale);
+std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& transform = Matrix3x4::identity);

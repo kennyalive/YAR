@@ -10,6 +10,7 @@ struct Matrix3x4 {
     void set_column(int column_index, Vector3 c);
     void set_row(int row_index, Vector4 r);
     Vector4 get_row(int row) const;
+    bool is_identity() const;
 };
 
 struct Matrix4x4 {
@@ -24,6 +25,8 @@ Matrix4x4 operator*(const Matrix4x4& m1, const Matrix3x4& m2);
 Matrix3x4 rotate_x(const Matrix3x4& m, float angle);
 Matrix3x4 rotate_y(const Matrix3x4& m, float angle);
 Matrix3x4 rotate_z(const Matrix3x4& m, float angle);
+
+Matrix3x4 uniform_scale(const Matrix3x4& m, float scale);
 
 // Computes world space->eye space transform that positions the camera at point 'from'
 // and orients its direction towards the point 'to'. 'up' unit vector specifies reference up direction.

@@ -32,6 +32,14 @@ Vector4 Matrix3x4::get_row(int row) const {
     return Vector4(a[row][0], a[row][1], a[row][2], a[row][3]);
 }
 
+bool Matrix3x4::is_identity() const {
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 4; j++)
+            if (a[i][j] != (i == j ? 1.f : 0.f))
+                return false;
+    return true;
+}
+
 Matrix3x4 operator*(const Matrix3x4& m1, const Matrix3x4& m2) {
     Matrix3x4 m;
     m.a[0][0] = m1.a[0][0]*m2.a[0][0] + m1.a[0][1]*m2.a[1][0] + m1.a[0][2]*m2.a[2][0];
@@ -141,6 +149,18 @@ Matrix3x4 rotate_z(const Matrix3x4& m, float angle) {
     return m2;
 }
 
+Matrix3x4 uniform_scale(const Matrix3x4& m, float scale) {
+    Matrix3x4 m2;
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            m2.a[i][j] = m.a[i][j] * scale;
+
+    m2.a[0][3] = m.a[0][3]; 
+    m2.a[1][3] = m.a[1][3];
+    m2.a[2][3] = m.a[2][3];
+    return m2;
+}
+
 Matrix3x4 look_at_transform(Vector3 from, Vector3 to, Vector3 up) {
     assert(up.is_normalized());
 
@@ -160,8 +180,8 @@ Matrix3x4 look_at_transform(Vector3 from, Vector3 to, Vector3 up) {
 
     Matrix3x4 m;
     m.set_row(0, Vector4(r, -dot(from, r)));
-    m.set_row(1, Vector4(u, -dot(from, u)));
-    m.set_row(2, Vector4(-f, -dot(from, -f)));
+    m.set_row(1, Vector4(f, -dot(from, f)));
+    m.set_row(2, Vector4(u, -dot(from, u)));
     return m;
 }
 

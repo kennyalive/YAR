@@ -226,7 +226,7 @@ void compute_normals(
     }
 }
 
-std::vector<Mesh_Data> load_obj(const std::string& obj_file, float additional_scale)
+std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& transform)
 {
     struct Vertex_Hasher {
         size_t operator()(const Vertex& v) const {
@@ -314,9 +314,11 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, float additional_sc
         }
     }
 
-    for (Mesh_Data& mesh : meshes) {
-        for (Vertex& v : mesh.vertices) {
-            v.pos *= 0.003f;
+    if (!transform.is_identity()) {
+        for (Mesh_Data& mesh : meshes) {
+            for (Vertex& v : mesh.vertices) {
+                v.pos = transform_point(transform, v.pos);
+            }
         }
     }
     return meshes;

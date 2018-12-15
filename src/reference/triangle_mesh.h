@@ -1,12 +1,15 @@
 #pragma once
 
 #include "lib/bounding_box.h"
+#include "lib/mesh.h"
 #include <vector>
 
 struct Triangle_Mesh {
   std::vector<Vector3> vertices;
   std::vector<Vector2> texcoords;
   std::vector<int32_t> face_indices;
+
+  static Triangle_Mesh from_mesh_data(const Mesh_Data& mesh_data);
 
   int32_t get_triangle_count() const {
       assert(face_indices.size() % 3 == 0);

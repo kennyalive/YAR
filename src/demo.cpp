@@ -49,7 +49,12 @@ void Vk_Demo::initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window) 
 
     // Geometry buffers.
     {
-        std::vector<Mesh_Data> mesh_data_array = load_obj("conference/conference.obj", 1.25f);
+        Matrix3x4 to_world_axis_orientation {{
+            {1, 0,  0, 0},
+            {0, 0, -1, 0},
+            {0, 1,  0, 0}
+        }};
+        mesh_data_array = load_obj("conference/conference.obj", uniform_scale(to_world_axis_orientation, 0.003f));
         meshes.resize(mesh_data_array.size());
 
         for (size_t i = 0; i < mesh_data_array.size(); i++) {
@@ -276,8 +281,8 @@ void Vk_Demo::run_frame() {
     }
     last_frame_time = current_time;
 
-    model_transform = rotate_y(Matrix3x4::identity, (float)sim_time * radians(20.0f));
-    view_transform = look_at_transform(camera_pos, camera_pos + camera_dir, Vector3(0, 1, 0));
+    model_transform = Matrix3x4::identity; //rotate_y(Matrix3x4::identity, (float)sim_time * radians(20.0f));
+    view_transform = look_at_transform(camera_pos, camera_pos + camera_dir, Vector3(0, 0, 1));
     raster.update(model_transform, view_transform);
 
     camera_to_world_transform.set_column(0, Vector3(view_transform.get_row(0)));
@@ -496,20 +501,19 @@ void Vk_Demo::do_imgui() {
             camera_pos -= 0.2f * camera_dir;
         }
         if (ImGui::IsKeyPressed(SDL_SCANCODE_A)) {
-            camera_pos -= 0.2f * Vector3(-camera_dir.z, 0, camera_dir.x);
+            camera_pos -= 0.2f * Vector3(camera_dir.y, -camera_dir.x, 0);
         }
         if (ImGui::IsKeyPressed(SDL_SCANCODE_D)) {
-            camera_pos += 0.2f * Vector3(-camera_dir.z, 0, camera_dir.x);
+            camera_pos += 0.2f * Vector3(camera_dir.y, -camera_dir.x, 0);
         }
         if (ImGui::IsKeyPressed(SDL_SCANCODE_LEFT)) {
             camera_yaw += radians(5.f);
-            camera_dir = Vector3(std::sin(camera_yaw), 0, std::cos(camera_yaw));
+            camera_dir = Vector3(std::cos(camera_yaw), std::sin(camera_yaw), 0);
         }
         if (ImGui::IsKeyPressed(SDL_SCANCODE_RIGHT)) {
             camera_yaw -= radians(5.f);
-            camera_dir = Vector3(std::sin(camera_yaw), 0, std::cos(camera_yaw));
+            camera_dir = Vector3(std::cos(camera_yaw), std::sin(camera_yaw), 0);
         }
-
     }
 
     if (show_ui) {
@@ -558,9 +562,9 @@ void Vk_Demo::do_imgui() {
 
             if (ImGui::Button("Render reference image"))
             {
-                extern int run_playground(const Matrix3x4& camera_to_world, bool* active);
+                extern int run_playground(const std::vector<Mesh_Data>& mesh_data, const Matrix3x4& camera_to_world, bool* active);
                 reference_render_active = true;
-                reference_render_thread = std::thread(run_playground, camera_to_world_transform, &reference_render_active);
+                reference_render_thread = std::thread(run_playground, mesh_data_array, camera_to_world_transform, &reference_render_active);
             }
 
             if (disable_button)

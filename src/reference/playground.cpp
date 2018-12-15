@@ -8,6 +8,7 @@
 #include "triangle_mesh.h"
 #include "triangle_mesh_loader.h"
 #include "lib/common.h"
+#include "lib/mesh.h"
 #include "lib/vector.h"
 
 #include <cassert>
@@ -18,25 +19,6 @@
 #include "half/half.h"
 
 #include "tiny_obj_loader.h"
-
-void write_ppm_image(const char* file_name, const Vector3* pixels, int w, int h) {
-    FILE* file;
-    if (fopen_s(&file, file_name, "w") != 0)
-        return;
-
-    fprintf(file, "P3\n%d %d\n255\n", w, h);
-
-    for (int i = 0; i < h; i++) {
-        for (int j = 0; j < w; j++) {
-            uint8_t r = static_cast<uint8_t>(pixels->x * 255.f);
-            uint8_t g = static_cast<uint8_t>(pixels->y * 255.f);
-            uint8_t b = static_cast<uint8_t>(pixels->z * 255.f);
-            fprintf(file, "%d %d %d\n", r, g, b);
-            pixels++;
-        }
-    }
-    fclose(file);
-}
 
 unsigned char* miniexr_write(unsigned width, unsigned height, unsigned channels, const void* rgba16f, size_t* outSize);
 
@@ -71,123 +53,34 @@ void write_exr_image(const char* file_name, const Vector3* pixels, int w, int h)
 void test_triangle_intersection();
 void test_kdtree();
 
-struct Scene {
-    std::vector<Triangle_Mesh> meshes;
-};
-
-namespace {
-struct Vertex {
-    Vector3 p;
-    Vector2 uv;
-
-    bool operator==(const Vertex& other) const {
-        return p == other.p && uv == other.uv;
-    }
-};
-}
-
-namespace std {
-template<> struct hash<Vertex> {
-    size_t operator()(const Vertex& vertex) const {
-        size_t hash = 0;
-        hash_combine(hash, vertex.p.x);
-        hash_combine(hash, vertex.p.y);
-        hash_combine(hash, vertex.p.z);
-        hash_combine(hash, vertex.uv.x);
-        hash_combine(hash, vertex.uv.y);
-        return hash;
-    }
-};}
-
-Scene load_conference_scene() {
-    Scene scene;
-
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string err;
-
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, get_resource_path("conference/conference.obj").c_str(), get_resource_path("conference/").c_str())) {
-        error("failed to load obj file");
-    }
-
-    scene.meshes.resize(shapes.size());
-
-    for (size_t i = 0; i < shapes.size(); i++){
-        const tinyobj::shape_t& shape = shapes[i];
-
-        // Should be true since triangulate flag is specified, also assume there are no unused indices at the end of array.
-        assert(shape.mesh.num_face_vertices.size() * 3 == shape.mesh.indices.size());
-
-        scene.meshes[i].face_indices.resize(shape.mesh.indices.size());
-
-        std::unordered_map<Vertex, int32_t> unique_vertices;
-
-        for (size_t k = 0; k < shape.mesh.indices.size(); k++) {
-            const tinyobj::index_t& index = shape.mesh.indices[k];
-            Vertex v;
-
-            const float* p = &attrib.vertices[3 * index.vertex_index];
-            v.p = Vector3(p[0], p[1], p[2]);
-            float tmp = v.p.y;
-            v.p.y = -v.p.z;
-            v.p.z = tmp;
-
-            if (index.texcoord_index != -1) {
-                const float* uv = &attrib.texcoords[2 * index.texcoord_index];
-                v.uv = Vector2(uv[0], uv[1]);
-            }
-
-            if (unique_vertices.count(v) == 0) {
-                unique_vertices[v] = (int32_t)scene.meshes[i].vertices.size();
-
-                scene.meshes[i].vertices.push_back(v.p * 0.003f);
-                scene.meshes[i].texcoords.push_back(v.uv);
-            }
-            scene.meshes[i].face_indices[k] = unique_vertices[v];
-        }
-    }
-    return scene;
-}
-
-int run_playground(const Matrix3x4& camera_to_world_vk, bool* active) {
+int run_playground(const std::vector<Mesh_Data>& mesh_data, const Matrix3x4& camera_to_world_vk, bool* active) {
     const int w = 1280;
     const int h = 720;
 
     Matrix3x4 camera_to_world = camera_to_world_vk;
     for (int i = 0; i < 3; i++) {
-        camera_to_world.a[i][1] = -camera_to_world.a[i][1];
-        camera_to_world.a[i][2] = -camera_to_world.a[i][2];
-    }
-    for (int i = 0; i < 4; i++) {
-        float tmp = camera_to_world.a[1][i];
-        camera_to_world.a[1][i] = -camera_to_world.a[2][i];
-        camera_to_world.a[2][i] = tmp;
+        float tmp = camera_to_world.a[i][1];
+        camera_to_world.a[i][1] = -camera_to_world.a[i][2];
+        camera_to_world.a[i][2] = tmp;
     }
 
     Camera camera(camera_to_world, Vector2(float(w), float(h)), 60.f);
 
-    Scene scene = load_conference_scene();
+    std::vector<Mesh_KdTree> kdtrees(mesh_data.size());
+    std::vector<Triangle_Mesh> meshes(mesh_data.size());
 
-    std::vector<Mesh_KdTree> kdtrees(scene.meshes.size());
-
-    for (size_t i = 0; i < scene.meshes.size(); i++) {
+    for (size_t i = 0; i < mesh_data.size(); i++) {
         Timestamp t;
-        kdtrees[i] = build_kdtree(scene.meshes[i]);
+        meshes[i] = Triangle_Mesh::from_mesh_data(mesh_data[i]);
+        kdtrees[i] = build_kdtree(meshes[i]);
         int time = int(elapsed_milliseconds(t));
         printf("KdTree %zd build time = %dms\n", i, time);
 
     }
 
     printf("conference scene processed\n");
-
     TwoLevel_KdTree kdtree = build_kdtree(kdtrees);
-    //Mesh_KdTree kdtree = std::move(kdtrees[38]);
-
     printf("two-level tree created\n");
-
-  /*  Simple_Triangle_Mesh mesh = Simple_Triangle_Mesh::from_indexed_mesh(*LoadTriangleMesh("data/teapot.stl"));
-    Mesh_KdTree kdtree = load_mesh_kdtree("data/teapot.kdtree", mesh);*/
 
     // Uniform spectrum that produces luminous flux of 1600Lm.
     float P = 1600 * 800; // Lm
@@ -227,7 +120,6 @@ int run_playground(const Matrix3x4& camera_to_world_vk, bool* active) {
     int time = int(elapsed_milliseconds(t));
     printf("image rendered in %d ms\n", time);
 
-    write_ppm_image("image.ppm", image.data(), w, h);
     write_exr_image("image.exr", image.data(), w, h);
 
     //test_triangle_intersection();

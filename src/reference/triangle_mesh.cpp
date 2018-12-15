@@ -1,5 +1,21 @@
 #include "triangle_mesh.h"
 
+Triangle_Mesh Triangle_Mesh::from_mesh_data(const Mesh_Data& mesh_data) {
+    Triangle_Mesh mesh;
+    mesh.vertices.resize(mesh_data.vertices.size());
+    mesh.texcoords.resize(mesh_data.vertices.size());
+    mesh.face_indices.resize(mesh_data.indices.size());
+
+   for (int i = 0; i < (int)mesh_data.vertices.size(); i++) {
+       mesh.vertices[i] = mesh_data.vertices[i].pos;
+       mesh.texcoords[i] = mesh_data.vertices[i].uv;
+   }
+   for (int i = 0; i < (int)mesh_data.indices.size(); i++) {
+       mesh.face_indices[i] = (int32_t)mesh_data.indices[i];
+   }
+    return mesh;
+}
+
 Bounding_Box Triangle_Mesh::get_triangle_bounds(int32_t triangle_index) const {
   const int32_t* indices = &face_indices[triangle_index*3];
   auto bounds = Bounding_Box(vertices[indices[0]]);

@@ -163,7 +163,12 @@ void Rasterization_Resources::destroy_framebuffer() {
 
 void Rasterization_Resources::update(const Matrix3x4& model_transform, const Matrix3x4& view_transform) {
     float aspect_ratio = (float)vk.surface_size.width / (float)vk.surface_size.height;
-    Matrix4x4 proj = perspective_transform_opengl_z01(radians(60.0f), aspect_ratio, 0.1f, 50.0f);
+    Matrix3x4 from_world_to_opengl = {{
+        {1,  0, 0, 0},
+        {0,  0, 1, 0},
+        {0, -1, 0, 0}
+    }};
+    Matrix4x4 proj = perspective_transform_opengl_z01(radians(60.0f), aspect_ratio, 0.1f, 50.0f) * from_world_to_opengl;
     Matrix4x4 model_view = Matrix4x4::identity * view_transform * model_transform;
     Matrix4x4 model_view_proj = proj * view_transform * model_transform;
 
