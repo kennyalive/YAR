@@ -208,6 +208,12 @@
     <ClInclude Include="src\realtime\vk.h">
       <Filter>realtime</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\scene.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\light.h">
+      <Filter>lib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="third_party">

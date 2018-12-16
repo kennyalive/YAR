@@ -152,6 +152,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\lib\light.h" />
+    <ClInclude Include="src\lib\scene.h" />
     <ClInclude Include="src\realtime\copy_to_swapchain.h" />
     <ClInclude Include="src\realtime\demo.h" />
     <ClInclude Include="src\io\io.h" />
