@@ -8,6 +8,7 @@
 
 #include "lib/matrix.h"
 #include "lib/mesh.h"
+#include "lib/scene.h"
 
 #include "sdl/SDL_syswm.h"
 
@@ -79,7 +80,8 @@ private:
     Vk_Image                    output_image;
     Copy_To_Swapchain           copy_to_swapchain;
 
-    std::vector<Mesh_Data> mesh_data_array;
+    
+    Scene_Data                  scene_data;
     std::vector<Mesh>           meshes;
     Vk_Image                    texture;
     VkSampler                   sampler;

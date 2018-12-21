@@ -101,6 +101,9 @@
     <ClCompile Include="src\realtime\vk.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
+    <ClCompile Include="src\io\test_scenes.cpp">
+      <Filter>io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third_party\half\half.h">
@@ -213,6 +216,9 @@
     </ClInclude>
     <ClInclude Include="src\lib\light.h">
       <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\test_scenes.h">
+      <Filter>io</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

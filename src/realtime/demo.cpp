@@ -5,6 +5,7 @@
 #include "lib/common.h"
 #include "lib/matrix.h"
 #include "lib/mesh.h"
+#include "io/test_scenes.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
@@ -49,16 +50,11 @@ void Vk_Demo::initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window) 
 
     // Geometry buffers.
     {
-        Matrix3x4 to_world_axis_orientation {{
-            {1, 0,  0, 0},
-            {0, 0, -1, 0},
-            {0, 1,  0, 0}
-        }};
-        mesh_data_array = load_obj("conference/conference.obj", uniform_scale(to_world_axis_orientation, 0.003f));
-        meshes.resize(mesh_data_array.size());
+        scene_data = load_conference_scene();
+        meshes.resize(scene_data.meshes.size());
 
-        for (size_t i = 0; i < mesh_data_array.size(); i++) {
-            const Mesh_Data& mesh_data = mesh_data_array[i];
+        for (size_t i = 0; i < scene_data.meshes.size(); i++) {
+            const Mesh_Data& mesh_data = scene_data.meshes[i];
             Mesh& mesh  = meshes[i];
             
             mesh.model_vertex_count = static_cast<uint32_t>(mesh_data.vertices.size());
@@ -562,9 +558,9 @@ void Vk_Demo::do_imgui() {
 
             if (ImGui::Button("Render reference image"))
             {
-                extern int run_playground(const std::vector<Mesh_Data>& mesh_data, const Matrix3x4& camera_to_world, bool* active);
+                extern int run_playground(const Scene_Data& scene_data, const Matrix3x4& camera_to_world, bool* active);
                 reference_render_active = true;
-                reference_render_thread = std::thread(run_playground, mesh_data_array, camera_to_world_transform, &reference_render_active);
+                reference_render_thread = std::thread(run_playground, scene_data, camera_to_world_transform, &reference_render_active);
             }
 
             if (disable_button)

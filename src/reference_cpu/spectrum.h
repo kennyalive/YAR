@@ -2,6 +2,11 @@
 
 #include <cassert>
 
+// disable windows RGB macro
+#ifdef RGB
+#undef RGB
+#endif
+
 struct XYZ {
     float c[3];
 

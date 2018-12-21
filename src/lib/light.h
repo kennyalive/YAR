@@ -1,8 +1,9 @@
 #pragma once
 
 #include "vector.h"
+#include "reference_cpu/spectrum.h"
 
-struct Point_Light_Data {
+struct RGB_Point_Light_Data {
     Vector3 position;
-    Vector3 intensity;
+    RGB intensity;
 };

@@ -113,6 +113,7 @@
     </CustomBuild>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\io\test_scenes.cpp" />
     <ClCompile Include="src\realtime\copy_to_swapchain.cpp" />
     <ClCompile Include="src\realtime\demo.cpp" />
     <ClCompile Include="src\realtime\demo_main.cpp" />
@@ -152,6 +153,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\io\test_scenes.h" />
     <ClInclude Include="src\lib\light.h" />
     <ClInclude Include="src\lib\scene.h" />
     <ClInclude Include="src\realtime\copy_to_swapchain.h" />

@@ -6,5 +6,5 @@
 
 struct Scene_Data {
     std::vector<Mesh_Data> meshes;
-    std::vector<Point_Light_Data> point_lights;
+    std::vector<RGB_Point_Light_Data> rgb_point_lights;
 };
