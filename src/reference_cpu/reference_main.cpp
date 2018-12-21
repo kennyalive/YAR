@@ -15,10 +15,7 @@
 
 #include <vector>
 
-void test_triangle_intersection();
-void test_kdtree();
-
-int run_playground(const Scene_Data& scene_data, const Matrix3x4& camera_to_world_vk, bool* active) {
+void render_reference_image(const Scene_Data& scene_data, const Matrix3x4& camera_to_world_vk, bool* active) {
     const int w = 1280;
     const int h = 720;
 
@@ -43,7 +40,6 @@ int run_playground(const Scene_Data& scene_data, const Matrix3x4& camera_to_worl
 
     }
 
-    printf("conference scene processed\n");
     TwoLevel_KdTree kdtree = build_kdtree(kdtrees);
     printf("two-level tree created\n");
     float albedo = 1.0f;
@@ -70,9 +66,5 @@ int run_playground(const Scene_Data& scene_data, const Matrix3x4& camera_to_worl
     printf("image rendered in %d ms\n", time);
 
     write_exr_image("image.exr", image.data(), w, h);
-
-    //test_triangle_intersection();
-    //test_kdtree();
     *active = false;
-    return 0;
 }

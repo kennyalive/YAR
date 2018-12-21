@@ -30,49 +30,34 @@
     </ClCompile>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\reference_cpu\camera.cpp">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClCompile>
     <ClCompile Include="src\reference_cpu\colorimetry.cpp">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClCompile>
     <ClCompile Include="src\reference_cpu\intersection.cpp">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClCompile>
     <ClCompile Include="src\reference_cpu\kdtree.cpp">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClCompile>
     <ClCompile Include="src\reference_cpu\kdtree_builder.cpp">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClCompile>
     <ClCompile Include="src\reference_cpu\sampling.cpp">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClCompile>
     <ClCompile Include="src\reference_cpu\spectrum.cpp">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClCompile>
     <ClCompile Include="src\reference_cpu\triangle_mesh.cpp">
-      <Filter>reference_cpu</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference_cpu\triangle_mesh_loader.cpp">
-      <Filter>reference_cpu</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference_cpu\test_kdtree.cpp">
-      <Filter>reference_cpu</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference_cpu\test_ray_generator.cpp">
-      <Filter>reference_cpu</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference_cpu\test_triangle_intersection.cpp">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\common.cpp">
       <Filter>lib</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\matrix.cpp">
       <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference_cpu\playground.cpp">
-      <Filter>reference_cpu</Filter>
     </ClCompile>
     <ClCompile Include="src\lib\mesh.cpp">
       <Filter>lib</Filter>
@@ -103,6 +88,21 @@
     </ClCompile>
     <ClCompile Include="src\io\test_scenes.cpp">
       <Filter>io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference_cpu\triangle_mesh_loader.cpp">
+      <Filter>reference\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference_cpu\test_ray_generator.cpp">
+      <Filter>reference\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference_cpu\test_triangle_intersection.cpp">
+      <Filter>reference\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference_cpu\test_kdtree.cpp">
+      <Filter>reference\tests</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference_cpu\reference_main.cpp">
+      <Filter>reference</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -137,40 +137,34 @@
       <Filter>third_party\imgui</Filter>
     </ClInclude>
     <ClInclude Include="src\reference_cpu\camera.h">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClInclude>
     <ClInclude Include="src\reference_cpu\colorimetry.h">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClInclude>
     <ClInclude Include="src\reference_cpu\intersection.h">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClInclude>
     <ClInclude Include="src\reference_cpu\kdtree.h">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClInclude>
     <ClInclude Include="src\reference_cpu\kdtree_builder.h">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClInclude>
     <ClInclude Include="src\reference_cpu\light.h">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClInclude>
     <ClInclude Include="src\reference_cpu\ray.h">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClInclude>
     <ClInclude Include="src\reference_cpu\sampling.h">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClInclude>
     <ClInclude Include="src\reference_cpu\spectrum.h">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClInclude>
     <ClInclude Include="src\reference_cpu\triangle_mesh.h">
-      <Filter>reference_cpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference_cpu\triangle_mesh_loader.h">
-      <Filter>reference_cpu</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference_cpu\test_ray_generator.h">
-      <Filter>reference_cpu</Filter>
+      <Filter>reference</Filter>
     </ClInclude>
     <ClInclude Include="src\lib\matrix.h">
       <Filter>lib</Filter>
@@ -220,6 +214,12 @@
     <ClInclude Include="src\io\test_scenes.h">
       <Filter>io</Filter>
     </ClInclude>
+    <ClInclude Include="src\reference_cpu\triangle_mesh_loader.h">
+      <Filter>reference\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference_cpu\test_ray_generator.h">
+      <Filter>reference\tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="third_party">
@@ -237,9 +237,6 @@
     <Filter Include="third_party\imgui\impl">
       <UniqueIdentifier>{e6558c84-f354-41bf-8a7f-d49b05ea4647}</UniqueIdentifier>
     </Filter>
-    <Filter Include="reference_cpu">
-      <UniqueIdentifier>{8769c619-a495-443c-a77a-e511cb8f1b86}</UniqueIdentifier>
-    </Filter>
     <Filter Include="lib">
       <UniqueIdentifier>{7687bc7b-702a-4f46-8552-cbb16b501aeb}</UniqueIdentifier>
     </Filter>
@@ -249,11 +246,17 @@
     <Filter Include="io">
       <UniqueIdentifier>{d37b2f80-62e7-4b64-b155-c441c42430a0}</UniqueIdentifier>
     </Filter>
-    <Filter Include="reference_gpu">
-      <UniqueIdentifier>{b3efe6a8-fd3c-4b9a-9994-dfd281dbaba8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="realtime">
       <UniqueIdentifier>{a0def918-0c9a-4c48-995c-f820b0e1b908}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="reference">
+      <UniqueIdentifier>{8769c619-a495-443c-a77a-e511cb8f1b86}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="reference\tests">
+      <UniqueIdentifier>{b83708ee-b2f2-4572-b3f1-e39c693ef1e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gpu_raytracer">
+      <UniqueIdentifier>{b3efe6a8-fd3c-4b9a-9994-dfd281dbaba8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

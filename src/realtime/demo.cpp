@@ -558,9 +558,9 @@ void Vk_Demo::do_imgui() {
 
             if (ImGui::Button("Render reference image"))
             {
-                extern int run_playground(const Scene_Data& scene_data, const Matrix3x4& camera_to_world, bool* active);
+                extern void render_reference_image(const Scene_Data& scene_data, const Matrix3x4& camera_to_world, bool* active);
                 reference_render_active = true;
-                reference_render_thread = std::thread(run_playground, scene_data, camera_to_world_transform, &reference_render_active);
+                reference_render_thread = std::thread(render_reference_image, scene_data, camera_to_world_transform, &reference_render_active);
             }
 
             if (disable_button)

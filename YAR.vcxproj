@@ -121,7 +121,7 @@
     <ClCompile Include="src\lib\mesh.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\realtime\raster_resources.cpp" />
-    <ClCompile Include="src\reference_cpu\playground.cpp" />
+    <ClCompile Include="src\reference_cpu\reference_main.cpp" />
     <ClCompile Include="src\realtime\rt_resources.cpp" />
     <ClCompile Include="src\realtime\utils.cpp" />
     <ClCompile Include="src\realtime\vk.cpp" />
