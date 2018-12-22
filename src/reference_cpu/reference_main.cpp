@@ -15,6 +15,21 @@
 
 #include <vector>
 
+Vector3 f_diffuse(Vector3 albedo) {
+    return albedo * Pi_Inv;
+}
+
+RGB compute_direct_lighting(const Local_Geometry& local_geom, const Scene_Data& scene, const Vector3& wo, Vector3 albedo) {
+    RGB L;
+    for (const RGB_Point_Light_Data& light : scene.rgb_point_lights) {
+        Vector3 light_vec = (light.position - local_geom.position);
+        float light_dist_sq_inv = 1.f / light_vec.squared_length();
+        Vector3 light_dir = light_vec * std::sqrt(light_dist_sq_inv);
+        L += f_diffuse(albedo) * light.intensity * (light_dist_sq_inv * std::max(0.f, dot(local_geom.normal, light_dir)));
+    }
+    return L;
+}
+
 void render_reference_image(const Scene_Data& scene_data, const Matrix3x4& camera_to_world_vk, bool* active) {
     const int w = 1280;
     const int h = 720;
@@ -42,7 +57,7 @@ void render_reference_image(const Scene_Data& scene_data, const Matrix3x4& camer
 
     TwoLevel_KdTree kdtree = build_kdtree(kdtrees);
     printf("two-level tree created\n");
-    float albedo = 1.0f;
+
     std::vector<Vector3> image(w * h);
 
     Timestamp t;
@@ -50,15 +65,12 @@ void render_reference_image(const Scene_Data& scene_data, const Matrix3x4& camer
     for (int i = 0; i < h; i++) {
         for (int j = 0; j < w; j++) {
             Ray ray = camera.generate_ray(Vector2(j + 0.5f, i + 0.5f));
-            *pixel = Vector3(0);
-            Local_Geometry local_geom;
-            if (kdtree.intersect(ray, local_geom) != Infinity) {
-                Vector3 light_dir = (scene_data.rgb_point_lights[0].position - local_geom.position).normalized();
-                float dd = (scene_data.rgb_point_lights[0].position - local_geom.position).squared_length();
-                RGB L = scene_data.rgb_point_lights[0].intensity * (albedo / (Pi * dd) * dot(local_geom.normal, light_dir));
-                *pixel = Vector3(L[0], L[1], L[2]);
+            RGB L;
+            if (Local_Geometry local_geom; kdtree.intersect(ray, local_geom) != Infinity) {
+                Vector3 wo = (ray.origin - local_geom.position).normalized();
+                L = compute_direct_lighting(local_geom, scene_data, wo, local_geom.k_diffuse);
             }
-            pixel++;
+            *pixel++ = Vector3(L[0], L[1], L[2]);
         }
     }
 

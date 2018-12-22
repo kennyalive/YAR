@@ -9,6 +9,7 @@
 #include <vector>
 
 constexpr float Pi = 3.14159265f;
+constexpr float Pi_Inv = 1.f / Pi;
 
 constexpr float Infinity = std::numeric_limits<float>::infinity();
 

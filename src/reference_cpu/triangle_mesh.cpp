@@ -13,6 +13,10 @@ Triangle_Mesh Triangle_Mesh::from_mesh_data(const Mesh_Data& mesh_data) {
    for (int i = 0; i < (int)mesh_data.indices.size(); i++) {
        mesh.face_indices[i] = (int32_t)mesh_data.indices[i];
    }
+
+   mesh.k_diffuse = mesh_data.k_diffuse;
+   mesh.k_specular = mesh_data.k_specular;
+
     return mesh;
 }
 

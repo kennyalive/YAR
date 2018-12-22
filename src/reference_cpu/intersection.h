@@ -21,6 +21,8 @@ void intersect_triangle(const Ray& ray, const Triangle_Mesh* mesh, int32_t trian
 struct Local_Geometry {
     Vector3                  position;
     Vector3                  normal;
+    Vector3                  k_diffuse;
+    Vector3                  k_specular;
 
     Local_Geometry() {}
     explicit Local_Geometry(const Ray& ray, const Triangle_Intersection& triangle_intersection);

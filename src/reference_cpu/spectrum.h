@@ -1,5 +1,6 @@
 #pragma once
 
+#include "lib/vector.h"
 #include <cassert>
 
 // disable windows RGB macro
@@ -71,6 +72,12 @@ struct RGB {
         c[1] *= v;
         c[2] *= v;
     }
+
+    void operator+=(RGB other) {
+        c[0] += other.c[0];
+        c[1] += other.c[1];
+        c[2] += other.c[2];
+    }
 };
 
 inline RGB operator*(const RGB& rgb, float v) {
@@ -79,6 +86,14 @@ inline RGB operator*(const RGB& rgb, float v) {
 
 inline RGB operator*(float v, const RGB& rgb) {
     return rgb * v;
+}
+
+inline RGB operator*(const RGB& rgb, const Vector3& v) {
+    return RGB(rgb[0]*v[0], rgb[1]*v[1], rgb[2]*v[2]);
+}
+
+inline RGB operator*(const Vector3& v, const RGB& rgb) {
+    return RGB(rgb[0]*v[0], rgb[1]*v[1], rgb[2]*v[2]);
 }
 
 // Sampled_Spectrum approximates spectrum function as a sequence of samples where each sample

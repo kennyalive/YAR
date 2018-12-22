@@ -8,6 +8,8 @@ struct Triangle_Mesh {
   std::vector<Vector3> vertices;
   std::vector<Vector2> texcoords;
   std::vector<int32_t> face_indices;
+  Vector3 k_diffuse;
+  Vector3 k_specular;
 
   static Triangle_Mesh from_mesh_data(const Mesh_Data& mesh_data);
 

@@ -61,4 +61,6 @@ Local_Geometry::Local_Geometry(const Ray& ray, const Triangle_Intersection& tria
 
     position = ray.get_point(triangle_intersection.t);
     normal = cross(p1 - p0, p2  - p0).normalized();
+    k_diffuse = triangle_intersection.mesh->k_diffuse;
+    k_specular = triangle_intersection.mesh->k_specular;
 }
