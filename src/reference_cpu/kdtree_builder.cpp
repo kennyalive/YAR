@@ -8,23 +8,30 @@
 #include <string>
 #include <vector>
 
+namespace {
+
 struct Edge {
     float position_on_axis;
-    uint32_t triangle_and_flag;
+    uint32_t triangle_and_flags;
 
-    enum : uint32_t { is_end_mask = 0x80000000 };
-    enum : uint32_t { triangle_mask = 0x7fffffff };
+    enum : uint32_t { edge_end_flag = 0x80000000 };
+    enum : uint32_t { primitive_perpendicular_to_axis_flag = 0x40000000 };
+    enum : uint32_t { triangle_mask = 0x3fffffff };
 
     bool is_start() const {
-        return (triangle_and_flag & is_end_mask) == 0;
+        return (triangle_and_flags & edge_end_flag) == 0;
     }
 
     bool is_end() const {
         return !is_start();
     }
 
+    bool is_primitive_perpendicular_to_axis() const {
+        return (triangle_and_flags & primitive_perpendicular_to_axis_flag) != 0;
+    }
+
     int32_t get_triangle_index() const {
-        return static_cast<int32_t>(triangle_and_flag & triangle_mask);
+        return static_cast<int32_t>(triangle_and_flags & triangle_mask);
     }
 
     static bool less(Edge edge1, Edge edge2) {
@@ -45,6 +52,7 @@ struct Triangle_Info {
 	int32_t triangle;
 	Bounding_Box bounds;
 };
+} // namespace
 
 template <typename Primitive_Source>
 class KdTree_Builder {
@@ -251,8 +259,9 @@ void KdTree_Builder<Primitive_Source>::build_node(const Bounding_Box& node_bound
     // classify triangles with respect to split
     int32_t n0 = 0;
     for (int32_t i = 0; i < split.edge; i++) {
-        if (edges[split.axis][i].is_start()) {
-            int32_t index = edges[split.axis][i].get_triangle_index();
+        const Edge edge = edges[split.axis][i];
+        if (edge.is_start() || edge.position_on_axis == split_position && edge.is_primitive_perpendicular_to_axis()) {
+            int32_t index = edge.get_triangle_index();
             Triangle_Info triangle_info = triangle_buffer2[index];
 
             if (build_params.split_clipping) {
@@ -267,8 +276,9 @@ void KdTree_Builder<Primitive_Source>::build_node(const Bounding_Box& node_bound
 
     int32_t n1 = 0;
     for (int32_t i = split.edge + 1; i < 2 * triangle_count; i++) {
-        if (edges[split.axis][i].is_end()) {
-            int32_t index = edges[split.axis][i].get_triangle_index();
+        const Edge edge = edges[split.axis][i];
+        if (edge.is_end() || edge.position_on_axis == split_position && edge.is_primitive_perpendicular_to_axis()) {
+            int32_t index = edge.get_triangle_index();
             Triangle_Info triangle_info = triangle_buffer2[index];
 
             if (build_params.split_clipping) {
@@ -352,7 +362,12 @@ Split KdTree_Builder<Primitive_Source>::select_split(const Bounding_Box& node_bo
         for (int32_t i = 0; i < triangle_count; i++) {
             auto& bounds = triangles[i].bounds;
             edges[axis][2 * i + 0] = { bounds.min_p[axis], static_cast<uint32_t>(i) };
-            edges[axis][2 * i + 1] = { bounds.max_p[axis], static_cast<uint32_t>(i) | Edge::is_end_mask };
+            edges[axis][2 * i + 1] = { bounds.max_p[axis], static_cast<uint32_t>(i) | Edge::edge_end_flag };
+
+            if (bounds.min_p[axis] == bounds.max_p[axis]) {
+                edges[axis][2 * i + 0].triangle_and_flags |= Edge::primitive_perpendicular_to_axis_flag;
+                edges[axis][2 * i + 1].triangle_and_flags |= Edge::primitive_perpendicular_to_axis_flag;
+            }
         }
 
         std::stable_sort(edges[axis].data(), edges[axis].data() + 2 * triangle_count, Edge::less);
