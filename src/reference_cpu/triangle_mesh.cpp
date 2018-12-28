@@ -3,11 +3,13 @@
 Triangle_Mesh Triangle_Mesh::from_mesh_data(const Mesh_Data& mesh_data) {
     Triangle_Mesh mesh;
     mesh.vertices.resize(mesh_data.vertices.size());
+    mesh.normals.resize(mesh_data.vertices.size());
     mesh.texcoords.resize(mesh_data.vertices.size());
     mesh.face_indices.resize(mesh_data.indices.size());
 
    for (int i = 0; i < (int)mesh_data.vertices.size(); i++) {
        mesh.vertices[i] = mesh_data.vertices[i].pos;
+       mesh.normals[i] = mesh_data.vertices[i].normal;
        mesh.texcoords[i] = mesh_data.vertices[i].uv;
    }
    for (int i = 0; i < (int)mesh_data.indices.size(); i++) {

@@ -86,9 +86,9 @@ private:
     Vk_Image                    texture;
     VkSampler                   sampler;
 
-    Vector3                     camera_pos = Vector3(0, -3, 1);
-    float                       camera_yaw = Pi/2; // relative to x axis
-    Vector3                     camera_dir = Vector3(0, 1, 0);
+    Vector3                     camera_pos = Vector3(0, 3, 1);
+    float                       camera_yaw = -Pi/2; // relative to x axis
+    Vector3                     camera_dir = Vector3(0, -1, 0);
     Matrix3x4                   model_transform;
     Matrix3x4                   view_transform;
 

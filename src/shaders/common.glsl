@@ -1,5 +1,8 @@
 layout(row_major) uniform;
 
+const float Pi = 3.14159265358;
+const float Pi_Inv = 1.f / Pi;
+
 float srgb_encode(float c) {
     if (c <= 0.0031308f)
         return 12.92f * c;

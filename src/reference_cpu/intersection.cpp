@@ -4,7 +4,7 @@
 
 //
 // Möller-Trumbore triangle intersection algorithm.
-// http://www.graphics.cornell.edu/pubs/1997/MT97.pdf
+// https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
 //
 float intersect_triangle_moller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2) {
     Vector3 edge1 = p1 - p0;
@@ -56,11 +56,8 @@ void intersect_triangle(const Ray& ray, const Triangle_Mesh* mesh, int32_t trian
 }
 
 Local_Geometry::Local_Geometry(const Ray& ray, const Triangle_Intersection& triangle_intersection) {
-    Vector3 p0, p1, p2;
-    triangle_intersection.mesh->get_triangle(triangle_intersection.triangle_index, p0, p1, p2);
-
     position = ray.get_point(triangle_intersection.t);
-    normal = cross(p1 - p0, p2  - p0).normalized();
+    normal = triangle_intersection.mesh->get_normal(triangle_intersection.triangle_index, triangle_intersection.b1, triangle_intersection.b2);
     k_diffuse = triangle_intersection.mesh->k_diffuse;
     k_specular = triangle_intersection.mesh->k_specular;
 }

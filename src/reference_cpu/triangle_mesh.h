@@ -6,6 +6,7 @@
 
 struct Triangle_Mesh {
   std::vector<Vector3> vertices;
+  std::vector<Vector3> normals;
   std::vector<Vector2> texcoords;
   std::vector<int32_t> face_indices;
   Vector3 k_diffuse;
@@ -27,6 +28,15 @@ struct Triangle_Mesh {
       p0 = vertices[indices[0]];
       p1 = vertices[indices[1]];
       p2 = vertices[indices[2]];
+  }
+
+  Vector3 get_normal(int32_t triangle_index, float b1, float b2) const {
+      const int32_t* indices = &face_indices[triangle_index * 3];
+      Vector3 n0 = normals[indices[0]];
+      Vector3 n1 = normals[indices[1]];
+      Vector3 n2 = normals[indices[2]];
+
+      return ((1.f-b1-b2)*n0 + b1*n1 + b2*n2).normalized();
   }
 
   Bounding_Box get_triangle_bounds(int32_t triangle_index) const;

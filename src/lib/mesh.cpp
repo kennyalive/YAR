@@ -250,7 +250,6 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& tr
         error("failed to load obj model: " + obj_file);
 
     std::vector<Mesh_Data> meshes(shapes.size());
-    Bounding_Box bounds;
 
     for (size_t i = 0; i < shapes.size(); i++) {
         tinyobj::shape_t& shape = shapes[i];
@@ -292,7 +291,6 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& tr
             if (unique_vertices.count(vertex) == 0) {
                 unique_vertices[vertex] = mesh.vertices.size();
                 mesh.vertices.push_back(vertex);
-                bounds.add_point(vertex.pos);
             }
             mesh.indices.push_back((uint32_t)unique_vertices[vertex]);
         }
@@ -318,6 +316,7 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& tr
         for (Mesh_Data& mesh : meshes) {
             for (Mesh_Vertex& v : mesh.vertices) {
                 v.pos = transform_point(transform, v.pos);
+                v.normal = transform_vector(transform, v.normal).normalized();
             }
         }
     }
