@@ -121,7 +121,9 @@
     <ClCompile Include="src\lib\mesh.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\realtime\raster_resources.cpp" />
-    <ClCompile Include="src\reference_cpu\reference_main.cpp" />
+    <ClCompile Include="src\reference_cpu\light.cpp" />
+    <ClCompile Include="src\reference_cpu\material.cpp" />
+    <ClCompile Include="src\reference_cpu\reference_renderer.cpp" />
     <ClCompile Include="src\realtime\rt_resources.cpp" />
     <ClCompile Include="src\realtime\utils.cpp" />
     <ClCompile Include="src\realtime\vk.cpp" />
@@ -164,6 +166,8 @@
     <ClInclude Include="src\realtime\rt_resources.h" />
     <ClInclude Include="src\realtime\utils.h" />
     <ClInclude Include="src\realtime\vk.h" />
+    <ClInclude Include="src\reference_cpu\material.h" />
+    <ClInclude Include="src\reference_cpu\reference_renderer.h" />
     <ClInclude Include="third_party\half\half.h" />
     <ClInclude Include="src\lib\bounding_box.h" />
     <ClInclude Include="src\reference_cpu\camera.h" />

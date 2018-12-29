@@ -1,11 +1,11 @@
-#include "lib/vector.h"
+#include "reference_cpu/spectrum.h"
 
 #include "half/half.h"
 
 // from third_party/miniexr.cpp
 unsigned char* miniexr_write(unsigned width, unsigned height, unsigned channels, const void* rgba16f, size_t* out_size);
 
-void write_exr_image(const char* file_name, const Vector3* pixels, int w, int h) {
+void write_exr_image(const char* file_name, const RGB* pixels, int w, int h) {
     FILE* file;
     if (fopen_s(&file, file_name, "wb") != 0)
         return;
@@ -13,12 +13,12 @@ void write_exr_image(const char* file_name, const Vector3* pixels, int w, int h)
     std::vector<unsigned short> rgb16f(w * h * 3);
 
     unsigned short* p = rgb16f.data();
-    const Vector3* pixel = pixels;
+    const RGB* pixel = pixels;
     for (int i = 0; i < h; i++) {
         for (int j = 0; j < w; j++) {
-            *p++ = float_to_half(pixel->x);
-            *p++ = float_to_half(pixel->y);
-            *p++ = float_to_half(pixel->z);
+            *p++ = float_to_half(pixel->c[0]);
+            *p++ = float_to_half(pixel->c[1]);
+            *p++ = float_to_half(pixel->c[2]);
             pixel++;
         }
     }

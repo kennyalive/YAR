@@ -7,6 +7,8 @@
 #include "lib/mesh.h"
 #include "io/test_scenes.h"
 
+#include "reference_cpu/reference_renderer.h"
+
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/impl/imgui_impl_vulkan.h"
@@ -558,9 +560,14 @@ void Vk_Demo::do_imgui() {
 
             if (ImGui::Button("Render reference image"))
             {
-                extern void render_reference_image(const Scene_Data& scene_data, const Matrix3x4& camera_to_world, bool* active);
                 reference_render_active = true;
-                reference_render_thread = std::thread(render_reference_image, scene_data, camera_to_world_transform, &reference_render_active);
+                Render_Reference_Image_Params params;
+                params.w = (int)vk.surface_size.width;
+                params.h = (int)vk.surface_size.height;
+                params.scene_data = &scene_data;
+                params.camera_to_world_vk = camera_to_world_transform;
+                     
+                reference_render_thread = std::thread(render_reference_image, params, &reference_render_active);
             }
 
             if (disable_button)

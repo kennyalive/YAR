@@ -101,7 +101,13 @@
     <ClCompile Include="src\reference_cpu\test_kdtree.cpp">
       <Filter>reference\tests</Filter>
     </ClCompile>
-    <ClCompile Include="src\reference_cpu\reference_main.cpp">
+    <ClCompile Include="src\reference_cpu\material.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference_cpu\light.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reference_cpu\reference_renderer.cpp">
       <Filter>reference</Filter>
     </ClCompile>
   </ItemGroup>
@@ -219,6 +225,12 @@
     </ClInclude>
     <ClInclude Include="src\reference_cpu\test_ray_generator.h">
       <Filter>reference\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference_cpu\material.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference_cpu\reference_renderer.h">
+      <Filter>reference</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

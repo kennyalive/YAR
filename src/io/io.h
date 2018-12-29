@@ -1,5 +1,4 @@
 #pragma once
 
-struct Vector3;
-
-void write_exr_image(const char* file_name, const Vector3* pixels, int w, int h);
+struct RGB;
+void write_exr_image(const char* file_name, const RGB* pixels, int w, int h);
