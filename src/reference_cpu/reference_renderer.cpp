@@ -25,6 +25,8 @@ struct Render_Tile_Params {
 };
 } // namespace
 
+constexpr int Tile_Size = 64;
+
 static std::vector<RGB> render_tile(const Render_Tile_Params& tile) {
     std::vector<RGB> radiance_values(tile.w * tile.h, RGB{});
     RGB* radiance = radiance_values.data();
@@ -79,19 +81,38 @@ void render_reference_image(const Render_Reference_Image_Params& params, bool* a
         }
     }
 
+    std::vector<RGB> image(params.w * params.h);
+
+    auto merge_tile_into_image = [&params, &image](const std::vector<RGB>& tile_radiance, int x, int y, int w, int h) {
+        assert(tile_radiance.size() == w * h);
+        for (int i = 0; i < h; i++) {
+            const RGB* src = tile_radiance.data() + i * w;
+            RGB* dst = image.data() + (y + i) * params.w + x;
+            memcpy(dst, src, w * sizeof(RGB));
+        }
+    };
+
     Render_Tile_Params tile;
-    tile.x = 0;
-    tile.y = 0;
-    tile.w = params.w;
-    tile.h = params.h;
     tile.camera = &camera;
     tile.acceleration_structure = &kdtree;
     tile.lights = lights;
 
-    std::vector<RGB> image(params.w * params.h);
+    const int x_tile_count = (params.w + Tile_Size - 1) / Tile_Size;
+    const int y_tile_count = (params.h + Tile_Size - 1) / Tile_Size;
 
     Timestamp t;
-    image = render_tile(tile);
+
+    for (int y_tile = 0; y_tile < y_tile_count; y_tile++) {
+        for (int x_tile = 0; x_tile < x_tile_count; x_tile++) {
+            tile.x = x_tile * Tile_Size;
+            tile.y = y_tile * Tile_Size;
+            tile.w = (x_tile == x_tile_count - 1) ? params.w - (x_tile_count - 1) * Tile_Size : Tile_Size;
+            tile.h = (y_tile == y_tile_count - 1) ? params.h - (y_tile_count - 1) * Tile_Size : Tile_Size;
+
+            std::vector<RGB> tile_radiance = render_tile(tile);
+            merge_tile_into_image(tile_radiance, tile.x, tile.y, tile.w, tile.h);
+        }
+    }
 
     int time = int(elapsed_milliseconds(t));
     printf("image rendered in %d ms\n", time);
