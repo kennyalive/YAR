@@ -561,9 +561,9 @@ void Vk_Demo::do_imgui() {
             if (ImGui::Button("Render reference image"))
             {
                 reference_render_active = true;
-                Render_Reference_Image_Params params;
-                params.w = (int)vk.surface_size.width;
-                params.h = (int)vk.surface_size.height;
+                Render_Reference_Image_Params params{};
+                params.film_w = (int)vk.surface_size.width;
+                params.film_h = (int)vk.surface_size.height;
                 params.scene_data = &scene_data;
                 params.camera_to_world_vk = camera_to_world_transform;
                      
