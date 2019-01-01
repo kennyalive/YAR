@@ -492,10 +492,10 @@ void Vk_Demo::do_imgui() {
         if (ImGui::IsKeyPressed(SDL_SCANCODE_F10)) {
             show_ui = !show_ui;
         }
-        if (ImGui::IsKeyPressed(SDL_SCANCODE_W)) {
+        if (ImGui::IsKeyPressed(SDL_SCANCODE_W) || ImGui::IsKeyPressed(SDL_SCANCODE_UP)) {
             camera_pos += 0.2f * camera_dir;
         }
-        if (ImGui::IsKeyPressed(SDL_SCANCODE_S)) {
+        if (ImGui::IsKeyPressed(SDL_SCANCODE_S) || ImGui::IsKeyPressed(SDL_SCANCODE_DOWN)) {
             camera_pos -= 0.2f * camera_dir;
         }
         if (ImGui::IsKeyPressed(SDL_SCANCODE_A)) {
@@ -511,6 +511,12 @@ void Vk_Demo::do_imgui() {
         if (ImGui::IsKeyPressed(SDL_SCANCODE_RIGHT)) {
             camera_yaw -= radians(5.f);
             camera_dir = Vector3(std::cos(camera_yaw), std::sin(camera_yaw), 0);
+        }
+        if (ImGui::IsKeyPressed(SDL_SCANCODE_R)) {
+            camera_pos.z += 0.1f;
+        }
+        if (ImGui::IsKeyPressed(SDL_SCANCODE_F)) {
+            camera_pos.z -= 0.1f;
         }
     }
 
