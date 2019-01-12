@@ -35,7 +35,7 @@ static void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, st
     for (const std::pair<Vector3, std::vector<int>>& entry : vertex_faces) {
         const Vector3 pos = entry.first;
         const std::vector<int>& faces = entry.second;
-        assert(faces.size() <= 64);
+        ASSERT(faces.size() <= 64);
 
         for (auto& info : normal_group_infos) {
             info.normal_group = 0;
@@ -111,7 +111,7 @@ static void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, st
                     v_index_index = face*3 + 1;
                 } else {
                     v = c;
-                    assert(c.pos == pos);
+                    ASSERT(c.pos == pos);
                     v_index_index = face*3 + 2;
                 }
 
@@ -123,7 +123,7 @@ static void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, st
                     }
                 }
                 if (new_vertex) {
-                    assert(uv_count < max_uvs);
+                    ASSERT(uv_count < max_uvs);
                     uvs[uv_count] = v.uv;
                     new_vertex_indices[uv_count] = (int)mesh.vertices.size();
                     mesh.vertices.push_back(v);
@@ -143,6 +143,7 @@ void compute_normals(
     uint32_t vertex_stride,
     const uint32_t* indices,
     uint32_t index_count,
+    Normal_Average_Mode normal_average_mode,
     Vector3* normals)
 {
     struct Vertex_Info {
@@ -177,7 +178,7 @@ void compute_normals(
         Vector3 pos = index_array_with_stride(vertex_positions, vertex_stride, i);
         Vertex_Info v_info = { pos, vertex_normal_groups[i] };
         uint32_t vertex_count = (uint32_t)duplicated_vertices[v_info].size();
-        assert(vertex_count > 0);
+        ASSERT(vertex_count > 0);
         has_duplicates[i] = vertex_count > 1;
     }
 
@@ -221,12 +222,16 @@ void compute_normals(
 
     for (uint32_t i = 0; i < vertex_count; i++) {
         Vector3& n = index_array_with_stride(normals, vertex_stride, i);
-        assert(n.length() > 1e-6f);
+        ASSERT(n.length() > 1e-6f);
         n.normalize();
     }
 }
 
-std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& transform)
+static inline bool operator==(const Mesh_Vertex& v, const Mesh_Vertex& v2) {
+    return v.pos == v2.pos && v.normal == v2.normal && v.uv == v2.uv;
+}
+
+std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Mesh_Load_Params params)
 {
     struct Vertex_Hasher {
         size_t operator()(const Mesh_Vertex& v) const {
@@ -255,7 +260,7 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& tr
         tinyobj::shape_t& shape = shapes[i];
         Mesh_Data& mesh = meshes[i];
 
-        std::unordered_map<Mesh_Vertex, std::size_t, Vertex_Hasher> unique_vertices;
+        std::unordered_map<Mesh_Vertex, uint32_t, Vertex_Hasher> unique_vertices;
         bool has_normals = true;
 
         for (const auto& index : shape.mesh.indices) {
@@ -267,8 +272,7 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& tr
                 attrib.vertices[3 * index.vertex_index + 2]
             };
 
-            if (!attrib.normals.empty() && index.normal_index != -1) {
-                assert(index.normal_index != -1);
+            if (index.normal_index != -1) {
                 vertex.normal = {
                     attrib.normals[3 * index.normal_index + 0],
                     attrib.normals[3 * index.normal_index + 1],
@@ -279,7 +283,7 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& tr
                 has_normals = false;
             }
 
-            if (!attrib.texcoords.empty() && index.texcoord_index != -1) {
+            if (index.texcoord_index != -1) {
                 vertex.uv = {
                     attrib.texcoords[2 * index.texcoord_index + 0],
                     1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
@@ -288,23 +292,56 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& tr
                 vertex.uv = Vector2_Zero;
             }
 
-            if (unique_vertices.count(vertex) == 0) {
-                unique_vertices[vertex] = mesh.vertices.size();
+            if (params.face_normals) {
+                mesh.indices.push_back((uint32_t)mesh.vertices.size());
                 mesh.vertices.push_back(vertex);
+            } else {
+                uint32_t index;
+                if (unique_vertices.count(vertex) == 0) {
+                    index = (uint32_t)mesh.vertices.size();
+                    unique_vertices[vertex] = (uint32_t)mesh.vertices.size();
+                    mesh.vertices.push_back(vertex);
+                } else {
+                    index = unique_vertices[vertex];
+                }
+                mesh.indices.push_back(index);
             }
-            mesh.indices.push_back((uint32_t)unique_vertices[vertex]);
         }
 
-        if (!has_normals) {
+        if (params.face_normals) {
+            for (int i = 0; i < mesh.indices.size(); i += 3) {
+                uint32_t ia = mesh.indices[i + 0];
+                uint32_t ib = mesh.indices[i + 1];
+                uint32_t ic = mesh.indices[i + 2];
+                Mesh_Vertex& va = mesh.vertices[ia];
+                Mesh_Vertex& vb = mesh.vertices[ib];
+                Mesh_Vertex& vc = mesh.vertices[ic];
+
+                Vector3 n = cross(vb.pos - va.pos, vc.pos - va.pos).normalized();
+                va.normal = n;
+                vb.normal = n;
+                vc.normal = n;
+            }
+        } else if (!has_normals) {
             std::vector<uint64_t> vertex_normal_groups;
             duplicate_vertices_due_to_crease_angle_threshold(mesh, vertex_normal_groups);
-            assert(vertex_normal_groups.size() == mesh.vertices.size());
-            compute_normals(&mesh.vertices[0].pos, vertex_normal_groups.data(), (int)mesh.vertices.size(), (int)sizeof(Mesh_Vertex), mesh.indices.data(), (int)mesh.indices.size(), &mesh.vertices[0].normal);
+            ASSERT(vertex_normal_groups.size() == mesh.vertices.size());
+
+            compute_normals(
+                &mesh.vertices[0].pos,
+                vertex_normal_groups.data(),
+                (int)mesh.vertices.size(),
+                (int)sizeof(Mesh_Vertex),
+                mesh.indices.data(),
+                (int)mesh.indices.size(),
+                params.normal_average_mode,
+                &mesh.vertices[0].normal
+            );
         }
 
         if (!shape.mesh.material_ids.empty() && shape.mesh.material_ids[0] != -1) {
             for (int face_material_id : shape.mesh.material_ids)
-                assert(face_material_id == shape.mesh.material_ids[0]);
+                ASSERT(face_material_id == shape.mesh.material_ids[0]);
 
             const tinyobj::material_t& material = materials[shape.mesh.material_ids[0]];
             mesh.k_diffuse = Vector3(material.diffuse[0], material.diffuse[1], material.diffuse[2]);
@@ -312,11 +349,11 @@ std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Matrix3x4& tr
         }
     }
 
-    if (!transform.is_identity()) {
+    if (!params.transform.is_identity()) {
         for (Mesh_Data& mesh : meshes) {
             for (Mesh_Vertex& v : mesh.vertices) {
-                v.pos = transform_point(transform, v.pos);
-                v.normal = transform_vector(transform, v.normal).normalized();
+                v.pos = transform_point(params.transform, v.pos);
+                v.normal = transform_vector(params.transform, v.normal).normalized();
             }
         }
     }
