@@ -196,27 +196,36 @@ void compute_normals(
 
         Vector3 d1 = b - a;
         Vector3 d2 = c - a;
-        Vector3 n_scaled_by_area = cross(d1, d2);
+
+        Vector3 scaled_n;
+        if (normal_average_mode == Normal_Average_Mode::angle) {
+            float angle = std::acos(std::clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
+            scaled_n = cross(d1, d2).normalized() * angle;
+        } else {
+            ASSERT(normal_average_mode == Normal_Average_Mode::area);
+            scaled_n = cross(d1, d2);
+        }
+        
 
         if (has_duplicates[i0]) {
             for (uint32_t vi : duplicated_vertices[{a, vertex_normal_groups[i0]}])
-                index_array_with_stride(normals, vertex_stride, vi) += n_scaled_by_area;
+                index_array_with_stride(normals, vertex_stride, vi) += scaled_n;
         } else {
-            index_array_with_stride(normals, vertex_stride, i0) += n_scaled_by_area;
+            index_array_with_stride(normals, vertex_stride, i0) += scaled_n;
         }
 
         if (has_duplicates[i1]) {
             for (uint32_t vi : duplicated_vertices[{b, vertex_normal_groups[i1]}])
-                index_array_with_stride(normals, vertex_stride, vi) += n_scaled_by_area;
+                index_array_with_stride(normals, vertex_stride, vi) += scaled_n;
         } else {
-            index_array_with_stride(normals, vertex_stride, i1) += n_scaled_by_area;
+            index_array_with_stride(normals, vertex_stride, i1) += scaled_n;
         }
 
         if (has_duplicates[i2]) {
             for (uint32_t vi : duplicated_vertices[{c, vertex_normal_groups[i2]}])
-                index_array_with_stride(normals, vertex_stride, vi) += n_scaled_by_area;
+                index_array_with_stride(normals, vertex_stride, vi) += scaled_n;
         } else {
-            index_array_with_stride(normals, vertex_stride, i2) += n_scaled_by_area;
+            index_array_with_stride(normals, vertex_stride, i2) += scaled_n;
         }
     }
 
