@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#define ASSERT(expression) if (!(expression)) __debugbreak()
+
 constexpr float Pi = 3.14159265f;
 constexpr float Pi_Inv = 1.f / Pi;
 
