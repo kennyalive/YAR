@@ -232,6 +232,9 @@
     <ClInclude Include="src\reference_cpu\reference_renderer.h">
       <Filter>reference</Filter>
     </ClInclude>
+    <ClInclude Include="src\realtime\gpu_structures.h">
+      <Filter>realtime</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="third_party">

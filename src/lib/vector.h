@@ -16,6 +16,9 @@ struct Vector3 {
 
     explicit Vector3(Vector4 v);
 
+    explicit Vector3(const float* v)
+        : x(v[0]), y(v[1]), z(v[2]) {}
+
     Vector3(float x, float y, float z)
         : x(x), y(y), z(z) {}
 

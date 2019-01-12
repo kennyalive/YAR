@@ -162,6 +162,7 @@
     <ClInclude Include="src\realtime\demo.h" />
     <ClInclude Include="src\io\io.h" />
     <ClInclude Include="src\lib\mesh.h" />
+    <ClInclude Include="src\realtime\gpu_structures.h" />
     <ClInclude Include="src\realtime\raster_resources.h" />
     <ClInclude Include="src\realtime\rt_resources.h" />
     <ClInclude Include="src\realtime\utils.h" />

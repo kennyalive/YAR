@@ -1,6 +1,7 @@
 #pragma once
 
 #include "vk.h"
+#include "lib/scene.h"
 
 struct Matrix3x4;
 
@@ -20,5 +21,6 @@ struct Rasterization_Resources {
     void destroy();
     void create_framebuffer(VkImageView output_image_view);
     void destroy_framebuffer();
+    void update_point_lights(const RGB_Point_Light_Data* point_lights, int point_light_count);
     void update(const Matrix3x4& model_transform, const Matrix3x4& view_transform);
 };

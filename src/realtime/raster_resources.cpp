@@ -1,3 +1,4 @@
+#include "gpu_structures.h"
 #include "raster_resources.h"
 #include "utils.h"
 #include "lib/matrix.h"
@@ -5,9 +6,11 @@
 
 namespace {
 struct Global_Uniform_Buffer {
-    Matrix4x4   model_view_proj;
-    Matrix4x4   model_view;
-    Matrix4x4   view;
+    Matrix4x4       model_view_proj;
+    Matrix4x4       model_view;
+    Matrix4x4       view;
+    GPU_Point_Light point_lights[8];
+    uint32_t        point_light_count;
 };
 }
 
@@ -159,6 +162,17 @@ void Rasterization_Resources::create_framebuffer(VkImageView output_image_view) 
 void Rasterization_Resources::destroy_framebuffer() {
     vkDestroyFramebuffer(vk.device, framebuffer, nullptr);
     framebuffer = VK_NULL_HANDLE;
+}
+
+void Rasterization_Resources::update_point_lights(const RGB_Point_Light_Data* point_lights, int point_light_count) {
+    assert(point_light_count < 8);
+
+    Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
+    for (int i = 0; i < point_light_count; i++) {
+        buf.point_lights[i].position = point_lights[i].position;
+        buf.point_lights[i].intensity = Vector3(point_lights[i].intensity.c);
+    }
+    buf.point_light_count = point_light_count;
 }
 
 void Rasterization_Resources::update(const Matrix3x4& model_transform, const Matrix3x4& view_transform) {

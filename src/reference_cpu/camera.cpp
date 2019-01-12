@@ -25,7 +25,7 @@ Ray Camera::generate_ray(Vector2 film_position) const {
 
     Vector3 dir = Vector3(dir_x, dir_y, 1.f).normalized();
 
-    Ray camera_ray = Ray(Vector3(0), dir);
+    Ray camera_ray = Ray(Vector3_Zero, dir);
     Ray world_ray = transform_ray(camera_to_world, camera_ray);
     return world_ray;
 }

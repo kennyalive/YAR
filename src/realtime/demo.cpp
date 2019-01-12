@@ -150,6 +150,7 @@ void Vk_Demo::initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window) 
     }
 
     raster.create();
+    raster.update_point_lights(scene_data.rgb_point_lights.data(), (int)scene_data.rgb_point_lights.size());
 
     if (vk.raytracing_supported) {
         assert(!"fix raytracing code");
