@@ -11,7 +11,6 @@
 #include "io/io.h"
 #include "lib/common.h"
 #include "lib/mesh.h"
-#include "lib/scene.h"
 #include "lib/vector.h"
 
 #include <vector>
@@ -40,7 +39,7 @@ static std::vector<RGB> render_tile(const Render_Tile_Params& tile) {
                 continue;
 
             Vector3 wo = (ray.origin - local_geom.position).normalized();
-            *radiance = compute_direct_lighting(local_geom, tile.acceleration_structure, tile.lights, wo, local_geom.k_diffuse);
+            *radiance = compute_direct_lighting(local_geom, tile.acceleration_structure, tile.lights, wo, local_geom.material);
         }
     }
     return radiance_values;
@@ -61,7 +60,8 @@ void render_reference_image(const Render_Reference_Image_Params& params, bool* a
 
     for (size_t i = 0; i < params.scene_data->meshes.size(); i++) {
         Timestamp t;
-        meshes[i] = Triangle_Mesh::from_mesh_data(params.scene_data->meshes[i]);
+        Material_Handle material_handle = register_material(params.scene_data->materials[i]);
+        meshes[i] = Triangle_Mesh::from_mesh_data(params.scene_data->meshes[i], material_handle);
         kdtrees[i] = build_kdtree(meshes[i]);
         int time = int(elapsed_milliseconds(t));
         printf("KdTree %zd build time = %dms\n", i, time);

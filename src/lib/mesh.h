@@ -13,8 +13,6 @@ struct Mesh_Vertex {
 struct Mesh_Data {
     std::vector<Mesh_Vertex> vertices;
     std::vector<uint32_t> indices;
-    Vector3 k_diffuse;
-    Vector3 k_specular;
 };
 
 // Defines how face normals are averaged to compute the vertex normal.
@@ -34,6 +32,8 @@ struct Mesh_Load_Params {
     bool face_normals = false;
 };
 
+void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, std::vector<uint64_t>& vertex_normal_groups);
+
 void compute_normals(
     const Vector3* vertex_positions, // #vertex_count
     const uint64_t* normal_groups, // #vertex_count
@@ -44,5 +44,3 @@ void compute_normals(
     Normal_Average_Mode normal_average_mode,
     Vector3* normals // #vertex_count
 );
-
-std::vector<Mesh_Data> load_obj(const std::string& obj_file, const Mesh_Load_Params params = Mesh_Load_Params{});

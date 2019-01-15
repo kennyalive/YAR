@@ -21,4 +21,4 @@ RGB compute_direct_lighting(
     const TwoLevel_KdTree* acceleration_structure,
     const Lights& lights,
     const Vector3& wo,
-    Vector3 albedo);
+    Material_Handle material);

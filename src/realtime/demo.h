@@ -8,7 +8,7 @@
 
 #include "lib/matrix.h"
 #include "lib/mesh.h"
-#include "lib/scene.h"
+#include "io/io.h"
 
 #include "sdl/SDL_syswm.h"
 

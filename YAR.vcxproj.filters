@@ -110,6 +110,9 @@
     <ClCompile Include="src\reference_cpu\reference_renderer.cpp">
       <Filter>reference</Filter>
     </ClCompile>
+    <ClCompile Include="src\io\obj_loader.cpp">
+      <Filter>io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third_party\half\half.h">
@@ -211,12 +214,6 @@
     <ClInclude Include="src\realtime\vk.h">
       <Filter>realtime</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\scene.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\light.h">
-      <Filter>lib</Filter>
-    </ClInclude>
     <ClInclude Include="src\io\test_scenes.h">
       <Filter>io</Filter>
     </ClInclude>
@@ -234,6 +231,9 @@
     </ClInclude>
     <ClInclude Include="src\realtime\gpu_structures.h">
       <Filter>realtime</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\obj_loader.h">
+      <Filter>io</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -269,9 +269,6 @@
     </Filter>
     <Filter Include="reference\tests">
       <UniqueIdentifier>{b83708ee-b2f2-4572-b3f1-e39c693ef1e8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="gpu_raytracer">
-      <UniqueIdentifier>{b3efe6a8-fd3c-4b9a-9994-dfd281dbaba8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

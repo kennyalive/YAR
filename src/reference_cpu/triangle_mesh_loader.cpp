@@ -59,7 +59,7 @@ std::unique_ptr<Triangle_Mesh> LoadTriangleMesh(const std::string& fileName) {
 
     // read mesh data
     auto mesh = std::make_unique<Triangle_Mesh>();
-    mesh->face_indices.resize(numTriangles * 3);
+    mesh->indices.resize(numTriangles * 3);
 
     std::unordered_map<Vector3, int32_t> uniqueVertices;
     uint8_t* dataPtr = fileContent.data() + headerSize + 4;
@@ -85,7 +85,7 @@ std::unique_ptr<Triangle_Mesh> LoadTriangleMesh(const std::string& fileName) {
             else {
                 vertexIndex = iterator->second;
             }
-            mesh->face_indices[3*i + k] = vertexIndex;
+            mesh->indices[3*i + k] = vertexIndex;
         }
         dataPtr += facetSize;
     }

@@ -1,5 +1,6 @@
 #pragma once
 
-#include "lib/scene.h"
+#include "io/io.h"
 
 Scene_Data load_conference_scene();
+Scene_Data load_bunny_scene();

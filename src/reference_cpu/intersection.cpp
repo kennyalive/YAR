@@ -58,6 +58,5 @@ void intersect_triangle(const Ray& ray, const Triangle_Mesh* mesh, int32_t trian
 Local_Geometry::Local_Geometry(const Ray& ray, const Triangle_Intersection& triangle_intersection) {
     position = ray.get_point(triangle_intersection.t);
     normal = triangle_intersection.mesh->get_normal(triangle_intersection.triangle_index, triangle_intersection.b1, triangle_intersection.b2);
-    k_diffuse = triangle_intersection.mesh->k_diffuse;
-    k_specular = triangle_intersection.mesh->k_specular;
+    material = triangle_intersection.mesh->material;
 }

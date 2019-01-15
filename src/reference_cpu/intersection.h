@@ -1,5 +1,6 @@
 #pragma once
 
+#include "material.h"
 #include "lib/common.h"
 #include "lib/vector.h"
 
@@ -19,10 +20,9 @@ struct Triangle_Intersection {
 void intersect_triangle(const Ray& ray, const Triangle_Mesh* mesh, int32_t triangle_index, Triangle_Intersection& intersection);
 
 struct Local_Geometry {
-    Vector3                  position;
-    Vector3                  normal;
-    Vector3                  k_diffuse;
-    Vector3                  k_specular;
+    Vector3                 position;
+    Vector3                 normal;
+    Material_Handle         material; 
 
     Local_Geometry() {}
     explicit Local_Geometry(const Ray& ray, const Triangle_Intersection& triangle_intersection);

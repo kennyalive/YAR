@@ -53,6 +53,7 @@ void Vk_Demo::initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window) 
     // Geometry buffers.
     {
         scene_data = load_conference_scene();
+        //scene_data = load_bunny_scene();
         meshes.resize(scene_data.meshes.size());
 
         for (size_t i = 0; i < scene_data.meshes.size(); i++) {
@@ -90,9 +91,10 @@ void Vk_Demo::initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window) 
                 });
             }
 
-            mesh.material.k_diffuse = mesh_data.k_diffuse;
+            ASSERT(scene_data.materials[i].material_format == Material_Format::obj_material);
+            mesh.material.k_diffuse = scene_data.materials[i].obj_material.k_diffuse;
             mesh.material.padding0 = 0;
-            mesh.material.k_specular = mesh_data.k_specular;
+            mesh.material.k_specular = scene_data.materials[i].obj_material.k_specular;
             mesh.material.padding1 = 0;
         }
     }
@@ -573,6 +575,11 @@ void Vk_Demo::do_imgui() {
                 params.film_h = (int)vk.surface_size.height;
                 params.scene_data = &scene_data;
                 params.camera_to_world_vk = camera_to_world_transform;
+
+                /*params.crop_x = 462;
+                params.crop_y = 302;
+                params.crop_w = 3;
+                params.crop_h = 3;*/
                      
                 reference_render_thread = std::thread(render_reference_image, params, &reference_render_active);
             }

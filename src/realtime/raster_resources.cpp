@@ -1,6 +1,7 @@
 #include "gpu_structures.h"
 #include "raster_resources.h"
 #include "utils.h"
+#include "io/io.h"
 #include "lib/matrix.h"
 #include "lib/mesh.h"
 

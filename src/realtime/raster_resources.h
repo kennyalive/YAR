@@ -1,9 +1,9 @@
 #pragma once
 
 #include "vk.h"
-#include "lib/scene.h"
 
 struct Matrix3x4;
+struct RGB_Point_Light_Data;
 
 struct Rasterization_Resources {
     VkDescriptorSetLayout       descriptor_set_layout;
