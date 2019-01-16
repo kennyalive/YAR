@@ -46,7 +46,7 @@ void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, std::vect
             masks[i] = 1ull << i;
         }
         for (size_t i = 0; i < faces.size()-1; i++) {
-            for (size_t k = 1; k < faces.size(); k++) {
+            for (size_t k = i + 1; k < faces.size(); k++) {
                 int face_a = faces[i];
                 int face_b = faces[k];
 
@@ -63,7 +63,7 @@ void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, std::vect
         // sort faces by normal group
         for (size_t i = 0; i < faces.size(); i++) {
             int k = 0;
-            for (k = 0; k < normal_group_count; k++) {
+            for (; k < normal_group_count; k++) {
                 if (normal_group_infos[k].normal_group == masks[i])
                     break;
             }
