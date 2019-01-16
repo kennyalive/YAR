@@ -78,9 +78,15 @@ void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, std::vect
 
         // update vertex_normal_groups for the first normal group
         for (int face : normal_group_infos[0].faces) {
-            vertex_normal_groups[mesh.indices[face*3 + 0]] = normal_group_infos[0].normal_group;
-            vertex_normal_groups[mesh.indices[face*3 + 1]] = normal_group_infos[0].normal_group;
-            vertex_normal_groups[mesh.indices[face*3 + 2]] = normal_group_infos[0].normal_group;
+            if (uint32_t index = mesh.indices[face*3 + 0]; mesh.vertices[index].pos == pos)
+                vertex_normal_groups[index] = normal_group_infos[0].normal_group;
+            else if (uint32_t index = mesh.indices[face*3 + 1]; mesh.vertices[index].pos == pos)
+                vertex_normal_groups[index] = normal_group_infos[0].normal_group;
+            else 
+            {
+                ASSERT(mesh.vertices[mesh.indices[face*3 + 2]].pos == pos);
+                vertex_normal_groups[mesh.indices[face*3 + 2]] = normal_group_infos[0].normal_group;
+            }
         }
 
         // Faces from the first normal group could use original vertices,
