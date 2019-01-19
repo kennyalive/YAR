@@ -101,20 +101,7 @@ std::vector<Obj_Model> load_obj(const std::string& obj_file, const Mesh_Load_Par
                 vc.normal = n;
             }
         } else if (!has_normals) {
-            std::vector<uint64_t> vertex_normal_groups;
-            duplicate_vertices_due_to_crease_angle_threshold(mesh, vertex_normal_groups);
-            ASSERT(vertex_normal_groups.size() == mesh.vertices.size());
-
-            compute_normals(
-                &mesh.vertices[0].pos,
-                vertex_normal_groups.data(),
-                (int)mesh.vertices.size(),
-                (int)sizeof(Mesh_Vertex),
-                mesh.indices.data(),
-                (int)mesh.indices.size(),
-                params.normal_average_mode,
-                &mesh.vertices[0].normal
-            );
+            compute_normals(mesh, params.normal_average_mode, params.crease_angle);
         }
 
         if (!shape.mesh.material_ids.empty() && shape.mesh.material_ids[0] != -1) {

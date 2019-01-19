@@ -17,30 +17,22 @@ struct Mesh_Data {
 
 // Defines how face normals are averaged to compute the vertex normal.
 enum class Normal_Average_Mode {
-    angle, // normals are averaged based on angle between face edges
-    area // normals are averaged based on face area
+    area, // normals are averaged based on face area
+    angle // normals are averaged based on angle between face edges
 };
 
 struct Mesh_Load_Params {
     Matrix3x4 transform = Matrix3x4::identity;
 
     // This is only used when model file does not provide normals.
-    Normal_Average_Mode normal_average_mode = Normal_Average_Mode::angle;
+    Normal_Average_Mode normal_average_mode = Normal_Average_Mode::area;
+
+    // crease_angle - in radians. 0.f to disable detection of edges that should have a sharp crease
+    float crease_angle = 0.f;
 
     // If set then normals are computed per face. Could be useful for debugging to visualise faces.
     // This will overwrite normmals that are provided by the model file.
     bool face_normals = false;
 };
 
-void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, std::vector<uint64_t>& vertex_normal_groups);
-
-void compute_normals(
-    const Vector3* vertex_positions, // #vertex_count
-    const uint64_t* normal_groups, // #vertex_count
-    uint32_t vertex_count,
-    uint32_t vertex_stride,
-    const uint32_t* indices, // #index_count
-    uint32_t index_count,
-    Normal_Average_Mode normal_average_mode,
-    Vector3* normals // #vertex_count
-);
+void compute_normals(Mesh_Data& mesh, Normal_Average_Mode normal_average_mode, float crease_angle);
