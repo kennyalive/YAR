@@ -1,23 +1,23 @@
 #include "camera.h"
-#include "colorimetry.h"
+#include "film.h"
 #include "intersection.h"
 #include "kdtree.h"
 #include "kdtree_builder.h"
 #include "light.h"
 #include "reference_renderer.h"
-#include "spectrum.h"
 #include "triangle_mesh.h"
 
 #include "io/io.h"
 #include "lib/common.h"
+#include "lib/geometry.h"
 #include "lib/mesh.h"
 #include "lib/vector.h"
 
 #include <vector>
 
 namespace {
-struct Render_Tile_Params {
-    int x, y, w, h;
+struct Render_Context {
+    Bounds2i sample_bounds;
     const Camera* camera;
     const TwoLevel_KdTree* acceleration_structure;
     Lights lights;
@@ -26,23 +26,26 @@ struct Render_Tile_Params {
 
 constexpr int Tile_Size = 64;
 
-static std::vector<RGB> render_tile(const Render_Tile_Params& tile) {
-    std::vector<RGB> radiance_values(tile.w * tile.h, RGB{});
-    RGB* radiance = radiance_values.data();
+void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, Film& film) {
+    Film_Tile tile(pixel_bounds, film.filter);
 
-    for (int y = tile.y; y < tile.y + tile.h; y++) {
-        for (int x = tile.x; x < tile.x + tile.w; x++, radiance++) {
-            Ray ray = tile.camera->generate_ray(Vector2(x + 0.5f, y + 0.5f));
+    for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
+        for (int x = sample_bounds.p0.x; x < sample_bounds.p1.x; x++) {
+            Vector2 film_pos = Vector2(x + 0.5f, y + 0.5f);
+
+            Ray ray = ctx.camera->generate_ray(film_pos);
 
             Local_Geometry local_geom;
-            if (tile.acceleration_structure->intersect(ray, local_geom) == Infinity)
+            if (ctx.acceleration_structure->intersect(ray, local_geom) == Infinity)
                 continue;
 
             Vector3 wo = (ray.origin - local_geom.position).normalized();
-            *radiance = compute_direct_lighting(local_geom, tile.acceleration_structure, tile.lights, wo, local_geom.material);
+            ColorRGB radiance = compute_direct_lighting(local_geom, ctx.acceleration_structure, ctx.lights, wo, local_geom.material);
+
+            tile.add_sample(film_pos, radiance);
         }
     }
-    return radiance_values;
+    film.merge_tile(tile);
 }
 
 void render_reference_image(const Render_Reference_Image_Params& params, bool* active) {
@@ -53,7 +56,7 @@ void render_reference_image(const Render_Reference_Image_Params& params, bool* a
         camera_to_world.a[i][2] = tmp;
     }
 
-    Camera camera(camera_to_world, Vector2(float(params.film_w), float(params.film_h)), 60.f);
+    Camera camera(camera_to_world, Vector2(params.image_resolution), 60.f);
 
     std::vector<Mesh_KdTree> kdtrees(params.scene_data->meshes.size());
     std::vector<Triangle_Mesh> meshes(params.scene_data->meshes.size());
@@ -81,64 +84,59 @@ void render_reference_image(const Render_Reference_Image_Params& params, bool* a
         }
     }
 
-    const bool crop_image = params.crop_x != 0 || params.crop_y != 0 || params.crop_w != 0 || params.crop_h != 0;
+    ASSERT(params.render_region.p0 >= Vector2i{});
+    ASSERT(params.render_region.p1 <= params.image_resolution);
+    ASSERT(params.render_region.p0 < params.render_region.p1);
 
-    int image_start_x, image_start_y;
-    int image_width, image_height;
+    const float filter_radius = 0.5f;
 
-    if (crop_image) {
-        assert(params.crop_w > 0 && params.crop_h > 0);
-        assert(params.crop_x + params.crop_w <= params.film_w);
-        assert(params.crop_y + params.crop_h <= params.film_h);
+    Film film(params.render_region.size(), params.render_region, get_box_filter(filter_radius));
 
-        image_start_x = params.crop_x;
-        image_start_y = params.crop_y;
-        image_width = params.crop_w;
-        image_height = params.crop_h;
-    } else {
-        image_start_x = 0;
-        image_start_y = 0;
-        image_width = params.film_w;
-        image_height = params.film_h;
-    }
-
-    std::vector<RGB> image;
-    image.resize(image_width * image_height);
-
-    auto merge_tile_into_image = [&image, image_width](const std::vector<RGB>& tile_radiance, int x, int y, int w, int h) {
-        assert(tile_radiance.size() == w * h);
-        for (int i = 0; i < h; i++) {
-            const RGB* src = tile_radiance.data() + i * w;
-            RGB* dst = image.data() + (y + i) * image_width + x;
-            memcpy(dst, src, w * sizeof(RGB));
-        }
+    Bounds2i sample_region {
+        Vector2i {
+            (int32_t)std::ceil(params.render_region.p0.x + 0.5f - filter_radius),
+            (int32_t)std::ceil(params.render_region.p0.y + 0.5f - filter_radius)
+        },
+        Vector2i {
+            (int32_t)std::ceil(params.render_region.p1.x-1 + 0.5f + filter_radius),
+            (int32_t)std::ceil(params.render_region.p1.y-1 + 0.5f + filter_radius)
+        } + Vector2i{1, 1}
     };
 
-    const int x_tile_count = (image_width + Tile_Size - 1) / Tile_Size;
-    const int y_tile_count = (image_height + Tile_Size - 1) / Tile_Size;
+    Vector2i sample_region_size = sample_region.p1 - sample_region.p0;
 
-    Render_Tile_Params tile;
-    tile.camera = &camera;
-    tile.acceleration_structure = &kdtree;
-    tile.lights = lights;
+    const int x_tile_count = (sample_region_size.x + Tile_Size - 1) / Tile_Size;
+    const int y_tile_count = (sample_region_size.y + Tile_Size - 1) / Tile_Size;
+
+    Render_Context ctx;
+    ctx.camera = &camera;
+    ctx.acceleration_structure = &kdtree;
+    ctx.lights = lights;
 
     Timestamp t;
 
     for (int y_tile = 0; y_tile < y_tile_count; y_tile++) {
         for (int x_tile = 0; x_tile < x_tile_count; x_tile++) {
-            tile.x = image_start_x + x_tile * Tile_Size;
-            tile.y = image_start_y + y_tile * Tile_Size;
-            tile.w = (x_tile == x_tile_count - 1) ? image_width - (x_tile_count - 1) * Tile_Size : Tile_Size;
-            tile.h = (y_tile == y_tile_count - 1) ? image_height - (y_tile_count - 1) * Tile_Size : Tile_Size;
+            Bounds2i tile_sample_bounds;
+            tile_sample_bounds.p0 = sample_region.p0 + Vector2i{x_tile * Tile_Size, y_tile * Tile_Size};
+            tile_sample_bounds.p1.x = std::min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
+            tile_sample_bounds.p1.y = std::min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
 
-            std::vector<RGB> tile_radiance = render_tile(tile);
-            merge_tile_into_image(tile_radiance, tile.x - image_start_x, tile.y - image_start_y, tile.w, tile.h);
+            Bounds2i tile_pixel_bounds;
+            tile_pixel_bounds.p0.x = std::max((int)std::ceil(tile_sample_bounds.p0.x + 0.5f - filter_radius), params.render_region.p0.x);
+            tile_pixel_bounds.p0.y = std::max((int)std::ceil(tile_sample_bounds.p0.y + 0.5f - filter_radius), params.render_region.p0.y);
+            tile_pixel_bounds.p1.x = std::min((int)std::ceil(tile_sample_bounds.p1.x-1 + 0.5f + filter_radius) + 1, params.render_region.p1.x);
+            tile_pixel_bounds.p1.y = std::min((int)std::ceil(tile_sample_bounds.p1.y-1 + 0.5f + filter_radius) + 1, params.render_region.p1.y);
+
+            render_tile(ctx, tile_sample_bounds, tile_pixel_bounds, film);
         }
     }
+
+    std::vector<ColorRGB> image = film.get_image();
 
     int time = int(elapsed_milliseconds(t));
     printf("image rendered in %d ms\n", time);
 
-    write_exr_image("image.exr", image.data(), image_width, image_height);
+    write_exr_image("image.exr",  image.data(), (int)params.render_region.size().x, (int)params.render_region.size().y);
     *active = false;
 }
