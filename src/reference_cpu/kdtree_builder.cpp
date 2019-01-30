@@ -1,6 +1,6 @@
+#include "lib/common.h"
 #include "kdtree_builder.h"
 #include "triangle_mesh.h"
-#include "lib/common.h"
 
 #include <algorithm>
 #include <cmath>

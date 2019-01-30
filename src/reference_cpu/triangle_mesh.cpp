@@ -1,3 +1,4 @@
+#include "lib/common.h"
 #include "triangle_mesh.h"
 
 Triangle_Mesh Triangle_Mesh::from_mesh_data(const Mesh_Data& mesh_data, Material_Handle material) {

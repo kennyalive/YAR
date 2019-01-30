@@ -1,5 +1,6 @@
-#include "gpu_structures.h"
+#include "lib/common.h"
 #include "raster_resources.h"
+#include "gpu_structures.h"
 #include "utils.h"
 #include "io/io.h"
 #include "lib/matrix.h"
@@ -171,7 +172,7 @@ void Rasterization_Resources::update_point_lights(const RGB_Point_Light_Data* po
     Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
     for (int i = 0; i < point_light_count; i++) {
         buf.point_lights[i].position = point_lights[i].position;
-        buf.point_lights[i].intensity = Vector3(point_lights[i].intensity.c);
+        buf.point_lights[i].intensity = point_lights[i].intensity;
     }
     buf.point_light_count = point_light_count;
 }

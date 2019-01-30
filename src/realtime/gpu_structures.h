@@ -1,10 +1,11 @@
 #pragma once
 
+#include "lib/color.h"
 #include "lib/vector.h"
 
 struct GPU_Point_Light {
-    Vector3 position;
-    float   padding0;
-    Vector3 intensity;
-    float   padding1;
+    Vector3     position;
+    float       padding0;
+    ColorRGB    intensity;
+    float       padding1;
 };

@@ -1,13 +1,14 @@
 #pragma once
 
 #include "io/obj_loader.h"
+#include "lib/color.h"
 #include "lib/mesh.h"
-#include "reference_cpu/spectrum.h"
+
 #include <vector>
 
 struct RGB_Point_Light_Data {
-    Vector3 position;
-    RGB intensity;
+    Vector3     position;
+    ColorRGB    intensity;
 };
 
 enum class Material_Format {
@@ -29,5 +30,4 @@ struct Scene_Data {
     std::vector<RGB_Point_Light_Data> rgb_point_lights;
 };
 
-struct RGB;
-void write_exr_image(const char* file_name, const RGB* pixels, int w, int h);
+void write_exr_image(const char* file_name, const ColorRGB* pixels, int w, int h);

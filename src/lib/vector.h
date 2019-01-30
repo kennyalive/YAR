@@ -4,8 +4,13 @@
 
 #include <cmath>
 
+struct Vector2;
+struct Vector2i;
 struct Vector4;
 
+//
+// Vector3
+//
 struct Vector3 {
     float x, y, z;
 
@@ -14,7 +19,7 @@ struct Vector3 {
     constexpr explicit Vector3(float v)
         : x(v), y(v), z(v) {}
 
-    explicit Vector3(Vector4 v);
+    explicit Vector3(const Vector4& v);
 
     explicit Vector3(const float* v)
         : x(v[0]), y(v[1]), z(v[2]) {}
@@ -82,10 +87,10 @@ struct Vector3 {
     }
 
     float length() const {
-        return std::sqrt(squared_length());
+        return std::sqrt(length_squared());
     }
 
-    float squared_length() const {
+    float length_squared() const {
         return x*x + y*y + z*z;
     }
 
@@ -103,73 +108,6 @@ struct Vector3 {
 };
 
 constexpr Vector3 Vector3_Zero = Vector3(0.f);
-
-struct Vector2 {
-    float x, y;
-
-    Vector2() {}
-
-    constexpr explicit Vector2(float v)
-        : x(v), y(v) {}
-
-    Vector2(float x, float y)
-        : x(x), y(y) {}
-
-    bool operator==(Vector2 v) const {
-        return x == v.x && y == v.y;
-    }
-
-    bool operator!=(Vector2 v) const {
-        return !(*this == v);
-    }
-
-    float operator[](int index) const {
-        return (&x)[index];
-    }
-
-    float& operator[](int index) {
-        return (&x)[index];
-    }
-};
-
-constexpr Vector2 Vector2_Zero = Vector2(0.f);
-
-struct Vector4 {
-    float x, y, z, w;
-
-    Vector4() {}
-
-    constexpr explicit Vector4(float v)
-        : x(v), y(v), z(v), w(v) {}
-
-    Vector4(float x, float y, float z, float w)
-        : x(x), y(y), z(z), w(w) {}
-
-    Vector4(Vector3 xyz, float w)
-        : x(xyz.x), y(xyz.y), z(xyz.z), w(w) {}
-
-    bool operator==(Vector4 v) const {
-        return x == v.x && y == v.y && z == v.z && w == v.w;
-    }
-
-    bool operator!=(Vector4 v) const {
-        return !(*this == v);
-    }
-
-    float operator[](int index) const {
-        return (&x)[index];
-    }
-
-    float& operator[](int index) {
-        return (&x)[index];
-    }
-};
-
-constexpr Vector4 Vector4_Zero = Vector4(0.f);
-
-inline Vector3::Vector3(Vector4 v)
-    : x(v.x), y(v.y), z(v.z) 
-{}
 
 inline Vector3 operator+(const Vector3& v1, const Vector3& v2) {
     return Vector3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
@@ -212,7 +150,56 @@ template<> struct hash<Vector3> {
         return hash;
     }
 };
+}
 
+//
+// Vector2
+//
+struct Vector2 {
+    float x, y;
+
+    Vector2() {}
+
+    constexpr explicit Vector2(float v)
+        : x(v), y(v) {}
+
+    Vector2(float x, float y)
+        : x(x), y(y) {}
+
+    explicit Vector2(const Vector2i& v);
+
+    bool operator==(Vector2 v) const {
+        return x == v.x && y == v.y;
+    }
+
+    bool operator!=(Vector2 v) const {
+        return !(*this == v);
+    }
+
+    float operator[](int index) const {
+        return (&x)[index];
+    }
+
+    float& operator[](int index) {
+        return (&x)[index];
+    }
+
+    float length() const {
+        return std::sqrt(length_squared());
+    }
+
+    float length_squared() const {
+        return x*x + y*y;
+    }
+};
+
+constexpr Vector2 Vector2_Zero = Vector2(0.f);
+
+inline Vector2 operator-(Vector2 a, Vector2 b) {
+    return Vector2{a.x - b.x, a.y - b.y};
+}
+
+namespace std {
 template<> struct hash<Vector2> {
     size_t operator()(Vector2 v) const {
         size_t hash = 0;
@@ -221,7 +208,45 @@ template<> struct hash<Vector2> {
         return hash;
     }
 };
+}
 
+//
+// Vector4
+//
+struct Vector4 {
+    float x, y, z, w;
+
+    Vector4() {}
+
+    constexpr explicit Vector4(float v)
+        : x(v), y(v), z(v), w(v) {}
+
+    Vector4(float x, float y, float z, float w)
+        : x(x), y(y), z(z), w(w) {}
+
+    Vector4(Vector3 xyz, float w)
+        : x(xyz.x), y(xyz.y), z(xyz.z), w(w) {}
+
+    bool operator==(Vector4 v) const {
+        return x == v.x && y == v.y && z == v.z && w == v.w;
+    }
+
+    bool operator!=(Vector4 v) const {
+        return !(*this == v);
+    }
+
+    float operator[](int index) const {
+        return (&x)[index];
+    }
+
+    float& operator[](int index) {
+        return (&x)[index];
+    }
+};
+
+constexpr Vector4 Vector4_Zero = Vector4(0.f);
+
+namespace std {
 template<> struct hash<Vector4> {
     size_t operator()(Vector4 v) const {
         size_t hash = 0;
@@ -232,4 +257,39 @@ template<> struct hash<Vector4> {
         return hash;
     }
 };
+}
+
+inline Vector3::Vector3(const Vector4& v)
+    : x(v.x), y(v.y), z(v.z) 
+{}
+
+//
+// Vector2i
+//
+struct Vector2i {
+    int x, y;
+};
+
+inline Vector2i operator+(Vector2i a, Vector2i b) {
+    return Vector2i{ a.x + b.x, a.y + b.y };
+}
+inline Vector2i operator-(Vector2i a, Vector2i b) {
+    return Vector2i{ a.x - b.x, a.y - b.y };
+}
+inline bool operator>(Vector2i a, Vector2i b) {
+    return a.x > b.x && a.y > b.y;
+}
+inline bool operator>=(Vector2i a, Vector2i b) {
+    return a.x >= b.x && a.y >= b.y;
+}
+inline bool operator<(Vector2i a, Vector2i b) {
+    return a.x < b.x && a.y < b.y;
+}
+inline bool operator<=(Vector2i a, Vector2i b) {
+    return a.x <= b.x && a.y <= b.y;
+}
+
+inline Vector2::Vector2(const Vector2i& v) {
+    x = float(v.x);
+    y = float(v.y);
 }

@@ -1,10 +1,10 @@
+#include "lib/common.h"
 #include "intersection.h"
 #include "kdtree.h"
 #include "kdtree_builder.h"
 #include "test_ray_generator.h"
 #include "triangle_mesh.h"
 #include "triangle_mesh_loader.h"
-#include "lib/common.h"
 #include "lib/rng.h"
 #include "lib/vector.h"
 

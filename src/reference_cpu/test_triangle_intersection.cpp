@@ -1,5 +1,5 @@
-#include "intersection.h"
 #include "lib/common.h"
+#include "intersection.h"
 #include "lib/ray.h"
 
 void test_triangle_intersection()

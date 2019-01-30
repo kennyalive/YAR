@@ -16,9 +16,9 @@
 #include <vector>
 
 struct Mesh_Material {
-    Vector3 k_diffuse;
+    ColorRGB k_diffuse;
     float   padding0;
-    Vector3 k_specular;
+    ColorRGB k_specular;
     float   padding1;
 };
 

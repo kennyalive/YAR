@@ -13,8 +13,6 @@ Camera::Camera(const Matrix3x4 & camera_to_world, Vector2 image_extent, float fo
 
 Ray Camera::generate_ray(Vector2 film_position) const {
     // film_position (0, 0) corresponds to upper left corner
-    assert(film_position.x >= 0.f && film_position.x <= image_extent.x);
-    assert(film_position.y >= 0.f && film_position.y <= image_extent.y);
 
     // map film_position to [-1, 1] range
     float u = 2.f * (film_position.x / image_extent.x) - 1.f;

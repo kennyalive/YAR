@@ -1,3 +1,4 @@
+#include "lib/common.h"
 #include "obj_loader.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -110,8 +111,8 @@ std::vector<Obj_Model> load_obj(const std::string& obj_file, const Mesh_Load_Par
 
             const tinyobj::material_t& src = materials[shape.mesh.material_ids[0]];
             Obj_Material& mtl = models[i].material;
-            mtl.k_diffuse = Vector3(src.diffuse);
-            mtl.k_specular = Vector3(src.specular);
+            mtl.k_diffuse = ColorRGB{src.diffuse[0], src.diffuse[1], src.diffuse[2]};
+            mtl.k_specular = ColorRGB{src.specular[0], src.specular[1], src.specular[2]};
             models[i].has_material = true;
         } else {
             models[i].has_material = false;

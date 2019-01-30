@@ -115,6 +115,7 @@
   <ItemGroup>
     <ClCompile Include="src\io\obj_loader.cpp" />
     <ClCompile Include="src\io\test_scenes.cpp" />
+    <ClCompile Include="src\lib\color.cpp" />
     <ClCompile Include="src\realtime\copy_to_swapchain.cpp" />
     <ClCompile Include="src\realtime\demo.cpp" />
     <ClCompile Include="src\realtime\demo_main.cpp" />
@@ -122,6 +123,7 @@
     <ClCompile Include="src\lib\mesh.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\realtime\raster_resources.cpp" />
+    <ClCompile Include="src\reference_cpu\film.cpp" />
     <ClCompile Include="src\reference_cpu\light.cpp" />
     <ClCompile Include="src\reference_cpu\material.cpp" />
     <ClCompile Include="src\reference_cpu\reference_renderer.cpp" />
@@ -158,6 +160,8 @@
   <ItemGroup>
     <ClInclude Include="src\io\obj_loader.h" />
     <ClInclude Include="src\io\test_scenes.h" />
+    <ClInclude Include="src\lib\color.h" />
+    <ClInclude Include="src\lib\geometry.h" />
     <ClInclude Include="src\realtime\copy_to_swapchain.h" />
     <ClInclude Include="src\realtime\demo.h" />
     <ClInclude Include="src\io\io.h" />
@@ -167,6 +171,7 @@
     <ClInclude Include="src\realtime\rt_resources.h" />
     <ClInclude Include="src\realtime\utils.h" />
     <ClInclude Include="src\realtime\vk.h" />
+    <ClInclude Include="src\reference_cpu\film.h" />
     <ClInclude Include="src\reference_cpu\material.h" />
     <ClInclude Include="src\reference_cpu\reference_renderer.h" />
     <ClInclude Include="third_party\half\half.h" />

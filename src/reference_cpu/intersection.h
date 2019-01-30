@@ -1,7 +1,6 @@
 #pragma once
 
 #include "material.h"
-#include "lib/common.h"
 #include "lib/vector.h"
 
 struct Ray;

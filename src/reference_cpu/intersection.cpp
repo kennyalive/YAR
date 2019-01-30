@@ -1,3 +1,4 @@
+#include "lib/common.h"
 #include "intersection.h"
 #include "triangle_mesh.h"
 #include "lib/ray.h"

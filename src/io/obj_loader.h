@@ -1,10 +1,11 @@
 #pragma once
 
+#include "lib/color.h"
 #include "lib/mesh.h"
 
 struct Obj_Material {
-    Vector3 k_diffuse;
-    Vector3 k_specular;
+    ColorRGB k_diffuse;
+    ColorRGB k_specular;
 };
 
 struct Obj_Model {

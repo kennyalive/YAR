@@ -113,6 +113,12 @@
     <ClCompile Include="src\io\obj_loader.cpp">
       <Filter>io</Filter>
     </ClCompile>
+    <ClCompile Include="src\reference_cpu\film.cpp">
+      <Filter>reference</Filter>
+    </ClCompile>
+    <ClCompile Include="src\lib\color.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third_party\half\half.h">
@@ -234,6 +240,15 @@
     </ClInclude>
     <ClInclude Include="src\io\obj_loader.h">
       <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reference_cpu\film.h">
+      <Filter>reference</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\geometry.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\color.h">
+      <Filter>lib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
