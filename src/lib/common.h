@@ -4,11 +4,14 @@
 #include <cassert>
 #include <chrono>
 #include <cmath>
+#include <filesystem>
 #include <limits>
 #include <string>
 #include <vector>
 
 #define ASSERT(expression) if (!(expression)) __debugbreak()
+
+namespace fs = std::filesystem;
 
 constexpr float Pi = 3.14159265f;
 constexpr float Pi_Inv = 1.f / Pi;
@@ -40,6 +43,12 @@ inline float lerp(float t, float a, float b) {
 }
 
 void error(const std::string& message);
+
+bool fs_exists(const fs::path& path);
+bool fs_remove_all(const fs::path& path);
+bool fs_create_directory(const fs::path& path);
+
+fs::path get_data_dir_path();
 std::string get_directory(const std::string& path);
 std::string get_resource_path(const std::string& resource_relative_path);
 std::vector<uint8_t> read_binary_file(const std::string& file_name);

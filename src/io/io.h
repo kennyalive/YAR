@@ -25,6 +25,7 @@ struct Material_Data {
 };
 
 struct Scene_Data {
+    std::string project_dir;
     std::vector<Mesh_Data> meshes;
     std::vector<Material_Data> materials; // per mesh material
     std::vector<RGB_Point_Light_Data> rgb_point_lights;

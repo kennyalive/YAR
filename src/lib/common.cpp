@@ -13,6 +13,21 @@ void error(const std::string& message) {
     exit(1);
 }
 
+bool fs_exists(const fs::path& path) {
+    std::error_code ec;
+    return fs::exists(path, ec);
+}
+
+bool fs_remove_all(const fs::path& path) {
+    std::error_code ec;
+    return fs::remove_all(path, ec) != static_cast<std::uintmax_t>(-1);
+}
+
+bool fs_create_directory(const fs::path& path) {
+    std::error_code ec;
+    return fs::create_directory(path, ec);
+}
+
 static std::string join_paths(std::string path1, std::string path2) {
   if (!path1.empty() && (path1.back() == '/' || path1.back() == '\\'))
     path1 = path1.substr(0, path1.length() - 1);
@@ -35,6 +50,10 @@ size_t get_last_slash_pos(const std::string& path) {
         return pos1;
     else
         return std::max(pos1, pos2);
+}
+
+fs::path get_data_dir_path() {
+    return g_data_dir;
 }
 
 std::string get_directory(const std::string& path) {

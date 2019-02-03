@@ -26,7 +26,38 @@ struct Render_Context {
 
 constexpr int Tile_Size = 64;
 
-void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, Film& film) {
+static fs::path get_kdtree_cache_path(const std::string& project_dir) {
+    return get_data_dir_path() / project_dir / "kdtrees";
+}
+
+static bool create_kdtree_cache(const std::string& project_dir, const std::vector<Triangle_Mesh>& meshes) {
+    const fs::path kdtree_cache_dir = get_kdtree_cache_path(project_dir);
+
+    if (fs_exists(kdtree_cache_dir) && !fs_remove_all(kdtree_cache_dir))
+        return false;
+    if (!fs_create_directory(kdtree_cache_dir))
+        return false;
+
+    for (int i = 0; i < (int)meshes.size(); i++) {
+        Mesh_KdTree kdtree = build_kdtree(meshes[i]);
+        fs::path kdtree_file = kdtree_cache_dir / (std::to_string(i) + ".kdtree");
+        kdtree.save_to_file(kdtree_file.string());
+    }
+    return true;
+}
+
+static std::vector<Mesh_KdTree> load_kdtree_cache(const std::string& project_dir, const std::vector<Triangle_Mesh>& meshes) {
+    const fs::path kdtree_cache_dir = get_kdtree_cache_path(project_dir);
+
+    std::vector<Mesh_KdTree> kdtrees(meshes.size());
+    for (int i = 0; i < (int)meshes.size(); i++) {
+        fs::path kdtree_file = kdtree_cache_dir / (std::to_string(i) + ".kdtree");
+        kdtrees[i] = load_mesh_kdtree(kdtree_file.string(), meshes[i]);
+    }
+    return kdtrees;
+}
+
+static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, Film& film) {
     Film_Tile tile(pixel_bounds, film.filter);
 
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
@@ -49,30 +80,35 @@ void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bounds2i pix
 }
 
 void render_reference_image(const Render_Reference_Image_Params& params, bool* active) {
+    printf("Preparing meshes\n");
+    std::vector<Triangle_Mesh> meshes(params.scene_data->meshes.size());
+    for (size_t i = 0; i < params.scene_data->meshes.size(); i++) {
+        Material_Handle material_handle = register_material(params.scene_data->materials[i]);
+        meshes[i] = Triangle_Mesh::from_mesh_data(params.scene_data->meshes[i], material_handle);
+    }
+
+    if (!fs_exists(get_kdtree_cache_path(params.scene_data->project_dir))) {
+        printf("Creating kdtree cache...\n");
+        Timestamp t;
+        if (!create_kdtree_cache(params.scene_data->project_dir, meshes)) {
+            printf("failed to create kdtree cache\n");
+            *active = false;
+            return;
+        }
+        printf("KdTree cache build time = %.2f s\n", elapsed_milliseconds(t) / 1e3f);
+    }
+    std::vector<Mesh_KdTree> kdtrees = load_kdtree_cache(params.scene_data->project_dir, meshes);
+
+    TwoLevel_KdTree kdtree = build_kdtree(kdtrees);
+    printf("two-level tree created\n");
+
     Matrix3x4 camera_to_world = params.camera_to_world_vk;
     for (int i = 0; i < 3; i++) {
         float tmp = camera_to_world.a[i][1];
         camera_to_world.a[i][1] = -camera_to_world.a[i][2];
         camera_to_world.a[i][2] = tmp;
     }
-
     Camera camera(camera_to_world, Vector2(params.image_resolution), 60.f);
-
-    std::vector<Mesh_KdTree> kdtrees(params.scene_data->meshes.size());
-    std::vector<Triangle_Mesh> meshes(params.scene_data->meshes.size());
-
-    for (size_t i = 0; i < params.scene_data->meshes.size(); i++) {
-        Timestamp t;
-        Material_Handle material_handle = register_material(params.scene_data->materials[i]);
-        meshes[i] = Triangle_Mesh::from_mesh_data(params.scene_data->meshes[i], material_handle);
-        kdtrees[i] = build_kdtree(meshes[i]);
-        int time = int(elapsed_milliseconds(t));
-        printf("KdTree %zd build time = %dms\n", i, time);
-
-    }
-
-    TwoLevel_KdTree kdtree = build_kdtree(kdtrees);
-    printf("two-level tree created\n");
 
     Lights lights;
     {
