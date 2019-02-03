@@ -107,6 +107,7 @@ Scene_Data load_hairball_scene() {
 
     Mesh_Load_Params mesh_load_params;
     mesh_load_params.transform = uniform_scale(to_world_axis_orientation, 1.f);
+    mesh_load_params.invert_winding_order = true;
 
     std::vector<Obj_Model> obj_models = load_obj("hairball/hairball.obj", mesh_load_params);
 

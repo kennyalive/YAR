@@ -33,6 +33,8 @@ struct Mesh_Load_Params {
     // If set then normals are computed per face. Could be useful for debugging to visualise faces.
     // This will overwrite normmals that are provided by the model file.
     bool face_normals = false;
+
+    bool invert_winding_order = false;
 };
 
 void compute_normals(Mesh_Data& mesh, Normal_Average_Mode normal_average_mode, float crease_angle);

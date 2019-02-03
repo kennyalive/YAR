@@ -127,5 +127,13 @@ std::vector<Obj_Model> load_obj(const std::string& obj_file, const Mesh_Load_Par
             }
         }
     }
+
+    if (params.invert_winding_order) {
+        for (Obj_Model& model : models) {
+            for (int i = 0; i < (int)model.mesh_data.indices.size(); i += 3)
+                std::swap(model.mesh_data.indices[i], model.mesh_data.indices[i+1]);
+        }
+    }
+
     return models;
 }

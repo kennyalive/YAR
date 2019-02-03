@@ -54,6 +54,7 @@ void Vk_Demo::initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window) 
     {
         scene_data = load_conference_scene();
         //scene_data = load_bunny_scene();
+        //scene_data = load_hairball_scene();
         meshes.resize(scene_data.meshes.size());
 
         for (size_t i = 0; i < scene_data.meshes.size(); i++) {
