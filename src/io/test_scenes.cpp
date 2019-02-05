@@ -1,8 +1,8 @@
 #include "lib/common.h"
 #include "test_scenes.h"
 #include "io/obj_loader.h"
-#include "reference_cpu/colorimetry.h"
-#include "reference_cpu/spectrum.h"
+#include "reference/colorimetry.h"
+#include "reference/spectrum.h"
 
 static Scene_Data convert_obj_models(const std::vector<Obj_Model>& obj_models) {
     Scene_Data scene;
