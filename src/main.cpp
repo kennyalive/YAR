@@ -1,5 +1,3 @@
-#include "realtime/demo.h"
-
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -40,12 +38,12 @@ static bool parse_command_line(int argc, char** argv) {
     return true;
 }
 
-int run_vk_demo(bool enable_validation_layers, bool use_debug_names);
+int run_realtime_renderer(bool enable_validation_layers, bool use_debug_names);
 
 int main(int argc, char** argv) {
     if (!parse_command_line(argc, argv))
         return 0;
 
-    run_vk_demo(enable_validation_layers, use_debug_names);
+    run_realtime_renderer(enable_validation_layers, use_debug_names);
     return 0;
 }

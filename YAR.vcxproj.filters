@@ -68,12 +68,6 @@
     <ClCompile Include="src\realtime\copy_to_swapchain.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
-    <ClCompile Include="src\realtime\demo.cpp">
-      <Filter>realtime</Filter>
-    </ClCompile>
-    <ClCompile Include="src\realtime\demo_main.cpp">
-      <Filter>realtime</Filter>
-    </ClCompile>
     <ClCompile Include="src\realtime\raster_resources.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
@@ -118,6 +112,12 @@
     </ClCompile>
     <ClCompile Include="src\lib\color.cpp">
       <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\realtime\realtime_renderer.cpp">
+      <Filter>realtime</Filter>
+    </ClCompile>
+    <ClCompile Include="src\realtime\app.cpp">
+      <Filter>realtime</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -205,9 +205,6 @@
     <ClInclude Include="src\realtime\copy_to_swapchain.h">
       <Filter>realtime</Filter>
     </ClInclude>
-    <ClInclude Include="src\realtime\demo.h">
-      <Filter>realtime</Filter>
-    </ClInclude>
     <ClInclude Include="src\realtime\raster_resources.h">
       <Filter>realtime</Filter>
     </ClInclude>
@@ -249,6 +246,9 @@
     </ClInclude>
     <ClInclude Include="src\lib\color.h">
       <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\realtime\realtime_renderer.h">
+      <Filter>realtime</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

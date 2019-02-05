@@ -117,8 +117,8 @@
     <ClCompile Include="src\io\test_scenes.cpp" />
     <ClCompile Include="src\lib\color.cpp" />
     <ClCompile Include="src\realtime\copy_to_swapchain.cpp" />
-    <ClCompile Include="src\realtime\demo.cpp" />
-    <ClCompile Include="src\realtime\demo_main.cpp" />
+    <ClCompile Include="src\realtime\realtime_renderer.cpp" />
+    <ClCompile Include="src\realtime\app.cpp" />
     <ClCompile Include="src\io\io.cpp" />
     <ClCompile Include="src\lib\mesh.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -163,7 +163,7 @@
     <ClInclude Include="src\lib\color.h" />
     <ClInclude Include="src\lib\geometry.h" />
     <ClInclude Include="src\realtime\copy_to_swapchain.h" />
-    <ClInclude Include="src\realtime\demo.h" />
+    <ClInclude Include="src\realtime\realtime_renderer.h" />
     <ClInclude Include="src\io\io.h" />
     <ClInclude Include="src\lib\mesh.h" />
     <ClInclude Include="src\realtime\gpu_structures.h" />

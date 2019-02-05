@@ -30,7 +30,7 @@ struct Mesh {
     Mesh_Material               material;
 };
 
-class Vk_Demo {
+class Realtime_Renderer {
 public:
     void initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window);
     void shutdown();

@@ -1,4 +1,4 @@
-#include "demo.h"
+#include "realtime_renderer.h"
 
 #include "sdl/SDL.h"
 #include "sdl/SDL_syswm.h"
@@ -33,7 +33,7 @@ static bool process_events() {
     return true;
 }
 
-int run_vk_demo(bool enable_validation_layers, bool use_debug_names) {
+int run_realtime_renderer(bool enable_validation_layers, bool use_debug_names) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
         error("SDL_Init error");
 
@@ -44,8 +44,8 @@ int run_vk_demo(bool enable_validation_layers, bool use_debug_names) {
     vk_create_info.use_debug_names = use_debug_names;
 
     // Create window.
-    SDL_Window* the_window = SDL_CreateWindow("Vulkan demo",
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 720, 720,
+    SDL_Window* the_window = SDL_CreateWindow("YAR",
+        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 960, 720,
         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if (the_window == nullptr)
         error("failed to create SDL window");
@@ -54,11 +54,11 @@ int run_vk_demo(bool enable_validation_layers, bool use_debug_names) {
     if (SDL_GetWindowWMInfo(the_window, &vk_create_info.windowing_system_info) == SDL_FALSE)
         error("failed to get platform specific window information");
 
-    // Initialize demo.
-    Vk_Demo demo{};
-    demo.initialize(vk_create_info, the_window);
+    // Initialize renderer.
+    Realtime_Renderer renderer{};
+    renderer.initialize(vk_create_info, the_window);
 
-    bool prev_vsync = demo.vsync_enabled();
+    bool prev_vsync = renderer.vsync_enabled();
     bool handle_vsync_toggle = false;
 
     // Run main loop.
@@ -76,7 +76,7 @@ int run_vk_demo(bool enable_validation_layers, bool use_debug_names) {
         if (handle_resize || handle_vsync_toggle) {
             if (vk.swapchain_info.handle != VK_NULL_HANDLE) {
                 VK_CHECK(vkDeviceWaitIdle(vk.device));
-                demo.release_resolution_dependent_resources();
+                renderer.release_resolution_dependent_resources();
                 vk_release_resolution_dependent_resources();
             }
             handle_resize = false;
@@ -85,20 +85,20 @@ int run_vk_demo(bool enable_validation_layers, bool use_debug_names) {
 
         if ((SDL_GetWindowFlags(the_window) & SDL_WINDOW_MINIMIZED) == 0) {
             if (vk.swapchain_info.handle == VK_NULL_HANDLE) {
-                vk_restore_resolution_dependent_resources(demo.vsync_enabled());
-                demo.restore_resolution_dependent_resources();
+                vk_restore_resolution_dependent_resources(renderer.vsync_enabled());
+                renderer.restore_resolution_dependent_resources();
             }
 
-            demo.run_frame();
+            renderer.run_frame();
 
-            if (prev_vsync != demo.vsync_enabled()) {
-                prev_vsync = demo.vsync_enabled();
+            if (prev_vsync != renderer.vsync_enabled()) {
+                prev_vsync = renderer.vsync_enabled();
                 handle_vsync_toggle = true;
             }
         }
         SDL_Delay(1);
     }
 
-    demo.shutdown();
+    renderer.shutdown();
     return 0;
 }

@@ -1,13 +1,13 @@
-#include "demo.h"
+#include "lib/common.h"
+#include "realtime_renderer.h"
 #include "vk.h"
 #include "utils.h"
 
-#include "lib/common.h"
 #include "lib/matrix.h"
 #include "lib/mesh.h"
 #include "io/test_scenes.h"
 
-#include "reference_cpu/reference_renderer.h"
+#include "reference/reference_renderer.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
@@ -18,7 +18,7 @@
 
 #include <chrono>
 
-void Vk_Demo::initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window) {
+void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window) {
     this->sdl_window = sdl_window;
     vk_initialize(vk_create_info);
 
@@ -203,7 +203,7 @@ void Vk_Demo::initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window) 
     time_keeper.initialize_time_intervals();
 }
 
-void Vk_Demo::shutdown() {
+void Realtime_Renderer::shutdown() {
     VK_CHECK(vkDeviceWaitIdle(vk.device));
 
     ImGui_ImplVulkan_Shutdown();
@@ -229,7 +229,7 @@ void Vk_Demo::shutdown() {
     vk_shutdown();
 }
 
-void Vk_Demo::release_resolution_dependent_resources() {
+void Realtime_Renderer::release_resolution_dependent_resources() {
     vkDestroyFramebuffer(vk.device, ui_framebuffer, nullptr);
     ui_framebuffer = VK_NULL_HANDLE;
 
@@ -237,7 +237,7 @@ void Vk_Demo::release_resolution_dependent_resources() {
     output_image.destroy();
 }
 
-void Vk_Demo::restore_resolution_dependent_resources() {
+void Realtime_Renderer::restore_resolution_dependent_resources() {
     // output image
     {
         output_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -275,7 +275,7 @@ void Vk_Demo::restore_resolution_dependent_resources() {
     last_frame_time = Clock::now();
 }
 
-void Vk_Demo::run_frame() {
+void Realtime_Renderer::run_frame() {
     Time current_time = Clock::now();
     if (animate) {
         double time_delta = std::chrono::duration_cast<std::chrono::microseconds>(current_time - last_frame_time).count() / 1e6;
@@ -300,7 +300,7 @@ void Vk_Demo::run_frame() {
     draw_frame();
 }
 
-void Vk_Demo::draw_frame() {
+void Realtime_Renderer::draw_frame() {
     vk_begin_frame();
     time_keeper.next_frame();
     gpu_times.frame->begin();
@@ -323,7 +323,7 @@ void Vk_Demo::draw_frame() {
     vk_end_frame();
 }
 
-void Vk_Demo::draw_rasterized_image() {
+void Realtime_Renderer::draw_rasterized_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
 
     VkViewport viewport{};
@@ -365,7 +365,7 @@ void Vk_Demo::draw_rasterized_image() {
     vkCmdEndRenderPass(vk.command_buffer);
 }
 
-void Vk_Demo::draw_raytraced_image() {
+void Realtime_Renderer::draw_raytraced_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
 
     vkCmdBuildAccelerationStructureNVX(vk.command_buffer,
@@ -400,7 +400,7 @@ void Vk_Demo::draw_raytraced_image() {
         vk.surface_size.width, vk.surface_size.height);
 }
 
-void Vk_Demo::draw_imgui() {
+void Realtime_Renderer::draw_imgui() {
     GPU_TIME_SCOPE(gpu_times.ui);
 
     ImGui::Render();
@@ -439,7 +439,7 @@ void Vk_Demo::draw_imgui() {
     }
 }
 
-void Vk_Demo::copy_output_image_to_swapchain() {
+void Realtime_Renderer::copy_output_image_to_swapchain() {
     GPU_TIME_SCOPE(gpu_times.compute_copy);
 
     const uint32_t group_size_x = 32; // according to shader
@@ -484,7 +484,7 @@ void Vk_Demo::copy_output_image_to_swapchain() {
     }
 }
 
-void Vk_Demo::do_imgui() {
+void Realtime_Renderer::do_imgui() {
     ui_result = UI_Result{};
     ImGuiIO& io = ImGui::GetIO();
 
