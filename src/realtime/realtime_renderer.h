@@ -10,8 +10,6 @@
 #include "lib/mesh.h"
 #include "io/io.h"
 
-#include "sdl/SDL_syswm.h"
-
 #include <thread>
 #include <vector>
 
@@ -30,9 +28,11 @@ struct Mesh {
     Mesh_Material               material;
 };
 
+struct GLFWwindow;
+
 class Realtime_Renderer {
 public:
-    void initialize(Vk_Create_Info vk_create_info, SDL_Window* sdl_window);
+    void initialize(Vk_Create_Info vk_create_info, GLFWwindow* window);
     void shutdown();
 
     void release_resolution_dependent_resources();
@@ -56,8 +56,6 @@ private:
 
     using Clock = std::chrono::high_resolution_clock;
     using Time  = std::chrono::time_point<Clock>;
-
-    SDL_Window*                 sdl_window;
 
     bool                        show_ui                 = true;
     bool                        vsync                   = true;

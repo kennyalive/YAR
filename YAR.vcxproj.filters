@@ -10,9 +10,6 @@
     <ClCompile Include="third_party\volk\volk.c">
       <Filter>third_party\volk</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\imgui\impl\imgui_impl_sdl.cpp">
-      <Filter>third_party\imgui\impl</Filter>
-    </ClCompile>
     <ClCompile Include="third_party\imgui\impl\imgui_impl_vulkan.cpp">
       <Filter>third_party\imgui\impl</Filter>
     </ClCompile>
@@ -119,6 +116,57 @@
     <ClCompile Include="src\realtime\app.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\win32.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\impl\imgui_impl_glfw.cpp">
+      <Filter>third_party\imgui\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\context.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\egl_context.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\init.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\input.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\monitor.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\osmesa_context.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\vulkan.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\wgl_context.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_init.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_joystick.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_monitor.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_thread.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_time.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_window.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\window.c">
+      <Filter>third_party\glfw</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third_party\half\half.h">
@@ -126,9 +174,6 @@
     </ClInclude>
     <ClInclude Include="third_party\volk\volk.h">
       <Filter>third_party\volk</Filter>
-    </ClInclude>
-    <ClInclude Include="third_party\imgui\impl\imgui_impl_sdl.h">
-      <Filter>third_party\imgui\impl</Filter>
     </ClInclude>
     <ClInclude Include="third_party\imgui\impl\imgui_impl_vulkan.h">
       <Filter>third_party\imgui\impl</Filter>
@@ -250,6 +295,39 @@
     <ClInclude Include="src\realtime\realtime_renderer.h">
       <Filter>realtime</Filter>
     </ClInclude>
+    <ClInclude Include="src\lib\platform.h">
+      <Filter>lib</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\impl\imgui_impl_glfw.h">
+      <Filter>third_party\imgui\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\egl_context.h">
+      <Filter>third_party\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\glfw3.h">
+      <Filter>third_party\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\glfw3native.h">
+      <Filter>third_party\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\internal.h">
+      <Filter>third_party\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\mappings.h">
+      <Filter>third_party\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\osmesa_context.h">
+      <Filter>third_party\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\wgl_context.h">
+      <Filter>third_party\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\win32_joystick.h">
+      <Filter>third_party\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\win32_platform.h">
+      <Filter>third_party\glfw</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="third_party">
@@ -284,6 +362,9 @@
     </Filter>
     <Filter Include="reference\tests">
       <UniqueIdentifier>{b83708ee-b2f2-4572-b3f1-e39c693ef1e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\glfw">
+      <UniqueIdentifier>{1840d867-e656-4430-a660-e47420418ddc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

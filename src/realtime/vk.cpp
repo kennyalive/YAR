@@ -3,6 +3,8 @@
 #define VMA_IMPLEMENTATION
 #include "vk.h"
 
+#include "lib/platform.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -165,7 +167,7 @@ static void create_instance() {
     VK_CHECK(vkCreateInstance(&desc, nullptr, &vk.instance));
 }
 
-static void create_device() {
+static void create_device(GLFWwindow* window) {
     // select physical device
     {
         uint32_t count;
@@ -195,10 +197,7 @@ static void create_device() {
             error("Failed to find physical device that supports requested Vulkan API version");
     }
 
-    VkWin32SurfaceCreateInfoKHR desc { VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR };
-    desc.hinstance  = ::GetModuleHandle(nullptr);
-    desc.hwnd       = vk.create_info.windowing_system_info.info.win.window;
-    VK_CHECK(vkCreateWin32SurfaceKHR(vk.instance, &desc, nullptr, &vk.surface));
+    vk.surface = platform::create_surface(vk.instance, window);
 
     // select queue family
     {
@@ -376,7 +375,7 @@ void Vk_Buffer::destroy() {
     *this = Vk_Buffer{};
 }
 
-void vk_initialize(const Vk_Create_Info& create_info) {
+void vk_initialize(GLFWwindow* window, const Vk_Create_Info& create_info) {
     vk.create_info = create_info;
 
     VK_CHECK(volkInitialize());
@@ -410,7 +409,7 @@ void vk_initialize(const Vk_Create_Info& create_info) {
         VK_CHECK(vkCreateDebugUtilsMessengerEXT(vk.instance, &desc, nullptr, &vk.debug_utils_messenger));
     }
 
-    create_device();
+    create_device(window);
     volkLoadDevice(vk.device);
 
     vkGetDeviceQueue(vk.device, vk.queue_family_index, 0, &vk.queue);

@@ -10,8 +10,6 @@
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #include "vk_mem_alloc.h"
 
-#include "sdl/SDL_syswm.h"
-
 #include <functional>
 #include <string>
 #include <vector>
@@ -20,8 +18,6 @@
 #define VK_CHECK(function_call) { VkResult result = function_call;  VK_CHECK_RESULT(result); }
 
 struct Vk_Create_Info {
-    SDL_SysWMinfo               windowing_system_info;
-
     bool                        enable_validation_layers;
     bool                        use_debug_names;
 };
@@ -55,9 +51,11 @@ struct Vk_Graphics_Pipeline_State {
     uint32_t                                dynamic_state_count;
 };
 
+struct GLFWwindow;
+
 // Initializes VK_Instance structure.
 // After calling this function we get fully functional vulkan subsystem.
-void vk_initialize(const Vk_Create_Info& create_info);
+void vk_initialize(GLFWwindow* window, const Vk_Create_Info& create_info);
 
 // Shutdown vulkan subsystem by releasing resources acquired by Vk_Instance.
 void vk_shutdown();
