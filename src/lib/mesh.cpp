@@ -1,7 +1,5 @@
-#include "bounding_box.h"
 #include "mesh.h"
 
-#include <algorithm>
 #include <unordered_map>
 
 static void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, std::vector<uint64_t>& normal_groups, float crease_angle) {

@@ -4,7 +4,4 @@ build/
 data/*
 !data/links/
 
-third_party/dxc/*
-!third_party/dxc/dxc-compiler.url
-
 imgui.ini

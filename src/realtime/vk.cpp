@@ -17,7 +17,7 @@ static const VkDescriptorPoolSize descriptor_pool_sizes[] = {
     {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              16},
     {VK_DESCRIPTOR_TYPE_SAMPLER,                    16},
     {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              16},
-    {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NVX, 16},
+    {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,  16},
 };
 
 constexpr uint32_t max_descriptor_sets = 64;
@@ -471,7 +471,7 @@ void vk_initialize(const Vk_Create_Info& create_info) {
     {
         std::vector<VkDescriptorPoolSize> pool_sizes;
         for (size_t i = 0; i < std::size(descriptor_pool_sizes); i++) {
-            if (descriptor_pool_sizes[i].type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NVX && !vk.raytracing_supported)
+            if (descriptor_pool_sizes[i].type == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV && !vk.raytracing_supported)
                 continue;
 
             pool_sizes.push_back(descriptor_pool_sizes[i]);
