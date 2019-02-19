@@ -1,6 +1,7 @@
 #version 460
 #extension GL_GOOGLE_include_directive : require
 #extension GL_NV_ray_tracing : require
+#extension GL_EXT_nonuniform_qualifier : require
 
 #include "common.glsl"
 
@@ -9,37 +10,39 @@
 
 hitAttributeNV vec2 attribs;
 
-struct Buffer_Vertex {
+struct Mesh_Vertex {
     float x, y, z;
     float nx, ny, nz;
     float u, v;
 };
 
-layout(push_constant) uniform Push_Constants {
-      layout(offset = 4) uint show_texture_lods;
+struct Point_Light {
+    vec3 position;
+    vec3 intensity;
 };
 
 layout (location=0) rayPayloadInNV Ray_Payload payload;
 
-layout(binding=2) uniform Uniform_Block {
+layout(std140, binding=2) uniform Uniform_Block {
     mat4x3 camera_to_world;
-    mat4x3 model_transform;
+    Point_Light point_lights[8];
+    int point_light_count;
 };
 
-layout(std430, binding=3) readonly buffer Indices {
-    uint index_buffer[];
-};
+layout(std430, binding=3) readonly buffer Index_Buffer {
+    uint indices[];
+} index_buffers[];
 
-layout(std430, binding=4) readonly buffer Vertices {
-    Buffer_Vertex vertex_buffer[];
-};
+layout(std430, binding=4) readonly buffer Vertex_Buffer {
+    Mesh_Vertex vertices[];
+} vertex_buffers[];
 
 layout(binding=5) uniform texture2D image;
 layout(binding=6) uniform sampler image_sampler;
 
-Vertex fetch_vertex(int vertex_index) {
-    uint i = index_buffer[vertex_index];
-    Buffer_Vertex bv = vertex_buffer[i];
+Vertex fetch_vertex(int index) {
+    uint vertex_index = index_buffers[nonuniformEXT(gl_InstanceCustomIndexNV)].indices[index];
+    Mesh_Vertex bv = vertex_buffers[nonuniformEXT(gl_InstanceCustomIndexNV)].vertices[vertex_index];
 
     Vertex v;
     v.p = vec3(bv.x, bv.y, bv.z);
@@ -53,20 +56,24 @@ void main() {
     Vertex v1 = fetch_vertex(gl_PrimitiveID*3 + 1);
     Vertex v2 = fetch_vertex(gl_PrimitiveID*3 + 2);
 
-    v0.p = model_transform * vec4(v0.p, 1);
-    v1.p = model_transform * vec4(v1.p, 1);
-    v2.p = model_transform * vec4(v2.p, 1);
+    mat3 normal_transform = mat3(gl_ObjectToWorldNV);
+    vec3 n0 = normal_transform * v0.n;
+    vec3 n1 = normal_transform * v1.n;
+    vec3 n2 = normal_transform * v2.n;
 
-    int mip_levels = textureQueryLevels(sampler2D(image, image_sampler));
-    float lod = compute_texture_lod(v0, v1, v2, payload.rx_dir, payload.ry_dir, mip_levels);
+    vec3 n = normalize(barycentric_interpolate(attribs.x, attribs.y, n0, n1, n2));
 
-    vec3 color;
-    if (show_texture_lods != 0) {
-        color = color_encode_lod(lod);
-    } else {
-        vec2 uv = fract(barycentric_interpolate(attribs.x, attribs.y, v0.uv, v1.uv, v2.uv));
-        color = textureLod(sampler2D(image, image_sampler), uv, lod).rgb;
+    vec3 L = vec3(0);
+
+    for (int i = 0; i < point_light_count; i++) {
+        vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
+        vec3 light_vec = point_lights[i].position - p;
+        float light_dist_sq_inv = 1.f / dot(light_vec, light_vec);
+        vec3 light_dir = light_vec * sqrt(light_dist_sq_inv);
+
+        L += (/*k_diffuse*/ 1.0 * Pi_Inv) * point_lights[i].intensity * (light_dist_sq_inv * max(0, dot(n, light_dir)));
     }
 
-    payload.color = srgb_encode(color);
+
+    payload.color = srgb_encode(vec3(L));
 }

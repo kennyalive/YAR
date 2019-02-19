@@ -13,21 +13,6 @@
 #include <thread>
 #include <vector>
 
-struct Mesh_Material {
-    ColorRGB k_diffuse;
-    float   padding0;
-    ColorRGB k_specular;
-    float   padding1;
-};
-
-struct Mesh {
-    Vk_Buffer                   vertex_buffer;
-    Vk_Buffer                   index_buffer;
-    uint32_t                    model_vertex_count;
-    uint32_t                    model_index_count;
-    Mesh_Material               material;
-};
-
 struct GLFWwindow;
 
 class Realtime_Renderer {
@@ -59,17 +44,12 @@ private:
 
     bool                        show_ui                 = true;
     bool                        vsync                   = true;
-    bool                        animate                 = false;
     bool                        raytracing              = false;
-    bool                        show_texture_lod        = false;
     bool                        spp4                    = false;
     bool                        reference_render_active = false;
 
     std::thread                 reference_render_thread;
     Matrix3x4                   camera_to_world_transform;
-
-    Time                        last_frame_time;
-    double                      sim_time;
 
     UI_Result                   ui_result;
 
@@ -80,9 +60,7 @@ private:
 
     
     Scene_Data                  scene_data;
-    std::vector<Mesh>           meshes;
-    Vk_Image                    texture;
-    VkSampler                   sampler;
+    std::vector<GPU_Mesh>       gpu_meshes;
 
     Vector3                     camera_pos = Vector3(0, 3, 1);
     float                       camera_yaw = -Pi/2; // relative to x axis

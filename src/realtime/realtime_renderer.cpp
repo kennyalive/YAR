@@ -53,73 +53,32 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
 
     // Geometry buffers.
     {
-        scene_data = load_conference_scene();
-        //scene_data = load_bunny_scene();
-        //scene_data = load_hairball_scene();
-        meshes.resize(scene_data.meshes.size());
+        //scene_data = load_bunny_scene(); // 144K
+        scene_data = load_conference_scene(); // 330K
+        //scene_data = load_buddha_scene(); // 1M
+        //scene_data = load_hairball_scene(); // 2.9M
+
+        gpu_meshes.resize(scene_data.meshes.size());
 
         for (size_t i = 0; i < scene_data.meshes.size(); i++) {
             const Mesh_Data& mesh_data = scene_data.meshes[i];
-            Mesh& mesh  = meshes[i];
-            
+            GPU_Mesh& mesh  = gpu_meshes[i];
+
             mesh.model_vertex_count = static_cast<uint32_t>(mesh_data.vertices.size());
             mesh.model_index_count = static_cast<uint32_t>(mesh_data.indices.size());
-            {
-                const VkDeviceSize size = mesh_data.vertices.size() * sizeof(mesh_data.vertices[0]);
-                mesh.vertex_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "vertex_buffer");
-                vk_ensure_staging_buffer_allocation(size);
-                memcpy(vk.staging_buffer_ptr, mesh_data.vertices.data(), size);
 
-                vk_execute(vk.command_pool, vk.queue, [&size, &mesh](VkCommandBuffer command_buffer) {
-                    VkBufferCopy region;
-                    region.srcOffset = 0;
-                    region.dstOffset = 0;
-                    region.size = size;
-                    vkCmdCopyBuffer(command_buffer, vk.staging_buffer, mesh.vertex_buffer.handle, 1, &region);
-                });
-            }
-            {
-                const VkDeviceSize size = mesh_data.indices.size() * sizeof(mesh_data.indices[0]);
-                mesh.index_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "index_buffer");
-                vk_ensure_staging_buffer_allocation(size);
-                memcpy(vk.staging_buffer_ptr, mesh_data.indices.data(), size);
+            const VkDeviceSize vertex_buffer_size = mesh_data.vertices.size() * sizeof(mesh_data.vertices[0]);
+            mesh.vertex_buffer = vk_create_buffer(vertex_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mesh_data.vertices.data(), "vertex_buffer");
 
-                vk_execute(vk.command_pool, vk.queue, [&size, &mesh](VkCommandBuffer command_buffer) {
-                    VkBufferCopy region;
-                    region.srcOffset = 0;
-                    region.dstOffset = 0;
-                    region.size = size;
-                    vkCmdCopyBuffer(command_buffer, vk.staging_buffer, mesh.index_buffer.handle, 1, &region);
-                });
-            }
+            const VkDeviceSize index_buffer_size = mesh_data.indices.size() * sizeof(mesh_data.indices[0]);
+            mesh.index_buffer = vk_create_buffer(index_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mesh_data.indices.data(), "index_buffer");
 
             ASSERT(scene_data.materials[i].material_format == Material_Format::obj_material);
             mesh.material.k_diffuse = scene_data.materials[i].obj_material.k_diffuse;
-            mesh.material.padding0 = 0;
+            mesh.material.pad0 = 0;
             mesh.material.k_specular = scene_data.materials[i].obj_material.k_specular;
-            mesh.material.padding1 = 0;
+            mesh.material.pad1 = 0;
         }
-    }
-
-    // Texture.
-    {
-        texture = vk_load_texture("model/diffuse.jpg");
-
-        VkSamplerCreateInfo create_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-        create_info.magFilter           = VK_FILTER_LINEAR;
-        create_info.minFilter           = VK_FILTER_LINEAR;
-        create_info.mipmapMode          = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-        create_info.addressModeU        = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        create_info.addressModeV        = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        create_info.addressModeW        = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        create_info.mipLodBias          = 0.0f;
-        create_info.anisotropyEnable    = VK_FALSE;
-        create_info.maxAnisotropy       = 1;
-        create_info.minLod              = 0.0f;
-        create_info.maxLod              = 12.0f;
-
-        VK_CHECK(vkCreateSampler(vk.device, &create_info, nullptr, &sampler));
-        vk_set_debug_name(sampler, "diffuse_texture_sampler");
     }
 
     // UI render pass.
@@ -157,19 +116,8 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
     raster.update_point_lights(scene_data.rgb_point_lights.data(), (int)scene_data.rgb_point_lights.size());
 
     if (vk.raytracing_supported) {
-        assert(!"fix raytracing code");
-        /*VkGeometryTrianglesNVX model_triangles { VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NVX };
-        model_triangles.vertexData    = mesh.vertex_buffer.handle;
-        model_triangles.vertexOffset  = 0;
-        model_triangles.vertexCount   = mesh.model_vertex_count;
-        model_triangles.vertexStride  = sizeof(Vertex);
-        model_triangles.vertexFormat  = VK_FORMAT_R32G32B32_SFLOAT;
-        model_triangles.indexData     = mesh.index_buffer.handle;
-        model_triangles.indexOffset   = 0;
-        model_triangles.indexCount    = mesh.model_index_count;
-        model_triangles.indexType     = VK_INDEX_TYPE_UINT32;
-
-        rt.create(model_triangles, texture.view, sampler);*/
+        rt.create(scene_data, gpu_meshes);
+        rt.update_point_lights(scene_data.rgb_point_lights.data(), (int)scene_data.rgb_point_lights.size());
     }
 
     copy_to_swapchain.create();
@@ -211,15 +159,13 @@ void Realtime_Renderer::shutdown() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
-    for (Mesh& mesh : meshes) {
+    for (GPU_Mesh& mesh : gpu_meshes) {
         mesh.vertex_buffer.destroy();
         mesh.index_buffer.destroy();
     }
-    meshes.clear();
+    gpu_meshes.clear();
 
-    texture.destroy();
     copy_to_swapchain.destroy();
-    vkDestroySampler(vk.device, sampler, nullptr);
     vkDestroyRenderPass(vk.device, ui_render_pass, nullptr);
     release_resolution_dependent_resources();
 
@@ -273,28 +219,20 @@ void Realtime_Renderer::restore_resolution_dependent_resources() {
         rt.update_output_image_descriptor(output_image.view);
 
     copy_to_swapchain.update_resolution_dependent_descriptors(output_image.view);
-    last_frame_time = Clock::now();
 }
 
 void Realtime_Renderer::run_frame() {
-    Time current_time = Clock::now();
-    if (animate) {
-        double time_delta = std::chrono::duration_cast<std::chrono::microseconds>(current_time - last_frame_time).count() / 1e6;
-        sim_time += time_delta;
-    }
-    last_frame_time = current_time;
-
-    model_transform = Matrix3x4::identity; //rotate_y(Matrix3x4::identity, (float)sim_time * radians(20.0f));
     view_transform = look_at_transform(camera_pos, camera_pos + camera_dir, Vector3(0, 0, 1));
-    raster.update(model_transform, view_transform);
+    raster.update(Matrix3x4::identity, view_transform);
 
     camera_to_world_transform.set_column(0, Vector3(view_transform.get_row(0)));
     camera_to_world_transform.set_column(1, Vector3(view_transform.get_row(1)));
     camera_to_world_transform.set_column(2, Vector3(view_transform.get_row(2)));
     camera_to_world_transform.set_column(3, camera_pos);
 
-    if (vk.raytracing_supported)
-        rt.update(model_transform, camera_to_world_transform);
+    if (vk.raytracing_supported) {
+        rt.update_camera_transform(camera_to_world_transform);
+    }
 
     bool old_raytracing = raytracing;
     do_imgui();
@@ -356,10 +294,10 @@ void Realtime_Renderer::draw_rasterized_image() {
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, raster.pipeline);
 
     const VkDeviceSize zero_offset = 0;
-    for (const Mesh& mesh : meshes) {
+    for (const GPU_Mesh& mesh : gpu_meshes) {
         vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &mesh.vertex_buffer.handle, &zero_offset);
         vkCmdBindIndexBuffer(vk.command_buffer, mesh.index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Mesh_Material), &mesh.material);
+        vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(GPU_Mesh_Material), &mesh.material);
         vkCmdDrawIndexed(vk.command_buffer, mesh.model_index_count, 1, 0, 0, 0);
     }
 
@@ -369,36 +307,11 @@ void Realtime_Renderer::draw_rasterized_image() {
 void Realtime_Renderer::draw_raytraced_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
 
-    VkAccelerationStructureInfoNV accel_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
-    accel_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-    accel_info.instanceCount = 1;
-
-    vkCmdBuildAccelerationStructureNV(vk.command_buffer,
-        &accel_info,
-        rt.instance_buffer, // instanceData
-        1, // instanceOffset
-        VK_FALSE, // update
-        rt.top_level_accel, // dst
-        VK_NULL_HANDLE, // src
-        rt.scratch_buffer,
-        0 // scratchOffset
-    );
-
-    VkMemoryBarrier barrier { VK_STRUCTURE_TYPE_MEMORY_BARRIER };
-    barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
-    barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
-
-    vkCmdPipelineBarrier(vk.command_buffer,
-        VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
-        VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV,
-        0, 1, &barrier, 0, nullptr, 0, nullptr);
-
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rt.pipeline_layout, 0, 1, &rt.descriptor_set, 0, nullptr);
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rt.pipeline);
 
-    uint32_t push_constants[2] = { spp4, show_texture_lod };
+    uint32_t push_constants[1] = { spp4 };
     vkCmdPushConstants(vk.command_buffer, rt.pipeline_layout, VK_SHADER_STAGE_RAYGEN_BIT_NV, 0, 4, &push_constants[0]);
-    vkCmdPushConstants(vk.command_buffer, rt.pipeline_layout, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV, 4, 4, &push_constants[1]);
 
     const VkBuffer sbt = rt.shader_binding_table.handle;
     const uint32_t sbt_slot_size = rt.properties.shaderGroupHandleSize;
@@ -563,8 +476,6 @@ void Realtime_Renderer::do_imgui() {
             ImGui::Separator();
             ImGui::Spacing();
             ImGui::Checkbox("Vertical sync", &vsync);
-            ImGui::Checkbox("Animate", &animate);
-            ImGui::Checkbox("Show texture lod", &show_texture_lod);
 
             if (!vk.raytracing_supported) {
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);

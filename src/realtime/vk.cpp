@@ -225,7 +225,8 @@ static void create_device(GLFWwindow* window) {
     // create VkDevice
     {
         std::vector<const char*> device_extensions = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
         };
 
         uint32_t count = 0;
@@ -245,10 +246,10 @@ static void create_device(GLFWwindow* window) {
             if (!is_extension_supported(required_extension))
                 error("Vulkan: required device extension is not available: " + std::string(required_extension));
         }
-        /*if (is_extension_supported(VK_NVX_RAYTRACING_EXTENSION_NAME)) {
-            device_extensions.push_back(VK_NVX_RAYTRACING_EXTENSION_NAME);
+        if (is_extension_supported(VK_NV_RAY_TRACING_EXTENSION_NAME)) {
+            device_extensions.push_back(VK_NV_RAY_TRACING_EXTENSION_NAME);
             vk.raytracing_supported = true;
-        }*/
+        }
 
         const float priority = 1.0;
         VkDeviceQueueCreateInfo queue_desc { VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO };
@@ -586,10 +587,10 @@ void vk_ensure_staging_buffer_allocation(VkDeviceSize size) {
     vk.staging_buffer_size = size;
 }
 
-Vk_Buffer vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, const char* name) {
+Vk_Buffer vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, const void* data, const char* name) {
     VkBufferCreateInfo buffer_create_info { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-    buffer_create_info.size        = size;
-    buffer_create_info.usage       = usage;
+    buffer_create_info.size = size;
+    buffer_create_info.usage = usage;
     buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VmaAllocationCreateInfo alloc_create_info{};
@@ -598,28 +599,38 @@ Vk_Buffer vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, const ch
     Vk_Buffer buffer;
     VK_CHECK(vmaCreateBuffer(vk.allocator, &buffer_create_info, &alloc_create_info, &buffer.handle, &buffer.allocation, nullptr));
     vk_set_debug_name(buffer.handle, name);
+
+    if (data != nullptr) {
+        vk_ensure_staging_buffer_allocation(size);
+        memcpy(vk.staging_buffer_ptr, data, size);
+
+        vk_execute(vk.command_pool, vk.queue, [size, &buffer](VkCommandBuffer command_buffer) {
+            VkBufferCopy region;
+            region.srcOffset = 0;
+            region.dstOffset = 0;
+            region.size = size;
+            vkCmdCopyBuffer(command_buffer, vk.staging_buffer, buffer.handle, 1, &region);
+        });
+    }
     return buffer;
 }
 
-Vk_Buffer vk_create_host_visible_buffer(VkDeviceSize size, VkBufferUsageFlags usage, void** buffer_ptr, const char* name) {
+Vk_Buffer vk_create_mapped_buffer(VkDeviceSize size, VkBufferUsageFlags usage, void** buffer_ptr, const char* name) {
     VkBufferCreateInfo buffer_create_info { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
-    buffer_create_info.size         = size;
-    buffer_create_info.usage        = usage;
-    buffer_create_info.sharingMode  = VK_SHARING_MODE_EXCLUSIVE;
+    buffer_create_info.size = size;
+    buffer_create_info.usage = usage;
 
     VmaAllocationCreateInfo alloc_create_info{};
     alloc_create_info.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     alloc_create_info.usage = VMA_MEMORY_USAGE_CPU_ONLY;
 
     VmaAllocationInfo alloc_info;
-
     Vk_Buffer buffer;
     VK_CHECK(vmaCreateBuffer(vk.allocator, &buffer_create_info, &alloc_create_info, &buffer.handle, &buffer.allocation, &alloc_info));
     vk_set_debug_name(buffer.handle, name);
 
     if (buffer_ptr)
         *buffer_ptr = alloc_info.pMappedData;
-
     return buffer;
 }
 
@@ -1099,7 +1110,7 @@ uint32_t vk_allocate_timestamp_queries(uint32_t count) {
 }
 
 void set_debug_name_impl(VkObjectType object_type, uint64_t object_handle, const char* name) {
-    if (vk.create_info.use_debug_names) {
+    if (vk.create_info.use_debug_names && name) {
         VkDebugUtilsObjectNameInfoEXT name_info { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
         name_info.objectType = object_type;
         name_info.objectHandle = object_handle;

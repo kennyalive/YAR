@@ -17,7 +17,7 @@ struct Global_Uniform_Buffer {
 }
 
 void Rasterization_Resources::create() {
-    uniform_buffer = vk_create_host_visible_buffer(static_cast<VkDeviceSize>(sizeof(Global_Uniform_Buffer)),
+    uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Global_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &mapped_uniform_buffer, "raster_uniform_buffer");
 
     descriptor_set_layout = Descriptor_Set_Layout()
