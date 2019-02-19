@@ -47,6 +47,9 @@ struct Raytracing_Resources {
     Vk_Buffer                   uniform_buffer;
     Rt_Uniform_Buffer*          mapped_uniform_buffer;
 
+    Vk_Buffer material_buffer;
+    GPU_Mesh_Material* material_buffer_ptr;
+
     void create(const Scene_Data& scene, const std::vector<GPU_Mesh>& gpu_meshes);
     void destroy();
     void update_output_image_descriptor(VkImageView output_image_view);

@@ -25,6 +25,18 @@ void Raytracing_Resources::create(const Scene_Data& scene, const std::vector<GPU
         instance_buffer_ptr = static_cast<VkGeometryInstanceNV*>(buffer_ptr);
     }
 
+    // Material buffer;
+    {
+        VkDeviceSize material_buffer_size = gpu_meshes.size() * sizeof(GPU_Mesh_Material);
+        void* buffer_ptr;
+        material_buffer = vk_create_mapped_buffer(material_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &buffer_ptr, "material_buffer");
+        material_buffer_ptr = static_cast<GPU_Mesh_Material*>(buffer_ptr);
+
+        for (auto [i, gpu_mesh] : enumerate(gpu_meshes)) {
+            material_buffer_ptr[i] = gpu_mesh.material;
+        }
+    }
+
     create_acceleration_structure(scene.meshes, gpu_meshes);
     create_pipeline(gpu_meshes);
 
@@ -259,6 +271,7 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
         .uniform_buffer(2, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
         .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // index buffers
         .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // vertex buffers
+        .storage_buffer(5, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // material buffer
         .create("rt_set_layout");
 
     // pipeline layout
@@ -368,6 +381,7 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
             .accelerator(1, top_level_accel)
             .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer))
             .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), index_buffer_infos.data())
-            .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), vertex_buffer_infos.data());
+            .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), vertex_buffer_infos.data())
+            .storage_buffer(5, material_buffer.handle, 0, gpu_meshes.size() * sizeof(GPU_Mesh_Material));
     }
 }

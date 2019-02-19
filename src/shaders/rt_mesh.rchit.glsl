@@ -37,8 +37,16 @@ layout(std430, binding=4) readonly buffer Vertex_Buffer {
     Mesh_Vertex vertices[];
 } vertex_buffers[];
 
-layout(binding=5) uniform texture2D image;
-layout(binding=6) uniform sampler image_sampler;
+struct Material {
+    vec3    k_diffuse;
+    float   pad0;
+    vec3    k_specular;
+    float   pad1;
+};
+
+layout(std430, binding=5) readonly buffer Materials {
+    Material materials[];
+};
 
 Vertex fetch_vertex(int index) {
     uint vertex_index = index_buffers[nonuniformEXT(gl_InstanceCustomIndexNV)].indices[index];
@@ -71,7 +79,7 @@ void main() {
         float light_dist_sq_inv = 1.f / dot(light_vec, light_vec);
         vec3 light_dir = light_vec * sqrt(light_dist_sq_inv);
 
-        L += (/*k_diffuse*/ 1.0 * Pi_Inv) * point_lights[i].intensity * (light_dist_sq_inv * max(0, dot(n, light_dir)));
+        L += (materials[gl_InstanceCustomIndexNV].k_diffuse * Pi_Inv) * point_lights[i].intensity * (light_dist_sq_inv * max(0, dot(n, light_dir)));
     }
 
 
