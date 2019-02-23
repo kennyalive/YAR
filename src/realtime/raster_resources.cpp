@@ -177,7 +177,7 @@ void Rasterization_Resources::update_point_lights(const RGB_Point_Light_Data* po
     buf.point_light_count = point_light_count;
 }
 
-void Rasterization_Resources::update(const Matrix3x4& model_transform, const Matrix3x4& view_transform) {
+void Rasterization_Resources::update(const Matrix3x4& view_transform) {
     float aspect_ratio = (float)vk.surface_size.width / (float)vk.surface_size.height;
     Matrix3x4 from_world_to_opengl = {{
         {1,  0, 0, 0},
@@ -185,8 +185,8 @@ void Rasterization_Resources::update(const Matrix3x4& model_transform, const Mat
         {0, -1, 0, 0}
     }};
     Matrix4x4 proj = perspective_transform_opengl_z01(radians(60.0f), aspect_ratio, 0.1f, 50.0f) * from_world_to_opengl;
-    Matrix4x4 model_view = Matrix4x4::identity * view_transform * model_transform;
-    Matrix4x4 model_view_proj = proj * view_transform * model_transform;
+    Matrix4x4 model_view = Matrix4x4::identity * view_transform;
+    Matrix4x4 model_view_proj = proj * view_transform;
 
     Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
     buf.model_view_proj = model_view_proj;

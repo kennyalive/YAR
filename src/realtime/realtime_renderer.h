@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "vk.h"
 
+#include "lib/flying_camera.h"
 #include "lib/matrix.h"
 #include "lib/mesh.h"
 #include "io/io.h"
@@ -42,14 +43,15 @@ private:
     using Clock = std::chrono::high_resolution_clock;
     using Time  = std::chrono::time_point<Clock>;
 
-    bool                        show_ui                 = true;
-    bool                        vsync                   = true;
-    bool                        raytracing              = false;
-    bool                        spp4                    = false;
-    bool                        reference_render_active = false;
+    bool show_ui = true;
+    bool vsync = true;
+    bool raytracing = false;
+    bool spp4 = false;
+    bool reference_render_active = false;
 
-    std::thread                 reference_render_thread;
-    Matrix3x4                   camera_to_world_transform;
+    Flying_Camera flying_camera;
+
+    std::thread reference_render_thread;
 
     UI_Result                   ui_result;
 
@@ -58,15 +60,8 @@ private:
     Vk_Image                    output_image;
     Copy_To_Swapchain           copy_to_swapchain;
 
-    
     Scene_Data                  scene_data;
     std::vector<GPU_Mesh>       gpu_meshes;
-
-    Vector3                     camera_pos = Vector3(0, 3, 1);
-    float                       camera_yaw = -Pi/2; // relative to x axis
-    Vector3                     camera_dir = Vector3(0, -1, 0);
-    Matrix3x4                   model_transform;
-    Matrix3x4                   view_transform;
 
     Rasterization_Resources     raster;
     Raytracing_Resources        rt;

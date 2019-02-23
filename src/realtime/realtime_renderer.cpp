@@ -58,6 +58,13 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
         //scene_data = load_buddha_scene(); // 1M
         //scene_data = load_hairball_scene(); // 2.9M
 
+        Matrix3x4 camera_transform;
+        camera_transform.set_column(0, Vector3(-1, 0, 0));
+        camera_transform.set_column(1, Vector3(0, -1, 0));
+        camera_transform.set_column(2, Vector3(0, 0, 1));
+        camera_transform.set_column(3, Vector3(0, 3, 1));
+        flying_camera.initialize(camera_transform);
+
         gpu_meshes.resize(scene_data.meshes.size());
 
         for (size_t i = 0; i < scene_data.meshes.size(); i++) {
@@ -221,21 +228,26 @@ void Realtime_Renderer::restore_resolution_dependent_resources() {
     copy_to_swapchain.update_resolution_dependent_descriptors(output_image.view);
 }
 
+static double last_frame_time;
+
 void Realtime_Renderer::run_frame() {
-    view_transform = look_at_transform(camera_pos, camera_pos + camera_dir, Vector3(0, 0, 1));
-    raster.update(Matrix3x4::identity, view_transform);
-
-    camera_to_world_transform.set_column(0, Vector3(view_transform.get_row(0)));
-    camera_to_world_transform.set_column(1, Vector3(view_transform.get_row(1)));
-    camera_to_world_transform.set_column(2, Vector3(view_transform.get_row(2)));
-    camera_to_world_transform.set_column(3, camera_pos);
-
-    if (vk.raytracing_supported) {
-        rt.update_camera_transform(camera_to_world_transform);
-    }
-
     bool old_raytracing = raytracing;
     do_imgui();
+
+    if (last_frame_time == 0.0) { // initialize
+        last_frame_time = glfwGetTime();
+    }
+    double current_time = glfwGetTime();
+    double dt = current_time - last_frame_time;
+    last_frame_time = current_time;
+
+    flying_camera.update(dt);
+
+    raster.update(flying_camera.get_view_transform());
+
+    if (vk.raytracing_supported)
+        rt.update_camera_transform(flying_camera.get_camera_pose());
+
     draw_frame();
 }
 
@@ -418,38 +430,6 @@ void Realtime_Renderer::do_imgui() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    if (!io.WantCaptureKeyboard) {
-        if (ImGui::IsKeyPressed(GLFW_KEY_F10)) {
-            show_ui = !show_ui;
-        }
-        if (ImGui::IsKeyPressed(GLFW_KEY_W) || ImGui::IsKeyPressed(GLFW_KEY_UP)) {
-            camera_pos += 0.2f * camera_dir;
-        }
-        if (ImGui::IsKeyPressed(GLFW_KEY_S) || ImGui::IsKeyPressed(GLFW_KEY_DOWN)) {
-            camera_pos -= 0.2f * camera_dir;
-        }
-        if (ImGui::IsKeyPressed(GLFW_KEY_A)) {
-            camera_pos -= 0.2f * Vector3(camera_dir.y, -camera_dir.x, 0);
-        }
-        if (ImGui::IsKeyPressed(GLFW_KEY_D)) {
-            camera_pos += 0.2f * Vector3(camera_dir.y, -camera_dir.x, 0);
-        }
-        if (ImGui::IsKeyPressed(GLFW_KEY_LEFT)) {
-            camera_yaw += radians(5.f);
-            camera_dir = Vector3(std::cos(camera_yaw), std::sin(camera_yaw), 0);
-        }
-        if (ImGui::IsKeyPressed(GLFW_KEY_RIGHT)) {
-            camera_yaw -= radians(5.f);
-            camera_dir = Vector3(std::cos(camera_yaw), std::sin(camera_yaw), 0);
-        }
-        if (ImGui::IsKeyPressed(GLFW_KEY_R)) {
-            camera_pos.z += 0.1f;
-        }
-        if (ImGui::IsKeyPressed(GLFW_KEY_F)) {
-            camera_pos.z -= 0.1f;
-        }
-    }
-
     if (show_ui) {
         const float DISTANCE = 10.0f;
         static int corner = 0;
@@ -503,7 +483,7 @@ void Realtime_Renderer::do_imgui() {
                 params.render_region.p1 = params.image_resolution;
 
                 params.scene_data = &scene_data;
-                params.camera_to_world_vk = camera_to_world_transform;
+                params.camera_to_world_vk = flying_camera.get_camera_pose();
 
                 /*params.crop_x = 462;
                 params.crop_y = 302;

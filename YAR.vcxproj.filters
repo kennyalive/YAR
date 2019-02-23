@@ -167,6 +167,9 @@
     <ClCompile Include="third_party\glfw\window.c">
       <Filter>third_party\glfw</Filter>
     </ClCompile>
+    <ClCompile Include="src\lib\flying_camera.cpp">
+      <Filter>lib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third_party\half\half.h">
@@ -327,6 +330,9 @@
     </ClInclude>
     <ClInclude Include="third_party\glfw\win32_platform.h">
       <Filter>third_party\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\flying_camera.h">
+      <Filter>lib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

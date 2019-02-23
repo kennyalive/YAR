@@ -1,3 +1,4 @@
+#include "common.h"
 #include "matrix.h"
 
 const Matrix3x4 Matrix3x4::identity = [] {
@@ -25,6 +26,11 @@ void Matrix3x4::set_row(int row_index, Vector4 r) {
     a[row_index][1] = r.y;
     a[row_index][2] = r.z;
     a[row_index][3] = r.w;
+}
+
+Vector3 Matrix3x4::get_column(int c) const {
+    ASSERT(c >= 0 && c < 4);
+    return Vector3(a[0][c], a[1][c], a[2][c]);
 }
 
 Vector4 Matrix3x4::get_row(int row) const {

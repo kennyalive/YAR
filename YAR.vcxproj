@@ -116,6 +116,7 @@
     <ClCompile Include="src\io\obj_loader.cpp" />
     <ClCompile Include="src\io\test_scenes.cpp" />
     <ClCompile Include="src\lib\color.cpp" />
+    <ClCompile Include="src\lib\flying_camera.cpp" />
     <ClCompile Include="src\lib\win32.cpp" />
     <ClCompile Include="src\realtime\copy_to_swapchain.cpp" />
     <ClCompile Include="src\realtime\realtime_renderer.cpp" />
@@ -177,6 +178,7 @@
     <ClInclude Include="src\io\obj_loader.h" />
     <ClInclude Include="src\io\test_scenes.h" />
     <ClInclude Include="src\lib\color.h" />
+    <ClInclude Include="src\lib\flying_camera.h" />
     <ClInclude Include="src\lib\geometry.h" />
     <ClInclude Include="src\lib\platform.h" />
     <ClInclude Include="src\realtime\copy_to_swapchain.h" />

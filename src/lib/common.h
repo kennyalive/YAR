@@ -28,12 +28,12 @@ constexpr uint32_t array_size32(T(&)[N]) {
     return N;
 }
 
-inline float radians(float degrees) {
+inline constexpr float radians(float degrees) {
     constexpr float deg_2_rad = Pi / 180.f;
     return degrees * deg_2_rad;
 }
 
-inline float degrees(float radians) {
+inline constexpr float degrees(float radians) {
     constexpr float rad_2_deg = 180.f / Pi;
     return radians * rad_2_deg;
 }
