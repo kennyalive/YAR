@@ -58,15 +58,8 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
         //scene_data = load_buddha_scene(); // 1M
         //scene_data = load_hairball_scene(); // 2.9M
 
-        Matrix3x4 camera_transform;
-        camera_transform.set_column(0, Vector3(-1, 0, 0));
-        camera_transform.set_column(1, Vector3(0, -1, 0));
-        camera_transform.set_column(2, Vector3(0, 0, 1));
-        camera_transform.set_column(3, Vector3(0, 3, 1));
-        flying_camera.initialize(camera_transform);
-
+        flying_camera.initialize(scene_data.view_points[0]);
         gpu_meshes.resize(scene_data.meshes.size());
-
         for (size_t i = 0; i < scene_data.meshes.size(); i++) {
             const Mesh_Data& mesh_data = scene_data.meshes[i];
             GPU_Mesh& mesh  = gpu_meshes[i];
@@ -240,6 +233,16 @@ void Realtime_Renderer::run_frame() {
     double current_time = glfwGetTime();
     double dt = current_time - last_frame_time;
     last_frame_time = current_time;
+
+    if (!ImGui::GetIO().WantCaptureKeyboard) {
+        if (ImGui::IsKeyDown(GLFW_KEY_F1)) {
+            Matrix3x4 camera_pose = flying_camera.get_camera_pose();
+            FILE* f = fopen("camera.txt", "w");
+            for (int i = 0; i < 3; i++)
+                fprintf(f, "%ff, %ff, %ff, %ff,\n", camera_pose.a[i][0], camera_pose.a[i][1], camera_pose.a[i][2], camera_pose.a[i][3]);
+            fclose(f);
+        }
+    }
 
     flying_camera.update(dt);
 

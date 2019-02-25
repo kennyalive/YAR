@@ -26,6 +26,42 @@ static Scene_Data convert_obj_models(const std::vector<Obj_Model>& obj_models) {
     return scene;
 }
 
+Scene_Data load_bunny_scene() {
+    Matrix3x4 to_world_axis_orientation {{
+        {1, 0,  0, 0},
+    {0, 0, -1, 0},
+    {0, 1,  0, 0}
+        }};
+
+    // Uniform spectrum that produces luminous flux of 1600Lm.
+    float P = 1600; // Lm
+    float C = P / (683.f * CIE_Y_integral); // [W/m]
+    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(C);
+    Vector3 xyz = s.emission_spectrum_to_XYZ();
+
+    RGB_Point_Light_Data light;
+    light.position = Vector3(2, -2, 1.5);
+    light.intensity = ColorRGBFromXYZ(xyz);
+
+    Mesh_Load_Params mesh_load_params;
+    mesh_load_params.transform = uniform_scale(to_world_axis_orientation, 1.f);
+
+    std::vector<Obj_Model> obj_models = load_obj("bunny/bunny.obj", mesh_load_params);
+
+    Scene_Data scene = convert_obj_models(obj_models);
+    scene.project_dir = "bunny";
+    scene.rgb_point_lights.push_back(light);
+
+    Matrix3x4 view_point {
+        0.942210f, -0.318238f, -0.104785f, 0.466048f,
+        0.335043f, 0.894951f, 0.294679f, -2.158572f,
+        0.000000f, -0.312751f, 0.949842f, 1.369773f,
+
+    };
+    scene.view_points.push_back(view_point);
+    return scene;
+}
+
 Scene_Data load_conference_scene() {
     Matrix3x4 to_world_axis_orientation {{
         {1, 0,  0, 0},
@@ -57,34 +93,13 @@ Scene_Data load_conference_scene() {
     scene.project_dir = "conference";
     scene.rgb_point_lights.push_back(light);
     scene.rgb_point_lights.push_back(light2);
-    return scene;
-}
 
-Scene_Data load_bunny_scene() {
-    Matrix3x4 to_world_axis_orientation {{
-        {1, 0,  0, 0},
-        {0, 0, -1, 0},
-        {0, 1,  0, 0}
-    }};
-
-    // Uniform spectrum that produces luminous flux of 1600Lm.
-    float P = 1600; // Lm
-    float C = P / (683.f * CIE_Y_integral); // [W/m]
-    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(C);
-    Vector3 xyz = s.emission_spectrum_to_XYZ();
-
-    RGB_Point_Light_Data light;
-    light.position = Vector3(2, 2, 1.5);
-    light.intensity = ColorRGBFromXYZ(xyz);
-
-    Mesh_Load_Params mesh_load_params;
-    mesh_load_params.transform = uniform_scale(to_world_axis_orientation, 1.f);
-
-    std::vector<Obj_Model> obj_models = load_obj("bunny/bunny.obj", mesh_load_params);
-
-    Scene_Data scene = convert_obj_models(obj_models);
-    scene.project_dir = "bunny";
-    scene.rgb_point_lights.push_back(light);
+    Matrix3x4 view_point{
+        -0.786632f, 0.589048f, 0.185115f, -0.329195f,
+        -0.617444f, -0.750455f, -0.235839f, 2.223660f,
+        0.000000f, -0.299808f, 0.954012f, 1.494759f
+    };
+    scene.view_points.push_back(view_point);
     return scene;
 }
 
@@ -113,6 +128,13 @@ Scene_Data load_buddha_scene() {
     Scene_Data scene = convert_obj_models(obj_models);
     scene.project_dir = "buddha";
     scene.rgb_point_lights.push_back(light);
+
+    Matrix3x4 view_point {
+        -0.990574f, 0.136961f, 0.003766f, -0.147305f,
+        -0.137013f, -0.990206f, -0.027226f, 1.083111f,
+        0.000000f, -0.027486f, 0.999627f, 0.058400f,
+    };
+    scene.view_points.push_back(view_point);
     return scene;
 }
 
@@ -142,5 +164,12 @@ Scene_Data load_hairball_scene() {
     Scene_Data scene = convert_obj_models(obj_models);
     scene.project_dir = "hairball";
     scene.rgb_point_lights.push_back(light);
+
+    Matrix3x4 view_point {
+        -0.981547f, -0.190761f, -0.013507f, 1.663855f,
+        0.191238f, -0.979099f, -0.069324f, 9.265212f,
+        0.000000f, -0.070627f, 0.997506f, 0.618077f
+    };
+    scene.view_points.push_back(view_point);
     return scene;
 }
