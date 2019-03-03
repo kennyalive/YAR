@@ -25,6 +25,13 @@ float KdTree<Primitive_Source>::intersect(const Ray& ray, Local_Geometry& local_
 
     return intersection.t;
 }
+ 
+template <typename Primitive_Source>
+float KdTree<Primitive_Source>::intersect_any(const Ray& ray) const {
+    Triangle_Intersection intersection;
+    intersect(ray, intersection);
+    return intersection.t;
+}
 
 template <typename Primitive_Source>
 void KdTree<Primitive_Source>::intersect(const Ray& ray, Triangle_Intersection& intersection) const {

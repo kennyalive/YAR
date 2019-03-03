@@ -122,6 +122,7 @@ public:
     KdTree& operator=(KdTree&& other) = default;
 
     float intersect(const Ray& ray, Local_Geometry& local_geom) const;
+    float intersect_any(const Ray& ray) const;
 
     const Primitive_Source& get_primitive_source() const { return primitive_source; }
     const Bounding_Box& get_bounds() const { return bounds; }

@@ -43,9 +43,8 @@ void Raytracing_Resources::create(const Scene_Data& scene, const std::vector<GPU
     // Shader binding table.
     {
         uint32_t miss_offset = round_up(properties.shaderGroupHandleSize /* raygen slot*/, properties.shaderGroupBaseAlignment);
-        uint32_t hit_offset = round_up(miss_offset + properties.shaderGroupHandleSize /* miss slot */, properties.shaderGroupBaseAlignment);
-
-        uint32_t sbt_buffer_size = hit_offset + properties.shaderGroupHandleSize;
+        uint32_t hit_offset = round_up(miss_offset + properties.shaderGroupHandleSize /* miss + slot */, properties.shaderGroupBaseAlignment);
+        uint32_t sbt_buffer_size = hit_offset + 2 * properties.shaderGroupHandleSize /* chit + shadow ray ahit slots */;
 
         void* mapped_memory;
         shader_binding_table = vk_create_mapped_buffer(sbt_buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, &mapped_memory, "shader_binding_table");
@@ -56,8 +55,8 @@ void Raytracing_Resources::create(const Scene_Data& scene, const std::vector<GPU
         // miss slot
         VK_CHECK(vkGetRayTracingShaderGroupHandlesNV(vk.device, pipeline, 1, 1, properties.shaderGroupHandleSize, (uint8_t*)mapped_memory + miss_offset));
 
-        // hit slot
-        VK_CHECK(vkGetRayTracingShaderGroupHandlesNV(vk.device, pipeline, 2, 1, properties.shaderGroupHandleSize, (uint8_t*)mapped_memory + hit_offset));
+        // chit + shadow ray chit slots
+        VK_CHECK(vkGetRayTracingShaderGroupHandlesNV(vk.device, pipeline, 2, 2, 2*properties.shaderGroupHandleSize, (uint8_t*)mapped_memory + hit_offset));
     }
 }
 
@@ -92,7 +91,7 @@ void Raytracing_Resources::update_mesh_transform(uint32_t mesh_index, const Matr
     instance.instanceCustomIndex = mesh_index;
     instance.mask = 0xff;
     instance.instanceOffset = 0;
-    instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_CULL_DISABLE_BIT_NV;
+    instance.flags = 0;
     instance.accelerationStructureHandle = mesh_accels[mesh_index].handle;
 }
 
@@ -114,6 +113,7 @@ void Raytracing_Resources::create_acceleration_structure(const std::vector<Mesh_
         geom = VkGeometryNV { VK_STRUCTURE_TYPE_GEOMETRY_NV };
         geom.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
         geom.geometry.aabbs = VkGeometryAABBNV { VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV };
+        geom.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
 
         VkGeometryTrianglesNV& triangle_geom = geom.geometry.triangles;
         triangle_geom = VkGeometryTrianglesNV { VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV };
@@ -267,7 +267,7 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
 
     descriptor_set_layout = Descriptor_Set_Layout()
         .storage_image(0, VK_SHADER_STAGE_RAYGEN_BIT_NV)
-        .accelerator(1, VK_SHADER_STAGE_RAYGEN_BIT_NV)
+        .accelerator(1, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
         .uniform_buffer(2, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
         .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // index buffers
         .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // vertex buffers
@@ -295,8 +295,9 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
         VkShaderModule rgen_shader = vk_load_spirv("spirv/rt_mesh.rgen.spv");
         VkShaderModule miss_shader = vk_load_spirv("spirv/rt_mesh.rmiss.spv");
         VkShaderModule chit_shader = vk_load_spirv("spirv/rt_mesh.rchit.spv");
+        VkShaderModule shadow_ray_chit_shader = vk_load_spirv("spirv/rt_shadow_ray.rchit.spv");
 
-        VkPipelineShaderStageCreateInfo stage_infos[3] {};
+        VkPipelineShaderStageCreateInfo stage_infos[4] {};
         stage_infos[0].sType    = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stage_infos[0].stage    = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         stage_infos[0].module   = rgen_shader;
@@ -312,7 +313,12 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
         stage_infos[2].module   = chit_shader;
         stage_infos[2].pName    = "main";
 
-        VkRayTracingShaderGroupCreateInfoNV shader_groups[3];
+        stage_infos[3].sType    = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        stage_infos[3].stage    = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+        stage_infos[3].module   = shadow_ray_chit_shader;
+        stage_infos[3].pName    = "main";
+
+        VkRayTracingShaderGroupCreateInfoNV shader_groups[4];
 
         {
             auto& group = shader_groups[0];
@@ -341,19 +347,29 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
             group.anyHitShader = VK_SHADER_UNUSED_NV;
             group.intersectionShader = VK_SHADER_UNUSED_NV;
         }
+        {
+            auto& group = shader_groups[3];
+            group = VkRayTracingShaderGroupCreateInfoNV { VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV };
+            group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
+            group.generalShader = VK_SHADER_UNUSED_NV;
+            group.closestHitShader = 3;
+            group.anyHitShader = VK_SHADER_UNUSED_NV;
+            group.intersectionShader = VK_SHADER_UNUSED_NV;
+        }
 
         VkRayTracingPipelineCreateInfoNV create_info { VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV };
         create_info.stageCount          = (uint32_t)std::size(stage_infos);
         create_info.pStages             = stage_infos;
         create_info.groupCount          = (uint32_t)std::size(shader_groups);
         create_info.pGroups             = shader_groups;
-        create_info.maxRecursionDepth   = 1;
+        create_info.maxRecursionDepth   = 2;
         create_info.layout              = pipeline_layout;
         VK_CHECK(vkCreateRayTracingPipelinesNV(vk.device, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
 
         vkDestroyShaderModule(vk.device, rgen_shader, nullptr);
         vkDestroyShaderModule(vk.device, miss_shader, nullptr);
         vkDestroyShaderModule(vk.device, chit_shader, nullptr);
+        vkDestroyShaderModule(vk.device, shadow_ray_chit_shader, nullptr);
     }
 
     // descriptor set

@@ -22,6 +22,9 @@ struct Point_Light {
 };
 
 layout (location=0) rayPayloadInNV Ray_Payload payload;
+layout (location=1) rayPayloadNV Shadow_Ray_Payload shadow_ray_payload;
+
+layout(set=0, binding = 1) uniform accelerationStructureNV accel;
 
 layout(std140, binding=2) uniform Uniform_Block {
     mat4x3 camera_to_world;
@@ -68,20 +71,29 @@ void main() {
     vec3 n0 = normal_transform * v0.n;
     vec3 n1 = normal_transform * v1.n;
     vec3 n2 = normal_transform * v2.n;
-
     vec3 n = normalize(barycentric_interpolate(attribs.x, attribs.y, n0, n1, n2));
 
     vec3 L = vec3(0);
-
     for (int i = 0; i < point_light_count; i++) {
         vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
         vec3 light_vec = point_lights[i].position - p;
-        float light_dist_sq_inv = 1.f / dot(light_vec, light_vec);
-        vec3 light_dir = light_vec * sqrt(light_dist_sq_inv);
+        float light_dist = length(light_vec);
+        vec3 light_dir = light_vec / light_dist;
 
-        L += (materials[gl_InstanceCustomIndexNV].k_diffuse * Pi_Inv) * point_lights[i].intensity * (light_dist_sq_inv * max(0, dot(n, light_dir)));
+        float n_dot_l = dot(n, light_dir);
+        if (n_dot_l <= 0.0)
+            continue;
+
+        // trace shadow ray
+        const float tmin = 1e-3;
+        shadow_ray_payload.shadow_factor = 1.0f;
+        traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, p, tmin, light_dir, light_dist - tmin, 1);
+        if (shadow_ray_payload.shadow_factor == 0.0)
+            continue;
+
+        vec3 irradiance = point_lights[i].intensity * (n_dot_l / (light_dist * light_dist));
+        vec3 bsdf = materials[gl_InstanceCustomIndexNV].k_diffuse * Pi_Inv;
+        L += shadow_ray_payload.shadow_factor * irradiance * bsdf;
     }
-
-
     payload.color = srgb_encode(vec3(L));
 }

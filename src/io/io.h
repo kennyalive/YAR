@@ -29,6 +29,7 @@ struct Scene_Data {
     std::vector<Mesh_Data> meshes;
     std::vector<Material_Data> materials; // per mesh material
     std::vector<RGB_Point_Light_Data> rgb_point_lights;
+    std::vector<Matrix3x4> view_points; // predefined camera positions
 };
 
 void write_exr_image(const char* file_name, const ColorRGB* pixels, int w, int h);

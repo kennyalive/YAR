@@ -4,6 +4,10 @@ struct Ray_Payload {
     vec3 color;
 };
 
+struct Shadow_Ray_Payload {
+    float shadow_factor; // 0 or 1
+};
+
 struct Vertex {
     vec3 p;
     vec3 n;

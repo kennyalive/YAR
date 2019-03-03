@@ -264,6 +264,11 @@
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
+    <CustomBuild Include="src\shaders\rt_shadow_ray.rchit.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CustomBuild>
     <None Include="src\shaders\rt_utils.glsl" />
     <None Include="src\shaders\tone_mapping.glsl" />
   </ItemGroup>

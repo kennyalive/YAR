@@ -403,5 +403,8 @@
     <CustomBuild Include="src\shaders\copy_to_swapchain.comp.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
+    <CustomBuild Include="src\shaders\rt_shadow_ray.rchit.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>
