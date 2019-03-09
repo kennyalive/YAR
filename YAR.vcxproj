@@ -132,6 +132,7 @@
     <ClCompile Include="src\realtime\rt_resources.cpp" />
     <ClCompile Include="src\realtime\utils.cpp" />
     <ClCompile Include="src\realtime\vk.cpp" />
+    <ClCompile Include="third_party\enkiTS\TaskScheduler.cpp" />
     <ClCompile Include="third_party\glfw\context.c" />
     <ClCompile Include="third_party\glfw\egl_context.c" />
     <ClCompile Include="third_party\glfw\init.c" />
@@ -169,6 +170,7 @@
     <ClCompile Include="src\reference\intersection.cpp" />
     <ClCompile Include="src\reference\triangle_mesh.cpp" />
     <ClCompile Include="src\reference\triangle_mesh_loader.cpp" />
+    <ClCompile Include="third_party\pcg\pcg_basic.c" />
     <ClCompile Include="third_party\volk\volk.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -193,6 +195,10 @@
     <ClInclude Include="src\reference\film.h" />
     <ClInclude Include="src\reference\material.h" />
     <ClInclude Include="src\reference\reference_renderer.h" />
+    <ClInclude Include="third_party\enkiTS\Atomics.h" />
+    <ClInclude Include="third_party\enkiTS\LockLessMultiReadPipe.h" />
+    <ClInclude Include="third_party\enkiTS\TaskScheduler.h" />
+    <ClInclude Include="third_party\enkiTS\Threads.h" />
     <ClInclude Include="third_party\glfw\egl_context.h" />
     <ClInclude Include="third_party\glfw\glfw3.h" />
     <ClInclude Include="third_party\glfw\glfw3native.h" />
@@ -228,6 +234,7 @@
     <ClInclude Include="third_party\imgui\imstb_rectpack.h" />
     <ClInclude Include="third_party\imgui\imstb_textedit.h" />
     <ClInclude Include="third_party\imgui\imstb_truetype.h" />
+    <ClInclude Include="third_party\pcg\pcg_basic.h" />
     <ClInclude Include="third_party\volk\volk.h" />
   </ItemGroup>
   <ItemGroup>

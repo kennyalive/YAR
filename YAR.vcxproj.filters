@@ -170,6 +170,12 @@
     <ClCompile Include="src\lib\flying_camera.cpp">
       <Filter>lib</Filter>
     </ClCompile>
+    <ClCompile Include="third_party\pcg\pcg_basic.c">
+      <Filter>third_party\pcg</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\enkiTS\TaskScheduler.cpp">
+      <Filter>third_party\enkiTS</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="third_party\half\half.h">
@@ -334,6 +340,21 @@
     <ClInclude Include="src\lib\flying_camera.h">
       <Filter>lib</Filter>
     </ClInclude>
+    <ClInclude Include="third_party\pcg\pcg_basic.h">
+      <Filter>third_party\pcg</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\enkiTS\Atomics.h">
+      <Filter>third_party\enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\enkiTS\LockLessMultiReadPipe.h">
+      <Filter>third_party\enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\enkiTS\TaskScheduler.h">
+      <Filter>third_party\enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\enkiTS\Threads.h">
+      <Filter>third_party\enkiTS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="third_party">
@@ -371,6 +392,12 @@
     </Filter>
     <Filter Include="third_party\glfw">
       <UniqueIdentifier>{1840d867-e656-4430-a660-e47420418ddc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\pcg">
+      <UniqueIdentifier>{2806c314-c368-47de-8d12-e1d685296b7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\enkiTS">
+      <UniqueIdentifier>{2bc03806-2506-4578-9b52-ac481afec95e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
