@@ -181,10 +181,14 @@ Scene_Data load_mori_knob() {
         {0, 1,  0, 0}
         }};
 
-    // Uniform spectrum that produces luminous flux of 1600Lm.
-    float P = 2600; // Lm
-    float C = P / (683.f * CIE_Y_integral); // [W/m]
-    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(C);
+    Vector2 light_size { 1, 1 }; // 1 m^2 light
+
+    // Convert provided luminous flux to radiant flux assuming constant spectrum.
+    float luminous_flux = 3000; // [Lm]
+    float radiant_flux_per_wavelength = luminous_flux / (683.f * CIE_Y_integral); // [W/m]
+    float radiant_exitance_per_wavelength = Pi * radiant_flux_per_wavelength; // [M/m]
+    
+    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(radiant_exitance_per_wavelength);
     Vector3 xyz = s.emission_spectrum_to_XYZ();
 
     Mesh_Load_Params mesh_load_params;
@@ -201,9 +205,9 @@ Scene_Data load_mori_knob() {
         0, 1, 0, 0,
         0, 0, -1, 1
     };
-    rect_light.emitted_radiance = ColorRGB{ 10, 10, 10 };
-    rect_light.size = Vector2{ 1, 1 };
-    rect_light.shadow_ray_count = 32;
+    rect_light.emitted_radiance = ColorRGBFromXYZ(xyz);
+    rect_light.size = light_size;
+    rect_light.shadow_ray_count = 1;
     scene.rgb_diffuse_rectangular_lights.push_back(rect_light);
 
     Matrix3x4 view_point{
