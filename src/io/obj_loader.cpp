@@ -25,13 +25,15 @@ std::vector<Obj_Model> load_obj(const std::string& obj_file, const Mesh_Load_Par
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
-    std::string err;
+    std::string warn, err;
 
     const std::string obj_path = get_resource_path(obj_file).c_str();
     const std::string mtl_dir = get_directory(obj_path);
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, obj_path.c_str(), mtl_dir.c_str()))
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, obj_path.c_str(), mtl_dir.c_str()))
         error("failed to load obj model: " + obj_file);
+    /*if (!warn.empty())
+        printf("Obj loading warning: %s (%s)\n", warn.c_str(), obj_file.c_str());*/
 
     std::vector<Obj_Model> models(shapes.size());
 

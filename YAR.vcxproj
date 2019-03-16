@@ -218,7 +218,7 @@
     <ClInclude Include="src\reference\light.h" />
     <ClInclude Include="src\lib\matrix.h" />
     <ClInclude Include="src\reference\ray.h" />
-    <ClInclude Include="src\lib\rng.h" />
+    <ClInclude Include="src\lib\random.h" />
     <ClInclude Include="src\reference\sampling.h" />
     <ClInclude Include="src\reference\spectrum.h" />
     <ClInclude Include="src\reference\test_ray_generator.h" />

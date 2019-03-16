@@ -118,6 +118,9 @@ void render_reference_image(const Render_Reference_Image_Params& params, bool* a
             light.intensity = point_light_data.intensity;
             lights.point_lights.push_back(light);
         }
+        for (const RGB_Diffuse_Rectangular_Light_Data& light_data : params.scene_data->rgb_diffuse_rectangular_lights) {
+            lights.diffuse_rectangular_lights.push_back(Diffuse_Rectangular_Light(light_data));
+        }
     }
 
     ASSERT(params.render_region.p0 >= Vector2i{});

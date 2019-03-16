@@ -54,9 +54,10 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
     // Geometry buffers.
     {
         //scene_data = load_bunny_scene(); // 144K
-        scene_data = load_conference_scene(); // 330K
+        //scene_data = load_conference_scene(); // 330K
         //scene_data = load_buddha_scene(); // 1M
         //scene_data = load_hairball_scene(); // 2.9M
+        scene_data = load_mori_knob();
 
         flying_camera.initialize(scene_data.view_points[0]);
         gpu_meshes.resize(scene_data.meshes.size());

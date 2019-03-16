@@ -73,7 +73,7 @@ void Flying_Camera::update(double dt) {
     if (x_motion_sign || y_motion_sign || z_motion_sign) {
         Vector3 position = camera_pose.get_column(3);
         float velocity_scale = ImGui::IsKeyDown(GLFW_KEY_LEFT_SHIFT) ? 3.0f : 1.f;
-        Vector3 movement = velocity * (velocity_scale * dt);
+        Vector3 movement = velocity * float(velocity_scale * dt);
         position += camera_pose.get_column(0) * float(movement.x * x_motion_sign);
         position += camera_pose.get_column(1) * float(movement.y * y_motion_sign);
         position += Vector3(0, 0, 1) * float(movement.z * z_motion_sign);

@@ -173,3 +173,45 @@ Scene_Data load_hairball_scene() {
     scene.view_points.push_back(view_point);
     return scene;
 }
+
+Scene_Data load_mori_knob() {
+    Matrix3x4 to_world_axis_orientation {{
+        {1, 0,  0, 0},
+        {0, 0, -1, 0},
+        {0, 1,  0, 0}
+        }};
+
+    // Uniform spectrum that produces luminous flux of 1600Lm.
+    float P = 2600; // Lm
+    float C = P / (683.f * CIE_Y_integral); // [W/m]
+    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(C);
+    Vector3 xyz = s.emission_spectrum_to_XYZ();
+
+    Mesh_Load_Params mesh_load_params;
+    mesh_load_params.transform = uniform_scale(to_world_axis_orientation, 1.f);
+
+    std::vector<Obj_Model> obj_models = load_obj("mori_knob/testObj.obj", mesh_load_params);
+
+    Scene_Data scene = convert_obj_models(obj_models);
+    scene.project_dir = "mori_knob";
+
+    RGB_Diffuse_Rectangular_Light_Data rect_light;
+    rect_light.light_to_world_transform = Matrix3x4{
+        -1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, -1, 1
+    };
+    rect_light.emitted_radiance = ColorRGB{ 10, 10, 10 };
+    rect_light.size = Vector2{ 1, 1 };
+    rect_light.shadow_ray_count = 32;
+    scene.rgb_diffuse_rectangular_lights.push_back(rect_light);
+
+    Matrix3x4 view_point{
+        -0.954639f, 0.265867f, 0.134153f, -0.833258f,
+        -0.297793f, -0.852289f, -0.430056f, 1.268962f,
+        0.000000f, -0.450491f, 0.892788f, 0.055605f,
+
+    };
+    scene.view_points.push_back(view_point);
+    return scene;
+}

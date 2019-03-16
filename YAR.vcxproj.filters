@@ -244,9 +244,6 @@
     <ClInclude Include="src\lib\common.h">
       <Filter>lib</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\rng.h">
-      <Filter>lib</Filter>
-    </ClInclude>
     <ClInclude Include="src\lib\vector.h">
       <Filter>lib</Filter>
     </ClInclude>
@@ -354,6 +351,9 @@
     </ClInclude>
     <ClInclude Include="third_party\enkiTS\Threads.h">
       <Filter>third_party\enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lib\random.h">
+      <Filter>lib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

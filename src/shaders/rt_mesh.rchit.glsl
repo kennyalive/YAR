@@ -75,7 +75,7 @@ void main() {
 
     vec3 L = vec3(0);
     for (int i = 0; i < point_light_count; i++) {
-        vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
+        vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV + 1e-3*n;
         vec3 light_vec = point_lights[i].position - p;
         float light_dist = length(light_vec);
         vec3 light_dir = light_vec / light_dist;

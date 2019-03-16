@@ -20,7 +20,13 @@ struct ColorRGB {
         g *= v;
         b *= v;
     }
-
+    void operator/=(float v) {
+        ASSERT(v != 0.f);
+        float inv_v = 1.f / v;
+        r *= inv_v;
+        g *= inv_v;
+        b *= inv_v;
+    }
     void operator+=(const ColorRGB c) {
         r += c.r;
         g += c.g;

@@ -5,7 +5,7 @@
 #include "test_ray_generator.h"
 #include "triangle_mesh.h"
 #include "triangle_mesh_loader.h"
-#include "lib/rng.h"
+#include "lib/random.h"
 #include "lib/vector.h"
 
 #ifdef _WIN32
@@ -139,8 +139,9 @@ const bool build_tree = false;
 void test_kdtree() {
     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
     _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
-    
-    RNG rng;
+
+    pcg32_random_t rng;
+    pcg32_srandom_r(&rng, 0, 0);
 
     std::unique_ptr<Triangle_Mesh> mesh = LoadTriangleMesh(model_path);
 
@@ -167,7 +168,7 @@ void test_kdtree() {
 
     int timeMsec = benchmark_kd_tree(kdtree);
     double speed = (benchmark_ray_count / 1000000.0) / (timeMsec / 1000.0);
-    printf("raycast performance [%-6s]: %.2f MRays/sec, (rnd = %d)\n", model_path.c_str(), speed, rng.random_uint32());
+    printf("raycast performance [%-6s]: %.2f MRays/sec, (rnd = %d)\n", model_path.c_str(), speed, pcg32_random_r(&rng));
 
     validate_kdtree(kdtree, validation_ray_count);
 }
