@@ -4,6 +4,21 @@
 #include "reference/colorimetry.h"
 #include "reference/spectrum.h"
 
+static const Matrix3x4 from_obj_to_world {
+    1, 0,  0, 0,
+    0, 0, -1, 0,
+    0, 1,  0, 0
+};
+
+ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminous_flux) {
+    float radiant_flux_per_wavelength = luminous_flux / (683.f * CIE_Y_integral); // [W/m]
+    // Uniform spectrum that produces luminous_flux
+    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(radiant_flux_per_wavelength);
+    Vector3 xyz = s.emission_spectrum_to_XYZ();
+    // Uniform spectrum does not produce white RGB (for sRGB). It's a bit reddish.
+    return ColorRGBFromXYZ(xyz);
+}
+
 static Scene_Data convert_obj_models(const std::vector<Obj_Model>& obj_models) {
     Scene_Data scene;
 
@@ -27,25 +42,12 @@ static Scene_Data convert_obj_models(const std::vector<Obj_Model>& obj_models) {
 }
 
 Scene_Data load_bunny_scene() {
-    Matrix3x4 to_world_axis_orientation {{
-        {1, 0,  0, 0},
-    {0, 0, -1, 0},
-    {0, 1,  0, 0}
-        }};
-
-    // Uniform spectrum that produces luminous flux of 1600Lm.
-    float P = 1600; // Lm
-    float C = P / (683.f * CIE_Y_integral); // [W/m]
-    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(C);
-    Vector3 xyz = s.emission_spectrum_to_XYZ();
-
     RGB_Point_Light_Data light;
     light.position = Vector3(2, -2, 1.5);
-    light.intensity = ColorRGBFromXYZ(xyz);
+    light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
     Mesh_Load_Params mesh_load_params;
-    mesh_load_params.transform = uniform_scale(to_world_axis_orientation, 1.f);
-
+    mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
     std::vector<Obj_Model> obj_models = load_obj("bunny/bunny.obj", mesh_load_params);
 
     Scene_Data scene = convert_obj_models(obj_models);
@@ -56,37 +58,23 @@ Scene_Data load_bunny_scene() {
         0.942210f, -0.318238f, -0.104785f, 0.466048f,
         0.335043f, 0.894951f, 0.294679f, -2.158572f,
         0.000000f, -0.312751f, 0.949842f, 1.369773f,
-
     };
     scene.view_points.push_back(view_point);
     return scene;
 }
 
 Scene_Data load_conference_scene() {
-    Matrix3x4 to_world_axis_orientation {{
-        {1, 0,  0, 0},
-        {0, 0, -1, 0},
-        {0, 1,  0, 0}
-    }};
-
-    // Uniform spectrum that produces luminous flux of 1600Lm.
-    float P = 1600; // Lm
-    float C = P / (683.f * CIE_Y_integral); // [W/m]
-    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(C);
-    Vector3 xyz = s.emission_spectrum_to_XYZ();
-
     RGB_Point_Light_Data light;
     light.position = Vector3(2, 0, 1.5);
-    light.intensity = ColorRGBFromXYZ(xyz);
+    light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
     RGB_Point_Light_Data light2;
     light2.position = Vector3(-1, 1, 1.0);
-    light2.intensity = ColorRGBFromXYZ(xyz);
+    light2.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
     Mesh_Load_Params mesh_load_params;
     mesh_load_params.crease_angle = radians(60);
-    mesh_load_params.transform = uniform_scale(to_world_axis_orientation, 0.003f);
-
+    mesh_load_params.transform = uniform_scale(from_obj_to_world, 0.003f);
     std::vector<Obj_Model> obj_models = load_obj("conference/conference.obj", mesh_load_params);
 
     Scene_Data scene = convert_obj_models(obj_models);
@@ -104,25 +92,12 @@ Scene_Data load_conference_scene() {
 }
 
 Scene_Data load_buddha_scene() {
-    Matrix3x4 to_world_axis_orientation {{
-        {1, 0,  0, 0},
-    {0, 0, -1, 0},
-    {0, 1,  0, 0}
-        }};
-
-    // Uniform spectrum that produces luminous flux of 1600Lm.
-    float P = 1600; // Lm
-    float C = P / (683.f * CIE_Y_integral); // [W/m]
-    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(C);
-    Vector3 xyz = s.emission_spectrum_to_XYZ();
-
     RGB_Point_Light_Data light;
     light.position = Vector3(2, 2, 1.5);
-    light.intensity = ColorRGBFromXYZ(xyz);
+    light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
     Mesh_Load_Params mesh_load_params;
-    mesh_load_params.transform = uniform_scale(to_world_axis_orientation, 1.f);
-
+    mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
     std::vector<Obj_Model> obj_models = load_obj("buddha/buddha.obj", mesh_load_params);
 
     Scene_Data scene = convert_obj_models(obj_models);
@@ -139,26 +114,13 @@ Scene_Data load_buddha_scene() {
 }
 
 Scene_Data load_hairball_scene() {
-    Matrix3x4 to_world_axis_orientation {{
-        {1, 0,  0, 0},
-        {0, 0, -1, 0},
-        {0, 1,  0, 0}
-    }};
-
-    // Uniform spectrum that produces luminous flux of 1600Lm.
-    float P = 1600; // Lm
-    float C = P / (683.f * CIE_Y_integral); // [W/m]
-    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(C);
-    Vector3 xyz = s.emission_spectrum_to_XYZ();
-
     RGB_Point_Light_Data light;
     light.position = Vector3(2, 2, 1.5);
-    light.intensity = ColorRGBFromXYZ(xyz);
+    light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
     Mesh_Load_Params mesh_load_params;
-    mesh_load_params.transform = uniform_scale(to_world_axis_orientation, 1.f);
+    mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
     mesh_load_params.invert_winding_order = true;
-
     std::vector<Obj_Model> obj_models = load_obj("hairball/hairball.obj", mesh_load_params);
 
     Scene_Data scene = convert_obj_models(obj_models);
@@ -175,12 +137,6 @@ Scene_Data load_hairball_scene() {
 }
 
 Scene_Data load_mori_knob() {
-    Matrix3x4 to_world_axis_orientation {{
-        {1, 0,  0, 0},
-        {0, 0, -1, 0},
-        {0, 1,  0, 0}
-        }};
-
     Vector2 light_size { 1, 1 }; // 1 m^2 light
 
     // Convert provided luminous flux to radiant flux assuming constant spectrum.
@@ -192,8 +148,7 @@ Scene_Data load_mori_knob() {
     Vector3 xyz = s.emission_spectrum_to_XYZ();
 
     Mesh_Load_Params mesh_load_params;
-    mesh_load_params.transform = uniform_scale(to_world_axis_orientation, 1.f);
-
+    mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
     std::vector<Obj_Model> obj_models = load_obj("mori_knob/testObj.obj", mesh_load_params);
 
     Scene_Data scene = convert_obj_models(obj_models);
