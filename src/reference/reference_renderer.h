@@ -10,6 +10,7 @@ struct Render_Reference_Image_Params {
     Bounds2i render_region;
     const Scene_Data* scene_data;
     Matrix3x4 camera_to_world_vk;
+    bool parallel_render = false;
 };
 
 void render_reference_image(const Render_Reference_Image_Params& params, bool* active);

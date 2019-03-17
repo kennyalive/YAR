@@ -13,6 +13,8 @@
 #include "lib/mesh.h"
 #include "lib/vector.h"
 
+#include "enkiTS/TaskScheduler.h"
+
 #include <vector>
 
 namespace {
@@ -154,21 +156,64 @@ void render_reference_image(const Render_Reference_Image_Params& params, bool* a
 
     Timestamp t;
 
-    for (int y_tile = 0; y_tile < y_tile_count; y_tile++) {
-        for (int x_tile = 0; x_tile < x_tile_count; x_tile++) {
-            Bounds2i tile_sample_bounds;
-            tile_sample_bounds.p0 = sample_region.p0 + Vector2i{x_tile * Tile_Size, y_tile * Tile_Size};
-            tile_sample_bounds.p1.x = std::min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
-            tile_sample_bounds.p1.y = std::min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
+    if (!params.parallel_render) {
+        for (int y_tile = 0; y_tile < y_tile_count; y_tile++) {
+            for (int x_tile = 0; x_tile < x_tile_count; x_tile++) {
+                Bounds2i tile_sample_bounds;
+                tile_sample_bounds.p0 = sample_region.p0 + Vector2i{ x_tile * Tile_Size, y_tile * Tile_Size };
+                tile_sample_bounds.p1.x = std::min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
+                tile_sample_bounds.p1.y = std::min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
 
-            Bounds2i tile_pixel_bounds;
-            tile_pixel_bounds.p0.x = std::max((int)std::ceil(tile_sample_bounds.p0.x + 0.5f - filter_radius), params.render_region.p0.x);
-            tile_pixel_bounds.p0.y = std::max((int)std::ceil(tile_sample_bounds.p0.y + 0.5f - filter_radius), params.render_region.p0.y);
-            tile_pixel_bounds.p1.x = std::min((int)std::ceil(tile_sample_bounds.p1.x-1 + 0.5f + filter_radius) + 1, params.render_region.p1.x);
-            tile_pixel_bounds.p1.y = std::min((int)std::ceil(tile_sample_bounds.p1.y-1 + 0.5f + filter_radius) + 1, params.render_region.p1.y);
+                Bounds2i tile_pixel_bounds;
+                tile_pixel_bounds.p0.x = std::max((int)std::ceil(tile_sample_bounds.p0.x + 0.5f - filter_radius), params.render_region.p0.x);
+                tile_pixel_bounds.p0.y = std::max((int)std::ceil(tile_sample_bounds.p0.y + 0.5f - filter_radius), params.render_region.p0.y);
+                tile_pixel_bounds.p1.x = std::min((int)std::ceil(tile_sample_bounds.p1.x - 1 + 0.5f + filter_radius) + 1, params.render_region.p1.x);
+                tile_pixel_bounds.p1.y = std::min((int)std::ceil(tile_sample_bounds.p1.y - 1 + 0.5f + filter_radius) + 1, params.render_region.p1.y);
 
-            render_tile(ctx, tile_sample_bounds, tile_pixel_bounds, film);
+                render_tile(ctx, tile_sample_bounds, tile_pixel_bounds, film);
+            }
         }
+    } else {
+        struct Render_Tile_Task : public enki::ITaskSet {
+            Render_Context* ctx;
+            Bounds2i tile_sample_bounds;
+            Bounds2i tile_pixel_bounds;
+            Film* film;
+
+            void ExecuteRange(enki::TaskSetPartition, uint32_t) override {
+                render_tile(*ctx, tile_sample_bounds, tile_pixel_bounds, *film);
+            }
+        };
+
+        std::vector<Render_Tile_Task> tasks;
+        for (int y_tile = 0; y_tile < y_tile_count; y_tile++) {
+            for (int x_tile = 0; x_tile < x_tile_count; x_tile++) {
+                Bounds2i tile_sample_bounds;
+                tile_sample_bounds.p0 = sample_region.p0 + Vector2i{ x_tile * Tile_Size, y_tile * Tile_Size };
+                tile_sample_bounds.p1.x = std::min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
+                tile_sample_bounds.p1.y = std::min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
+
+                Bounds2i tile_pixel_bounds;
+                tile_pixel_bounds.p0.x = std::max((int)std::ceil(tile_sample_bounds.p0.x + 0.5f - filter_radius), params.render_region.p0.x);
+                tile_pixel_bounds.p0.y = std::max((int)std::ceil(tile_sample_bounds.p0.y + 0.5f - filter_radius), params.render_region.p0.y);
+                tile_pixel_bounds.p1.x = std::min((int)std::ceil(tile_sample_bounds.p1.x - 1 + 0.5f + filter_radius) + 1, params.render_region.p1.x);
+                tile_pixel_bounds.p1.y = std::min((int)std::ceil(tile_sample_bounds.p1.y - 1 + 0.5f + filter_radius) + 1, params.render_region.p1.y);
+
+                Render_Tile_Task task{};
+                task.ctx = &ctx;
+                task.tile_sample_bounds = tile_sample_bounds;
+                task.tile_pixel_bounds = tile_pixel_bounds;
+                task.film = &film;
+                tasks.push_back(task);
+            }
+        }
+
+        enki::TaskScheduler task_scheduler;
+        task_scheduler.Initialize();
+        for (Render_Tile_Task& task : tasks) {
+            task_scheduler.AddTaskSetToPipe(&task);
+        }
+        task_scheduler.WaitforAllAndShutdown();
     }
 
     std::vector<ColorRGB> image = film.get_image();

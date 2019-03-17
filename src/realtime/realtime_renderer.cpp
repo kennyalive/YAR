@@ -476,6 +476,8 @@ void Realtime_Renderer::do_imgui() {
             if (disable_button)
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 
+            ImGui::Separator();
+            ImGui::Checkbox("Parallel", &parallel_reference_rendering);
             if (ImGui::Button("Render reference image"))
             {
                 reference_render_active = true;
@@ -493,7 +495,9 @@ void Realtime_Renderer::do_imgui() {
                 params.crop_y = 302;
                 params.crop_w = 3;
                 params.crop_h = 3;*/
-                     
+
+                params.parallel_render = parallel_reference_rendering;
+                    
                 reference_render_thread = std::thread(render_reference_image, params, &reference_render_active);
             }
 

@@ -10,12 +10,12 @@ static const Matrix3x4 from_obj_to_world {
     0, 1,  0, 0
 };
 
-ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminous_flux) {
+static ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminous_flux) {
     float radiant_flux_per_wavelength = luminous_flux / (683.f * CIE_Y_integral); // [W/m]
-    // Uniform spectrum that produces luminous_flux
+    // Get constant spectrum that produces given luminous_flux.
     Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(radiant_flux_per_wavelength);
     Vector3 xyz = s.emission_spectrum_to_XYZ();
-    // Uniform spectrum does not produce white RGB (for sRGB). It's a bit reddish.
+    // Constant spectrum does not produce white RGB (for sRGB). It's a bit reddish.
     return ColorRGBFromXYZ(xyz);
 }
 

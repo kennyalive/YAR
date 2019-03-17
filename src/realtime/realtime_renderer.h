@@ -47,6 +47,8 @@ private:
     bool vsync = true;
     bool raytracing = false;
     bool spp4 = false;
+
+    bool parallel_reference_rendering = false;
     bool reference_render_active = false;
 
     Flying_Camera flying_camera;
