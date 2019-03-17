@@ -6,6 +6,7 @@
 
 #include "lib/color.h"
 #include "lib/matrix.h"
+#include "lib/random.h"
 #include "lib/vector.h"
 
 struct Local_Geometry;
@@ -35,4 +36,5 @@ ColorRGB compute_direct_lighting(
     const TwoLevel_KdTree* acceleration_structure,
     const Lights& lights,
     const Vector3& wo,
-    Material_Handle material);
+    Material_Handle material,
+    pcg32_random_t* rng);

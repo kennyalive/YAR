@@ -11,6 +11,7 @@
 #include "lib/common.h"
 #include "lib/geometry.h"
 #include "lib/mesh.h"
+#include "lib/random.h"
 #include "lib/vector.h"
 
 #include "enkiTS/TaskScheduler.h"
@@ -59,7 +60,10 @@ static std::vector<Mesh_KdTree> load_kdtree_cache(const std::string& project_dir
     return kdtrees;
 }
 
-static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, Film& film) {
+static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, uint64_t rng_seed, Film& film) {
+    pcg32_random_t rng;
+    pcg32_srandom_r(&rng, 0, rng_seed);
+
     Film_Tile tile(pixel_bounds, film.filter);
 
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
@@ -73,8 +77,7 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
                 continue;
 
             Vector3 wo = (ray.origin - local_geom.position).normalized();
-            ColorRGB radiance = compute_direct_lighting(local_geom, ctx.acceleration_structure, ctx.lights, wo, local_geom.material);
-
+            ColorRGB radiance = compute_direct_lighting(local_geom, ctx.acceleration_structure, ctx.lights, wo, local_geom.material, &rng);
             tile.add_sample(film_pos, radiance);
         }
     }
@@ -170,7 +173,8 @@ void render_reference_image(const Render_Reference_Image_Params& params, bool* a
                 tile_pixel_bounds.p1.x = std::min((int)std::ceil(tile_sample_bounds.p1.x - 1 + 0.5f + filter_radius) + 1, params.render_region.p1.x);
                 tile_pixel_bounds.p1.y = std::min((int)std::ceil(tile_sample_bounds.p1.y - 1 + 0.5f + filter_radius) + 1, params.render_region.p1.y);
 
-                render_tile(ctx, tile_sample_bounds, tile_pixel_bounds, film);
+                uint64_t rng_seed = y_tile * x_tile_count + x_tile;
+                render_tile(ctx, tile_sample_bounds, tile_pixel_bounds, rng_seed, film);
             }
         }
     } else {
@@ -178,10 +182,11 @@ void render_reference_image(const Render_Reference_Image_Params& params, bool* a
             Render_Context* ctx;
             Bounds2i tile_sample_bounds;
             Bounds2i tile_pixel_bounds;
+            uint64_t rng_seed;
             Film* film;
 
             void ExecuteRange(enki::TaskSetPartition, uint32_t) override {
-                render_tile(*ctx, tile_sample_bounds, tile_pixel_bounds, *film);
+                render_tile(*ctx, tile_sample_bounds, tile_pixel_bounds, rng_seed, *film);
             }
         };
 
@@ -199,10 +204,13 @@ void render_reference_image(const Render_Reference_Image_Params& params, bool* a
                 tile_pixel_bounds.p1.x = std::min((int)std::ceil(tile_sample_bounds.p1.x - 1 + 0.5f + filter_radius) + 1, params.render_region.p1.x);
                 tile_pixel_bounds.p1.y = std::min((int)std::ceil(tile_sample_bounds.p1.y - 1 + 0.5f + filter_radius) + 1, params.render_region.p1.y);
 
+                uint64_t rng_seed = y_tile * x_tile_count + x_tile;
+
                 Render_Tile_Task task{};
                 task.ctx = &ctx;
                 task.tile_sample_bounds = tile_sample_bounds;
                 task.tile_pixel_bounds = tile_pixel_bounds;
+                task.rng_seed = rng_seed;
                 task.film = &film;
                 tasks.push_back(task);
             }

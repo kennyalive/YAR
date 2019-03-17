@@ -1,5 +1,4 @@
 #include "lib/common.h"
-#include "lib/random.h"
 #include "light.h"
 #include "material.h"
 
@@ -16,7 +15,8 @@ ColorRGB compute_direct_lighting(
     const TwoLevel_KdTree* acceleration_structure,
     const Lights& lights,
     const Vector3& wo,
-    Material_Handle material)
+    Material_Handle material,
+    pcg32_random_t* rng)
 {
     ColorRGB L{};
     for (const Point_Light& light : lights.point_lights) {
@@ -38,13 +38,9 @@ ColorRGB compute_direct_lighting(
         L += bsdf * light.intensity * (n_dot_l / (light_dist * light_dist));
     }
 
-    static uint64_t seed = 0;
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 0, seed++);
-
     for (const Diffuse_Rectangular_Light& light : lights.diffuse_rectangular_lights) {
         for (int i = 0; i < light.shadow_ray_count; i++) {
-            Vector2 u{2.0f * random_float(&rng) - 1.0f, 2.0f * random_float(&rng) - 1.0f};
+            Vector2 u{2.0f * random_float(rng) - 1.0f, 2.0f * random_float(rng) - 1.0f};
             Vector3 local_light_point = Vector3{light.size.x/2.0f * u.x, light.size.y/2.0f * u.y, 0.0f};
 
             Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
