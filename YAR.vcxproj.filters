@@ -26,39 +26,6 @@
       <Filter>third_party\imgui</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\reference\camera.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\colorimetry.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\intersection.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\kdtree.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\kdtree_builder.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\sampling.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\spectrum.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\triangle_mesh.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\common.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\matrix.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\mesh.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
     <ClCompile Include="src\io\io.cpp">
       <Filter>io</Filter>
     </ClCompile>
@@ -80,44 +47,14 @@
     <ClCompile Include="src\io\test_scenes.cpp">
       <Filter>io</Filter>
     </ClCompile>
-    <ClCompile Include="src\reference\triangle_mesh_loader.cpp">
-      <Filter>reference\tests</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\test_ray_generator.cpp">
-      <Filter>reference\tests</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\test_triangle_intersection.cpp">
-      <Filter>reference\tests</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\test_kdtree.cpp">
-      <Filter>reference\tests</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\material.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\light.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\reference_renderer.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
     <ClCompile Include="src\io\obj_loader.cpp">
       <Filter>io</Filter>
-    </ClCompile>
-    <ClCompile Include="src\reference\film.cpp">
-      <Filter>reference</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\color.cpp">
-      <Filter>lib</Filter>
     </ClCompile>
     <ClCompile Include="src\realtime\realtime_renderer.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
     <ClCompile Include="src\realtime\app.cpp">
       <Filter>realtime</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lib\win32.cpp">
-      <Filter>lib</Filter>
     </ClCompile>
     <ClCompile Include="third_party\imgui\impl\imgui_impl_glfw.cpp">
       <Filter>third_party\imgui\impl</Filter>
@@ -167,9 +104,6 @@
     <ClCompile Include="third_party\glfw\window.c">
       <Filter>third_party\glfw</Filter>
     </ClCompile>
-    <ClCompile Include="src\lib\flying_camera.cpp">
-      <Filter>lib</Filter>
-    </ClCompile>
     <ClCompile Include="third_party\pcg\pcg_basic.c">
       <Filter>third_party\pcg</Filter>
     </ClCompile>
@@ -205,51 +139,6 @@
     <ClInclude Include="third_party\imgui\imstb_truetype.h">
       <Filter>third_party\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\reference\camera.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\colorimetry.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\intersection.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\kdtree.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\kdtree_builder.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\light.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\ray.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\sampling.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\spectrum.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\triangle_mesh.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\matrix.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\bounding_box.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\common.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\vector.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\mesh.h">
-      <Filter>lib</Filter>
-    </ClInclude>
     <ClInclude Include="src\io\io.h">
       <Filter>io</Filter>
     </ClInclude>
@@ -271,38 +160,14 @@
     <ClInclude Include="src\io\test_scenes.h">
       <Filter>io</Filter>
     </ClInclude>
-    <ClInclude Include="src\reference\triangle_mesh_loader.h">
-      <Filter>reference\tests</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\test_ray_generator.h">
-      <Filter>reference\tests</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\material.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\reference\reference_renderer.h">
-      <Filter>reference</Filter>
-    </ClInclude>
     <ClInclude Include="src\realtime\gpu_structures.h">
       <Filter>realtime</Filter>
     </ClInclude>
     <ClInclude Include="src\io\obj_loader.h">
       <Filter>io</Filter>
     </ClInclude>
-    <ClInclude Include="src\reference\film.h">
-      <Filter>reference</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\geometry.h">
-      <Filter>lib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\color.h">
-      <Filter>lib</Filter>
-    </ClInclude>
     <ClInclude Include="src\realtime\realtime_renderer.h">
       <Filter>realtime</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\platform.h">
-      <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="third_party\imgui\impl\imgui_impl_glfw.h">
       <Filter>third_party\imgui\impl</Filter>
@@ -334,9 +199,6 @@
     <ClInclude Include="third_party\glfw\win32_platform.h">
       <Filter>third_party\glfw</Filter>
     </ClInclude>
-    <ClInclude Include="src\lib\flying_camera.h">
-      <Filter>lib</Filter>
-    </ClInclude>
     <ClInclude Include="third_party\pcg\pcg_basic.h">
       <Filter>third_party\pcg</Filter>
     </ClInclude>
@@ -351,9 +213,6 @@
     </ClInclude>
     <ClInclude Include="third_party\enkiTS\Threads.h">
       <Filter>third_party\enkiTS</Filter>
-    </ClInclude>
-    <ClInclude Include="src\lib\random.h">
-      <Filter>lib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -372,9 +231,6 @@
     <Filter Include="third_party\imgui\impl">
       <UniqueIdentifier>{e6558c84-f354-41bf-8a7f-d49b05ea4647}</UniqueIdentifier>
     </Filter>
-    <Filter Include="lib">
-      <UniqueIdentifier>{7687bc7b-702a-4f46-8552-cbb16b501aeb}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders">
       <UniqueIdentifier>{1be3d33b-ac0d-4df7-ad63-48c4e7b89b7b}</UniqueIdentifier>
     </Filter>
@@ -383,12 +239,6 @@
     </Filter>
     <Filter Include="realtime">
       <UniqueIdentifier>{a0def918-0c9a-4c48-995c-f820b0e1b908}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="reference">
-      <UniqueIdentifier>{8769c619-a495-443c-a77a-e511cb8f1b86}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="reference\tests">
-      <UniqueIdentifier>{b83708ee-b2f2-4572-b3f1-e39c693ef1e8}</UniqueIdentifier>
     </Filter>
     <Filter Include="third_party\glfw">
       <UniqueIdentifier>{1840d867-e656-4430-a660-e47420418ddc}</UniqueIdentifier>

@@ -14,7 +14,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{5CB76875-96D2-4581-8544-017176CB4F06}</ProjectGuid>
     <RootNamespace>YAR</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -44,11 +44,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\intermediate\</IntDir>
+    <IntDir>$(SolutionDir)build\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\intermediate\</IntDir>
+    <IntDir>$(SolutionDir)build\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -62,6 +62,8 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>kitchen.lib;reference.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>DeclareDPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
@@ -95,6 +97,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>kitchen.lib;reference.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)build\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>DeclareDPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
@@ -115,20 +119,12 @@
   <ItemGroup>
     <ClCompile Include="src\io\obj_loader.cpp" />
     <ClCompile Include="src\io\test_scenes.cpp" />
-    <ClCompile Include="src\lib\color.cpp" />
-    <ClCompile Include="src\lib\flying_camera.cpp" />
-    <ClCompile Include="src\lib\win32.cpp" />
     <ClCompile Include="src\realtime\copy_to_swapchain.cpp" />
     <ClCompile Include="src\realtime\realtime_renderer.cpp" />
     <ClCompile Include="src\realtime\app.cpp" />
     <ClCompile Include="src\io\io.cpp" />
-    <ClCompile Include="src\lib\mesh.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\realtime\raster_resources.cpp" />
-    <ClCompile Include="src\reference\film.cpp" />
-    <ClCompile Include="src\reference\light.cpp" />
-    <ClCompile Include="src\reference\material.cpp" />
-    <ClCompile Include="src\reference\reference_renderer.cpp" />
     <ClCompile Include="src\realtime\rt_resources.cpp" />
     <ClCompile Include="src\realtime\utils.cpp" />
     <ClCompile Include="src\realtime\vk.cpp" />
@@ -156,20 +152,6 @@
     <ClCompile Include="third_party\imgui\impl\imgui_impl_glfw.cpp" />
     <ClCompile Include="third_party\imgui\impl\imgui_impl_vulkan.cpp" />
     <ClCompile Include="third_party\miniexr.cpp" />
-    <ClCompile Include="src\reference\camera.cpp" />
-    <ClCompile Include="src\reference\colorimetry.cpp" />
-    <ClCompile Include="src\lib\common.cpp" />
-    <ClCompile Include="src\reference\kdtree.cpp" />
-    <ClCompile Include="src\reference\kdtree_builder.cpp" />
-    <ClCompile Include="src\lib\matrix.cpp" />
-    <ClCompile Include="src\reference\sampling.cpp" />
-    <ClCompile Include="src\reference\spectrum.cpp" />
-    <ClCompile Include="src\reference\test_kdtree.cpp" />
-    <ClCompile Include="src\reference\test_ray_generator.cpp" />
-    <ClCompile Include="src\reference\test_triangle_intersection.cpp" />
-    <ClCompile Include="src\reference\intersection.cpp" />
-    <ClCompile Include="src\reference\triangle_mesh.cpp" />
-    <ClCompile Include="src\reference\triangle_mesh_loader.cpp" />
     <ClCompile Include="third_party\pcg\pcg_basic.c" />
     <ClCompile Include="third_party\volk\volk.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -179,22 +161,14 @@
   <ItemGroup>
     <ClInclude Include="src\io\obj_loader.h" />
     <ClInclude Include="src\io\test_scenes.h" />
-    <ClInclude Include="src\lib\color.h" />
-    <ClInclude Include="src\lib\flying_camera.h" />
-    <ClInclude Include="src\lib\geometry.h" />
-    <ClInclude Include="src\lib\platform.h" />
     <ClInclude Include="src\realtime\copy_to_swapchain.h" />
     <ClInclude Include="src\realtime\realtime_renderer.h" />
     <ClInclude Include="src\io\io.h" />
-    <ClInclude Include="src\lib\mesh.h" />
     <ClInclude Include="src\realtime\gpu_structures.h" />
     <ClInclude Include="src\realtime\raster_resources.h" />
     <ClInclude Include="src\realtime\rt_resources.h" />
     <ClInclude Include="src\realtime\utils.h" />
     <ClInclude Include="src\realtime\vk.h" />
-    <ClInclude Include="src\reference\film.h" />
-    <ClInclude Include="src\reference\material.h" />
-    <ClInclude Include="src\reference\reference_renderer.h" />
     <ClInclude Include="third_party\enkiTS\Atomics.h" />
     <ClInclude Include="third_party\enkiTS\LockLessMultiReadPipe.h" />
     <ClInclude Include="third_party\enkiTS\TaskScheduler.h" />
@@ -209,23 +183,6 @@
     <ClInclude Include="third_party\glfw\win32_joystick.h" />
     <ClInclude Include="third_party\glfw\win32_platform.h" />
     <ClInclude Include="third_party\half\half.h" />
-    <ClInclude Include="src\lib\bounding_box.h" />
-    <ClInclude Include="src\reference\camera.h" />
-    <ClInclude Include="src\reference\colorimetry.h" />
-    <ClInclude Include="src\lib\common.h" />
-    <ClInclude Include="src\reference\kdtree.h" />
-    <ClInclude Include="src\reference\kdtree_builder.h" />
-    <ClInclude Include="src\reference\light.h" />
-    <ClInclude Include="src\lib\matrix.h" />
-    <ClInclude Include="src\reference\ray.h" />
-    <ClInclude Include="src\lib\random.h" />
-    <ClInclude Include="src\reference\sampling.h" />
-    <ClInclude Include="src\reference\spectrum.h" />
-    <ClInclude Include="src\reference\test_ray_generator.h" />
-    <ClInclude Include="src\reference\intersection.h" />
-    <ClInclude Include="src\reference\triangle_mesh.h" />
-    <ClInclude Include="src\reference\triangle_mesh_loader.h" />
-    <ClInclude Include="src\lib\vector.h" />
     <ClInclude Include="third_party\imgui\imconfig.h" />
     <ClInclude Include="third_party\imgui\imgui.h" />
     <ClInclude Include="third_party\imgui\imgui_internal.h" />
