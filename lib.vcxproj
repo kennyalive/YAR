@@ -14,8 +14,9 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{5D5C215F-DB9F-4795-800F-D48159BF0620}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>kitchen</RootNamespace>
+    <RootNamespace>lib</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <ProjectName>lib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">

@@ -62,7 +62,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>kitchen.lib;reference.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lib.lib;reference.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)build\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
@@ -97,7 +97,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>kitchen.lib;reference.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lib.lib;reference.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)build\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
