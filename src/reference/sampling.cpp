@@ -1,7 +1,6 @@
+#include "std.h"
 #include "lib/common.h"
 #include "lib/vector.h"
-
-#include <cmath>
 
 Vector3 uniform_sample_sphere(float u0, float u1)
 {

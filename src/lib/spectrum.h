@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lib/vector.h"
+#include "vector.h"
 
 // Sampled_Spectrum approximates spectrum function as a sequence of samples where each sample
 // represents an average of the spectrum function over the interval of a fixed length.

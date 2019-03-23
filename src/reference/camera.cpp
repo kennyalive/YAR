@@ -1,3 +1,4 @@
+#include "std.h"
 #include "camera.h"
 #include "lib/common.h"
 

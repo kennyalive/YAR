@@ -1,3 +1,4 @@
+#include "std.h"
 #include "common.h"
 #include "matrix.h"
 
@@ -14,14 +15,14 @@ const Matrix4x4 Matrix4x4::identity = [] {
 }();
 
 void Matrix3x4::set_column(int column_index, Vector3 c) {
-    assert(column_index >= 0 && column_index < 4);
+    ASSERT(column_index >= 0 && column_index < 4);
     a[0][column_index] = c.x;
     a[1][column_index] = c.y;
     a[2][column_index] = c.z;
 }
 
 void Matrix3x4::set_row(int row_index, Vector4 r) {
-    assert(row_index >= 0 && row_index < 3);
+    ASSERT(row_index >= 0 && row_index < 3);
     a[row_index][0] = r.x;
     a[row_index][1] = r.y;
     a[row_index][2] = r.z;
@@ -34,7 +35,7 @@ Vector3 Matrix3x4::get_column(int c) const {
 }
 
 Vector4 Matrix3x4::get_row(int row) const {
-    assert(row >= 0 && row < 3);
+    ASSERT(row >= 0 && row < 3);
     return Vector4(a[row][0], a[row][1], a[row][2], a[row][3]);
 }
 
@@ -168,7 +169,7 @@ Matrix3x4 uniform_scale(const Matrix3x4& m, float scale) {
 }
 
 Matrix3x4 look_at_transform(Vector3 from, Vector3 to, Vector3 up) {
-    assert(up.is_normalized());
+    ASSERT(up.is_normalized());
 
     Vector3 f = to - from;
     float d = f.length();

@@ -1,6 +1,7 @@
-#include "colorimetry.h"
+#include "std.h"
+#include "common.h"
 #include "spectrum.h"
-#include "lib/common.h"
+#include "colorimetry.h"
 
 static float compute_average_value_for_range(const float* lambdas, const float* values, int n, float range_start, float range_end) {
     ASSERT(n >= 2);

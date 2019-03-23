@@ -1,8 +1,9 @@
+#include "std.h"
 #include "lib/common.h"
 #include "raster_resources.h"
 #include "gpu_structures.h"
 #include "utils.h"
-#include "io/io.h"
+#include "lib/io.h"
 #include "lib/matrix.h"
 #include "lib/mesh.h"
 
@@ -167,7 +168,7 @@ void Rasterization_Resources::destroy_framebuffer() {
 }
 
 void Rasterization_Resources::update_point_lights(const RGB_Point_Light_Data* point_lights, int point_light_count) {
-    assert(point_light_count < 8);
+    ASSERT(point_light_count < 8);
 
     Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
     for (int i = 0; i < point_light_count; i++) {

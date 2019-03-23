@@ -15,7 +15,7 @@ struct Triangle_Mesh {
     static Triangle_Mesh from_mesh_data(const Mesh_Data& mesh_data, Material_Handle material);
 
     uint32_t get_triangle_count() const {
-        assert(indices.size() % 3 == 0);
+        ASSERT(indices.size() % 3 == 0);
         return static_cast<uint32_t>(indices.size() / 3);
     }
 

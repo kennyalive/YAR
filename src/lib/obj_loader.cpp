@@ -1,4 +1,5 @@
-#include "lib/common.h"
+#include "std.h"
+#include "common.h"
 #include "obj_loader.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION

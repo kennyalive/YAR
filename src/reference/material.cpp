@@ -1,6 +1,7 @@
+#include "std.h"
 #include "lib/common.h"
 #include "material.h"
-#include "io/io.h"
+#include "lib/io.h"
 
 
 namespace {

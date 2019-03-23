@@ -1,7 +1,20 @@
-#include "lib/common.h"
-#include "io/io.h"
+#include "std.h"
+#include "common.h"
+#include "io.h"
 
 #include "half/half.h"
+
+YAR_File load_yar_file(const std::string& path) {
+    ASSERT(false);
+    YAR_File result;
+    return result;
+}
+
+Scene_Data load_scene(Scene_Type scene_type, const std::string& scene_path) {
+    ASSERT(false);
+    Scene_Data scene_data;
+    return scene_data;
+}
 
 // from third_party/miniexr.cpp
 unsigned char* miniexr_write(unsigned width, unsigned height, unsigned channels, const void* rgba16f, size_t* out_size);
@@ -28,7 +41,7 @@ void write_exr_image(const char* file_name, const ColorRGB* pixels, int w, int h
     unsigned char* exr_data = miniexr_write(w, h, 3, rgb16f.data(), &exr_size);
 
     size_t bytes_written = fwrite(exr_data, 1, exr_size, file);
-    assert(bytes_written == exr_size);
+    ASSERT(bytes_written == exr_size);
 
     free(exr_data);
     fclose(file);

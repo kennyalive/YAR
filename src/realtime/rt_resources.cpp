@@ -1,11 +1,9 @@
+#include "std.h"
 #include "lib/common.h"
 #include "rt_resources.h"
 #include "gpu_structures.h"
 #include "utils.h"
 #include "lib/mesh.h"
-
-#include <algorithm>
-#include <cassert>
 
 struct Rt_Uniform_Buffer {
     Matrix3x4 camera_to_world;
@@ -96,7 +94,7 @@ void Raytracing_Resources::update_mesh_transform(uint32_t mesh_index, const Matr
 }
 
 void Raytracing_Resources::update_point_lights(const RGB_Point_Light_Data* point_lights, int point_light_count) {
-    assert(point_light_count < 8);
+    ASSERT(point_light_count < 8);
 
     Rt_Uniform_Buffer& buf = *mapped_uniform_buffer;
     for (int i = 0; i < point_light_count; i++) {

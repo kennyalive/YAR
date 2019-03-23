@@ -1,3 +1,4 @@
+#include "std.h"
 #include "lib/common.h"
 #include "light.h"
 #include "material.h"

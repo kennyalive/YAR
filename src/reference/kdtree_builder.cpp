@@ -1,12 +1,7 @@
+#include "std.h"
 #include "lib/common.h"
 #include "kdtree_builder.h"
 #include "triangle_mesh.h"
-
-#include <algorithm>
-#include <cmath>
-#include <numeric>
-#include <string>
-#include <vector>
 
 namespace {
 

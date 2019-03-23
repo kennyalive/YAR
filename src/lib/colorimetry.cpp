@@ -1,6 +1,6 @@
+#include "std.h"
+#include "common.h"
 #include "spectrum.h"
-#include "lib/common.h"
-#include <vector>
 
 //
 // Data is obtained from 'Colour & Vision Research Laboratory': http://www.cvrl.org

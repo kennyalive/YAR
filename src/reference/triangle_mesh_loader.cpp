@@ -1,15 +1,8 @@
+#include "std.h"
 #include "lib/common.h"
 #include "triangle_mesh.h"
 #include "triangle_mesh_loader.h"
 #include "lib/vector.h"
-
-#include <algorithm>
-#include <array>
-#include <cstring>
-#include <fstream>
-#include <functional>
-#include <unordered_map>
-#include <vector>
 
 std::unique_ptr<Triangle_Mesh> LoadTriangleMesh(const std::string& fileName) {
     enum {

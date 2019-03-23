@@ -2,9 +2,8 @@
 
 #include "kdtree.h"
 
-#include "io/io.h"
-
 #include "lib/color.h"
+#include "lib/io.h"
 #include "lib/matrix.h"
 #include "lib/random.h"
 #include "lib/vector.h"

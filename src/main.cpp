@@ -1,6 +1,4 @@
-#include <cstdio>
-#include <cstring>
-#include <string>
+#include "std.h"
 
 static bool enable_validation_layers = false;
 static bool use_debug_names = false;

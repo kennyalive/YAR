@@ -1,3 +1,4 @@
+#include "std.h"
 #include "common.h"
 #include "platform.h"
 

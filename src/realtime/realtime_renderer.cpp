@@ -1,21 +1,21 @@
+#include "std.h"
 #include "lib/common.h"
 #include "realtime_renderer.h"
 #include "vk.h"
 #include "utils.h"
 
-#include "io/test_scenes.h"
 #include "lib/matrix.h"
 #include "lib/mesh.h"
+#include "lib/test_scenes.h"
 #include "reference/reference_renderer.h"
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
-#include "imgui/impl/imgui_impl_vulkan.h"
-#include "imgui/impl/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_vulkan.h"
+#include "imgui/imgui_impl_glfw.h"
 
 #include <cinttypes>
-#include <chrono>
 
 void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* window) {
     vk_initialize(window, vk_create_info);
@@ -54,10 +54,10 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
     // Geometry buffers.
     {
         //scene_data = load_bunny_scene(); // 144K
-        //scene_data = load_conference_scene(); // 330K
+        scene_data = load_conference_scene(); // 330K
         //scene_data = load_buddha_scene(); // 1M
         //scene_data = load_hairball_scene(); // 2.9M
-        scene_data = load_mori_knob();
+        //scene_data = load_mori_knob();
 
         flying_camera.initialize(scene_data.view_points[0]);
         gpu_meshes.resize(scene_data.meshes.size());
@@ -479,27 +479,7 @@ void Realtime_Renderer::do_imgui() {
             ImGui::Separator();
             ImGui::Checkbox("Parallel", &parallel_reference_rendering);
             if (ImGui::Button("Render reference image"))
-            {
-                reference_render_active = true;
-
-                Render_Reference_Image_Params params {};
-                params.image_resolution = Vector2i{ (int)vk.surface_size.width, (int)vk.surface_size.height };
-
-                params.render_region.p0 = Vector2i{};
-                params.render_region.p1 = params.image_resolution;
-
-                params.scene_data = &scene_data;
-                params.camera_to_world_vk = flying_camera.get_camera_pose();
-
-                /*params.crop_x = 462;
-                params.crop_y = 302;
-                params.crop_w = 3;
-                params.crop_h = 3;*/
-
-                params.parallel_render = parallel_reference_rendering;
-                    
-                reference_render_thread = std::thread(render_reference_image, params, &reference_render_active);
-            }
+                start_reference_renderer();
 
             if (disable_button)
                 ImGui::PopItemFlag();
@@ -519,4 +499,27 @@ void Realtime_Renderer::do_imgui() {
         }
         ImGui::End();
     }
+}
+
+void Realtime_Renderer::start_reference_renderer() {
+    ASSERT(false);
+    //reference_render_active = true;
+
+    //Render_Reference_Image_Params params {};
+    //params.image_resolution = Vector2i{ (int)vk.surface_size.width, (int)vk.surface_size.height };
+
+    //params.render_region.p0 = Vector2i{};
+    //params.render_region.p1 = params.image_resolution;
+
+    //params.scene_data = &scene_data;
+    //params.camera_to_world_vk = flying_camera.get_camera_pose();
+
+    ///*params.crop_x = 462;
+    //params.crop_y = 302;
+    //params.crop_w = 3;
+    //params.crop_h = 3;*/
+
+    //params.parallel_render = parallel_reference_rendering;
+    //                
+    //reference_render_thread = std::thread(render_reference_image, params, &reference_render_active);
 }

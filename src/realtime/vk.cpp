@@ -1,3 +1,4 @@
+#include "std.h"
 #include "lib/common.h"
 
 #define VMA_IMPLEMENTATION
@@ -7,12 +8,6 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
-#include <algorithm>
-#include <cassert>
-#include <functional>
-#include <iostream>
-#include <vector>
 
 static const VkDescriptorPoolSize descriptor_pool_sizes[] = {
     {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             16},

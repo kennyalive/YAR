@@ -9,10 +9,7 @@
 #include "lib/flying_camera.h"
 #include "lib/matrix.h"
 #include "lib/mesh.h"
-#include "io/io.h"
-
-#include <thread>
-#include <vector>
+#include "lib/io.h"
 
 struct GLFWwindow;
 
@@ -34,6 +31,7 @@ private:
     void draw_imgui();
     void copy_output_image_to_swapchain();
     void do_imgui();
+    void start_reference_renderer();
 
 private:
     struct UI_Result {

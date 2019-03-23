@@ -12,11 +12,10 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{5D5C215F-DB9F-4795-800F-D48159BF0620}</ProjectGuid>
+    <ProjectGuid>{BB5FD379-295D-4971-841C-BA6567147146}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>lib</RootNamespace>
+    <RootNamespace>thirdparty</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
-    <ProjectName>lib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -56,17 +55,16 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_GLFW_WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party</AdditionalIncludeDirectories>
-      <PrecompiledHeaderFile>std.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir)third_party</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -77,15 +75,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_GLFW_WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party</AdditionalIncludeDirectories>
-      <PrecompiledHeaderFile>std.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir)third_party</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -93,40 +90,61 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\lib\bounding_box.h" />
-    <ClInclude Include="src\lib\color.h" />
-    <ClInclude Include="src\lib\colorimetry.h" />
-    <ClInclude Include="src\lib\common.h" />
-    <ClInclude Include="src\lib\flying_camera.h" />
-    <ClInclude Include="src\lib\geometry.h" />
-    <ClInclude Include="src\lib\io.h" />
-    <ClInclude Include="src\lib\matrix.h" />
-    <ClInclude Include="src\lib\mesh.h" />
-    <ClInclude Include="src\lib\obj_loader.h" />
-    <ClInclude Include="src\lib\platform.h" />
-    <ClInclude Include="src\lib\random.h" />
-    <ClInclude Include="src\lib\ray.h" />
-    <ClInclude Include="src\lib\spectrum.h" />
-    <ClInclude Include="src\lib\test_scenes.h" />
-    <ClInclude Include="src\lib\vector.h" />
-    <ClInclude Include="src\std.h" />
+    <ClCompile Include="third_party\enkiTS\TaskScheduler.cpp" />
+    <ClCompile Include="third_party\glfw\context.c" />
+    <ClCompile Include="third_party\glfw\egl_context.c" />
+    <ClCompile Include="third_party\glfw\init.c" />
+    <ClCompile Include="third_party\glfw\input.c" />
+    <ClCompile Include="third_party\glfw\monitor.c" />
+    <ClCompile Include="third_party\glfw\osmesa_context.c" />
+    <ClCompile Include="third_party\glfw\vulkan.c" />
+    <ClCompile Include="third_party\glfw\wgl_context.c" />
+    <ClCompile Include="third_party\glfw\win32_init.c" />
+    <ClCompile Include="third_party\glfw\win32_joystick.c" />
+    <ClCompile Include="third_party\glfw\win32_monitor.c" />
+    <ClCompile Include="third_party\glfw\win32_thread.c" />
+    <ClCompile Include="third_party\glfw\win32_time.c" />
+    <ClCompile Include="third_party\glfw\win32_window.c" />
+    <ClCompile Include="third_party\glfw\window.c" />
+    <ClCompile Include="third_party\half\half.cpp" />
+    <ClCompile Include="third_party\imgui\imgui.cpp" />
+    <ClCompile Include="third_party\imgui\imgui_demo.cpp" />
+    <ClCompile Include="third_party\imgui\imgui_draw.cpp" />
+    <ClCompile Include="third_party\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="third_party\imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="third_party\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="third_party\miniexr.cpp" />
+    <ClCompile Include="third_party\pcg\pcg_basic.c" />
+    <ClCompile Include="third_party\volk\volk.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\lib\color.cpp" />
-    <ClCompile Include="src\lib\colorimetry.cpp" />
-    <ClCompile Include="src\lib\common.cpp" />
-    <ClCompile Include="src\lib\flying_camera.cpp" />
-    <ClCompile Include="src\lib\io.cpp" />
-    <ClCompile Include="src\lib\matrix.cpp" />
-    <ClCompile Include="src\lib\mesh.cpp" />
-    <ClCompile Include="src\lib\obj_loader.cpp" />
-    <ClCompile Include="src\lib\spectrum.cpp" />
-    <ClCompile Include="src\lib\test_scenes.cpp" />
-    <ClCompile Include="src\lib\win32.cpp" />
-    <ClCompile Include="src\std.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
+    <ClInclude Include="third_party\enkiTS\Atomics.h" />
+    <ClInclude Include="third_party\enkiTS\LockLessMultiReadPipe.h" />
+    <ClInclude Include="third_party\enkiTS\TaskScheduler.h" />
+    <ClInclude Include="third_party\enkiTS\Threads.h" />
+    <ClInclude Include="third_party\glfw\egl_context.h" />
+    <ClInclude Include="third_party\glfw\glfw3.h" />
+    <ClInclude Include="third_party\glfw\glfw3native.h" />
+    <ClInclude Include="third_party\glfw\internal.h" />
+    <ClInclude Include="third_party\glfw\mappings.h" />
+    <ClInclude Include="third_party\glfw\osmesa_context.h" />
+    <ClInclude Include="third_party\glfw\wgl_context.h" />
+    <ClInclude Include="third_party\glfw\win32_joystick.h" />
+    <ClInclude Include="third_party\glfw\win32_platform.h" />
+    <ClInclude Include="third_party\half\half.h" />
+    <ClInclude Include="third_party\imgui\imconfig.h" />
+    <ClInclude Include="third_party\imgui\imgui.h" />
+    <ClInclude Include="third_party\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="third_party\imgui\imgui_impl_vulkan.h" />
+    <ClInclude Include="third_party\imgui\imgui_internal.h" />
+    <ClInclude Include="third_party\imgui\imstb_rectpack.h" />
+    <ClInclude Include="third_party\imgui\imstb_textedit.h" />
+    <ClInclude Include="third_party\imgui\imstb_truetype.h" />
+    <ClInclude Include="third_party\pcg\pcg_basic.h" />
+    <ClInclude Include="third_party\volk\volk.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

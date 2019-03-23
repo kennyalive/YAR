@@ -2,11 +2,8 @@
 
 #include "gpu_structures.h"
 #include "vk.h"
-#include "io/io.h"
+#include "lib/io.h"
 #include "lib/matrix.h"
-
-
-#include <vector>
 
 struct Rt_Uniform_Buffer;
 

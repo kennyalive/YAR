@@ -1,0 +1,175 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="enkiTS">
+      <UniqueIdentifier>{1088a4b7-0f64-4bb8-b860-83ec5d5bfa66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="glfw">
+      <UniqueIdentifier>{b6b8da2c-7203-4c5f-88d7-6ef3651a662f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="half">
+      <UniqueIdentifier>{19848736-492f-4845-939d-0a34755048fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imgui">
+      <UniqueIdentifier>{8fb8bcf7-dc41-4813-9dc0-5be5e88bcf5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pcg">
+      <UniqueIdentifier>{989bbf8f-4154-4311-97c1-ae1ab2015f6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="volk">
+      <UniqueIdentifier>{4f782fe0-2a7b-4a21-acae-ec7624df63c3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="third_party\enkiTS\TaskScheduler.cpp">
+      <Filter>enkiTS</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\context.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\egl_context.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\init.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\input.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\monitor.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\osmesa_context.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\vulkan.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\wgl_context.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_init.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_joystick.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_monitor.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_thread.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_time.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\win32_window.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\glfw\window.c">
+      <Filter>glfw</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\half\half.cpp">
+      <Filter>half</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_demo.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_draw.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_widgets.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\pcg\pcg_basic.c">
+      <Filter>pcg</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\volk\volk.c">
+      <Filter>volk</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\miniexr.cpp" />
+    <ClCompile Include="third_party\imgui\imgui_impl_glfw.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="third_party\imgui\imgui_impl_vulkan.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="third_party\enkiTS\Atomics.h">
+      <Filter>enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\enkiTS\LockLessMultiReadPipe.h">
+      <Filter>enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\enkiTS\TaskScheduler.h">
+      <Filter>enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\enkiTS\Threads.h">
+      <Filter>enkiTS</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\egl_context.h">
+      <Filter>glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\glfw3.h">
+      <Filter>glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\glfw3native.h">
+      <Filter>glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\internal.h">
+      <Filter>glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\mappings.h">
+      <Filter>glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\osmesa_context.h">
+      <Filter>glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\wgl_context.h">
+      <Filter>glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\win32_joystick.h">
+      <Filter>glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\glfw\win32_platform.h">
+      <Filter>glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\half\half.h">
+      <Filter>half</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imconfig.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imgui.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imgui_internal.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imstb_rectpack.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imstb_textedit.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imstb_truetype.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\pcg\pcg_basic.h">
+      <Filter>pcg</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\volk\volk.h">
+      <Filter>volk</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imgui_impl_glfw.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\imgui\imgui_impl_vulkan.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

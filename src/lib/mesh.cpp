@@ -1,3 +1,4 @@
+#include "std.h"
 #include "mesh.h"
 
 #include <unordered_map>

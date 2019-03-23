@@ -3,8 +3,6 @@
 #include "vk.h"
 #include "lib/vector.h"
 
-#include <vector>
-
 struct Descriptor_Writes {
     static constexpr uint32_t max_writes = 32;
 

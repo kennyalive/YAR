@@ -1,11 +1,10 @@
 #pragma once
 
-#include "io/obj_loader.h"
-#include "lib/color.h"
-#include "lib/matrix.h"
-#include "lib/mesh.h"
-
-#include <vector>
+#include "color.h"
+#include "matrix.h"
+#include "mesh.h"
+#include "obj_loader.h"
+#include "vector.h"
 
 struct RGB_Point_Light_Data {
     Vector3 position;
@@ -43,4 +42,20 @@ struct Scene_Data {
     std::vector<RGB_Diffuse_Rectangular_Light_Data> rgb_diffuse_rectangular_lights;
 };
 
+// YAR file format
+enum class Scene_Type {
+    test_scene
+};
+
+struct YAR_File {
+    Vector2i image_resolution;
+    Matrix3x4 camera_to_world;
+    Scene_Type scene_type;
+    std::string scene_path;
+};
+
+YAR_File load_yar_file(const std::string& path);
+Scene_Data load_scene(Scene_Type scene_type, const std::string& scene_path);
+
+// Writes image data to EXR file.
 void write_exr_image(const char* file_name, const ColorRGB* pixels, int w, int h);

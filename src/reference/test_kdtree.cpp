@@ -1,3 +1,4 @@
+#include "std.h"
 #include "lib/common.h"
 #include "intersection.h"
 #include "kdtree.h"
@@ -11,9 +12,6 @@
 #ifdef _WIN32
 #include <pmmintrin.h>
 #endif
-
-#include <string>
-#include <vector>
 
 enum { benchmark_ray_count = 1'000'000 };
 enum { debug_rays = false };

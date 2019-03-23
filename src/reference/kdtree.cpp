@@ -1,10 +1,7 @@
+#include "std.h"
 #include "lib/common.h"
 #include "intersection.h"
 #include "kdtree.h"
-#include <cassert>
-#include <fstream>
-#include <map>
-#include <numeric>
 
 template <typename Primitive_Source>
 KdTree<Primitive_Source>::KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& triangle_indices, const Primitive_Source& primitive_source)

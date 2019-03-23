@@ -1,8 +1,10 @@
-#include "lib/common.h"
+#include "std.h"
+#include "common.h"
 #include "test_scenes.h"
-#include "io/obj_loader.h"
-#include "reference/colorimetry.h"
-#include "reference/spectrum.h"
+
+#include "colorimetry.h"
+#include "obj_loader.h"
+#include "spectrum.h"
 
 static const Matrix3x4 from_obj_to_world {
     1, 0,  0, 0,
