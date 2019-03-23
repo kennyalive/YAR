@@ -21,154 +21,154 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="third_party\enkiTS\TaskScheduler.cpp">
+    <ClCompile Include="..\third_party\enkiTS\TaskScheduler.cpp">
       <Filter>enkiTS</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\context.c">
+    <ClCompile Include="..\third_party\glfw\context.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\egl_context.c">
+    <ClCompile Include="..\third_party\glfw\egl_context.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\init.c">
+    <ClCompile Include="..\third_party\glfw\init.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\input.c">
+    <ClCompile Include="..\third_party\glfw\input.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\monitor.c">
+    <ClCompile Include="..\third_party\glfw\monitor.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\osmesa_context.c">
+    <ClCompile Include="..\third_party\glfw\osmesa_context.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\vulkan.c">
+    <ClCompile Include="..\third_party\glfw\vulkan.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\wgl_context.c">
+    <ClCompile Include="..\third_party\glfw\wgl_context.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\win32_init.c">
+    <ClCompile Include="..\third_party\glfw\win32_init.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\win32_joystick.c">
+    <ClCompile Include="..\third_party\glfw\win32_joystick.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\win32_monitor.c">
+    <ClCompile Include="..\third_party\glfw\win32_monitor.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\win32_thread.c">
+    <ClCompile Include="..\third_party\glfw\win32_thread.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\win32_time.c">
+    <ClCompile Include="..\third_party\glfw\win32_time.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\win32_window.c">
+    <ClCompile Include="..\third_party\glfw\win32_window.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\glfw\window.c">
+    <ClCompile Include="..\third_party\glfw\window.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\half\half.cpp">
+    <ClCompile Include="..\third_party\half\half.cpp">
       <Filter>half</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\imgui\imgui.cpp">
+    <ClCompile Include="..\third_party\imgui\imgui.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\imgui\imgui_demo.cpp">
+    <ClCompile Include="..\third_party\imgui\imgui_demo.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\imgui\imgui_draw.cpp">
+    <ClCompile Include="..\third_party\imgui\imgui_draw.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\imgui\imgui_widgets.cpp">
+    <ClCompile Include="..\third_party\imgui\imgui_widgets.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\pcg\pcg_basic.c">
+    <ClCompile Include="..\third_party\pcg\pcg_basic.c">
       <Filter>pcg</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\volk\volk.c">
+    <ClCompile Include="..\third_party\volk\volk.c">
       <Filter>volk</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\miniexr.cpp" />
-    <ClCompile Include="third_party\imgui\imgui_impl_glfw.cpp">
+    <ClCompile Include="..\third_party\miniexr.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_impl_glfw.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="third_party\imgui\imgui_impl_vulkan.cpp">
+    <ClCompile Include="..\third_party\imgui\imgui_impl_vulkan.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="third_party\enkiTS\Atomics.h">
+    <ClInclude Include="..\third_party\enkiTS\Atomics.h">
       <Filter>enkiTS</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\enkiTS\LockLessMultiReadPipe.h">
+    <ClInclude Include="..\third_party\enkiTS\LockLessMultiReadPipe.h">
       <Filter>enkiTS</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\enkiTS\TaskScheduler.h">
+    <ClInclude Include="..\third_party\enkiTS\TaskScheduler.h">
       <Filter>enkiTS</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\enkiTS\Threads.h">
+    <ClInclude Include="..\third_party\enkiTS\Threads.h">
       <Filter>enkiTS</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\glfw\egl_context.h">
+    <ClInclude Include="..\third_party\glfw\egl_context.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\glfw\glfw3.h">
+    <ClInclude Include="..\third_party\glfw\glfw3.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\glfw\glfw3native.h">
+    <ClInclude Include="..\third_party\glfw\glfw3native.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\glfw\internal.h">
+    <ClInclude Include="..\third_party\glfw\internal.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\glfw\mappings.h">
+    <ClInclude Include="..\third_party\glfw\mappings.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\glfw\osmesa_context.h">
+    <ClInclude Include="..\third_party\glfw\osmesa_context.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\glfw\wgl_context.h">
+    <ClInclude Include="..\third_party\glfw\wgl_context.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\glfw\win32_joystick.h">
+    <ClInclude Include="..\third_party\glfw\win32_joystick.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\glfw\win32_platform.h">
+    <ClInclude Include="..\third_party\glfw\win32_platform.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\half\half.h">
+    <ClInclude Include="..\third_party\half\half.h">
       <Filter>half</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\imgui\imconfig.h">
+    <ClInclude Include="..\third_party\imgui\imconfig.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\imgui\imgui.h">
+    <ClInclude Include="..\third_party\imgui\imgui.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\imgui\imgui_internal.h">
+    <ClInclude Include="..\third_party\imgui\imgui_internal.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\imgui\imstb_rectpack.h">
+    <ClInclude Include="..\third_party\imgui\imstb_rectpack.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\imgui\imstb_textedit.h">
+    <ClInclude Include="..\third_party\imgui\imstb_textedit.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\imgui\imstb_truetype.h">
+    <ClInclude Include="..\third_party\imgui\imstb_truetype.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\pcg\pcg_basic.h">
+    <ClInclude Include="..\third_party\pcg\pcg_basic.h">
       <Filter>pcg</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\volk\volk.h">
+    <ClInclude Include="..\third_party\volk\volk.h">
       <Filter>volk</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\imgui\imgui_impl_glfw.h">
+    <ClInclude Include="..\third_party\imgui\imgui_impl_glfw.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="third_party\imgui\imgui_impl_vulkan.h">
+    <ClInclude Include="..\third_party\imgui\imgui_impl_vulkan.h">
       <Filter>imgui</Filter>
     </ClInclude>
   </ItemGroup>

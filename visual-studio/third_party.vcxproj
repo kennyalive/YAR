@@ -45,13 +45,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\build\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\build\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\build\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\build\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -63,7 +63,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_GLFW_WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)third_party</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\third_party</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -81,7 +81,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_GLFW_WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)third_party</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\third_party</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -90,61 +90,61 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="third_party\enkiTS\TaskScheduler.cpp" />
-    <ClCompile Include="third_party\glfw\context.c" />
-    <ClCompile Include="third_party\glfw\egl_context.c" />
-    <ClCompile Include="third_party\glfw\init.c" />
-    <ClCompile Include="third_party\glfw\input.c" />
-    <ClCompile Include="third_party\glfw\monitor.c" />
-    <ClCompile Include="third_party\glfw\osmesa_context.c" />
-    <ClCompile Include="third_party\glfw\vulkan.c" />
-    <ClCompile Include="third_party\glfw\wgl_context.c" />
-    <ClCompile Include="third_party\glfw\win32_init.c" />
-    <ClCompile Include="third_party\glfw\win32_joystick.c" />
-    <ClCompile Include="third_party\glfw\win32_monitor.c" />
-    <ClCompile Include="third_party\glfw\win32_thread.c" />
-    <ClCompile Include="third_party\glfw\win32_time.c" />
-    <ClCompile Include="third_party\glfw\win32_window.c" />
-    <ClCompile Include="third_party\glfw\window.c" />
-    <ClCompile Include="third_party\half\half.cpp" />
-    <ClCompile Include="third_party\imgui\imgui.cpp" />
-    <ClCompile Include="third_party\imgui\imgui_demo.cpp" />
-    <ClCompile Include="third_party\imgui\imgui_draw.cpp" />
-    <ClCompile Include="third_party\imgui\imgui_impl_glfw.cpp" />
-    <ClCompile Include="third_party\imgui\imgui_impl_vulkan.cpp" />
-    <ClCompile Include="third_party\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="third_party\miniexr.cpp" />
-    <ClCompile Include="third_party\pcg\pcg_basic.c" />
-    <ClCompile Include="third_party\volk\volk.c">
+    <ClCompile Include="..\third_party\enkiTS\TaskScheduler.cpp" />
+    <ClCompile Include="..\third_party\glfw\context.c" />
+    <ClCompile Include="..\third_party\glfw\egl_context.c" />
+    <ClCompile Include="..\third_party\glfw\init.c" />
+    <ClCompile Include="..\third_party\glfw\input.c" />
+    <ClCompile Include="..\third_party\glfw\monitor.c" />
+    <ClCompile Include="..\third_party\glfw\osmesa_context.c" />
+    <ClCompile Include="..\third_party\glfw\vulkan.c" />
+    <ClCompile Include="..\third_party\glfw\wgl_context.c" />
+    <ClCompile Include="..\third_party\glfw\win32_init.c" />
+    <ClCompile Include="..\third_party\glfw\win32_joystick.c" />
+    <ClCompile Include="..\third_party\glfw\win32_monitor.c" />
+    <ClCompile Include="..\third_party\glfw\win32_thread.c" />
+    <ClCompile Include="..\third_party\glfw\win32_time.c" />
+    <ClCompile Include="..\third_party\glfw\win32_window.c" />
+    <ClCompile Include="..\third_party\glfw\window.c" />
+    <ClCompile Include="..\third_party\half\half.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="..\third_party\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\third_party\miniexr.cpp" />
+    <ClCompile Include="..\third_party\pcg\pcg_basic.c" />
+    <ClCompile Include="..\third_party\volk\volk.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="third_party\enkiTS\Atomics.h" />
-    <ClInclude Include="third_party\enkiTS\LockLessMultiReadPipe.h" />
-    <ClInclude Include="third_party\enkiTS\TaskScheduler.h" />
-    <ClInclude Include="third_party\enkiTS\Threads.h" />
-    <ClInclude Include="third_party\glfw\egl_context.h" />
-    <ClInclude Include="third_party\glfw\glfw3.h" />
-    <ClInclude Include="third_party\glfw\glfw3native.h" />
-    <ClInclude Include="third_party\glfw\internal.h" />
-    <ClInclude Include="third_party\glfw\mappings.h" />
-    <ClInclude Include="third_party\glfw\osmesa_context.h" />
-    <ClInclude Include="third_party\glfw\wgl_context.h" />
-    <ClInclude Include="third_party\glfw\win32_joystick.h" />
-    <ClInclude Include="third_party\glfw\win32_platform.h" />
-    <ClInclude Include="third_party\half\half.h" />
-    <ClInclude Include="third_party\imgui\imconfig.h" />
-    <ClInclude Include="third_party\imgui\imgui.h" />
-    <ClInclude Include="third_party\imgui\imgui_impl_glfw.h" />
-    <ClInclude Include="third_party\imgui\imgui_impl_vulkan.h" />
-    <ClInclude Include="third_party\imgui\imgui_internal.h" />
-    <ClInclude Include="third_party\imgui\imstb_rectpack.h" />
-    <ClInclude Include="third_party\imgui\imstb_textedit.h" />
-    <ClInclude Include="third_party\imgui\imstb_truetype.h" />
-    <ClInclude Include="third_party\pcg\pcg_basic.h" />
-    <ClInclude Include="third_party\volk\volk.h" />
+    <ClInclude Include="..\third_party\enkiTS\Atomics.h" />
+    <ClInclude Include="..\third_party\enkiTS\LockLessMultiReadPipe.h" />
+    <ClInclude Include="..\third_party\enkiTS\TaskScheduler.h" />
+    <ClInclude Include="..\third_party\enkiTS\Threads.h" />
+    <ClInclude Include="..\third_party\glfw\egl_context.h" />
+    <ClInclude Include="..\third_party\glfw\glfw3.h" />
+    <ClInclude Include="..\third_party\glfw\glfw3native.h" />
+    <ClInclude Include="..\third_party\glfw\internal.h" />
+    <ClInclude Include="..\third_party\glfw\mappings.h" />
+    <ClInclude Include="..\third_party\glfw\osmesa_context.h" />
+    <ClInclude Include="..\third_party\glfw\wgl_context.h" />
+    <ClInclude Include="..\third_party\glfw\win32_joystick.h" />
+    <ClInclude Include="..\third_party\glfw\win32_platform.h" />
+    <ClInclude Include="..\third_party\half\half.h" />
+    <ClInclude Include="..\third_party\imgui\imconfig.h" />
+    <ClInclude Include="..\third_party\imgui\imgui.h" />
+    <ClInclude Include="..\third_party\imgui\imgui_impl_glfw.h" />
+    <ClInclude Include="..\third_party\imgui\imgui_impl_vulkan.h" />
+    <ClInclude Include="..\third_party\imgui\imgui_internal.h" />
+    <ClInclude Include="..\third_party\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\third_party\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\third_party\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\third_party\pcg\pcg_basic.h" />
+    <ClInclude Include="..\third_party\volk\volk.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

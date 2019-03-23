@@ -1,53 +1,53 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\realtime\copy_to_swapchain.cpp">
+    <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\realtime\copy_to_swapchain.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
-    <ClCompile Include="src\realtime\raster_resources.cpp">
+    <ClCompile Include="..\src\realtime\raster_resources.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
-    <ClCompile Include="src\realtime\rt_resources.cpp">
+    <ClCompile Include="..\src\realtime\rt_resources.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
-    <ClCompile Include="src\realtime\utils.cpp">
+    <ClCompile Include="..\src\realtime\utils.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
-    <ClCompile Include="src\realtime\vk.cpp">
+    <ClCompile Include="..\src\realtime\vk.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
-    <ClCompile Include="src\realtime\realtime_renderer.cpp">
+    <ClCompile Include="..\src\realtime\realtime_renderer.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
-    <ClCompile Include="src\realtime\app.cpp">
+    <ClCompile Include="..\src\realtime\app.cpp">
       <Filter>realtime</Filter>
     </ClCompile>
-    <ClCompile Include="src\std.cpp" />
+    <ClCompile Include="..\src\std.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\realtime\copy_to_swapchain.h">
+    <ClInclude Include="..\src\realtime\copy_to_swapchain.h">
       <Filter>realtime</Filter>
     </ClInclude>
-    <ClInclude Include="src\realtime\raster_resources.h">
+    <ClInclude Include="..\src\realtime\raster_resources.h">
       <Filter>realtime</Filter>
     </ClInclude>
-    <ClInclude Include="src\realtime\rt_resources.h">
+    <ClInclude Include="..\src\realtime\rt_resources.h">
       <Filter>realtime</Filter>
     </ClInclude>
-    <ClInclude Include="src\realtime\utils.h">
+    <ClInclude Include="..\src\realtime\utils.h">
       <Filter>realtime</Filter>
     </ClInclude>
-    <ClInclude Include="src\realtime\vk.h">
+    <ClInclude Include="..\src\realtime\vk.h">
       <Filter>realtime</Filter>
     </ClInclude>
-    <ClInclude Include="src\realtime\gpu_structures.h">
+    <ClInclude Include="..\src\realtime\gpu_structures.h">
       <Filter>realtime</Filter>
     </ClInclude>
-    <ClInclude Include="src\realtime\realtime_renderer.h">
+    <ClInclude Include="..\src\realtime\realtime_renderer.h">
       <Filter>realtime</Filter>
     </ClInclude>
-    <ClInclude Include="src\std.h" />
+    <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
@@ -58,36 +58,36 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\common.glsl">
+    <None Include="..\src\shaders\common.glsl">
       <Filter>shaders</Filter>
     </None>
-    <None Include="src\shaders\rt_utils.glsl">
+    <None Include="..\src\shaders\rt_utils.glsl">
       <Filter>shaders</Filter>
     </None>
-    <None Include="src\shaders\tone_mapping.glsl">
+    <None Include="..\src\shaders\tone_mapping.glsl">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="src\shaders\raster_mesh.frag.glsl">
+    <CustomBuild Include="..\src\shaders\raster_mesh.frag.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="src\shaders\raster_mesh.vert.glsl">
+    <CustomBuild Include="..\src\shaders\raster_mesh.vert.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="src\shaders\rt_mesh.rchit.glsl">
+    <CustomBuild Include="..\src\shaders\rt_mesh.rchit.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="src\shaders\rt_mesh.rgen.glsl">
+    <CustomBuild Include="..\src\shaders\rt_mesh.rgen.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="src\shaders\rt_mesh.rmiss.glsl">
+    <CustomBuild Include="..\src\shaders\rt_mesh.rmiss.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="src\shaders\copy_to_swapchain.comp.glsl">
+    <CustomBuild Include="..\src\shaders\copy_to_swapchain.comp.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="src\shaders\rt_shadow_ray.rchit.glsl">
+    <CustomBuild Include="..\src\shaders\rt_shadow_ray.rchit.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
   </ItemGroup>

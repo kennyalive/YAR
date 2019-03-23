@@ -43,12 +43,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\build\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\build\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)build\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\build\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)..\build\$(Configuration)\intermediate\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -56,7 +56,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party;$(ProjectDir)third_party\imgui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\src;$(ProjectDir)..\third_party;$(ProjectDir)..\third_party\imgui</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>_DEBUG;_GLFW_WIN32;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -66,19 +66,19 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>third_party.lib;lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)build\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>DeclareDPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
     <CustomBuild>
-      <Command>$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V --target-env vulkan1.1 -o $(ProjectDir)data\spirv\%(Filename).spv &amp;&amp; $(VULKAN_SDK)\Bin\spirv-opt $(ProjectDir)data\spirv\%(Filename).spv -O --strip-debug -o $(ProjectDir)data\spirv\%(Filename).spv</Command>
+      <Command>$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V --target-env vulkan1.1 -o $(ProjectDir)..\data\spirv\%(Filename).spv &amp;&amp; $(VULKAN_SDK)\Bin\spirv-opt $(ProjectDir)..\data\spirv\%(Filename).spv -O --strip-debug -o $(ProjectDir)..\data\spirv\%(Filename).spv</Command>
     </CustomBuild>
     <CustomBuild>
-      <Outputs>$(ProjectDir)data\spirv\%(Filename).spv</Outputs>
+      <Outputs>$(ProjectDir)..\data\spirv\%(Filename).spv</Outputs>
     </CustomBuild>
     <CustomBuild>
-      <AdditionalInputs>$(ProjectDir)src\shaders\rt_utils.glsl;$(ProjectDir)src\shaders\common.glsl</AdditionalInputs>
+      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl</AdditionalInputs>
     </CustomBuild>
     <CustomBuild>
       <LinkObjects>false</LinkObjects>
@@ -92,7 +92,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;$(ProjectDir)third_party;$(ProjectDir)third_party\imgui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\src;$(ProjectDir)..\third_party;$(ProjectDir)..\third_party\imgui</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PreprocessorDefinitions>NDEBUG;_GLFW_WIN32;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -104,89 +104,89 @@
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>third_party.lib;lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)build\$(Configuration)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <Manifest>
       <AdditionalManifestFiles>DeclareDPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
     <CustomBuild>
-      <Command>$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V --target-env vulkan1.1 -o $(ProjectDir)data\spirv\%(Filename).spv &amp;&amp; $(VULKAN_SDK)\Bin\spirv-opt $(ProjectDir)data\spirv\%(Filename).spv -O --strip-debug -o $(ProjectDir)data\spirv\%(Filename).spv</Command>
+      <Command>$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V --target-env vulkan1.1 -o $(ProjectDir)..\data\spirv\%(Filename).spv &amp;&amp; $(VULKAN_SDK)\Bin\spirv-opt $(ProjectDir)..\data\spirv\%(Filename).spv -O --strip-debug -o $(ProjectDir)..\data\spirv\%(Filename).spv</Command>
     </CustomBuild>
     <CustomBuild>
-      <Outputs>$(ProjectDir)data\spirv\%(Filename).spv</Outputs>
+      <Outputs>$(ProjectDir)..\data\spirv\%(Filename).spv</Outputs>
     </CustomBuild>
     <CustomBuild>
-      <AdditionalInputs>$(ProjectDir)src\shaders\rt_utils.glsl;$(ProjectDir)src\shaders\common.glsl</AdditionalInputs>
+      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl</AdditionalInputs>
     </CustomBuild>
     <CustomBuild>
       <LinkObjects>false</LinkObjects>
     </CustomBuild>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\realtime\copy_to_swapchain.cpp" />
-    <ClCompile Include="src\realtime\realtime_renderer.cpp" />
-    <ClCompile Include="src\realtime\app.cpp" />
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\realtime\raster_resources.cpp" />
-    <ClCompile Include="src\realtime\rt_resources.cpp" />
-    <ClCompile Include="src\realtime\utils.cpp" />
-    <ClCompile Include="src\realtime\vk.cpp" />
-    <ClCompile Include="src\std.cpp">
+    <ClCompile Include="..\src\realtime\copy_to_swapchain.cpp" />
+    <ClCompile Include="..\src\realtime\realtime_renderer.cpp" />
+    <ClCompile Include="..\src\realtime\app.cpp" />
+    <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\realtime\raster_resources.cpp" />
+    <ClCompile Include="..\src\realtime\rt_resources.cpp" />
+    <ClCompile Include="..\src\realtime\utils.cpp" />
+    <ClCompile Include="..\src\realtime\vk.cpp" />
+    <ClCompile Include="..\src\std.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\realtime\copy_to_swapchain.h" />
-    <ClInclude Include="src\realtime\realtime_renderer.h" />
-    <ClInclude Include="src\realtime\gpu_structures.h" />
-    <ClInclude Include="src\realtime\raster_resources.h" />
-    <ClInclude Include="src\realtime\rt_resources.h" />
-    <ClInclude Include="src\realtime\utils.h" />
-    <ClInclude Include="src\realtime\vk.h" />
-    <ClInclude Include="src\std.h" />
+    <ClInclude Include="..\src\realtime\copy_to_swapchain.h" />
+    <ClInclude Include="..\src\realtime\realtime_renderer.h" />
+    <ClInclude Include="..\src\realtime\gpu_structures.h" />
+    <ClInclude Include="..\src\realtime\raster_resources.h" />
+    <ClInclude Include="..\src\realtime\rt_resources.h" />
+    <ClInclude Include="..\src\realtime\utils.h" />
+    <ClInclude Include="..\src\realtime\vk.h" />
+    <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\common.glsl" />
-    <CustomBuild Include="src\shaders\copy_to_swapchain.comp.glsl">
+    <None Include="..\src\shaders\common.glsl" />
+    <CustomBuild Include="..\src\shaders\copy_to_swapchain.comp.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
-    <CustomBuild Include="src\shaders\raster_mesh.frag.glsl">
+    <CustomBuild Include="..\src\shaders\raster_mesh.frag.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
-    <CustomBuild Include="src\shaders\raster_mesh.vert.glsl">
+    <CustomBuild Include="..\src\shaders\raster_mesh.vert.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
-    <CustomBuild Include="src\shaders\rt_mesh.rchit.glsl">
+    <CustomBuild Include="..\src\shaders\rt_mesh.rchit.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
-    <CustomBuild Include="src\shaders\rt_mesh.rgen.glsl">
+    <CustomBuild Include="..\src\shaders\rt_mesh.rgen.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V -o $(ProjectDir)data/spirv/%(Filename).spv</Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V -o $(ProjectDir)data/spirv/%(Filename).spv</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V -o $(ProjectDir)../data/spirv/%(Filename).spv</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V -o $(ProjectDir)../data/spirv/%(Filename).spv</Command>
     </CustomBuild>
-    <CustomBuild Include="src\shaders\rt_mesh.rmiss.glsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="src\shaders\rt_shadow_ray.rchit.glsl">
+    <CustomBuild Include="..\src\shaders\rt_mesh.rmiss.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
-    <None Include="src\shaders\rt_utils.glsl" />
-    <None Include="src\shaders\tone_mapping.glsl" />
+    <CustomBuild Include="..\src\shaders\rt_shadow_ray.rchit.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CustomBuild>
+    <None Include="..\src\shaders\rt_utils.glsl" />
+    <None Include="..\src\shaders\tone_mapping.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

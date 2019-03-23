@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\src\reference\camera.cpp" />
+    <ClCompile Include="..\src\reference\film.cpp" />
+    <ClCompile Include="..\src\reference\intersection.cpp" />
+    <ClCompile Include="..\src\reference\kdtree.cpp" />
+    <ClCompile Include="..\src\reference\kdtree_builder.cpp" />
+    <ClCompile Include="..\src\reference\light.cpp" />
+    <ClCompile Include="..\src\reference\material.cpp" />
+    <ClCompile Include="..\src\reference\reference_renderer.cpp" />
+    <ClCompile Include="..\src\reference\sampling.cpp" />
+    <ClCompile Include="..\src\reference\test_kdtree.cpp" />
+    <ClCompile Include="..\src\reference\test_ray_generator.cpp" />
+    <ClCompile Include="..\src\reference\test_triangle_intersection.cpp" />
+    <ClCompile Include="..\src\reference\triangle_mesh.cpp" />
+    <ClCompile Include="..\src\reference\triangle_mesh_loader.cpp" />
+    <ClCompile Include="..\src\reference\main.cpp" />
+    <ClCompile Include="..\src\std.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\reference\camera.h" />
+    <ClInclude Include="..\src\reference\film.h" />
+    <ClInclude Include="..\src\reference\intersection.h" />
+    <ClInclude Include="..\src\reference\kdtree.h" />
+    <ClInclude Include="..\src\reference\kdtree_builder.h" />
+    <ClInclude Include="..\src\reference\light.h" />
+    <ClInclude Include="..\src\reference\material.h" />
+    <ClInclude Include="..\src\reference\sampling.h" />
+    <ClInclude Include="..\src\reference\test_ray_generator.h" />
+    <ClInclude Include="..\src\reference\triangle_mesh.h" />
+    <ClInclude Include="..\src\reference\triangle_mesh_loader.h" />
+    <ClInclude Include="..\src\reference\reference_renderer.h" />
+  </ItemGroup>
+</Project>

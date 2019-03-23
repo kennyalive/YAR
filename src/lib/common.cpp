@@ -7,7 +7,7 @@
 #endif
 
 // Default data folder path. Can be changed with --data-dir command line option.
-std::string g_data_dir = "./data";
+std::string g_data_dir = "./../data";
 
 void error(const std::string& message) {
     printf("error: %s\n", message.c_str());
