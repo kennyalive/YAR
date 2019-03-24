@@ -1,6 +1,6 @@
 #include "std.h"
 #include "common.h"
-#include <fstream>
+#include <cstdarg>
 
 #ifdef _WIN32
 #include <intrin.h>
@@ -11,6 +11,14 @@ std::string g_data_dir = "./../data";
 
 void error(const std::string& message) {
     printf("error: %s\n", message.c_str());
+    exit(1);
+}
+
+void error(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
     exit(1);
 }
 
@@ -87,6 +95,32 @@ std::vector<uint8_t> read_binary_file(const std::string& file_name) {
         error("failed to read file content: " + abs_path);
 
     return file_content;
+}
+
+std::string read_text_file(const std::string& file_name) {
+    std::string abs_path = get_resource_path(file_name);
+    std::ifstream file(abs_path);
+    if (!file)
+        error("failed to open file: %s", abs_path.c_str());
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+Text_File_Lines read_text_file_by_lines(const std::string& file_name) {
+    std::string abs_path = get_resource_path(file_name);
+    std::ifstream file(abs_path);
+    if (!file)
+        error("failed to open file: %s", abs_path.c_str());
+    Text_File_Lines result;
+    result.line_start_positions.push_back(0);
+    std::stringstream ss;
+    for (std::string line; std::getline(file, line); ) {
+        ss << line << "\n";
+        result.line_start_positions.push_back(result.line_start_positions.back() + line.length() + 1 /*new line*/);
+    }
+    result.text = ss.str();
+    return result;
 }
 
 double get_base_cpu_frequency_ghz() {

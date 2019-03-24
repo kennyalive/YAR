@@ -54,7 +54,7 @@ struct YAR_File {
     std::string scene_path;
 };
 
-YAR_File load_yar_file(const std::string& path);
+YAR_File load_yar_file(const std::string& file_name);
 Scene_Data load_scene(Scene_Type scene_type, const std::string& scene_path);
 
 // Writes image data to EXR file.

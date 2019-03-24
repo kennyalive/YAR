@@ -34,6 +34,7 @@ inline float lerp(float t, float a, float b) {
 }
 
 void error(const std::string& message);
+void error(const char* format, ...);
 
 bool fs_exists(const fs::path& path);
 bool fs_remove_all(const fs::path& path);
@@ -43,6 +44,13 @@ fs::path get_data_dir_path();
 std::string get_directory(const std::string& path);
 std::string get_resource_path(const std::string& resource_relative_path);
 std::vector<uint8_t> read_binary_file(const std::string& file_name);
+std::string read_text_file(const std::string& path);
+
+struct Text_File_Lines {
+    std::string text;
+    std::vector<size_t> line_start_positions; // the last element is a position at the end of the file
+};
+Text_File_Lines read_text_file_by_lines(const std::string& file_name);
 
 struct Timestamp {
     Timestamp() : t(std::chrono::steady_clock::now()) {}
