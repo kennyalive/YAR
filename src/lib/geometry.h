@@ -14,6 +14,10 @@ struct Bounds2i {
         Vector2i d = size();
         return d.x * d.y;
     }
+
+    bool operator==(const Bounds2i& other) const {
+        return p0 == other.p0 && p1 == other.p1;
+    }
 };
 
 inline Bounds2i intersect_bounds(const Bounds2i& a, const Bounds2i& b) {

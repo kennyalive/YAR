@@ -1,6 +1,7 @@
 #pragma once
 
 #include "color.h"
+#include "geometry.h"
 #include "matrix.h"
 #include "mesh.h"
 #include "obj_loader.h"
@@ -48,10 +49,11 @@ enum class Scene_Type {
 };
 
 struct YAR_File {
-    Vector2i image_resolution;
-    Matrix3x4 camera_to_world;
     Scene_Type scene_type;
     std::string scene_path;
+    Vector2i image_resolution;
+    Bounds2i render_region;
+    Matrix3x4 camera_to_world;
 };
 
 YAR_File load_yar_file(const std::string& file_name);

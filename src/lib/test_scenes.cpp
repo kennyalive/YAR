@@ -171,7 +171,6 @@ Scene_Data load_mori_knob() {
         -0.954639f, 0.265867f, 0.134153f, -0.833258f,
         -0.297793f, -0.852289f, -0.430056f, 1.268962f,
         0.000000f, -0.450491f, 0.892788f, 0.055605f,
-
     };
     scene.view_points.push_back(view_point);
     return scene;

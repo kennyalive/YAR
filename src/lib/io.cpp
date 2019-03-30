@@ -1,8 +1,11 @@
 #include "std.h"
 #include "common.h"
 #include "io.h"
+#include "test_scenes.h"
 
 #include "half/half.h"
+
+#include <charconv> // from_chars
 
 struct Text_File_Parser {
 private:
@@ -50,24 +53,87 @@ public:
         } else
             return std::string_view(); // signal end of stream
     }
+
+    bool parse_integers(int* values, int count) {
+        for (int i = 0; i < count; i++) {
+            std::string_view token = next_token();
+            if (!parse_int(token, &values[i]))
+                return false;
+        }
+        return true;
+    }
+
+    bool parse_floats(float* values, int count) {
+        for (int i = 0; i < count; i++) {
+            std::string_view token = next_token();
+            if (!parse_float(token, &values[i]))
+                return false;
+        }
+        return true;
+    }
+
+private:
+    bool parse_int(const std::string_view& token, int* value) {
+        std::from_chars_result result = std::from_chars(token.data(), token.data() + token.length(), *value);
+        return result.ptr == token.data() + token.length();
+    }
+
+    bool parse_float(const std::string_view& token, float* value) {
+        std::from_chars_result result = std::from_chars(token.data(), token.data() + token.length(), *value);
+        return result.ptr == token.data() + token.length();
+    }
 };
 
 YAR_File load_yar_file(const std::string& file_name) {
     Text_File_Lines text_file = read_text_file_by_lines(file_name);
-    Text_File_Parser parser(&text_file) ;
-
-    std::string_view token;
-    while (!(token = parser.next_token()).empty()) {
-        printf("%s\n", std::string(token).c_str());
-    }
+    Text_File_Parser parser(&text_file);
 
     YAR_File result;
+    std::string_view token;
+    while (!(token = parser.next_token()).empty()) {
+        if (token == "scene_type") {
+            token = parser.next_token();
+            if (token == "test") {
+                result.scene_type = Scene_Type::test_scene;
+            }
+            else {
+                error("uknown scene_type: %s", std::string(token).c_str());
+            }
+        }
+        else if (token == "scene_path") {
+            result.scene_path = parser.next_token();
+        }
+        else if (token == "image_resolution") {
+            parser.parse_integers(&result.image_resolution.x, 2);
+        }
+        else if (token == "render_region") {
+            parser.parse_integers(&result.render_region.p0.x, 4);
+        }
+        else if (token == "camera_to_world") {
+            parser.parse_floats(&result.camera_to_world.a[0][0], 12);
+        }
+        else {
+            error("unknown token: %s\n", std::string(token).c_str());
+        }
+    }
     return result;
 }
 
 Scene_Data load_scene(Scene_Type scene_type, const std::string& scene_path) {
-    ASSERT(false);
+    ASSERT(scene_type == Scene_Type::test_scene);
     Scene_Data scene_data;
+
+    if (scene_path == "conference")
+        scene_data = load_conference_scene();
+    else if (scene_path == "bunny")
+        scene_data = load_bunny_scene();
+    else if (scene_path == "buddha")
+        scene_data = load_buddha_scene();
+    else if (scene_path == "hairball")
+        scene_data = load_hairball_scene();
+    else if (scene_path == "mori_knob")
+        scene_data = load_mori_knob();
+
     return scene_data;
 }
 

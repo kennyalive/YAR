@@ -268,6 +268,10 @@ inline Vector3::Vector3(const Vector4& v)
 //
 struct Vector2i {
     int x, y;
+
+    bool operator==(const Vector2i& other) const {
+        return x == other.x && y == other.y;
+    }
 };
 
 inline Vector2i operator+(Vector2i a, Vector2i b) {
