@@ -9,7 +9,6 @@
 
 static std::string yar_project_file;
 static bool enable_validation_layers = false;
-static bool use_debug_names = false;
 
 static int window_width = 960;
 static int window_height = 720;
@@ -18,9 +17,6 @@ static bool parse_command_line(int argc, char** argv) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--validation-layers") == 0) {
             enable_validation_layers = true;
-        }
-        else if (strcmp(argv[i], "--debug-names") == 0) {
-            use_debug_names = true;
         }
         else if (strcmp(argv[i], "--data-dir") == 0) {
             if (i == argc-1) {
@@ -75,10 +71,9 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
     }
 }
 
-int run_realtime_renderer(bool enable_validation_layers, bool use_debug_names) {
+int run_realtime_renderer(bool enable_validation_layers) {
     Vk_Create_Info vk_create_info{};
     vk_create_info.enable_validation_layers = enable_validation_layers;
-    vk_create_info.use_debug_names = use_debug_names;
 
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
@@ -141,6 +136,6 @@ int main(int argc, char** argv) {
     if (!parse_command_line(argc, argv))
         return 0;
 
-    run_realtime_renderer(enable_validation_layers, use_debug_names);
+    run_realtime_renderer(enable_validation_layers);
     return 0;
 }

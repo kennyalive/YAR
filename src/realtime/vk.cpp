@@ -1105,7 +1105,7 @@ uint32_t vk_allocate_timestamp_queries(uint32_t count) {
 }
 
 void set_debug_name_impl(VkObjectType object_type, uint64_t object_handle, const char* name) {
-    if (vk.create_info.use_debug_names && name) {
+    if (name) {
         VkDebugUtilsObjectNameInfoEXT name_info { VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT };
         name_info.objectType = object_type;
         name_info.objectHandle = object_handle;

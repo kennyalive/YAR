@@ -14,8 +14,7 @@
 #define VK_CHECK(function_call) { VkResult result = function_call;  VK_CHECK_RESULT(result); }
 
 struct Vk_Create_Info {
-    bool                        enable_validation_layers;
-    bool                        use_debug_names;
+    bool enable_validation_layers;
 };
 
 struct Vk_Image {
