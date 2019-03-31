@@ -11,6 +11,9 @@ std::string g_data_dir = "./../data";
 
 void error(const std::string& message) {
     printf("error: %s\n", message.c_str());
+#ifdef _WIN32
+    __debugbreak();
+#endif
     exit(1);
 }
 
@@ -19,6 +22,9 @@ void error(const char* format, ...) {
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
+#ifdef _WIN32
+    __debugbreak();
+#endif
     exit(1);
 }
 

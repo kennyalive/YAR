@@ -51,37 +51,6 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
 
     }
 
-    // Geometry buffers.
-    {
-        //scene_data = load_bunny_scene(); // 144K
-        scene_data = load_conference_scene(); // 330K
-        //scene_data = load_buddha_scene(); // 1M
-        //scene_data = load_hairball_scene(); // 2.9M
-        //scene_data = load_mori_knob();
-
-        flying_camera.initialize(scene_data.view_points[0]);
-        gpu_meshes.resize(scene_data.meshes.size());
-        for (size_t i = 0; i < scene_data.meshes.size(); i++) {
-            const Mesh_Data& mesh_data = scene_data.meshes[i];
-            GPU_Mesh& mesh  = gpu_meshes[i];
-
-            mesh.model_vertex_count = static_cast<uint32_t>(mesh_data.vertices.size());
-            mesh.model_index_count = static_cast<uint32_t>(mesh_data.indices.size());
-
-            const VkDeviceSize vertex_buffer_size = mesh_data.vertices.size() * sizeof(mesh_data.vertices[0]);
-            mesh.vertex_buffer = vk_create_buffer(vertex_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mesh_data.vertices.data(), "vertex_buffer");
-
-            const VkDeviceSize index_buffer_size = mesh_data.indices.size() * sizeof(mesh_data.indices[0]);
-            mesh.index_buffer = vk_create_buffer(index_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mesh_data.indices.data(), "index_buffer");
-
-            ASSERT(scene_data.materials[i].material_format == Material_Format::obj_material);
-            mesh.material.k_diffuse = scene_data.materials[i].obj_material.k_diffuse;
-            mesh.material.pad0 = 0;
-            mesh.material.k_specular = scene_data.materials[i].obj_material.k_specular;
-            mesh.material.pad1 = 0;
-        }
-    }
-
     // UI render pass.
     {
         VkAttachmentDescription attachments[1] = {};
@@ -113,14 +82,6 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
         vk_set_debug_name(ui_render_pass, "ui_render_pass");
     }
 
-    raster.create();
-    raster.update_point_lights(scene_data.rgb_point_lights.data(), (int)scene_data.rgb_point_lights.size());
-
-    if (vk.raytracing_supported) {
-        rt.create(scene_data, gpu_meshes);
-        rt.update_point_lights(scene_data.rgb_point_lights.data(), (int)scene_data.rgb_point_lights.size());
-    }
-
     copy_to_swapchain.create();
     restore_resolution_dependent_resources();
 
@@ -146,11 +107,11 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
         ImGui_ImplVulkan_InvalidateFontUploadObjects();
     }
 
-    gpu_times.frame = time_keeper.allocate_time_interval();
-    gpu_times.draw = time_keeper.allocate_time_interval();
-    gpu_times.ui = time_keeper.allocate_time_interval();
-    gpu_times.compute_copy = time_keeper.allocate_time_interval();
-    time_keeper.initialize_time_intervals();
+    gpu_times.frame = time_keeper.allocate_time_scope();
+    gpu_times.draw = time_keeper.allocate_time_scope();
+    gpu_times.ui = time_keeper.allocate_time_scope();
+    gpu_times.compute_copy = time_keeper.allocate_time_scope();
+    time_keeper.initialize_time_scopes();
 }
 
 void Realtime_Renderer::shutdown() {
@@ -170,9 +131,11 @@ void Realtime_Renderer::shutdown() {
     vkDestroyRenderPass(vk.device, ui_render_pass, nullptr);
     release_resolution_dependent_resources();
 
-    raster.destroy();
-    if (vk.raytracing_supported)
-        rt.destroy();
+    if (project_loaded) {
+        raster.destroy();
+        if (vk.raytracing_supported)
+            rt.destroy();
+    }
     
     vk_shutdown();
 }
@@ -199,6 +162,14 @@ void Realtime_Renderer::restore_resolution_dependent_resources() {
                     VK_IMAGE_LAYOUT_UNDEFINED,          VK_IMAGE_LAYOUT_GENERAL);
             });
         }
+        else {
+            vk_execute(vk.command_pool, vk.queue, [this](VkCommandBuffer command_buffer) {
+                vk_cmd_image_barrier(command_buffer, output_image.handle,
+                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                    0,                                  0,
+                    VK_IMAGE_LAYOUT_UNDEFINED,          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            });
+        }
     }
 
     // imgui framebuffer
@@ -214,12 +185,53 @@ void Realtime_Renderer::restore_resolution_dependent_resources() {
         VK_CHECK(vkCreateFramebuffer(vk.device, &create_info, nullptr, &ui_framebuffer));
     }
 
-    raster.create_framebuffer(output_image.view);
+    if (project_loaded) {
+        raster.create_framebuffer(output_image.view);
 
-    if (vk.raytracing_supported)
-        rt.update_output_image_descriptor(output_image.view);
+        if (vk.raytracing_supported)
+            rt.update_output_image_descriptor(output_image.view);
+    }
 
     copy_to_swapchain.update_resolution_dependent_descriptors(output_image.view);
+}
+
+void Realtime_Renderer::load_project(const std::string& yar_file_name) {
+    project = load_yar_project(yar_file_name);
+    scene_data = load_scene(project.scene_type, project.scene_path);
+
+    flying_camera.initialize(scene_data.view_points[0]);
+    gpu_meshes.resize(scene_data.meshes.size());
+    for (size_t i = 0; i < scene_data.meshes.size(); i++) {
+        const Mesh_Data& mesh_data = scene_data.meshes[i];
+        GPU_Mesh& mesh  = gpu_meshes[i];
+
+        mesh.model_vertex_count = static_cast<uint32_t>(mesh_data.vertices.size());
+        mesh.model_index_count = static_cast<uint32_t>(mesh_data.indices.size());
+
+        const VkDeviceSize vertex_buffer_size = mesh_data.vertices.size() * sizeof(mesh_data.vertices[0]);
+        mesh.vertex_buffer = vk_create_buffer(vertex_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mesh_data.vertices.data(), "vertex_buffer");
+
+        const VkDeviceSize index_buffer_size = mesh_data.indices.size() * sizeof(mesh_data.indices[0]);
+        mesh.index_buffer = vk_create_buffer(index_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mesh_data.indices.data(), "index_buffer");
+
+        ASSERT(scene_data.materials[i].material_format == Material_Format::obj_material);
+        mesh.material.k_diffuse = scene_data.materials[i].obj_material.k_diffuse;
+        mesh.material.pad0 = 0;
+        mesh.material.k_specular = scene_data.materials[i].obj_material.k_specular;
+        mesh.material.pad1 = 0;
+    }
+
+    raster.create();
+    raster.create_framebuffer(output_image.view);
+    raster.update_point_lights(scene_data.rgb_point_lights.data(), (int)scene_data.rgb_point_lights.size());
+
+    if (vk.raytracing_supported) {
+        rt.create(scene_data, gpu_meshes);
+        rt.update_output_image_descriptor(output_image.view);
+        rt.update_point_lights(scene_data.rgb_point_lights.data(), (int)scene_data.rgb_point_lights.size());
+    }
+
+    project_loaded = true;
 }
 
 static double last_frame_time;
@@ -247,9 +259,10 @@ void Realtime_Renderer::run_frame() {
 
     flying_camera.update(dt);
 
-    raster.update(flying_camera.get_view_transform());
+    if (project_loaded)
+        raster.update(flying_camera.get_view_transform());
 
-    if (vk.raytracing_supported)
+    if (project_loaded && vk.raytracing_supported)
         rt.update_camera_transform(flying_camera.get_camera_pose());
 
     draw_frame();
@@ -257,7 +270,7 @@ void Realtime_Renderer::run_frame() {
 
 void Realtime_Renderer::draw_frame() {
     vk_begin_frame();
-    time_keeper.next_frame();
+    time_keeper.retrieve_query_results(); // get timestamp values from previous frame (in current implementation it's alredy finished)
     gpu_times.frame->begin();
 
     if (raytracing && ui_result.raytracing_toggled) {
@@ -267,10 +280,12 @@ void Realtime_Renderer::draw_frame() {
             VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
     }
 
-    if (raytracing)
-        draw_raytraced_image();
-    else
-        draw_rasterized_image();
+    if (project_loaded) {
+        if (raytracing)
+            draw_raytraced_image();
+        else
+            draw_rasterized_image();
+    }
 
     draw_imgui();
     copy_output_image_to_swapchain();
@@ -472,20 +487,10 @@ void Realtime_Renderer::do_imgui() {
                 ImGui::PopStyleVar();
             }
 
-            bool disable_button = reference_render_active;
-            if (disable_button)
-                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-
             ImGui::Separator();
             ImGui::Checkbox("Parallel", &parallel_reference_rendering);
             if (ImGui::Button("Render reference image"))
                 start_reference_renderer();
-
-            if (disable_button)
-                ImGui::PopItemFlag();
-
-            if (!reference_render_active && reference_render_thread.joinable())
-                reference_render_thread.join();
 
             if (ImGui::BeginPopupContextWindow()) {
                 if (ImGui::MenuItem("Custom",       NULL, corner == -1)) corner = -1;
@@ -502,9 +507,6 @@ void Realtime_Renderer::do_imgui() {
 }
 
 void Realtime_Renderer::start_reference_renderer() {
-    ASSERT(false);
-    //reference_render_active = true;
-
     //Render_Reference_Image_Params params {};
     //params.image_resolution = Vector2i{ (int)vk.surface_size.width, (int)vk.surface_size.height };
 

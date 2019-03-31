@@ -22,6 +22,7 @@ public:
     void restore_resolution_dependent_resources();
     bool vsync_enabled() const { return vsync; }
 
+    void load_project(const std::string& yar_file_name);
     void run_frame();
 
 private:
@@ -38,20 +39,14 @@ private:
         bool raytracing_toggled;
     };
 
-    using Clock = std::chrono::high_resolution_clock;
-    using Time  = std::chrono::time_point<Clock>;
-
     bool show_ui = true;
     bool vsync = true;
     bool raytracing = false;
     bool spp4 = false;
 
     bool parallel_reference_rendering = false;
-    bool reference_render_active = false;
 
     Flying_Camera flying_camera;
-
-    std::thread reference_render_thread;
 
     UI_Result                   ui_result;
 
@@ -60,17 +55,20 @@ private:
     Vk_Image                    output_image;
     Copy_To_Swapchain           copy_to_swapchain;
 
-    Scene_Data                  scene_data;
     std::vector<GPU_Mesh>       gpu_meshes;
 
     Rasterization_Resources     raster;
     Raytracing_Resources        rt;
 
-    GPU_Time_Keeper             time_keeper;
+    GPU_Time_Keeper time_keeper;
     struct {
-        GPU_Time_Interval*      frame;
-        GPU_Time_Interval*      draw;
-        GPU_Time_Interval*      ui;
-        GPU_Time_Interval*      compute_copy;
+        GPU_Time_Scope* frame;
+        GPU_Time_Scope* draw;
+        GPU_Time_Scope* ui;
+        GPU_Time_Scope* compute_copy;
     } gpu_times;
+
+    bool project_loaded = false;
+    YAR_Project project;
+    Scene_Data scene_data;
 };

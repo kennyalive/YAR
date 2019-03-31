@@ -7,11 +7,14 @@
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
 
+static std::string yar_project_file;
 static bool enable_validation_layers = false;
 static bool use_debug_names = false;
 
+static int window_width = 960;
+static int window_height = 720;
+
 static bool parse_command_line(int argc, char** argv) {
-    bool found_unknown_option = false;
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--validation-layers") == 0) {
             enable_validation_layers = true;
@@ -22,7 +25,8 @@ static bool parse_command_line(int argc, char** argv) {
         else if (strcmp(argv[i], "--data-dir") == 0) {
             if (i == argc-1) {
                 printf("--data-dir value is missing\n");
-            } else {
+            }
+            else {
                 extern std::string g_data_dir;
                 g_data_dir = argv[i+1];
                 i++;
@@ -35,16 +39,12 @@ static bool parse_command_line(int argc, char** argv) {
             printf("%-25s Shows this information.\n", "--help");
             return false;
         }
-        else
-            found_unknown_option = true;
+        else {
+            yar_project_file = argv[i];
+        }
     }
-    if (found_unknown_option)
-        printf("Use --help to list all options.\n");
     return true;
 }
-
-static int window_width = 960;
-static int window_height = 720;
 
 static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "GLFW error: %s\n", description);
@@ -91,6 +91,9 @@ int run_realtime_renderer(bool enable_validation_layers, bool use_debug_names) {
 
     Realtime_Renderer renderer{};
     renderer.initialize(vk_create_info, window);
+
+    if (!yar_project_file.empty())
+        renderer.load_project(yar_project_file);
 
     bool prev_vsync = renderer.vsync_enabled();
     bool window_active = true;
