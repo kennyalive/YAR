@@ -483,7 +483,7 @@ static double CIE_1931_2_Degree[471][3] = {
 
 // Converts given Color Matching Function to Sampled_Spectrum representation.
 static Sampled_Spectrum compute_CIE_sampled_spectrum(int cmf_index) {
-    const size_t n = array_size(CIE_1931_2_Degree);
+    const size_t n = std::size(CIE_1931_2_Degree);
     std::vector<float> l(n);
     std::vector<float> v(n);
 

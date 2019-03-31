@@ -9,16 +9,6 @@ constexpr float Pi_Inv = 1.f / Pi;
 
 constexpr float Infinity = std::numeric_limits<float>::infinity();
 
-template<class T, size_t N>
-constexpr size_t array_size(T (&)[N]) {
-    return N;
-}
-
-template <class T, uint32_t N>
-constexpr uint32_t array_size32(T(&)[N]) {
-    return N;
-}
-
 inline constexpr float radians(float degrees) {
     constexpr float deg_2_rad = Pi / 180.f;
     return degrees * deg_2_rad;
