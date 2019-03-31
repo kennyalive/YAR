@@ -48,7 +48,7 @@ enum class Scene_Type {
     test_scene
 };
 
-struct YAR_File {
+struct YAR_Project {
     Scene_Type scene_type;
     std::string scene_path;
     Vector2i image_resolution;
@@ -56,7 +56,7 @@ struct YAR_File {
     Matrix3x4 camera_to_world;
 };
 
-YAR_File load_yar_file(const std::string& file_name);
+YAR_Project load_yar_project(const std::string& file_name);
 Scene_Data load_scene(Scene_Type scene_type, const std::string& scene_path);
 
 // Writes image data to EXR file.

@@ -84,39 +84,39 @@ private:
     }
 };
 
-YAR_File load_yar_file(const std::string& file_name) {
+YAR_Project load_yar_project(const std::string& file_name) {
     Text_File_Lines text_file = read_text_file_by_lines(file_name);
     Text_File_Parser parser(&text_file);
 
-    YAR_File result;
+    YAR_Project project{};
     std::string_view token;
     while (!(token = parser.next_token()).empty()) {
         if (token == "scene_type") {
             token = parser.next_token();
             if (token == "test") {
-                result.scene_type = Scene_Type::test_scene;
+                project.scene_type = Scene_Type::test_scene;
             }
             else {
                 error("uknown scene_type: %s", std::string(token).c_str());
             }
         }
         else if (token == "scene_path") {
-            result.scene_path = parser.next_token();
+            project.scene_path = parser.next_token();
         }
         else if (token == "image_resolution") {
-            parser.parse_integers(&result.image_resolution.x, 2);
+            parser.parse_integers(&project.image_resolution.x, 2);
         }
         else if (token == "render_region") {
-            parser.parse_integers(&result.render_region.p0.x, 4);
+            parser.parse_integers(&project.render_region.p0.x, 4);
         }
         else if (token == "camera_to_world") {
-            parser.parse_floats(&result.camera_to_world.a[0][0], 12);
+            parser.parse_floats(&project.camera_to_world.a[0][0], 12);
         }
         else {
             error("unknown token: %s\n", std::string(token).c_str());
         }
     }
-    return result;
+    return project;
 }
 
 Scene_Data load_scene(Scene_Type scene_type, const std::string& scene_path) {
