@@ -3,7 +3,6 @@
   <ItemGroup>
     <ClCompile Include="..\src\std.cpp" />
     <ClCompile Include="..\src\realtime\main.cpp" />
-    <ClCompile Include="..\src\realtime\app.cpp" />
     <ClCompile Include="..\src\realtime\copy_to_swapchain.cpp" />
     <ClCompile Include="..\src\realtime\raster_resources.cpp" />
     <ClCompile Include="..\src\realtime\realtime_renderer.cpp" />
