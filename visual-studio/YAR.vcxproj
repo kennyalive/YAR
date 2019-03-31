@@ -124,9 +124,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\realtime\copy_to_swapchain.cpp" />
+    <ClCompile Include="..\src\realtime\main.cpp" />
     <ClCompile Include="..\src\realtime\realtime_renderer.cpp" />
     <ClCompile Include="..\src\realtime\app.cpp" />
-    <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\realtime\raster_resources.cpp" />
     <ClCompile Include="..\src\realtime\rt_resources.cpp" />
     <ClCompile Include="..\src\realtime\utils.cpp" />

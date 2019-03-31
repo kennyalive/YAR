@@ -1,60 +1,29 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\realtime\copy_to_swapchain.cpp">
-      <Filter>realtime</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\realtime\raster_resources.cpp">
-      <Filter>realtime</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\realtime\rt_resources.cpp">
-      <Filter>realtime</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\realtime\utils.cpp">
-      <Filter>realtime</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\realtime\vk.cpp">
-      <Filter>realtime</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\realtime\realtime_renderer.cpp">
-      <Filter>realtime</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\realtime\app.cpp">
-      <Filter>realtime</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\std.cpp" />
+    <ClCompile Include="..\src\realtime\main.cpp" />
+    <ClCompile Include="..\src\realtime\app.cpp" />
+    <ClCompile Include="..\src\realtime\copy_to_swapchain.cpp" />
+    <ClCompile Include="..\src\realtime\raster_resources.cpp" />
+    <ClCompile Include="..\src\realtime\realtime_renderer.cpp" />
+    <ClCompile Include="..\src\realtime\rt_resources.cpp" />
+    <ClCompile Include="..\src\realtime\utils.cpp" />
+    <ClCompile Include="..\src\realtime\vk.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\realtime\copy_to_swapchain.h">
-      <Filter>realtime</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\realtime\raster_resources.h">
-      <Filter>realtime</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\realtime\rt_resources.h">
-      <Filter>realtime</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\realtime\utils.h">
-      <Filter>realtime</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\realtime\vk.h">
-      <Filter>realtime</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\realtime\gpu_structures.h">
-      <Filter>realtime</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\realtime\realtime_renderer.h">
-      <Filter>realtime</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\std.h" />
+    <ClInclude Include="..\src\realtime\copy_to_swapchain.h" />
+    <ClInclude Include="..\src\realtime\gpu_structures.h" />
+    <ClInclude Include="..\src\realtime\raster_resources.h" />
+    <ClInclude Include="..\src\realtime\realtime_renderer.h" />
+    <ClInclude Include="..\src\realtime\rt_resources.h" />
+    <ClInclude Include="..\src\realtime\utils.h" />
+    <ClInclude Include="..\src\realtime\vk.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
       <UniqueIdentifier>{1be3d33b-ac0d-4df7-ad63-48c4e7b89b7b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="realtime">
-      <UniqueIdentifier>{a0def918-0c9a-4c48-995c-f820b0e1b908}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
