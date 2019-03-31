@@ -194,45 +194,53 @@ VkDescriptorSetLayout Descriptor_Set_Layout::create(const char* name) {
     return set_layout;
 }
 
-void GPU_Time_Interval::begin() {
+//
+// GPU time queries.
+//
+void GPU_Time_Scope::begin() {
+    ASSERT(parent->frame_active_scope_count < GPU_Time_Keeper::max_scopes);
+    parent->frame_active_scopes[parent->frame_active_scope_count++] = this;
     vkCmdWriteTimestamp(vk.command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk.timestamp_query_pool, start_query);
 }
-void GPU_Time_Interval::end() {
+void GPU_Time_Scope::end() {
     vkCmdWriteTimestamp(vk.command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk.timestamp_query_pool, start_query + 1);
 }
 
-GPU_Time_Interval* GPU_Time_Keeper::allocate_time_interval() {
-    ASSERT(time_interval_count < max_time_intervals);
-    GPU_Time_Interval* time_interval = &time_intervals[time_interval_count++];
+GPU_Time_Scope* GPU_Time_Keeper::allocate_time_scope() {
+    ASSERT(scope_count < max_scopes);
+    GPU_Time_Scope* time_scope = &scopes[scope_count++];
 
-    time_interval->start_query = vk_allocate_timestamp_queries(2);
-    time_interval->length_ms = 0.f;
-    return time_interval;
+    time_scope->parent = this;
+    time_scope->start_query = vk_allocate_timestamp_queries(2);
+    time_scope->length_ms = 0.f;
+    return time_scope;
 }
 
-void GPU_Time_Keeper::initialize_time_intervals() {
+void GPU_Time_Keeper::initialize_time_scopes() {
     vk_execute(vk.command_pool, vk.queue, [this](VkCommandBuffer command_buffer) {
-        vkCmdResetQueryPool(command_buffer, vk.timestamp_query_pool, 0, 2 * time_interval_count);
-        for (uint32_t i = 0; i < time_interval_count; i++) {
-            vkCmdWriteTimestamp(command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk.timestamp_query_pool, time_intervals[i].start_query);
-            vkCmdWriteTimestamp(command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk.timestamp_query_pool, time_intervals[i].start_query + 1);
+        vkCmdResetQueryPool(command_buffer, vk.timestamp_query_pool, 0, 2 * scope_count);
+        for (uint32_t i = 0; i < scope_count; i++) {
+            vkCmdWriteTimestamp(command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk.timestamp_query_pool, scopes[i].start_query);
+            vkCmdWriteTimestamp(command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk.timestamp_query_pool, scopes[i].start_query + 1);
         }
     });
 }
 
-void GPU_Time_Keeper::next_frame() {
-    uint64_t timestamps[2*max_time_intervals];
-    const uint32_t query_count = 2 * time_interval_count;
-    VkResult result = vkGetQueryPoolResults(vk.device, vk.timestamp_query_pool, 0, query_count, query_count * sizeof(uint64_t), timestamps, 0, VK_QUERY_RESULT_64_BIT);
-    VK_CHECK_RESULT(result);
-    ASSERT(result != VK_NOT_READY);
-
+void GPU_Time_Keeper::retrieve_query_results() {
     const float influence = 0.25f;
 
-    for (uint32_t i = 0; i < time_interval_count; i++) {
-        ASSERT(timestamps[2*i + 1] >= timestamps[2*i]);
-        time_intervals[i].length_ms = (1.f-influence) * time_intervals[i].length_ms + influence * float(double(timestamps[2*i + 1] - timestamps[2*i]) * vk.timestamp_period_ms);
-    }
+    for (int i = 0; i < frame_active_scope_count; i++) {
+        uint32_t start_query = frame_active_scopes[i]->start_query;
 
-    vkCmdResetQueryPool(vk.command_buffer, vk.timestamp_query_pool, 0, query_count);
+        uint64_t timestamps[2]; // scope start/end timestamps
+        VkResult result = vkGetQueryPoolResults(vk.device, vk.timestamp_query_pool, start_query, 2, 2*sizeof(uint64_t), timestamps, 0, VK_QUERY_RESULT_64_BIT);
+        VK_CHECK_RESULT(result);
+        ASSERT(result != VK_NOT_READY);
+
+        ASSERT(timestamps[1] >= timestamps[0]); // check that end time >= start time
+        float measured_duration = float(double(timestamps[1] - timestamps[0]) * vk.timestamp_period_ms);
+        scopes[start_query/2].length_ms = lerp(0.25f, scopes[start_query/2].length_ms, measured_duration);
+        vkCmdResetQueryPool(vk.command_buffer, vk.timestamp_query_pool, start_query, 2);
+    }
+    frame_active_scope_count = 0;
 }

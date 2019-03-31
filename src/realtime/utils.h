@@ -60,36 +60,44 @@ struct Descriptor_Set_Layout {
     VkDescriptorSetLayout create(const char* name);
 };
 
-struct GPU_Time_Interval {
-    uint32_t    start_query; // end query == (start_query + 1)
-    float       length_ms;
+//
+// GPU time queries.
+//
+struct GPU_Time_Keeper;
+
+struct GPU_Time_Scope {
+    GPU_Time_Keeper* parent;
+    uint32_t start_query; // end query == (start_query + 1)
+    float length_ms;
 
     void begin();
     void end();
 };
 
-struct GPU_Time_Keeper {
-    static constexpr uint32_t max_time_intervals = 128;
-
-    GPU_Time_Interval time_intervals[max_time_intervals];
-    uint32_t time_interval_count;
-
-    GPU_Time_Interval* allocate_time_interval();
-    void initialize_time_intervals();
-    void next_frame();
-};
-
-struct GPU_Time_Scope {
-    GPU_Time_Scope(GPU_Time_Interval* time_interval) {
-        this->time_interval = time_interval;
-        time_interval->begin();
+struct GPU_Time_Scope_Helper {
+    GPU_Time_Scope_Helper(GPU_Time_Scope* time_scope) {
+        this->time_scope = time_scope;
+        time_scope->begin();
     }
-    ~GPU_Time_Scope() {
-        time_interval->end();
+    ~GPU_Time_Scope_Helper() {
+        time_scope->end();
     }
-
 private:
-    GPU_Time_Interval* time_interval;
+    GPU_Time_Scope* time_scope;
 };
 
-#define GPU_TIME_SCOPE(time_interval) GPU_Time_Scope gpu_time_scope##__LINE__(time_interval)
+#define GPU_TIME_SCOPE(time_scope) GPU_Time_Scope_Helper gpu_time_scope##__LINE__(time_scope)
+
+struct GPU_Time_Keeper {
+    static constexpr uint32_t max_scopes = 128;
+
+    GPU_Time_Scope scopes[max_scopes];
+    uint32_t scope_count = 0;
+
+    GPU_Time_Scope* frame_active_scopes[max_scopes];
+    int frame_active_scope_count = 0;
+
+    GPU_Time_Scope* allocate_time_scope();
+    void initialize_time_scopes();
+    void retrieve_query_results();
+};
