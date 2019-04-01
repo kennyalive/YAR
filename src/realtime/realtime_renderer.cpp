@@ -196,7 +196,7 @@ void Realtime_Renderer::restore_resolution_dependent_resources() {
 }
 
 void Realtime_Renderer::load_project(const std::string& yar_file_name) {
-    project = load_yar_project(yar_file_name);
+    project = parse_project(yar_file_name);
     scene_data = load_scene(project.scene_type, project.scene_path);
 
     flying_camera.initialize(scene_data.view_points[0]);
@@ -507,21 +507,34 @@ void Realtime_Renderer::do_imgui() {
 }
 
 void Realtime_Renderer::start_reference_renderer() {
-    //Render_Reference_Image_Params params {};
-    //params.image_resolution = Vector2i{ (int)vk.surface_size.width, (int)vk.surface_size.height };
+    const std::string temp_project_name = "temp.yar";
 
-    //params.render_region.p0 = Vector2i{};
-    //params.render_region.p1 = params.image_resolution;
+    YAR_Project temp_project = project;
+    temp_project.image_resolution = Vector2i{(int)vk.surface_size.width, (int)vk.surface_size.height};
+    temp_project.camera_to_world = flying_camera.get_camera_pose();
+    save_project(temp_project_name, temp_project);
 
-    //params.scene_data = &scene_data;
-    //params.camera_to_world_vk = flying_camera.get_camera_pose();
+#ifdef _WIN32
+    std::string temp_project_path = get_resource_path(temp_project_name);
+    char cmd_line[256];
+    sprintf_s(cmd_line, "RAY.exe \"%s\"", temp_project_path.c_str());
 
-    ///*params.crop_x = 462;
-    //params.crop_y = 302;
-    //params.crop_w = 3;
-    //params.crop_h = 3;*/
+    STARTUPINFOA si{};
+    si.cb = sizeof(si);
+    PROCESS_INFORMATION pi{};
 
-    //params.parallel_render = parallel_reference_rendering;
-    //                
-    //reference_render_thread = std::thread(render_reference_image, params, &reference_render_active);
+    BOOL result = ::CreateProcessA(
+        NULL, cmd_line,
+        NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+
+    if (!result) {
+        ::MessageBoxA(NULL, "Failed to run RAY.exe", "Error", MB_OK);
+    }
+    else {
+        ::CloseHandle(pi.hProcess);
+        ::CloseHandle(pi.hThread);
+    }
+#else
+#error Unsupported platform
+#endif
 }

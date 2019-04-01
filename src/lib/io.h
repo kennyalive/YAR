@@ -56,8 +56,8 @@ struct YAR_Project {
     Matrix3x4 camera_to_world;
 };
 
-YAR_Project load_yar_project(const std::string& file_name);
-Scene_Data load_scene(Scene_Type scene_type, const std::string& scene_path);
+YAR_Project parse_project(const std::string& file_name);
+bool save_project(const std::string& file_name, const YAR_Project& project);
 
-// Writes image data to EXR file.
+Scene_Data load_scene(Scene_Type scene_type, const std::string& scene_path);
 void write_exr_image(const char* file_name, const ColorRGB* pixels, int w, int h);

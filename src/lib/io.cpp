@@ -84,7 +84,7 @@ private:
     }
 };
 
-YAR_Project load_yar_project(const std::string& file_name) {
+YAR_Project parse_project(const std::string& file_name) {
     Text_File_Lines text_file = read_text_file_by_lines(file_name);
     Text_File_Parser parser(&text_file);
 
@@ -117,6 +117,26 @@ YAR_Project load_yar_project(const std::string& file_name) {
         }
     }
     return project;
+}
+
+bool save_project(const std::string& file_name, const YAR_Project& project) {
+    std::string abs_path = get_resource_path(file_name);
+    std::ofstream file(abs_path);
+    if (!file)
+        return false;
+
+    if (project.scene_type == Scene_Type::test_scene)
+        file << "scene_type test\n";
+
+    file << "scene_path " << project.scene_path << "\n";
+    file << "image_resolution " << project.image_resolution.x << " " << project.image_resolution.y << "\n";
+
+    file << "camera_to_world\n";
+    for (int i = 0; i < 3; i++) {
+        const float* row = project.camera_to_world.a[i];
+        file << row[0] << " " << row[1] << " " << row[2] << " " << row[3] << "\n";
+    }
+    return true;
 }
 
 Scene_Data load_scene(Scene_Type scene_type, const std::string& scene_path) {
