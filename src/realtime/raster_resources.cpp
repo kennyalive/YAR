@@ -12,8 +12,14 @@ struct Global_Uniform_Buffer {
     Matrix4x4       model_view_proj;
     Matrix4x4       model_view;
     Matrix4x4       view;
+
     GPU_Point_Light point_lights[8];
     uint32_t        point_light_count;
+    Vector3         pad0;
+
+    GPU_Diffuse_Rectangular_Light diffuse_rectangular_lights[8];
+    int             diffuse_rectangular_light_count;
+    Vector3         pad2;
 };
 }
 
@@ -176,6 +182,16 @@ void Rasterization_Resources::update_point_lights(const RGB_Point_Light_Data* po
         buf.point_lights[i].intensity = point_lights[i].intensity;
     }
     buf.point_light_count = point_light_count;
+}
+
+void Rasterization_Resources::update_diffuse_rectangular_lights(const RGB_Diffuse_Rectangular_Light_Data* lights, int light_count) {
+    ASSERT(light_count < 8);
+
+    Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
+    for (int i = 0; i < light_count; i++) {
+        buf.diffuse_rectangular_lights[i].init(lights[i]);
+    }
+    buf.diffuse_rectangular_light_count = light_count;
 }
 
 void Rasterization_Resources::update(const Matrix3x4& view_transform) {

@@ -37,3 +37,20 @@ void coordinate_system_from_vector(vec3 v, out vec3 v1, out vec3 v2) {
     v1 = normalize(abs(v.x) > abs(v.y) ? vec3(-v.z, 0, v.x) : vec3(0, -v.z, v.y));
     v2 = cross(v, v1);
 }
+
+uint wang_hash(uint seed) {
+    seed = (seed ^ 61) ^ (seed >> 16);
+    seed *= 9;
+    seed = seed ^ (seed >> 4);
+    seed *= 0x27d4eb2d;
+    seed = seed ^ (seed >> 15);
+    return seed;
+}
+
+// Xorshift algorithm from George Marsaglia's paper.
+uint rand_xorshift(uint rng_state) {
+    rng_state ^= (rng_state << 13);
+    rng_state ^= (rng_state >> 17);
+    rng_state ^= (rng_state << 5);
+    return rng_state;
+}

@@ -224,6 +224,7 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
     raster.create();
     raster.create_framebuffer(output_image.view);
     raster.update_point_lights(scene_data.rgb_point_lights.data(), (int)scene_data.rgb_point_lights.size());
+    raster.update_diffuse_rectangular_lights(scene_data.rgb_diffuse_rectangular_lights.data(), (int)scene_data.rgb_diffuse_rectangular_lights.size());
 
     if (vk.raytracing_supported) {
         rt.create(scene_data, gpu_meshes);
