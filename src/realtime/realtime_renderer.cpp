@@ -329,7 +329,7 @@ void Realtime_Renderer::draw_rasterized_image() {
     for (const GPU_Mesh& mesh : gpu_meshes) {
         vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &mesh.vertex_buffer.handle, &zero_offset);
         vkCmdBindIndexBuffer(vk.command_buffer, mesh.index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(GPU_Mesh_Material), &mesh.material);
+        vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(GPU_Types::Mesh_Material), &mesh.material);
         vkCmdDrawIndexed(vk.command_buffer, mesh.model_index_count, 1, 0, 0, 0);
     }
 

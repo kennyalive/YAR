@@ -1,7 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "raster_resources.h"
-#include "gpu_structures.h"
+#include "../shaders/gpu_structures.h"
 #include "utils.h"
 #include "lib/io.h"
 #include "lib/matrix.h"
@@ -13,11 +13,11 @@ struct Global_Uniform_Buffer {
     Matrix4x4       model_view;
     Matrix4x4       view;
 
-    GPU_Point_Light point_lights[8];
+    GPU_Types::Point_Light point_lights[8];
     uint32_t        point_light_count;
     Vector3         pad0;
 
-    GPU_Diffuse_Rectangular_Light diffuse_rectangular_lights[8];
+    GPU_Types::Diffuse_Rectangular_Light diffuse_rectangular_lights[8];
     int             diffuse_rectangular_light_count;
     Vector3         pad2;
 };

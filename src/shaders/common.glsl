@@ -1,5 +1,7 @@
 layout(row_major) uniform;
 
+#include "gpu_structures.h"
+
 const float Pi = 3.14159265358;
 const float Pi_Inv = 1.f / Pi;
 

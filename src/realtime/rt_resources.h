@@ -1,7 +1,6 @@
 #pragma once
 
-#include "gpu_structures.h"
-#include "vk.h"
+#include "common.h"
 #include "lib/io.h"
 #include "lib/matrix.h"
 
@@ -45,7 +44,7 @@ struct Raytracing_Resources {
     Rt_Uniform_Buffer*          mapped_uniform_buffer;
 
     Vk_Buffer material_buffer;
-    GPU_Mesh_Material* material_buffer_ptr;
+    GPU_Types::Mesh_Material* material_buffer_ptr;
 
     void create(const Scene_Data& scene, const std::vector<GPU_Mesh>& gpu_meshes);
     void destroy();

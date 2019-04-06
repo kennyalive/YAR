@@ -8,22 +8,6 @@ struct Frag_In {
     vec2 uv;
 };
 
-struct Point_Light {
-    vec3 position;
-    float pad0;
-    vec3 intensity;
-    float pad1;
-};
-
-struct Diffuse_Rectangular_Light {
-    mat4x3 light_to_world;
-    vec3 emitted_radiance;
-    float pad0;
-    vec2 size;
-    float area;
-    int shadow_ray_count;
-};
-
 layout(location=0) in Frag_In frag_in;
 
 layout(location = 0) out vec4 color_attachment0;

@@ -1,13 +1,13 @@
 #include "std.h"
 #include "lib/common.h"
+
 #include "rt_resources.h"
-#include "gpu_structures.h"
 #include "utils.h"
 #include "lib/mesh.h"
 
 struct Rt_Uniform_Buffer {
     Matrix3x4 camera_to_world;
-    GPU_Point_Light point_lights[8];
+    GPU_Types::Point_Light point_lights[8];
     uint32_t point_light_count;
 };
 
@@ -25,10 +25,10 @@ void Raytracing_Resources::create(const Scene_Data& scene, const std::vector<GPU
 
     // Material buffer;
     {
-        VkDeviceSize material_buffer_size = gpu_meshes.size() * sizeof(GPU_Mesh_Material);
+        VkDeviceSize material_buffer_size = gpu_meshes.size() * sizeof(GPU_Types::Mesh_Material);
         void* buffer_ptr;
         material_buffer = vk_create_mapped_buffer(material_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &buffer_ptr, "material_buffer");
-        material_buffer_ptr = static_cast<GPU_Mesh_Material*>(buffer_ptr);
+        material_buffer_ptr = static_cast<GPU_Types::Mesh_Material*>(buffer_ptr);
 
         for (auto [i, gpu_mesh] : enumerate(gpu_meshes)) {
             material_buffer_ptr[i] = gpu_mesh.material;
@@ -396,6 +396,6 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
             .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer))
             .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), index_buffer_infos.data())
             .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), vertex_buffer_infos.data())
-            .storage_buffer(5, material_buffer.handle, 0, gpu_meshes.size() * sizeof(GPU_Mesh_Material));
+            .storage_buffer(5, material_buffer.handle, 0, gpu_meshes.size() * sizeof(GPU_Types::Mesh_Material));
     }
 }

@@ -136,13 +136,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\realtime\common.h" />
     <ClInclude Include="..\src\realtime\copy_to_swapchain.h" />
     <ClInclude Include="..\src\realtime\realtime_renderer.h" />
-    <ClInclude Include="..\src\realtime\gpu_structures.h" />
     <ClInclude Include="..\src\realtime\raster_resources.h" />
     <ClInclude Include="..\src\realtime\rt_resources.h" />
     <ClInclude Include="..\src\realtime\utils.h" />
     <ClInclude Include="..\src\realtime\vk.h" />
+    <ClInclude Include="..\src\shaders\gpu_structures.h" />
     <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>
