@@ -19,7 +19,7 @@
     <ClInclude Include="..\src\realtime\utils.h" />
     <ClInclude Include="..\src\realtime\vk.h" />
     <ClInclude Include="..\src\realtime\common.h" />
-    <ClInclude Include="..\src\shaders\gpu_structures.h" />
+    <ClInclude Include="..\src\shaders\gpu_types.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">

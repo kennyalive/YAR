@@ -1,7 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "raster_resources.h"
-#include "../shaders/gpu_structures.h"
+#include "../shaders/gpu_types.h"
 #include "utils.h"
 #include "lib/io.h"
 #include "lib/matrix.h"

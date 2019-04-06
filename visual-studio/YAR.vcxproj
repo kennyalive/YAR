@@ -143,7 +143,7 @@
     <ClInclude Include="..\src\realtime\rt_resources.h" />
     <ClInclude Include="..\src\realtime\utils.h" />
     <ClInclude Include="..\src\realtime\vk.h" />
-    <ClInclude Include="..\src\shaders\gpu_structures.h" />
+    <ClInclude Include="..\src\shaders\gpu_types.h" />
     <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>

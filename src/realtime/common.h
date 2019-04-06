@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vk.h"
-#include "../shaders/gpu_structures.h"
+#include "../shaders/gpu_types.h"
 
 struct GPU_Mesh {
     Vk_Buffer vertex_buffer;
