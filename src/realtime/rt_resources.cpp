@@ -60,6 +60,7 @@ void Raytracing_Resources::create(const Scene_Data& scene, const std::vector<GPU
 
 void Raytracing_Resources::destroy() {
     uniform_buffer.destroy();
+    material_buffer.destroy();
     shader_binding_table.destroy();
 
     for (const Mesh_Accel& mesh_accel : mesh_accels) {
