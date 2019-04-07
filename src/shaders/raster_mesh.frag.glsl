@@ -23,16 +23,17 @@ layout(std140, binding=0) uniform Global_Uniform_Block {
     mat4x4 model_view_proj;
     mat4x4 model_view;
     mat4x4 view;
-
-    Point_Light point_lights[8];
     int point_light_count;
-    float pad0;
-    vec2 pad1;
-
-    Diffuse_Rectangular_Light diffuse_rectangular_lights[8];
     int diffuse_rectangular_light_count;
-    float pad2;
-    vec2 pad3;
+    vec2 pad0;
+};
+
+layout(std430, binding=1) readonly buffer Point_Light_Buffer {
+    Point_Light point_lights[];
+};
+
+layout(std430, binding=2) readonly buffer Diffuse_Rectangular_Light_Buffer {
+    Diffuse_Rectangular_Light diffuse_rectangular_lights[];
 };
 
 void main() {

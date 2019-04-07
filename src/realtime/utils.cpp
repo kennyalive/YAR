@@ -74,7 +74,7 @@ Descriptor_Writes& Descriptor_Writes::uniform_buffer(uint32_t binding, VkBuffer 
 Descriptor_Writes& Descriptor_Writes::storage_buffer(uint32_t binding, VkBuffer buffer_handle, VkDeviceSize offset, VkDeviceSize range) {
     ASSERT(write_count < max_writes);
     VkDescriptorBufferInfo& buffer = resource_infos[write_count].buffer;
-    buffer.buffer   = buffer_handle;
+    buffer.buffer   = buffer_handle ? buffer_handle : vk.dummy_buffer.handle;
     buffer.offset   = offset;
     buffer.range    = range;
 

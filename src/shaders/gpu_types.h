@@ -27,6 +27,16 @@ struct Point_Light {
     float       pad0;
     ColorRGB    intensity;
     float       pad1;
+
+#ifdef __cplusplus
+    void init(const RGB_Point_Light_Data& data) {
+        position    = data.position;
+        pad0        = 0.f;
+
+        intensity   = data.intensity;
+        pad1        = 0.f;
+    }
+#endif
 };
 
 struct Diffuse_Rectangular_Light {

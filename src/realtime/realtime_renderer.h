@@ -55,7 +55,12 @@ private:
     Vk_Image                    output_image;
     Copy_To_Swapchain           copy_to_swapchain;
 
-    std::vector<GPU_Mesh>       gpu_meshes;
+    std::vector<GPU_Mesh> gpu_meshes;
+
+    struct GPU_Scene_Resources {
+        Vk_Buffer point_lights;
+        Vk_Buffer diffuse_rectangular_lights;
+    } gpu_scene;
 
     Rasterization_Resources     raster;
     Raytracing_Resources        rt;

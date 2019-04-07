@@ -366,8 +366,10 @@ void Vk_Image::destroy() {
 }
 
 void Vk_Buffer::destroy() {
-    vkDestroyBuffer(vk.device, handle, nullptr);
-    vmaFreeMemory(vk.allocator, allocation);
+    if (handle) {
+        vkDestroyBuffer(vk.device, handle, nullptr);
+        vmaFreeMemory(vk.allocator, allocation);
+    }
     *this = Vk_Buffer{};
 }
 
@@ -525,11 +527,15 @@ void vk_initialize(GLFWwindow* window, const Vk_Create_Info& create_info) {
         VK_CHECK(vkCreateQueryPool(vk.device, &create_info, nullptr, &vk.timestamp_query_pool));
 
     }
+
+    // Create dummy resources.
+    vk.dummy_buffer = vk_create_buffer(1, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, nullptr, "dummy_buffer");
 }
 
 void vk_shutdown() {
     vkDeviceWaitIdle(vk.device);
 
+    vk.dummy_buffer.destroy();
     if (vk.staging_buffer != VK_NULL_HANDLE) {
         vmaDestroyBuffer(vk.allocator, vk.staging_buffer, vk.staging_buffer_allocation);
     }

@@ -12,14 +12,9 @@ struct Global_Uniform_Buffer {
     Matrix4x4       model_view_proj;
     Matrix4x4       model_view;
     Matrix4x4       view;
-
-    GPU_Types::Point_Light point_lights[8];
     uint32_t        point_light_count;
-    Vector3         pad0;
-
-    GPU_Types::Diffuse_Rectangular_Light diffuse_rectangular_lights[8];
-    int             diffuse_rectangular_light_count;
-    Vector3         pad2;
+    uint32_t        diffuse_rectangular_light_count;
+    Vector2         pad0;
 };
 }
 
@@ -29,6 +24,8 @@ void Rasterization_Resources::create() {
 
     descriptor_set_layout = Descriptor_Set_Layout()
         .uniform_buffer (0, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
+        .storage_buffer (1, VK_SHADER_STAGE_FRAGMENT_BIT)
+        .storage_buffer (2, VK_SHADER_STAGE_FRAGMENT_BIT)
         .create         ("raster_set_layout");
 
     // Pipeline layout.
@@ -173,24 +170,17 @@ void Rasterization_Resources::destroy_framebuffer() {
     framebuffer = VK_NULL_HANDLE;
 }
 
-void Rasterization_Resources::update_point_lights(const RGB_Point_Light_Data* point_lights, int point_light_count) {
-    ASSERT(point_light_count < 8);
+void Rasterization_Resources::update_point_lights(VkBuffer light_buffer, int light_count) {
+    Descriptor_Writes(descriptor_set).storage_buffer(1, light_buffer, 0, VK_WHOLE_SIZE);
 
     Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
-    for (int i = 0; i < point_light_count; i++) {
-        buf.point_lights[i].position = point_lights[i].position;
-        buf.point_lights[i].intensity = point_lights[i].intensity;
-    }
-    buf.point_light_count = point_light_count;
+    buf.point_light_count = light_count;
 }
 
-void Rasterization_Resources::update_diffuse_rectangular_lights(const RGB_Diffuse_Rectangular_Light_Data* lights, int light_count) {
-    ASSERT(light_count < 8);
+void Rasterization_Resources::update_diffuse_rectangular_lights(VkBuffer light_buffer, int light_count) {
+    Descriptor_Writes(descriptor_set).storage_buffer(2, light_buffer, 0, VK_WHOLE_SIZE);
 
     Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
-    for (int i = 0; i < light_count; i++) {
-        buf.diffuse_rectangular_lights[i].init(lights[i]);
-    }
     buf.diffuse_rectangular_light_count = light_count;
 }
 

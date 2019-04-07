@@ -199,6 +199,8 @@ struct Vk_Instance {
 
     Depth_Buffer_Info               depth_info;
     VkDebugUtilsMessengerEXT        debug_utils_messenger;
+
+    Vk_Buffer                       dummy_buffer;
 };
 
 extern Vk_Instance vk;

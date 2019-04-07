@@ -16,11 +16,6 @@ struct Mesh_Vertex {
     float u, v;
 };
 
-struct Point_Light {
-    vec3 position;
-    vec3 intensity;
-};
-
 layout (location=0) rayPayloadInNV Ray_Payload payload;
 layout (location=1) rayPayloadNV Shadow_Ray_Payload shadow_ray_payload;
 

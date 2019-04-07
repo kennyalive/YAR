@@ -121,6 +121,8 @@ void Realtime_Renderer::shutdown() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
+    gpu_scene.point_lights.destroy();
+    gpu_scene.diffuse_rectangular_lights.destroy();
     for (GPU_Mesh& mesh : gpu_meshes) {
         mesh.vertex_buffer.destroy();
         mesh.index_buffer.destroy();
@@ -200,6 +202,8 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
     scene_data = load_scene(project.scene_type, project.scene_path);
 
     flying_camera.initialize(scene_data.view_points[0]);
+
+    // Create geometry.
     gpu_meshes.resize(scene_data.meshes.size());
     for (size_t i = 0; i < scene_data.meshes.size(); i++) {
         const Mesh_Data& mesh_data = scene_data.meshes[i];
@@ -221,10 +225,30 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
         mesh.material.pad1 = 0;
     }
 
+    // Create light data.
+    if (!scene_data.rgb_point_lights.empty()) {
+        std::vector<GPU_Types::Point_Light> lights(scene_data.rgb_point_lights.size());
+        for (auto [i, data] : enumerate(scene_data.rgb_point_lights))
+            lights[i].init(data);
+
+        gpu_scene.point_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            lights.data(), "point_light_buffer");
+    }
+    if (!scene_data.rgb_diffuse_rectangular_lights.empty()) {
+        std::vector<GPU_Types::Diffuse_Rectangular_Light> lights(scene_data.rgb_diffuse_rectangular_lights.size());
+        for (auto [i, data] : enumerate(scene_data.rgb_diffuse_rectangular_lights))
+            lights[i].init(data);
+
+        gpu_scene.diffuse_rectangular_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            lights.data(), "diffuse_rectangular_light_buffer");
+    }
+
     raster.create();
     raster.create_framebuffer(output_image.view);
-    raster.update_point_lights(scene_data.rgb_point_lights.data(), (int)scene_data.rgb_point_lights.size());
-    raster.update_diffuse_rectangular_lights(scene_data.rgb_diffuse_rectangular_lights.data(), (int)scene_data.rgb_diffuse_rectangular_lights.size());
+    raster.update_point_lights(gpu_scene.point_lights.handle, (int)scene_data.rgb_point_lights.size());
+    raster.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene_data.rgb_diffuse_rectangular_lights.size());
 
     if (vk.raytracing_supported) {
         rt.create(scene_data, gpu_meshes);
