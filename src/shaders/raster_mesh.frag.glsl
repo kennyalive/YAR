@@ -61,7 +61,6 @@ void main() {
             u.y = float(rng_state) * (1.0/float(0xffffffffu));
 
             vec3 local_light_point = vec3(light.size.x/2.0 * u.x, light.size.y/2.0 * u.y, 0.f);
-
             vec3 light_point = light.light_to_world * vec4(local_light_point, 1.0);
             vec3 light_point_eye = vec3(view * vec4(light_point, 1.0));
 
@@ -69,7 +68,7 @@ void main() {
             float light_dist = length(light_vec);
             vec3 light_dir = light_vec / light_dist;
 
-            vec3 light_normal = light.light_to_world[2];
+            vec3 light_normal = vec3(model_view * vec4(light.light_to_world[2], 0.0));
             float light_n_dot_l = dot(light_normal, -light_dir);
             if (light_n_dot_l <= 0.f)
                 continue;

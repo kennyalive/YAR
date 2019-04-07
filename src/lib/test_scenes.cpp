@@ -164,7 +164,7 @@ Scene_Data load_mori_knob() {
     };
     rect_light.emitted_radiance = ColorRGBFromXYZ(xyz);
     rect_light.size = light_size;
-    rect_light.shadow_ray_count = 1;
+    rect_light.shadow_ray_count = 4;
     scene.rgb_diffuse_rectangular_lights.push_back(rect_light);
 
     Matrix3x4 view_point{
