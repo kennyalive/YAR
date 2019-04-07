@@ -253,7 +253,7 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
     if (vk.raytracing_supported) {
         rt.create(scene_data, gpu_meshes);
         rt.update_output_image_descriptor(output_image.view);
-        rt.update_point_lights(scene_data.rgb_point_lights.data(), (int)scene_data.rgb_point_lights.size());
+        rt.update_point_lights(gpu_scene.point_lights.handle, (int)scene_data.rgb_point_lights.size());
     }
 
     project_loaded = true;

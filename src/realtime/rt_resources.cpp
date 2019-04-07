@@ -7,7 +7,6 @@
 
 struct Rt_Uniform_Buffer {
     Matrix3x4 camera_to_world;
-    GPU_Types::Point_Light point_lights[8];
     uint32_t point_light_count;
 };
 
@@ -94,15 +93,9 @@ void Raytracing_Resources::update_mesh_transform(uint32_t mesh_index, const Matr
     instance.accelerationStructureHandle = mesh_accels[mesh_index].handle;
 }
 
-void Raytracing_Resources::update_point_lights(const RGB_Point_Light_Data* point_lights, int point_light_count) {
-    ASSERT(point_light_count < 8);
-
-    Rt_Uniform_Buffer& buf = *mapped_uniform_buffer;
-    for (int i = 0; i < point_light_count; i++) {
-        buf.point_lights[i].position = point_lights[i].position;
-        buf.point_lights[i].intensity = point_lights[i].intensity;
-    }
-    buf.point_light_count = point_light_count;
+void Raytracing_Resources::update_point_lights(VkBuffer light_buffer, int light_count) {
+    Descriptor_Writes(descriptor_set).storage_buffer(6, light_buffer, 0, VK_WHOLE_SIZE);
+    mapped_uniform_buffer->point_light_count = light_count;
 }
 
 void Raytracing_Resources::create_acceleration_structure(const std::vector<Mesh_Data>& meshes, const std::vector<GPU_Mesh>& gpu_meshes) {
@@ -271,6 +264,7 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
         .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // index buffers
         .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // vertex buffers
         .storage_buffer(5, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // material buffer
+        .storage_buffer(6, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // point light buffer
         .create("rt_set_layout");
 
     // pipeline layout

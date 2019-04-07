@@ -51,7 +51,7 @@ struct Raytracing_Resources {
     void update_output_image_descriptor(VkImageView output_image_view);
     void update_camera_transform(const Matrix3x4& camera_to_world_transform);
     void update_mesh_transform(uint32_t mesh_index, const Matrix3x4& mesh_transform);
-    void update_point_lights(const RGB_Point_Light_Data* point_lights, int point_light_count);
+    void update_point_lights(VkBuffer light_buffer, int light_count);
 
 private:
     void create_acceleration_structure(const std::vector<Mesh_Data>& meshes, const std::vector<GPU_Mesh>& gpu_meshes);

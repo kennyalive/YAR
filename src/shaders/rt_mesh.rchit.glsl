@@ -23,7 +23,6 @@ layout(set=0, binding = 1) uniform accelerationStructureNV accel;
 
 layout(std140, binding=2) uniform Uniform_Block {
     mat4x3 camera_to_world;
-    Point_Light point_lights[8];
     int point_light_count;
 };
 
@@ -44,6 +43,10 @@ struct Material {
 
 layout(std430, binding=5) readonly buffer Materials {
     Material materials[];
+};
+
+layout(std430, binding=6) readonly buffer Point_Light_Buffer {
+    Point_Light point_lights[];
 };
 
 Vertex fetch_vertex(int index) {
