@@ -19,6 +19,9 @@
     <Filter Include="volk">
       <UniqueIdentifier>{4f782fe0-2a7b-4a21-acae-ec7624df63c3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="pbrt-parser">
+      <UniqueIdentifier>{d491dcfc-e534-4d29-986f-5f94056311fe}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\enkiTS\TaskScheduler.cpp">
@@ -97,6 +100,9 @@
     <ClCompile Include="..\third_party\imgui\imgui_impl_vulkan.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\pbrt_parser.cpp">
+      <Filter>pbrt-parser</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\third_party\enkiTS\Atomics.h">
@@ -170,6 +176,9 @@
     </ClInclude>
     <ClInclude Include="..\third_party\imgui\imgui_impl_vulkan.h">
       <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\pbrt-parser\pbrt_parser.h">
+      <Filter>pbrt-parser</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

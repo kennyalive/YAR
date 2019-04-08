@@ -114,6 +114,10 @@
     <ClCompile Include="..\third_party\imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\third_party\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\third_party\miniexr.cpp" />
+    <ClCompile Include="..\third_party\pbrt-parser\pbrt_parser.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4005;4244;4267</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4005;4244;4267</DisableSpecificWarnings>
+    </ClCompile>
     <ClCompile Include="..\third_party\pcg\pcg_basic.c" />
     <ClCompile Include="..\third_party\volk\volk.c">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -143,6 +147,7 @@
     <ClInclude Include="..\third_party\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\third_party\imgui\imstb_textedit.h" />
     <ClInclude Include="..\third_party\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\third_party\pbrt-parser\pbrt_parser.h" />
     <ClInclude Include="..\third_party\pcg\pcg_basic.h" />
     <ClInclude Include="..\third_party\volk\volk.h" />
   </ItemGroup>
