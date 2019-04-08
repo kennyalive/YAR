@@ -13,6 +13,8 @@ static bool enable_validation_layers = false;
 static int window_width = 960;
 static int window_height = 720;
 
+static GLFWwindow* window;
+
 static bool parse_command_line(int argc, char** argv) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--validation-layers") == 0) {
@@ -67,6 +69,9 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
             } else {
                 glfwSetWindowMonitor(window, nullptr, last_window_xpos, last_window_ypos, last_window_width, last_window_height, 0);
             }
+        } else if (key == GLFW_KEY_F10) {
+            Realtime_Renderer* renderer = (Realtime_Renderer*)glfwGetWindowUserPointer(window);
+            renderer->toggle_ui();
         }
     }
 }
@@ -80,12 +85,13 @@ int run_realtime_renderer(bool enable_validation_layers) {
         error("glfwInit failed");
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow* window = glfwCreateWindow(window_width, window_height, "YAR", nullptr, nullptr);
+    window = glfwCreateWindow(window_width, window_height, "YAR", nullptr, nullptr);
     ASSERT(window != nullptr);
     glfwSetKeyCallback(window, glfw_key_callback);
 
     Realtime_Renderer renderer{};
     renderer.initialize(vk_create_info, window);
+    glfwSetWindowUserPointer(window, &renderer);
 
     if (!yar_project_file.empty())
         renderer.load_project(yar_project_file);

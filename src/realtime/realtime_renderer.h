@@ -21,6 +21,7 @@ public:
     void release_resolution_dependent_resources();
     void restore_resolution_dependent_resources();
     bool vsync_enabled() const { return vsync; }
+    void toggle_ui() { show_ui = !show_ui; }
 
     void load_project(const std::string& yar_file_name);
     void run_frame();
