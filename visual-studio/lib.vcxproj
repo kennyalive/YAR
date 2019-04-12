@@ -103,6 +103,7 @@
     <ClInclude Include="..\src\lib\matrix.h" />
     <ClInclude Include="..\src\lib\mesh.h" />
     <ClInclude Include="..\src\lib\obj_loader.h" />
+    <ClInclude Include="..\src\lib\pbrt_loader.h" />
     <ClInclude Include="..\src\lib\platform.h" />
     <ClInclude Include="..\src\lib\random.h" />
     <ClInclude Include="..\src\lib\ray.h" />
@@ -120,6 +121,7 @@
     <ClCompile Include="..\src\lib\matrix.cpp" />
     <ClCompile Include="..\src\lib\mesh.cpp" />
     <ClCompile Include="..\src\lib\obj_loader.cpp" />
+    <ClCompile Include="..\src\lib\pbrt_loader.cpp" />
     <ClCompile Include="..\src\lib\spectrum.cpp" />
     <ClCompile Include="..\src\lib\test_scenes.cpp" />
     <ClCompile Include="..\src\lib\win32.cpp" />

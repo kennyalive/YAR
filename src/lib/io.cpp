@@ -1,6 +1,8 @@
 #include "std.h"
 #include "common.h"
 #include "io.h"
+
+#include "pbrt_loader.h"
 #include "test_scenes.h"
 
 #include "half/half.h"
@@ -95,6 +97,9 @@ YAR_Project parse_project(const std::string& file_name) {
             token = parser.next_token();
             if (token == "test") {
                 project.scene_type = Scene_Type::test_scene;
+            } 
+            else if (token == "pbrt") {
+                project.scene_type = Scene_Type::pbrt_scene;
             }
             else {
                 error("uknown scene_type: %s", std::string(token).c_str());
@@ -127,6 +132,10 @@ bool save_project(const std::string& file_name, const YAR_Project& project) {
 
     if (project.scene_type == Scene_Type::test_scene)
         file << "scene_type test\n";
+    else if (project.scene_type == Scene_Type::pbrt_scene)
+        file << "scene_type pbrt\n";
+    else
+        error("save_project: unknown scene type");
 
     file << "scene_path " << project.scene_path << "\n";
     file << "image_resolution " << project.image_resolution.x << " " << project.image_resolution.y << "\n";
@@ -139,22 +148,25 @@ bool save_project(const std::string& file_name, const YAR_Project& project) {
     return true;
 }
 
-Scene_Data load_scene(Scene_Type scene_type, const std::string& scene_path) {
-    ASSERT(scene_type == Scene_Type::test_scene);
-    Scene_Data scene_data;
+Scene_Data load_scene(const YAR_Project& project) {
+    if (project.scene_type == Scene_Type::test_scene) {
+        if (project.scene_path == "conference")
+            return load_conference_scene();
+        else if (project.scene_path == "bunny")
+            return load_bunny_scene();
+        else if (project.scene_path == "buddha")
+            return load_buddha_scene();
+        else if (project.scene_path == "hairball")
+            return load_hairball_scene();
+        else if (project.scene_path == "mori_knob")
+            return load_mori_knob();
+    }
+    else if (project.scene_type == Scene_Type::pbrt_scene) {
+        return load_pbrt_scene(project);
+    }
 
-    if (scene_path == "conference")
-        scene_data = load_conference_scene();
-    else if (scene_path == "bunny")
-        scene_data = load_bunny_scene();
-    else if (scene_path == "buddha")
-        scene_data = load_buddha_scene();
-    else if (scene_path == "hairball")
-        scene_data = load_hairball_scene();
-    else if (scene_path == "mori_knob")
-        scene_data = load_mori_knob();
-
-    return scene_data;
+    error("load_scene: unknown scene type");
+    return Scene_Data{};
 }
 
 // from third_party/miniexr.cpp

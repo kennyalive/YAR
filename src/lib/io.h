@@ -45,7 +45,8 @@ struct Scene_Data {
 
 // YAR file format
 enum class Scene_Type {
-    test_scene
+    test_scene,
+    pbrt_scene
 };
 
 struct YAR_Project {
@@ -59,5 +60,5 @@ struct YAR_Project {
 YAR_Project parse_project(const std::string& file_name);
 bool save_project(const std::string& file_name, const YAR_Project& project);
 
-Scene_Data load_scene(Scene_Type scene_type, const std::string& scene_path);
+Scene_Data load_scene(const YAR_Project& project);
 void write_exr_image(const char* file_name, const ColorRGB* pixels, int w, int h);

@@ -24,6 +24,9 @@
     </ClInclude>
     <ClInclude Include="..\src\lib\colorimetry.h" />
     <ClInclude Include="..\src\lib\spectrum.h" />
+    <ClInclude Include="..\src\lib\pbrt_loader.h">
+      <Filter>io</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />
@@ -44,6 +47,9 @@
     </ClCompile>
     <ClCompile Include="..\src\lib\colorimetry.cpp" />
     <ClCompile Include="..\src\lib\spectrum.cpp" />
+    <ClCompile Include="..\src\lib\pbrt_loader.cpp">
+      <Filter>io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="io">
