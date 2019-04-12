@@ -242,7 +242,9 @@ void compute_normals(Mesh_Data& mesh, Normal_Average_Mode normal_average_mode, f
     }
 
     for (Mesh_Vertex& v : mesh.vertices) {
-        ASSERT(v.normal.length() > 1e-6f);
+        if (v.normal == Vector3_Zero) {
+            v.normal = Vector3(0, 0, 1); // default value for degenerated triangle
+        }
         v.normal.normalize();
     }
 }
