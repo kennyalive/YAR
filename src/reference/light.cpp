@@ -1,7 +1,13 @@
 #include "std.h"
 #include "lib/common.h"
 #include "light.h"
+
+#include "intersection.h"
+#include "kdtree_builder.h"
 #include "material.h"
+#include "render_context.h"
+
+#include "lib/io.h"
 
 Diffuse_Rectangular_Light::Diffuse_Rectangular_Light(const RGB_Diffuse_Rectangular_Light_Data& light_data) {
     light_to_world_transform = light_data.light_to_world_transform;
@@ -12,16 +18,17 @@ Diffuse_Rectangular_Light::Diffuse_Rectangular_Light(const RGB_Diffuse_Rectangul
 }
 
 ColorRGB compute_direct_lighting(
+    const Render_Context& ctx,
     const Local_Geometry& local_geom,
-    const TwoLevel_KdTree* acceleration_structure,
-    const Lights& lights,
     const Vector3& wo,
     Material_Handle material,
     pcg32_random_t* rng)
 {
-    ColorRGB L{};
-    for (const Point_Light& light : lights.point_lights) {
-        const Vector3 light_vec = (light.position - local_geom.position);
+    ColorRGB L;
+    for (const Point_Light& light : ctx.lights.point_lights) {
+        Vector3 surface_point = local_geom.position + local_geom.normal * 1e-3f;
+
+        const Vector3 light_vec = (light.position - surface_point);
         const float light_dist = light_vec.length();
         const Vector3 light_dir = light_vec / light_dist;
 
@@ -29,9 +36,9 @@ ColorRGB compute_direct_lighting(
         if (n_dot_l <= 0.f)
             continue;
 
-        Ray shadow_ray(local_geom.position + local_geom.normal * 1e-3f, light_dir);
-        float any_intersection_dist = acceleration_structure->intersect_any(shadow_ray);
-        bool in_shadow = any_intersection_dist + 1e-4f < light_dist;
+        Ray shadow_ray(surface_point, light_dir);
+        float any_intersection_dist = ctx.acceleration_structure->intersect_any(shadow_ray);
+        bool in_shadow = any_intersection_dist < light_dist - 1e-4f;
         if (in_shadow)
             continue;
 
@@ -39,14 +46,15 @@ ColorRGB compute_direct_lighting(
         L += bsdf * light.intensity * (n_dot_l / (light_dist * light_dist));
     }
 
-    for (const Diffuse_Rectangular_Light& light : lights.diffuse_rectangular_lights) {
+    for (const Diffuse_Rectangular_Light& light : ctx.lights.diffuse_rectangular_lights) {
         for (int i = 0; i < light.shadow_ray_count; i++) {
             Vector2 u{2.0f * random_float(rng) - 1.0f, 2.0f * random_float(rng) - 1.0f};
             Vector3 local_light_point = Vector3{light.size.x/2.0f * u.x, light.size.y/2.0f * u.y, 0.0f};
-
             Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
 
-            const Vector3 light_vec = (light_point - local_geom.position);
+            Vector3 surface_point = local_geom.position + local_geom.normal * 1e-3f;
+
+            const Vector3 light_vec = (light_point - surface_point);
             const float light_dist = light_vec.length();
             const Vector3 light_dir = light_vec / light_dist;
 
@@ -59,9 +67,9 @@ ColorRGB compute_direct_lighting(
             if (n_dot_l <= 0.f)
                 continue;
 
-            Ray shadow_ray(local_geom.position + local_geom.normal * 1e-3f, light_dir);
-            float any_intersection_dist = acceleration_structure->intersect_any(shadow_ray);
-            bool in_shadow = any_intersection_dist + 1e-4f < light_dist;
+            Ray shadow_ray(surface_point, light_dir);
+            float any_intersection_dist = ctx.acceleration_structure->intersect_any(shadow_ray);
+            bool in_shadow = any_intersection_dist < light_dist - 1e-3f;
             if (in_shadow)
                 continue;
 
@@ -70,5 +78,11 @@ ColorRGB compute_direct_lighting(
         }
         L /= float(light.shadow_ray_count);
     }
+
+    if (local_geom.area_light != Null_Light) {
+        ASSERT(local_geom.area_light.type == Light_Type::diffuse_rectangular);
+        L += ctx.lights.diffuse_rectangular_lights[local_geom.area_light.index].emitted_radiance;
+    }
+
     return L;
 }

@@ -61,4 +61,5 @@ Local_Geometry::Local_Geometry(const Ray& ray, const Triangle_Intersection& tria
     position = ray.get_point(triangle_intersection.t);
     normal = triangle_intersection.mesh->get_normal(triangle_intersection.triangle_index, triangle_intersection.b1, triangle_intersection.b2);
     material = triangle_intersection.mesh->material;
+    area_light = triangle_intersection.mesh->area_light;
 }

@@ -3,7 +3,9 @@
 struct Vector3;
 
 struct ColorRGB {
-    float r, g, b;
+    float r = 0.f;
+    float g = 0.f;
+    float b = 0.f;
 
     float operator[](int index) const {
         ASSERT(index >= 0 && index < 3);

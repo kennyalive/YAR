@@ -1,5 +1,6 @@
 #pragma once
 
+#include "light.h"
 #include "material.h"
 #include "lib/vector.h"
 
@@ -22,6 +23,7 @@ struct Local_Geometry {
     Vector3                 position;
     Vector3                 normal;
     Material_Handle         material; 
+    Light_Handle            area_light;
 
     Local_Geometry() {}
     explicit Local_Geometry(const Ray& ray, const Triangle_Intersection& triangle_intersection);

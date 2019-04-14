@@ -205,6 +205,19 @@ Matrix4x4 perspective_transform_opengl_z01(float fovy_radians, float aspect_rati
     return proj;
 }
 
+Matrix3x4 get_inverted_transform(const Matrix3x4& m) {
+    Vector3 x_axis = m.get_column(0);
+    Vector3 y_axis = m.get_column(1);
+    Vector3 z_axis = m.get_column(2);
+    Vector3 origin = m.get_column(3);
+
+    Matrix3x4 m_inv;
+    m_inv.set_row(0, Vector4(x_axis, -dot(x_axis, origin)));
+    m_inv.set_row(1, Vector4(y_axis, -dot(y_axis, origin)));
+    m_inv.set_row(2, Vector4(z_axis, -dot(z_axis, origin)));
+    return m_inv;
+}
+
 Vector3 transform_point(const Matrix3x4& m, Vector3 p) {
     Vector3 p2;
     p2.x = m.a[0][0]*p.x + m.a[0][1]*p.y + m.a[0][2]*p.z + m.a[0][3];

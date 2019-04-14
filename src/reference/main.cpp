@@ -1,4 +1,5 @@
 #include "std.h"
+#include "lib/common.h"
 #include "reference_renderer.h"
 #include "lib/io.h"
 
@@ -8,17 +9,7 @@ int main(int argc, char** argv) {
         return 1;
     }
     YAR_Project project = parse_project(argv[1]);
-    Scene_Data scene_data = load_scene(project);
-
-    Bounds2i render_region = project.render_region;
-    if (render_region == Bounds2i{})
-        render_region = { {0, 0}, project.image_resolution }; // default render region
-
-    Reference_Renderer_Input input{};
-    input.scene_data = &scene_data;
-    input.image_resolution = project.image_resolution;
-    input.render_region = render_region;
-    input.camera_to_world = project.camera_to_world;
-    render_reference_image(input);
+    Renderer_Options options;
+    render_reference_image(project, options);
     return 0;
 }

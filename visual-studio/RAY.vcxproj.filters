@@ -31,5 +31,6 @@
     <ClInclude Include="..\src\reference\triangle_mesh.h" />
     <ClInclude Include="..\src\reference\triangle_mesh_loader.h" />
     <ClInclude Include="..\src\reference\reference_renderer.h" />
+    <ClInclude Include="..\src\reference\render_context.h" />
   </ItemGroup>
 </Project>

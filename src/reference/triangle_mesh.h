@@ -1,18 +1,21 @@
 #pragma once
 
+#include "light.h"
 #include "material.h"
 #include "lib/bounding_box.h"
 #include "lib/mesh.h"
 #include <vector>
 
 struct Triangle_Mesh {
-    std::vector<Vector3>  vertices;
-    std::vector<Vector3>  normals;
-    std::vector<Vector2>  uvs;
+    std::vector<Vector3> vertices;
+    std::vector<Vector3> normals;
+    std::vector<Vector2> uvs;
     std::vector<uint32_t> indices;
-    Material_Handle       material;
+    Material_Handle material = Null_Material;
+    Light_Handle area_light = Null_Light;
 
     static Triangle_Mesh from_mesh_data(const Mesh_Data& mesh_data, Material_Handle material);
+    static Triangle_Mesh from_diffuse_rectangular_light(const Diffuse_Rectangular_Light& light, int light_index);
 
     uint32_t get_triangle_count() const {
         ASSERT(indices.size() % 3 == 0);

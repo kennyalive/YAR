@@ -20,7 +20,7 @@ Material_Handle register_material(const Material_Data& material_data) {
     if (material_data.material_format == Material_Format::obj_material) {
         const Obj_Material& obj_material = material_data.obj_material;
         materials.diffuse.push_back(Diffuse_Material{ obj_material.k_diffuse });
-        return Material_Handle{ Material_Type::diffuse, uint32_t(materials.diffuse.size() - 1) };
+        return Material_Handle{ Material_Type::diffuse, int(materials.diffuse.size() - 1) };
     }
 
     ASSERT(false);

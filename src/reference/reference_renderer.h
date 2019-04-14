@@ -1,17 +1,9 @@
 #pragma once
 
-#include "lib/geometry.h"
-#include "lib/matrix.h"
-#include "lib/vector.h"
+struct YAR_Project;
 
-struct Scene_Data;
-
-struct Reference_Renderer_Input {
-    Vector2i image_resolution;
-    Bounds2i render_region;
-    Matrix3x4 camera_to_world;
-    bool parallel_rendering;
-    const Scene_Data* scene_data;
+struct Renderer_Options {
+    int cpu_core_count = 0;
 };
 
-void render_reference_image(const Reference_Renderer_Input& input);
+void render_reference_image(const YAR_Project& project, const Renderer_Options& options);

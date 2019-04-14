@@ -9,6 +9,7 @@ struct Obj_Material {
 };
 
 struct Obj_Model {
+    std::string name;
     Mesh_Data mesh_data;
     bool has_material;
     Obj_Material material;

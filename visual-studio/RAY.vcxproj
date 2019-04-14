@@ -116,6 +116,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
+    <ClInclude Include="..\src\reference\render_context.h" />
     <ClInclude Include="..\src\reference\film.h" />
     <ClInclude Include="..\src\reference\intersection.h" />
     <ClInclude Include="..\src\reference\kdtree.h" />

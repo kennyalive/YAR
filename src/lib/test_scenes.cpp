@@ -153,6 +153,8 @@ Scene_Data load_mori_knob() {
     mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
     std::vector<Obj_Model> obj_models = load_obj("mori_knob/testObj.obj", mesh_load_params);
 
+    obj_models.erase(obj_models.begin() + 3); // remove light geometry
+
     Scene_Data scene = convert_obj_models(obj_models);
     scene.project_dir = "mori_knob";
 
@@ -168,9 +170,9 @@ Scene_Data load_mori_knob() {
     scene.rgb_diffuse_rectangular_lights.push_back(rect_light);
 
     Matrix3x4 view_point{
-        -0.954639f, 0.265867f, 0.134153f, -0.833258f,
-        -0.297793f, -0.852289f, -0.430056f, 1.268962f,
-        0.000000f, -0.450491f, 0.892788f, 0.055605f,
+        -0.788123f, 0.606466f, -0.105479f, -0.945053f,
+        -0.615556f, -0.776481f, 0.135049f, 1.593694f,
+        0.000000f, 0.171357f, 0.985232f, -0.075311f,
     };
     scene.view_points.push_back(view_point);
     return scene;

@@ -41,6 +41,9 @@ Matrix3x4 look_at_transform(Vector3 from, Vector3 to, Vector3 up);
 // space points top-down with regard to eye space vertical direction (to match Vulkan viewport).
 Matrix4x4 perspective_transform_opengl_z01(float fovy_radians, float aspect_ratio, float near, float far);
 
+// Assumes that input matrix constains only rotation, translation and uniform scale.
+Matrix3x4 get_inverted_transform(const Matrix3x4& m);
+
 Vector3 transform_point(const Matrix3x4& m, Vector3 p);
 Vector3 transform_vector(const Matrix3x4& m, Vector3 v);
 Ray transform_ray(const Matrix3x4& m, const Ray& ray);

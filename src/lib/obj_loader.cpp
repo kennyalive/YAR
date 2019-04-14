@@ -40,6 +40,7 @@ std::vector<Obj_Model> load_obj(const std::string& obj_file, const Mesh_Load_Par
 
     for (size_t i = 0; i < shapes.size(); i++) {
         tinyobj::shape_t& shape = shapes[i];
+        models[i].name = shape.name;
         Mesh_Data& mesh = models[i].mesh_data;
 
         std::unordered_map<Mesh_Vertex, uint32_t, Vertex_Hasher> unique_vertices;
