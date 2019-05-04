@@ -34,19 +34,19 @@ struct Raytracing_Resources {
     VkGeometryInstanceNV* instance_buffer_ptr;
 
     VkDescriptorSetLayout       descriptor_set_layout;
+    VkDescriptorSet             descriptor_set;
+
     VkPipelineLayout            pipeline_layout;
     VkPipeline                  pipeline;
-    VkDescriptorSet             descriptor_set;
 
     Vk_Buffer                   shader_binding_table;
 
     Vk_Buffer                   uniform_buffer;
     Rt_Uniform_Buffer*          mapped_uniform_buffer;
 
-    Vk_Buffer material_buffer;
-    GPU_Types::Mesh_Material* material_buffer_ptr;
+    Vk_Buffer material_handle_buffer;
 
-    void create(const Scene_Data& scene, const std::vector<GPU_Mesh>& gpu_meshes);
+    void create(const Scene_Data& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout);
     void destroy();
     void update_output_image_descriptor(VkImageView output_image_view);
     void update_camera_transform(const Matrix3x4& camera_to_world_transform);
@@ -56,5 +56,5 @@ struct Raytracing_Resources {
 
 private:
     void create_acceleration_structure(const std::vector<Mesh_Data>& meshes, const std::vector<GPU_Mesh>& gpu_meshes);
-    void create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes);
+    void create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout);
 };

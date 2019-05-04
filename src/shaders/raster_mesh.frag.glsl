@@ -1,6 +1,7 @@
 #version 460
 #extension GL_GOOGLE_include_directive : require
 #include "common.glsl"
+#include "material.glsl"
 
 struct Frag_In {
     vec3 normal;
@@ -8,16 +9,14 @@ struct Frag_In {
     vec2 uv;
 };
 
+layout(push_constant) uniform Push_Constants {
+    int material_type;
+    int material_index;
+};
+
 layout(location=0) in Frag_In frag_in;
 
 layout(location = 0) out vec4 color_attachment0;
-
-layout(push_constant) uniform Push_Constants {
-    vec3    k_diffuse;
-    float   padding0;
-    vec3    k_specular;
-    float   padding1;
-};
 
 layout(std140, binding=0) uniform Global_Uniform_Block {
     mat4x4 model_view_proj;
@@ -40,13 +39,18 @@ void main() {
     vec3 n = normalize(frag_in.normal);
     vec3 L = vec3(0);
 
+    Material_Handle mtl_handle = Material_Handle(material_type, material_index);
+
+    vec3 wo = normalize(-frag_in.pos);
+
     for (int i = 0; i < point_light_count; i++) {
         vec3 light_pos_eye = vec3(view * vec4(point_lights[i].position, 1.0));
         vec3 light_vec = light_pos_eye - frag_in.pos;
         float light_dist_sq_inv = 1.f / dot(light_vec, light_vec);
         vec3 light_dir = light_vec * sqrt(light_dist_sq_inv);
 
-        L += (k_diffuse * Pi_Inv) * point_lights[i].intensity * (light_dist_sq_inv * max(0, dot(n, light_dir)));
+        vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
+        L += bsdf * point_lights[i].intensity * (light_dist_sq_inv * max(0, dot(n, light_dir)));
     }
 
     uint seed = uint(gl_FragCoord.y)*uint(800) + uint(gl_FragCoord.x);
@@ -77,7 +81,8 @@ void main() {
             if (n_dot_l <= 0.f)
                 continue;
 
-            L += (k_diffuse * Pi_Inv) * light.area * light.emitted_radiance * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
+            vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
+            L += light.area * light.emitted_radiance * bsdf * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
         L /= float(light.shadow_ray_count);
     }

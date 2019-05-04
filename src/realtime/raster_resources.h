@@ -18,7 +18,7 @@ struct Rasterization_Resources {
     Vk_Buffer                   uniform_buffer;
     void*                       mapped_uniform_buffer;
 
-    void create();
+    void create(VkDescriptorSetLayout material_descriptor_set_layout);
     void destroy();
     void create_framebuffer(VkImageView output_image_view);
     void destroy_framebuffer();

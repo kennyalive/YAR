@@ -185,6 +185,7 @@
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
+    <None Include="..\src\shaders\material.glsl" />
     <None Include="..\src\shaders\rt_utils.glsl" />
     <None Include="..\src\shaders\tone_mapping.glsl" />
   </ItemGroup>

@@ -12,9 +12,20 @@ struct Rt_Uniform_Buffer {
     Vector2     pad0;
 };
 
-void Raytracing_Resources::create(const Scene_Data& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
+void Raytracing_Resources::create(const Scene_Data& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Rt_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &(void*&)mapped_uniform_buffer, "rt_uniform_buffer");
+
+    // Material handles.
+    {
+        std::vector<Material_Handle> handles(gpu_meshes.size());
+        for (auto [i, mesh] : enumerate(gpu_meshes)) {
+            handles[i] = mesh.material;
+        }
+        VkDeviceSize size = gpu_meshes.size() * sizeof(Material_Handle); 
+        material_handle_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            handles.data(), "material_handle_buffer");
+    }
 
     // Instance buffer.
     {
@@ -24,20 +35,8 @@ void Raytracing_Resources::create(const Scene_Data& scene, const std::vector<GPU
         instance_buffer_ptr = static_cast<VkGeometryInstanceNV*>(buffer_ptr);
     }
 
-    // Material buffer;
-    {
-        VkDeviceSize material_buffer_size = gpu_meshes.size() * sizeof(GPU_Types::Mesh_Material);
-        void* buffer_ptr;
-        material_buffer = vk_create_mapped_buffer(material_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, &buffer_ptr, "material_buffer");
-        material_buffer_ptr = static_cast<GPU_Types::Mesh_Material*>(buffer_ptr);
-
-        for (auto [i, gpu_mesh] : enumerate(gpu_meshes)) {
-            material_buffer_ptr[i] = gpu_mesh.material;
-        }
-    }
-
     create_acceleration_structure(scene.meshes, gpu_meshes);
-    create_pipeline(gpu_meshes);
+    create_pipeline(gpu_meshes, material_descriptor_set_layout);
 
     // Shader binding table.
     {
@@ -61,7 +60,7 @@ void Raytracing_Resources::create(const Scene_Data& scene, const std::vector<GPU
 
 void Raytracing_Resources::destroy() {
     uniform_buffer.destroy();
-    material_buffer.destroy();
+    material_handle_buffer.destroy();
     shader_binding_table.destroy();
 
     for (const Mesh_Accel& mesh_accel : mesh_accels) {
@@ -73,6 +72,7 @@ void Raytracing_Resources::destroy() {
     vmaFreeMemory(vk.allocator, top_level_accel_allocation);
     instance_buffer.destroy();
     vkDestroyDescriptorSetLayout(vk.device, descriptor_set_layout, nullptr);
+
     vkDestroyPipelineLayout(vk.device, pipeline_layout, nullptr);
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
@@ -96,12 +96,12 @@ void Raytracing_Resources::update_mesh_transform(uint32_t mesh_index, const Matr
 }
 
 void Raytracing_Resources::update_point_lights(VkBuffer light_buffer, int light_count) {
-    Descriptor_Writes(descriptor_set).storage_buffer(6, light_buffer, 0, VK_WHOLE_SIZE);
+    Descriptor_Writes(descriptor_set).storage_buffer(5, light_buffer, 0, VK_WHOLE_SIZE);
     mapped_uniform_buffer->point_light_count = light_count;
 }
 
 void Raytracing_Resources::update_diffuse_rectangular_lights(VkBuffer light_buffer, int light_count) {
-    Descriptor_Writes(descriptor_set).storage_buffer(7, light_buffer, 0, VK_WHOLE_SIZE);
+    Descriptor_Writes(descriptor_set).storage_buffer(6, light_buffer, 0, VK_WHOLE_SIZE);
     mapped_uniform_buffer->diffuse_rectangular_light_count = light_count;
 }
 
@@ -262,17 +262,17 @@ void Raytracing_Resources::create_acceleration_structure(const std::vector<Mesh_
     printf("\nAcceleration structures build time = %lld microseconds\n", elapsed_microseconds(t));
 }
 
-void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes) {
+void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout) {
 
     descriptor_set_layout = Descriptor_Set_Layout()
         .storage_image(0, VK_SHADER_STAGE_RAYGEN_BIT_NV)
         .accelerator(1, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
-        .uniform_buffer(2, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
+        .uniform_buffer(2, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV)
         .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // index buffers
         .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // vertex buffers
-        .storage_buffer(5, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // material buffer
-        .storage_buffer(6, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // point light buffer
-        .storage_buffer(7, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // diffuse rectangular light buffer
+        .storage_buffer(5, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // point light buffer
+        .storage_buffer(6, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV) // diffuse rectangular light buffer
+        .storage_buffer(7, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // material handle buffer
         .create("rt_set_layout");
 
     // pipeline layout
@@ -283,9 +283,14 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
         push_constant_ranges[0].offset = 0;
         push_constant_ranges[0].size = 4;
 
+        VkDescriptorSetLayout set_layouts[] = {
+            descriptor_set_layout,
+            material_descriptor_set_layout
+        };
+
         VkPipelineLayoutCreateInfo create_info { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        create_info.setLayoutCount = 1;
-        create_info.pSetLayouts = &descriptor_set_layout;
+        create_info.setLayoutCount = (uint32_t)std::size(set_layouts);
+        create_info.pSetLayouts = set_layouts;
         create_info.pushConstantRangeCount = (uint32_t)std::size(push_constant_ranges);
         create_info.pPushConstantRanges = push_constant_ranges;
         VK_CHECK(vkCreatePipelineLayout(vk.device, &create_info, nullptr, &pipeline_layout));
@@ -399,6 +404,6 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
             .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer))
             .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), index_buffer_infos.data())
             .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), vertex_buffer_infos.data())
-            .storage_buffer(5, material_buffer.handle, 0, gpu_meshes.size() * sizeof(GPU_Types::Mesh_Material));
+            .storage_buffer(7, material_handle_buffer.handle, 0, VK_WHOLE_SIZE);
     }
 }

@@ -4,10 +4,11 @@
 
 #include "intersection.h"
 #include "kdtree_builder.h"
-#include "material.h"
 #include "render_context.h"
 
 #include "lib/io.h"
+
+ColorRGB compute_bsdf(const Materials& materials, Material_Handle mtl, Vector3 wi, Vector3 wo);
 
 Diffuse_Rectangular_Light::Diffuse_Rectangular_Light(const RGB_Diffuse_Rectangular_Light_Data& light_data) {
     light_to_world_transform = light_data.light_to_world_transform;
@@ -42,7 +43,7 @@ ColorRGB compute_direct_lighting(
         if (in_shadow)
             continue;
 
-        ColorRGB bsdf = compute_bsdf(material, light_dir, wo);
+        ColorRGB bsdf = compute_bsdf(ctx.materials, material, light_dir, wo);
         L += bsdf * light.intensity * (n_dot_l / (light_dist * light_dist));
     }
 
@@ -73,7 +74,7 @@ ColorRGB compute_direct_lighting(
             if (in_shadow)
                 continue;
 
-            ColorRGB bsdf = compute_bsdf(material, light_dir, wo);
+            ColorRGB bsdf = compute_bsdf(ctx.materials, material, light_dir, wo);
             L += light.area * light.emitted_radiance * bsdf * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
         L /= float(light.shadow_ray_count);

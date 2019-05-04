@@ -1,7 +1,7 @@
 #pragma once
 
 #include "light.h"
-#include "material.h"
+#include "lib/material.h"
 #include "lib/vector.h"
 
 struct Ray;

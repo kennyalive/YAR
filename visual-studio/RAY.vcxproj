@@ -122,7 +122,6 @@
     <ClInclude Include="..\src\reference\kdtree.h" />
     <ClInclude Include="..\src\reference\kdtree_builder.h" />
     <ClInclude Include="..\src\reference\light.h" />
-    <ClInclude Include="..\src\reference\material.h" />
     <ClInclude Include="..\src\reference\reference_renderer.h" />
     <ClInclude Include="..\src\reference\sampling.h" />
     <ClInclude Include="..\src\reference\test_ray_generator.h" />

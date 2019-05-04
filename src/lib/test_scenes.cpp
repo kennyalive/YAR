@@ -25,20 +25,20 @@ static Scene_Data convert_obj_models(const std::vector<Obj_Model>& obj_models) {
     Scene_Data scene;
 
     scene.meshes.reserve(obj_models.size());
-    scene.materials.reserve(obj_models.size());
+    scene.materials.lambertian.reserve(obj_models.size());
 
     for (const Obj_Model& model : obj_models) {
         scene.meshes.push_back(model.mesh_data);
+        scene.meshes.back().material = { Material_Type::lambertian, (int)scene.materials.lambertian.size() };
 
-        Material_Data material{};
-        material.material_format = Material_Format::obj_material;
-
-        if (model.has_material)
-            material.obj_material = model.material;
-        else {
-            material.obj_material.k_diffuse = Color_White;
+        Lambertian_Material mtl;
+        if (model.has_material) {
+            mtl.albedo = model.material.k_diffuse;
         }
-        scene.materials.push_back(material);
+        else {
+            mtl.albedo = Color_White;
+        }
+        scene.materials.lambertian.push_back(mtl);
     }
     return scene;
 }

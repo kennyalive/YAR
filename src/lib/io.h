@@ -2,6 +2,7 @@
 
 #include "color.h"
 #include "geometry.h"
+#include "material.h"
 #include "matrix.h"
 #include "mesh.h"
 #include "obj_loader.h"
@@ -19,23 +20,10 @@ struct RGB_Diffuse_Rectangular_Light_Data {
     int shadow_ray_count;
 };
 
-enum class Material_Format {
-    obj_material
-};
-
-struct Material_Data {
-    Material_Data() {}
-
-    Material_Format material_format;
-    union {
-        Obj_Material obj_material;
-    };
-};
-
 struct Scene_Data {
     std::string project_dir;
     std::vector<Mesh_Data> meshes;
-    std::vector<Material_Data> materials; // per mesh material
+    Materials materials;
     std::vector<Matrix3x4> view_points; // predefined camera positions
 
     // Lights

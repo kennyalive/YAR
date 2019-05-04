@@ -2,7 +2,7 @@
 #include "lib/common.h"
 #include "triangle_mesh.h"
 
-Triangle_Mesh Triangle_Mesh::from_mesh_data(const Mesh_Data& mesh_data, Material_Handle material) {
+Triangle_Mesh Triangle_Mesh::from_mesh_data(const Mesh_Data& mesh_data) {
     Triangle_Mesh mesh;
     mesh.vertices.resize(mesh_data.vertices.size());
     mesh.normals.resize(mesh_data.vertices.size());
@@ -17,7 +17,7 @@ Triangle_Mesh Triangle_Mesh::from_mesh_data(const Mesh_Data& mesh_data, Material
     for (int i = 0; i < (int)mesh_data.indices.size(); i++) {
         mesh.indices[i] = mesh_data.indices[i];
     }
-    mesh.material = material;
+    mesh.material = mesh_data.material;
     return mesh;
 }
 

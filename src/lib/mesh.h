@@ -1,5 +1,6 @@
 #pragma once
 
+#include "material.h"
 #include "matrix.h"
 #include "vector.h"
 #include <vector>
@@ -13,6 +14,7 @@ struct Mesh_Vertex {
 struct Mesh_Data {
     std::vector<Mesh_Vertex> vertices;
     std::vector<uint32_t> indices;
+    Material_Handle material;
 };
 
 // Defines how face normals are averaged to compute the vertex normal.

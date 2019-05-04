@@ -25,8 +25,8 @@ struct Vk_Image {
 };
 
 struct Vk_Buffer {
-    VkBuffer        handle;
-    VmaAllocation   allocation;
+    VkBuffer handle = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
     void destroy();
 };
 

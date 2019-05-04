@@ -45,8 +45,6 @@ private:
     bool raytracing = false;
     bool spp4 = false;
 
-    bool parallel_reference_rendering = false;
-
     Flying_Camera flying_camera;
 
     UI_Result                   ui_result;
@@ -61,10 +59,14 @@ private:
     struct GPU_Scene_Resources {
         Vk_Buffer point_lights;
         Vk_Buffer diffuse_rectangular_lights;
+
+        Vk_Buffer lambertian_material_buffer;
+        VkDescriptorSetLayout material_descriptor_set_layout;
+        VkDescriptorSet material_descriptor_set;
     } gpu_scene;
 
-    Rasterization_Resources     raster;
-    Raytracing_Resources        rt;
+    Rasterization_Resources raster;
+    Raytracing_Resources rt;
 
     GPU_Time_Keeper time_keeper;
     struct {

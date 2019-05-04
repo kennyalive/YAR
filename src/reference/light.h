@@ -1,8 +1,7 @@
 #pragma once
 
-#include "material.h"
-
 #include "lib/color.h"
+#include "lib/material.h"
 #include "lib/matrix.h"
 #include "lib/random.h"
 #include "lib/vector.h"

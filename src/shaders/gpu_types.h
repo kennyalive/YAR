@@ -15,13 +15,6 @@
 namespace GPU_Types {
 #endif
 
-struct Mesh_Material {
-    ColorRGB    k_diffuse;
-    float       pad0;
-    ColorRGB    k_specular;
-    float       pad1;
-};
-
 struct Point_Light {
     Vector3     position;
     float       pad0;

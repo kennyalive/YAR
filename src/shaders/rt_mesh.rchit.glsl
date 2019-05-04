@@ -4,6 +4,7 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include "common.glsl"
+#include "material.glsl"
 
 #define HIT_SHADER
 #include "rt_utils.glsl"
@@ -36,23 +37,16 @@ layout(std430, binding=4) readonly buffer Vertex_Buffer {
     Mesh_Vertex vertices[];
 } vertex_buffers[];
 
-struct Material {
-    vec3    k_diffuse;
-    float   pad0;
-    vec3    k_specular;
-    float   pad1;
-};
-
-layout(std430, binding=5) readonly buffer Materials {
-    Material materials[];
-};
-
-layout(std430, binding=6) readonly buffer Point_Light_Buffer {
+layout(std430, binding=5) readonly buffer Point_Light_Buffer {
     Point_Light point_lights[];
 };
 
-layout(std430, binding=7) readonly buffer Diffuse_Rectangular_Light_Buffer {
+layout(std430, binding=6) readonly buffer Diffuse_Rectangular_Light_Buffer {
     Diffuse_Rectangular_Light diffuse_rectangular_lights[];
+};
+
+layout(std430, binding=7) readonly buffer Material_Handle_Buffer {
+    Material_Handle material_handles[];
 };
 
 Vertex fetch_vertex(int index) {
@@ -77,6 +71,8 @@ void main() {
     vec3 n2 = normal_transform * v2.n;
     vec3 n = normalize(barycentric_interpolate(attribs.x, attribs.y, n0, n1, n2));
 
+    vec3 wo = -gl_WorldRayDirectionNV;
+
     vec3 L = vec3(0);
     for (int i = 0; i < point_light_count; i++) {
         vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV + 1e-3*n;
@@ -95,8 +91,9 @@ void main() {
         if (shadow_ray_payload.shadow_factor == 0.0)
             continue;
 
+        Material_Handle mtl_handle = material_handles[gl_InstanceCustomIndexNV];
+        vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
         vec3 irradiance = point_lights[i].intensity * (n_dot_l / (light_dist * light_dist));
-        vec3 bsdf = materials[gl_InstanceCustomIndexNV].k_diffuse * Pi_Inv;
         L += shadow_ray_payload.shadow_factor * irradiance * bsdf;
     }
 
@@ -136,8 +133,8 @@ void main() {
             if (shadow_ray_payload.shadow_factor == 0.0)
                 continue;
 
-            vec3 bsdf = materials[gl_InstanceCustomIndexNV].k_diffuse * Pi_Inv;
-
+            Material_Handle mtl_handle = material_handles[gl_InstanceCustomIndexNV];
+            vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
             L += shadow_ray_payload.shadow_factor * bsdf * light.area * light.emitted_radiance * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
         L /= float(light.shadow_ray_count);

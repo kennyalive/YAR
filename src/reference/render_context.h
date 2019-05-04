@@ -16,4 +16,5 @@ struct Render_Context {
     const Camera* camera;
     const TwoLevel_KdTree* acceleration_structure;
     Lights lights;
+    Materials materials;
 };

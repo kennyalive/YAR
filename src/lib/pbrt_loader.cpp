@@ -48,12 +48,13 @@ Scene_Data load_pbrt_scene(const YAR_Project& project) {
                 compute_normals(mesh_data, Normal_Average_Mode::area, 0.f);
             }
 
+            mesh_data.material = {Material_Type::lambertian, (int)scene_data.materials.lambertian.size()};
+
             scene_data.meshes.emplace_back(mesh_data);
 
-            Material_Data material{};
-            material.material_format = Material_Format::obj_material;
-            material.obj_material.k_diffuse = ColorRGB{ 0.5f, 0.5f, 0.5f };
-            scene_data.materials.push_back(material);
+            Lambertian_Material mtl;
+            mtl.albedo = ColorRGB{ 0.5f, 0.5f, 0.5f };
+            scene_data.materials.lambertian.push_back(mtl);
         }
     }
 

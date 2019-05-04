@@ -9,6 +9,8 @@
 #include "lib/test_scenes.h"
 #include "reference/reference_renderer.h"
 
+#include "shaders/gpu_types.h"
+
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
@@ -123,6 +125,8 @@ void Realtime_Renderer::shutdown() {
 
     gpu_scene.point_lights.destroy();
     gpu_scene.diffuse_rectangular_lights.destroy();
+    gpu_scene.lambertian_material_buffer.destroy();
+    vkDestroyDescriptorSetLayout(vk.device, gpu_scene.material_descriptor_set_layout, nullptr);
     for (GPU_Mesh& mesh : gpu_meshes) {
         mesh.vertex_buffer.destroy();
         mesh.index_buffer.destroy();
@@ -204,8 +208,9 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
     flying_camera.initialize(scene_data.view_points[0]);
 
     // Create geometry.
-    gpu_meshes.resize(scene_data.meshes.size());
-    for (size_t i = 0; i < scene_data.meshes.size(); i++) {
+    gpu_meshes.resize(scene_data.meshes.size() + scene_data.rgb_diffuse_rectangular_lights.size());
+    int mesh_index = 0;
+    for (size_t i = 0; i < scene_data.meshes.size(); i++, mesh_index++) {
         const Mesh_Data& mesh_data = scene_data.meshes[i];
         GPU_Mesh& mesh  = gpu_meshes[i];
 
@@ -218,11 +223,56 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
         const VkDeviceSize index_buffer_size = mesh_data.indices.size() * sizeof(mesh_data.indices[0]);
         mesh.index_buffer = vk_create_buffer(index_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mesh_data.indices.data(), "index_buffer");
 
-        ASSERT(scene_data.materials[i].material_format == Material_Format::obj_material);
-        mesh.material.k_diffuse = scene_data.materials[i].obj_material.k_diffuse;
-        mesh.material.pad0 = 0;
-        mesh.material.k_specular = scene_data.materials[i].obj_material.k_specular;
-        mesh.material.pad1 = 0;
+        mesh.material = scene_data.meshes[i].material;
+    }
+
+    for (auto [i, light] : enumerate(scene_data.rgb_diffuse_rectangular_lights)) {
+        GPU_Mesh& mesh = gpu_meshes[mesh_index++];
+
+        mesh.model_vertex_count = 4;
+        mesh.model_index_count = 6;
+
+        Mesh_Vertex vertices[4];
+        float x = light.size.x / 2.0f;
+        float y = light.size.y / 2.0f;
+        vertices[0].pos = transform_point(light.light_to_world_transform, Vector3(-x, -y, 0.f));
+        vertices[1].pos = transform_point(light.light_to_world_transform, Vector3( x, -y, 0.f));
+        vertices[2].pos = transform_point(light.light_to_world_transform, Vector3( x,  y, 0.f));
+        vertices[3].pos = transform_point(light.light_to_world_transform, Vector3(-x,  y, 0.f));
+
+        Vector3 n = light.light_to_world_transform.get_column(2);
+        for (int i = 0; i < 4; i++) {
+            vertices[i].normal = n;
+            vertices[i].uv = Vector2_Zero;
+        }
+
+        uint32_t indices[6] = {0, 1, 2, 0, 2, 3};
+
+        const VkDeviceSize vertex_buffer_size = std::size(vertices) * sizeof(vertices[0]);
+        mesh.vertex_buffer = vk_create_buffer(vertex_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vertices, "vertex_buffer");
+
+        const VkDeviceSize index_buffer_size = std::size(indices) * sizeof(indices[0]);
+        mesh.index_buffer = vk_create_buffer(index_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, indices, "index_buffer");
+    }
+
+    // Materials.
+    {
+        VkDeviceSize size = scene_data.materials.lambertian.size() * sizeof(Lambertian_Material);
+        gpu_scene.lambertian_material_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            scene_data.materials.lambertian.data(), "lambertian_material_buffer");
+
+        gpu_scene.material_descriptor_set_layout = Descriptor_Set_Layout()
+            .storage_buffer(0, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // lambertian materials
+            .create("material_descriptor_set_layout");
+
+        VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+        alloc_info.descriptorPool = vk.descriptor_pool;
+        alloc_info.descriptorSetCount = 1;
+        alloc_info.pSetLayouts = &gpu_scene.material_descriptor_set_layout;
+        VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &gpu_scene.material_descriptor_set));
+
+        Descriptor_Writes(gpu_scene.material_descriptor_set)
+            .storage_buffer(0, gpu_scene.lambertian_material_buffer.handle, 0, VK_WHOLE_SIZE);
     }
 
     // Create light data.
@@ -245,13 +295,13 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
             lights.data(), "diffuse_rectangular_light_buffer");
     }
 
-    raster.create();
+    raster.create(gpu_scene.material_descriptor_set_layout);
     raster.create_framebuffer(output_image.view);
     raster.update_point_lights(gpu_scene.point_lights.handle, (int)scene_data.rgb_point_lights.size());
     raster.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene_data.rgb_diffuse_rectangular_lights.size());
 
     if (vk.raytracing_supported) {
-        rt.create(scene_data, gpu_meshes);
+        rt.create(scene_data, gpu_meshes, gpu_scene.material_descriptor_set_layout);
         rt.update_output_image_descriptor(output_image.view);
         rt.update_point_lights(gpu_scene.point_lights.handle, (int)scene_data.rgb_point_lights.size());
         rt.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene_data.rgb_diffuse_rectangular_lights.size());
@@ -346,15 +396,17 @@ void Realtime_Renderer::draw_rasterized_image() {
     render_pass_begin_info.clearValueCount   = (uint32_t)std::size(clear_values);
     render_pass_begin_info.pClearValues      = clear_values;
 
+    VkDescriptorSet sets[] = { raster.descriptor_set, gpu_scene.material_descriptor_set };
+
     vkCmdBeginRenderPass(vk.command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, raster.pipeline_layout, 0, 1, &raster.descriptor_set, 0, nullptr);
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, raster.pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, raster.pipeline);
 
     const VkDeviceSize zero_offset = 0;
     for (const GPU_Mesh& mesh : gpu_meshes) {
         vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &mesh.vertex_buffer.handle, &zero_offset);
         vkCmdBindIndexBuffer(vk.command_buffer, mesh.index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(GPU_Types::Mesh_Material), &mesh.material);
+        vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Material_Handle), &mesh.material);
         vkCmdDrawIndexed(vk.command_buffer, mesh.model_index_count, 1, 0, 0, 0);
     }
 
@@ -364,7 +416,8 @@ void Realtime_Renderer::draw_rasterized_image() {
 void Realtime_Renderer::draw_raytraced_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
 
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rt.pipeline_layout, 0, 1, &rt.descriptor_set, 0, nullptr);
+    VkDescriptorSet sets[] = { rt.descriptor_set, gpu_scene.material_descriptor_set };
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rt.pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rt.pipeline);
 
     uint32_t push_constants[1] = { spp4 };
@@ -514,7 +567,6 @@ void Realtime_Renderer::do_imgui() {
             }
 
             ImGui::Separator();
-            ImGui::Checkbox("Parallel", &parallel_reference_rendering);
             if (ImGui::Button("Render reference image"))
                 start_reference_renderer();
 

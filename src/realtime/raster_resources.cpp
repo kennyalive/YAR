@@ -18,7 +18,7 @@ struct Global_Uniform_Buffer {
 };
 }
 
-void Rasterization_Resources::create() {
+void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_set_layout) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Global_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &mapped_uniform_buffer, "raster_uniform_buffer");
 
@@ -33,11 +33,13 @@ void Rasterization_Resources::create() {
         VkPushConstantRange push_constant_range; // show_texture_lods value
         push_constant_range.stageFlags  = VK_SHADER_STAGE_FRAGMENT_BIT;
         push_constant_range.offset      = 0;
-        push_constant_range.size        = 32;
+        push_constant_range.size        = 8;
+
+        VkDescriptorSetLayout set_layouts[] = {descriptor_set_layout, material_descriptor_set_layout};
 
         VkPipelineLayoutCreateInfo create_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        create_info.setLayoutCount          = 1;
-        create_info.pSetLayouts             = &descriptor_set_layout;
+        create_info.setLayoutCount          = (uint32_t)std::size(set_layouts);
+        create_info.pSetLayouts             = set_layouts;
         create_info.pushConstantRangeCount  = 1;
         create_info.pPushConstantRanges     = &push_constant_range;
 

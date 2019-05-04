@@ -85,8 +85,7 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
 
     int mesh_index = 0;
     for (size_t i = 0; i < scene_data.meshes.size(); i++, mesh_index++) {
-        Material_Handle material_handle = register_material(scene_data.materials[i]);
-        meshes[mesh_index] = Triangle_Mesh::from_mesh_data(scene_data.meshes[i], material_handle);
+        meshes[mesh_index] = Triangle_Mesh::from_mesh_data(scene_data.meshes[i]);
     }
     for (auto [i, light] : enumerate(scene_data.rgb_diffuse_rectangular_lights)) {
         meshes[mesh_index] = Triangle_Mesh::from_diffuse_rectangular_light(light, (int)i);
@@ -160,6 +159,7 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
     ctx.camera = &camera;
     ctx.acceleration_structure = &kdtree;
     ctx.lights = lights;
+    ctx.materials = scene_data.materials;
 
     Timestamp t;
 
