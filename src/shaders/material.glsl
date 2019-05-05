@@ -20,6 +20,6 @@ vec3 compute_bsdf(Material_Handle mtl_handle, vec3 wi, vec3 wo) {
         vec3 albedo = vec3(mtl.r, mtl.g, mtl.b);
         return Pi_Inv * albedo;
     }
-    return vec3(0);    
+    return vec3(1, 0, 0);    
 }
 

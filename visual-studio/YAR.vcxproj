@@ -78,7 +78,7 @@
       <Outputs>$(ProjectDir)..\data\spirv\%(Filename).spv</Outputs>
     </CustomBuild>
     <CustomBuild>
-      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl</AdditionalInputs>
+      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl;$(ProjectDir)..\src\shaders\material.glsl</AdditionalInputs>
     </CustomBuild>
     <CustomBuild>
       <LinkObjects>false</LinkObjects>
@@ -116,7 +116,7 @@
       <Outputs>$(ProjectDir)..\data\spirv\%(Filename).spv</Outputs>
     </CustomBuild>
     <CustomBuild>
-      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl</AdditionalInputs>
+      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl;$(ProjectDir)..\src\shaders\material.glsl</AdditionalInputs>
     </CustomBuild>
     <CustomBuild>
       <LinkObjects>false</LinkObjects>

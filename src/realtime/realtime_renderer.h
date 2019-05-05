@@ -42,7 +42,7 @@ private:
 
     bool show_ui = true;
     bool vsync = true;
-    bool raytracing = false;
+    bool raytracing = true;
     bool spp4 = false;
 
     Flying_Camera flying_camera;

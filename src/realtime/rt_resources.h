@@ -44,7 +44,7 @@ struct Raytracing_Resources {
     Vk_Buffer                   uniform_buffer;
     Rt_Uniform_Buffer*          mapped_uniform_buffer;
 
-    Vk_Buffer material_handle_buffer;
+    Vk_Buffer instance_info_buffer;
 
     void create(const Scene_Data& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout);
     void destroy();
@@ -55,6 +55,6 @@ struct Raytracing_Resources {
     void update_diffuse_rectangular_lights(VkBuffer light_buffer, int light_count);
 
 private:
-    void create_acceleration_structure(const std::vector<Mesh_Data>& meshes, const std::vector<GPU_Mesh>& gpu_meshes);
+    void create_acceleration_structure(const std::vector<GPU_Mesh>& gpu_meshes);
     void create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout);
 };

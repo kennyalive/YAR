@@ -2,6 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 #include "common.glsl"
 #include "material.glsl"
+#include "gpu_types.h"
 
 struct Frag_In {
     vec3 normal;
@@ -10,8 +11,7 @@ struct Frag_In {
 };
 
 layout(push_constant) uniform Push_Constants {
-    int material_type;
-    int material_index;
+    Instance_Info instance_info;
 };
 
 layout(location=0) in Frag_In frag_in;
@@ -39,7 +39,7 @@ void main() {
     vec3 n = normalize(frag_in.normal);
     vec3 L = vec3(0);
 
-    Material_Handle mtl_handle = Material_Handle(material_type, material_index);
+    Material_Handle mtl_handle = instance_info.mtl_handle;
 
     vec3 wo = normalize(-frag_in.pos);
 
@@ -85,6 +85,10 @@ void main() {
             L += light.area * light.emitted_radiance * bsdf * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
         L /= float(light.shadow_ray_count);
+    }
+
+    if (instance_info.area_light_index != -1) {
+        L += diffuse_rectangular_lights[instance_info.area_light_index].emitted_radiance;
     }
 
     color_attachment0 = vec4(srgb_encode(L), 1);

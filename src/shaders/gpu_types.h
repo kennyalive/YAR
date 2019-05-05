@@ -56,6 +56,11 @@ struct Diffuse_Rectangular_Light {
 #endif
 };
 
+struct Instance_Info {
+    Material_Handle mtl_handle;
+    int area_light_index; // -1 if not an area light
+};
+
 #ifdef __cplusplus
 } // namespace GPU_Types
 #endif

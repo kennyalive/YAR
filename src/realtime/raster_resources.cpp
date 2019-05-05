@@ -33,7 +33,7 @@ void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_s
         VkPushConstantRange push_constant_range; // show_texture_lods value
         push_constant_range.stageFlags  = VK_SHADER_STAGE_FRAGMENT_BIT;
         push_constant_range.offset      = 0;
-        push_constant_range.size        = 8;
+        push_constant_range.size        = 12;
 
         VkDescriptorSetLayout set_layouts[] = {descriptor_set_layout, material_descriptor_set_layout};
 

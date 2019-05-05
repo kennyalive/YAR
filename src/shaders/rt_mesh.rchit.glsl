@@ -5,6 +5,7 @@
 
 #include "common.glsl"
 #include "material.glsl"
+#include "gpu_types.h"
 
 #define HIT_SHADER
 #include "rt_utils.glsl"
@@ -45,8 +46,8 @@ layout(std430, binding=6) readonly buffer Diffuse_Rectangular_Light_Buffer {
     Diffuse_Rectangular_Light diffuse_rectangular_lights[];
 };
 
-layout(std430, binding=7) readonly buffer Material_Handle_Buffer {
-    Material_Handle material_handles[];
+layout(std430, binding=7) readonly buffer Instance_Info_Buffer {
+    Instance_Info instance_infos[];
 };
 
 Vertex fetch_vertex(int index) {
@@ -91,7 +92,7 @@ void main() {
         if (shadow_ray_payload.shadow_factor == 0.0)
             continue;
 
-        Material_Handle mtl_handle = material_handles[gl_InstanceCustomIndexNV];
+        Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].mtl_handle;
         vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
         vec3 irradiance = point_lights[i].intensity * (n_dot_l / (light_dist * light_dist));
         L += shadow_ray_payload.shadow_factor * irradiance * bsdf;
@@ -133,11 +134,16 @@ void main() {
             if (shadow_ray_payload.shadow_factor == 0.0)
                 continue;
 
-            Material_Handle mtl_handle = material_handles[gl_InstanceCustomIndexNV];
+            Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].mtl_handle;
             vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
             L += shadow_ray_payload.shadow_factor * bsdf * light.area * light.emitted_radiance * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
         L /= float(light.shadow_ray_count);
+    }
+
+    int area_light_index = instance_infos[gl_InstanceCustomIndexNV].area_light_index; 
+    if (area_light_index != -1) {
+        L += diffuse_rectangular_lights[area_light_index].emitted_radiance;
     }
 
     payload.color = srgb_encode(vec3(L));

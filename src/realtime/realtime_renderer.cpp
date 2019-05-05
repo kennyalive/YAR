@@ -50,7 +50,9 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
             printf("  maxTriangleCount = %" PRIu64 "\n", rt.properties.maxTriangleCount);
             printf("  maxDescriptorSetAccelerationStructures = %u\n", rt.properties.maxDescriptorSetAccelerationStructures);
         }
-
+        else {
+            raytracing = false;
+        }
     }
 
     // UI render pass.
@@ -253,6 +255,8 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
 
         const VkDeviceSize index_buffer_size = std::size(indices) * sizeof(indices[0]);
         mesh.index_buffer = vk_create_buffer(index_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, indices, "index_buffer");
+
+        mesh.area_light_index = (int)i;
     }
 
     // Materials.
@@ -404,9 +408,13 @@ void Realtime_Renderer::draw_rasterized_image() {
 
     const VkDeviceSize zero_offset = 0;
     for (const GPU_Mesh& mesh : gpu_meshes) {
+        GPU_Types::Instance_Info instance_info;
+        instance_info.mtl_handle = mesh.material;
+        instance_info.area_light_index = mesh.area_light_index;
+
         vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &mesh.vertex_buffer.handle, &zero_offset);
         vkCmdBindIndexBuffer(vk.command_buffer, mesh.index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(Material_Handle), &mesh.material);
+        vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(GPU_Types::Instance_Info), &instance_info);
         vkCmdDrawIndexed(vk.command_buffer, mesh.model_index_count, 1, 0, 0, 0);
     }
 

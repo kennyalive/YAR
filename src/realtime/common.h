@@ -9,4 +9,5 @@ struct GPU_Mesh {
     uint32_t model_vertex_count = 0;
     uint32_t model_index_count = 0;
     Material_Handle material;
+    int area_light_index = -1;
 };
