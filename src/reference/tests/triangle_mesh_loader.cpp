@@ -1,6 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
-#include "triangle_mesh.h"
+#include "../triangle_mesh.h"
 #include "triangle_mesh_loader.h"
 #include "lib/vector.h"
 

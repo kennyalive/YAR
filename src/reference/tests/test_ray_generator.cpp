@@ -1,5 +1,5 @@
 #include "std.h"
-#include "sampling.h"
+#include "../sampling.h"
 #include "test_ray_generator.h"
 #include "lib/common.h"
 #include "lib/vector.h"

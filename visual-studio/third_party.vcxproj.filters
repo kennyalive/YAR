@@ -22,6 +22,9 @@
     <Filter Include="pbrt-parser">
       <UniqueIdentifier>{d491dcfc-e534-4d29-986f-5f94056311fe}</UniqueIdentifier>
     </Filter>
+    <Filter Include="getopt">
+      <UniqueIdentifier>{d51f4701-0e8b-474e-b6f3-7df275046530}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\enkiTS\TaskScheduler.cpp">
@@ -103,6 +106,9 @@
     <ClCompile Include="..\third_party\pbrt-parser\pbrt_parser.cpp">
       <Filter>pbrt-parser</Filter>
     </ClCompile>
+    <ClCompile Include="..\third_party\getopt\getopt.c">
+      <Filter>getopt</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\third_party\enkiTS\Atomics.h">
@@ -179,6 +185,9 @@
     </ClInclude>
     <ClInclude Include="..\third_party\pbrt-parser\pbrt_parser.h">
       <Filter>pbrt-parser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\getopt\getopt.h">
+      <Filter>getopt</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
