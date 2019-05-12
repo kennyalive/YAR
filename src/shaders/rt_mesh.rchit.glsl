@@ -108,6 +108,7 @@ void main() {
             u.x = float(rng_state) * (1.0/float(0xffffffffu));
             rng_state = rand_xorshift(rng_state);
             u.y = float(rng_state) * (1.0/float(0xffffffffu));
+            u = 2.0*u - 1.0;
 
             vec3 local_light_point = vec3(light.size.x/2.0 * u.x, light.size.y/2.0 * u.y, 0.f);
             vec3 light_point = light.light_to_world * vec4(local_light_point, 1.0);
