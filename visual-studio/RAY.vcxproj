@@ -104,6 +104,7 @@
     <ClCompile Include="..\src\reference\material.cpp" />
     <ClCompile Include="..\src\reference\reference_renderer.cpp" />
     <ClCompile Include="..\src\reference\sampling.cpp" />
+    <ClCompile Include="..\src\reference\tests\test.cpp" />
     <ClCompile Include="..\src\reference\tests\test_kdtree.cpp" />
     <ClCompile Include="..\src\reference\tests\test_ray_generator.cpp" />
     <ClCompile Include="..\src\reference\tests\test_triangle_intersection.cpp" />
@@ -124,6 +125,7 @@
     <ClInclude Include="..\src\reference\light.h" />
     <ClInclude Include="..\src\reference\reference_renderer.h" />
     <ClInclude Include="..\src\reference\sampling.h" />
+    <ClInclude Include="..\src\reference\tests\test.h" />
     <ClInclude Include="..\src\reference\tests\test_ray_generator.h" />
     <ClInclude Include="..\src\reference\tests\triangle_mesh_loader.h" />
     <ClInclude Include="..\src\reference\triangle_mesh.h" />

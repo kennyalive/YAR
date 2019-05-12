@@ -25,6 +25,9 @@
     <ClCompile Include="..\src\reference\tests\triangle_mesh_loader.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\reference\tests\test.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -41,6 +44,9 @@
       <Filter>tests</Filter>
     </ClInclude>
     <ClInclude Include="..\src\reference\tests\triangle_mesh_loader.h">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\reference\tests\test.h">
       <Filter>tests</Filter>
     </ClInclude>
   </ItemGroup>
