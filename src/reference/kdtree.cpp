@@ -256,27 +256,24 @@ std::vector<int32_t> KdTree<Primitive_Source>::calculate_path_to_node(int32_t no
 void KdTree_Stats::print()
 {
     printf("[memory consumption]\n");
-    printf("nodes_size = %zdK\n", nodes_size / 1024);
-    printf("triangle_indices_size = %zdK\n", triangle_indices_size / 1024);
-    printf("\n");
+    printf("\tnodes_size = %zdK\n", nodes_size / 1024);
+    printf("\ttriangle_indices_size = %zdK\n", triangle_indices_size / 1024);
 
-    printf("[kdtree general]\n");
-    printf("node_count = %d\n", node_count);
-    printf("leaf_count = %d\n", leaf_count);
-    printf("empty_leaf_count = %d\n", empty_leaf_count);
-    printf("single_triangle_leaf_count = %d\n", single_triangle_leaf_count);
-    printf("perfect_depth = %d\n", perfect_depth);
-    printf("\n");
+    printf("[general]\n");
+    printf("\tnode_count = %d\n", node_count);
+    printf("\tleaf_count = %d\n", leaf_count);
+    printf("\tempty_leaf_count = %d\n", empty_leaf_count);
+    printf("\tsingle_triangle_leaf_count = %d\n", single_triangle_leaf_count);
+    printf("\tperfect_depth = %d\n", perfect_depth);
 
-    printf("[kdtree not empty leaves]\n");
-    printf("average_depth = %.2f\n", not_empty_leaf_stats.average_depth);
-    printf("depth_standard_deviation = %.2f\n", not_empty_leaf_stats.depth_standard_deviation);
-    printf("average_triangle_count = %.2f\n", not_empty_leaf_stats.average_triangle_count);
-    printf("\n");
+    printf("[non-empty leaves]\n");
+    printf("\taverage_depth = %.2f\n", not_empty_leaf_stats.average_depth);
+    printf("\tdepth_standard_deviation = %.2f\n", not_empty_leaf_stats.depth_standard_deviation);
+    printf("\taverage_triangle_count = %.2f\n", not_empty_leaf_stats.average_triangle_count);
 
-    printf("[kdtree empty leaves]\n");
-    printf("average_depth = %.2f\n", empty_leaf_stats.average_depth);
-    printf("depth_standard_deviation = %.2f\n", empty_leaf_stats.depth_standard_deviation);
+    printf("[empty leaves]\n");
+    printf("\taverage_depth = %.2f\n", empty_leaf_stats.average_depth);
+    printf("\tdepth_standard_deviation = %.2f\n", empty_leaf_stats.depth_standard_deviation);
 }
 
 template <typename Primitive_Source>

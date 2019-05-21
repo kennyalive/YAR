@@ -16,13 +16,7 @@
     <ClCompile Include="..\src\reference\tests\test_kdtree.cpp">
       <Filter>tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\reference\tests\test_ray_generator.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\reference\tests\test_triangle_intersection.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\reference\tests\triangle_mesh_loader.cpp">
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="..\src\reference\tests\test.cpp">
@@ -40,12 +34,6 @@
     <ClInclude Include="..\src\reference\triangle_mesh.h" />
     <ClInclude Include="..\src\reference\reference_renderer.h" />
     <ClInclude Include="..\src\reference\render_context.h" />
-    <ClInclude Include="..\src\reference\tests\test_ray_generator.h">
-      <Filter>tests</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\reference\tests\triangle_mesh_loader.h">
-      <Filter>tests</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\reference\tests\test.h">
       <Filter>tests</Filter>
     </ClInclude>

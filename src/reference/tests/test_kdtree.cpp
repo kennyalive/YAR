@@ -1,41 +1,87 @@
 #include "std.h"
 #include "lib/common.h"
+#include "lib/obj_loader.h"
+#include "lib/vector.h"
 #include "../intersection.h"
 #include "../kdtree.h"
 #include "../kdtree_builder.h"
-#include "test_ray_generator.h"
+#include "../sampling.h"
 #include "../triangle_mesh.h"
-#include "triangle_mesh_loader.h"
-#include "lib/random.h"
-#include "lib/vector.h"
 
 #ifdef _WIN32
 #include <pmmintrin.h>
 #endif
 
-enum { benchmark_ray_count = 1'000'000 };
-enum { debug_rays = false };
-enum { debug_ray_count = 4 };
+class Ray_Generator {
+public:
+    Ray_Generator(const Bounding_Box& mesh_bounds);
+    Ray generate_ray(const Vector3& last_hit, float last_hit_epsilon);
 
-//const std::string model_path = "data/soccer_ball.stl";
-//const std::string kdtree_path = "data/soccer_ball.kdtree";
-//const int validation_ray_count = 32768;
+private:
+    pcg32_random_t rng;
+    Bounding_Box ray_bounds;
+};
 
-const std::string model_path = "data/teapot.stl";
-const std::string kdtree_path = "data/teapot.kdtree";
-const int validation_ray_count = 1'000'000;
+Ray_Generator::Ray_Generator(const Bounding_Box& mesh_bounds) {
+    pcg32_srandom_r(&rng, 0, 0);
 
-//const std::string model_path = "data/bunny.stl";
-//const std::string kdtree_path = "data/bunny.kdtree";
-//const int validation_ray_count = 10'000;
+    auto diagonal = mesh_bounds.max_p - mesh_bounds.min_p;
+    float delta = 2.0f * diagonal.length();
 
-//const std::string model_path = "data/dragon.stl";
-//const std::string kdtree_path = "data/dragon.kdtree";
-//const int validation_ray_count = 5'000;
+    auto p_min = mesh_bounds.min_p - Vector3(delta);
+    auto p_max = mesh_bounds.max_p + Vector3(delta);
+    ray_bounds = Bounding_Box(p_min, p_max);
+}
 
-const double cpu_ghz = 4.5; // get_base_cpu_frequency_ghz();
+Ray Ray_Generator::generate_ray(const Vector3& last_hit, float last_hit_epsilon) {
+    auto random_from_range = [this](float a, float b) {
+        return a + (b - a) * random_float(&rng);
+    };
 
-int benchmark_kd_tree(const Mesh_KdTree& kdtree) {
+    // Ray origin.
+    Vector3 origin;
+    origin.x = random_from_range(ray_bounds.min_p.x, ray_bounds.max_p.x);
+    origin.y = random_from_range(ray_bounds.min_p.y, ray_bounds.max_p.y);
+    origin.z = random_from_range(ray_bounds.min_p.z, ray_bounds.max_p.z);
+
+    const bool use_last_hit = random_float(&rng) < 0.25f;
+    if (use_last_hit)
+        origin = last_hit;
+
+    // Ray direction.
+    auto direction = uniform_sample_sphere(random_float(&rng), random_float(&rng));
+    auto len = direction.length();
+
+    if (random_float(&rng) < 1.0f / 32.0f && direction.z != 0.0)
+        direction.x = direction.y = 0.0;
+    else if (random_float(&rng) < 1.0f / 32.0f && direction.y != 0.0)
+        direction.x = direction.z = 0.0;
+    else if (random_float(&rng) < 1.0f / 32.0f && direction.x != 0.0)
+        direction.y = direction.z = 0.0;
+    direction = direction.normalized();
+
+    auto ray = Ray(origin, direction);
+    ray.origin = ray.get_point(use_last_hit ? last_hit_epsilon : 1e-3f);
+    return ray;
+}
+
+const int benchmark_ray_count = 1'000'000;
+
+struct Model_Info {
+    std::string file_name;
+    int validation_ray_count;
+};
+
+static std::vector<Model_Info> model_infos {
+    { "test-files/teapot.obj", 100'000 },
+    { "test-files/bunny.obj", 10'000 },
+    { "test-files/dragon.obj", 5'000 },
+};
+
+int benchmark_mesh_kdtree(const Mesh_KdTree& kdtree) {
+    const bool debug_rays = false;
+    const int debug_ray_count = 4;
+
     Timestamp tx;
 
     auto bounds = kdtree.get_bounds();
@@ -71,6 +117,7 @@ int benchmark_kd_tree(const Mesh_KdTree& kdtree) {
         }
     }
 
+    double cpu_ghz = get_base_cpu_frequency_ghz();
     double nanoseconds_per_raycast = time_ns / double(benchmark_ray_count);
     int clocks = static_cast<int>(nanoseconds_per_raycast * cpu_ghz);
     printf("Single raycast time: %.2f nanoseconds, %d clocks\n", nanoseconds_per_raycast, clocks);
@@ -79,7 +126,7 @@ int benchmark_kd_tree(const Mesh_KdTree& kdtree) {
     return (int)(time_ns / 1'000'000);
 }
 
-void validate_kdtree(const Mesh_KdTree& kdtree, int ray_count) {
+void validate_mesh_kdtree(const Mesh_KdTree& kdtree, int ray_count) {
     printf("Running kdtree validation... ");
     auto bounds = kdtree.get_bounds();
     Vector3 last_hit = (bounds.min_p + bounds.max_p) * 0.5;
@@ -132,41 +179,59 @@ void validate_kdtree(const Mesh_KdTree& kdtree, int ray_count) {
     printf("DONE\n");
 }
 
-const bool build_tree = false;
+TwoLevel_KdTree get_toplevel_kdtree(const std::string& model_file_name, const std::vector<Triangle_Mesh>& model_meshes, std::vector<Mesh_KdTree>& mesh_kdtrees) {
+    // Build kdtrees for all meshes.
+    Timestamp t;
+    KdTree_Build_Params build_params;
+    mesh_kdtrees.resize(model_meshes.size());
+    for (auto [i, mesh] : enumerate(model_meshes)) {
+        mesh_kdtrees[i] = build_kdtree(mesh, build_params);
+        printf("kdtree %d\n", static_cast<int>(i));
+        mesh_kdtrees[i].calculate_stats().print();
+    }
+    printf("Mesh kdtrees build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
+
+    // Build top-level kdtree.
+    Timestamp t2;
+    TwoLevel_KdTree top_level_kdtree = build_kdtree(mesh_kdtrees, build_params);
+    printf("top-level kdtree\n");
+    top_level_kdtree.calculate_stats().print();
+    printf("Top level kdtree build time = %.2fs\n", elapsed_milliseconds(t2) / 1000.f);
+    return top_level_kdtree;
+}
+
+void test_model(const Model_Info& model_info) {
+    std::vector<Triangle_Mesh> meshes;
+    {
+        std::vector<Obj_Model> obj_models = load_obj(model_info.file_name);
+        for (const Obj_Model& obj_model : obj_models) {
+            meshes.push_back(Triangle_Mesh::from_mesh_data(obj_model.mesh_data));
+        }
+    }
+
+    Timestamp t;
+    KdTree_Build_Params build_params;
+    Mesh_KdTree mesh_kdtree = build_kdtree(meshes[0], build_params);
+    printf("kdtree build time = %.2fs\n\n", elapsed_milliseconds(t) / 1000.f);
+    mesh_kdtree.calculate_stats().print();
+
+    printf("\nshooting rays (kdtree)...\n");
+    int time_msec = benchmark_mesh_kdtree(mesh_kdtree);
+    double speed = (benchmark_ray_count / 1000000.0) / (time_msec / 1000.0);
+    printf("raycast performance [%-6s]: %.2f MRays/sec\n", model_info.file_name.c_str(), speed);
+
+    validate_mesh_kdtree(mesh_kdtree, model_info.validation_ray_count);
+}
 
 void test_kdtree() {
+#ifdef _WIN32
     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
     _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+#endif
 
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 0, 0);
-
-    std::unique_ptr<Triangle_Mesh> mesh = LoadTriangleMesh(model_path);
-
-    if (build_tree) {
-        KdTree_Build_Params params;
-        Timestamp t;
-        Mesh_KdTree kdtree = build_kdtree(*mesh, params);
-        int time = int(elapsed_milliseconds(t));
-        printf("KdTree build time = %dms\n", time);
-		kdtree.calculate_stats().print();
-
-        kdtree.save_to_file("test.kdtree");
-        printf("\n");
-        return;
+    for (const Model_Info& model_info : model_infos) {
+        printf("---------------------\n");
+        printf("Model: %s\n", model_info.file_name.c_str());
+        test_model(model_info);
     }
-    auto kdtree = load_mesh_kdtree(kdtree_path, *mesh);
-    //auto kdtree = std::unique_ptr<KdTree>(new KdTree("test.kdtree", mesh));
-
-    mesh->print_info();
-    kdtree.calculate_stats().print();
-    printf("\n");
-    printf("=========================\n");
-    printf("shooting rays (kdtree)...\n");
-
-    int timeMsec = benchmark_kd_tree(kdtree);
-    double speed = (benchmark_ray_count / 1000000.0) / (timeMsec / 1000.0);
-    printf("raycast performance [%-6s]: %.2f MRays/sec, (rnd = %d)\n", model_path.c_str(), speed, pcg32_random_r(&rng));
-
-    validate_kdtree(kdtree, validation_ray_count);
-}
+ }
