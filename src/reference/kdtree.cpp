@@ -4,9 +4,9 @@
 #include "kdtree.h"
 
 template <typename Primitive_Source>
-KdTree<Primitive_Source>::KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& triangle_indices, const Primitive_Source& primitive_source)
+KdTree<Primitive_Source>::KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& primitive_indices, const Primitive_Source& primitive_source)
 : nodes(std::move(nodes))
-, triangle_indices(std::move(triangle_indices))
+, primitive_indices(std::move(primitive_indices))
 , primitive_source(primitive_source)
 , bounds(primitive_source.calculate_bounds())
 {
@@ -14,7 +14,7 @@ KdTree<Primitive_Source>::KdTree(std::vector<KdNode>&& nodes, std::vector<int32_
 
 template <typename Primitive_Source>
 float KdTree<Primitive_Source>::intersect(const Ray& ray, Local_Geometry& local_geom) const {
-    Triangle_Intersection intersection;
+    Intersection intersection;
     intersect(ray, intersection);
 
     if (intersection.t != Infinity)
@@ -25,13 +25,13 @@ float KdTree<Primitive_Source>::intersect(const Ray& ray, Local_Geometry& local_
  
 template <typename Primitive_Source>
 float KdTree<Primitive_Source>::intersect_any(const Ray& ray) const {
-    Triangle_Intersection intersection;
+    Intersection intersection;
     intersect(ray, intersection);
     return intersection.t;
 }
 
 template <typename Primitive_Source>
-void KdTree<Primitive_Source>::intersect(const Ray& ray, Triangle_Intersection& intersection) const {
+void KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersection) const {
     float t_min, t_max;
 
     if (!bounds.intersect_by_ray(ray, t_min, t_max))
@@ -48,7 +48,7 @@ void KdTree<Primitive_Source>::intersect(const Ray& ray, Triangle_Intersection& 
     auto node = &nodes[0];
 
     while (t_min < intersection.t) {
-        if (node->is_interior_node()) {
+        if (!node->is_leaf()) {
             int axis = node->get_split_axis();
 
             float distance_to_split_plane = node->get_split_position() - ray.origin[axis];
@@ -75,7 +75,7 @@ void KdTree<Primitive_Source>::intersect(const Ray& ray, Triangle_Intersection& 
                 else if (t_split <= t_min)
                     node = secondChild;
                 else { // t_min < t_split < t_max
-                    assert(traversal_stack_size < max_traversal_depth);
+                    ASSERT(traversal_stack_size < max_traversal_depth);
                     traversal_stack[traversal_stack_size++] = {secondChild, t_split, t_max};
                     node = firstChild;
                     t_max = t_split;
@@ -86,7 +86,7 @@ void KdTree<Primitive_Source>::intersect(const Ray& ray, Triangle_Intersection& 
                     if (t_min > 0.0)
                         node = aboveChild;
                     else { // t_min == 0.0
-                        assert(traversal_stack_size < max_traversal_depth);
+                        ASSERT(traversal_stack_size < max_traversal_depth);
                         traversal_stack[traversal_stack_size++] = {aboveChild, 0.0, t_max};
                         // check single point [0.0, 0.0]
                         node = belowChild;
@@ -97,7 +97,7 @@ void KdTree<Primitive_Source>::intersect(const Ray& ray, Triangle_Intersection& 
                     if (t_min > 0.0)
                         node = belowChild;
                     else { // t_min == 0.0
-                        assert(traversal_stack_size < max_traversal_depth);
+                        ASSERT(traversal_stack_size < max_traversal_depth);
                         traversal_stack[traversal_stack_size++] = {belowChild, 0.0, t_max};
                         // check single point [0.0, 0.0]
                         node = aboveChild;
@@ -106,7 +106,7 @@ void KdTree<Primitive_Source>::intersect(const Ray& ray, Triangle_Intersection& 
                 }
                 else { // ray.direction[axis] == 0.0
                     // for both nodes check [t_min, t_max] range
-                    assert(traversal_stack_size < max_traversal_depth);
+                    ASSERT(traversal_stack_size < max_traversal_depth);
                     traversal_stack[traversal_stack_size++] = {aboveChild, t_min, t_max};
                     node = belowChild;
                 }
@@ -132,14 +132,14 @@ void KdTree<Primitive_Source>::intersect(const Ray& ray, Triangle_Intersection& 
 }
 
 template <typename Primitive_Source>
-void KdTree<Primitive_Source>::intersect_leaf(const Ray& ray, KdNode leaf, Triangle_Intersection& intersection) const
+void KdTree<Primitive_Source>::intersect_leaf(const Ray& ray, KdNode leaf, Intersection& intersection) const
 {
-    if (leaf.get_triangle_count() == 1) {
+    if (leaf.get_primitive_count() == 1) {
         primitive_source.intersect(ray, leaf.get_index(), intersection);
     } else {
-        for (int32_t i = 0; i < leaf.get_triangle_count(); i++) {
-            int32_t triangleIndex = triangle_indices[leaf.get_index() + i];
-            primitive_source.intersect(ray, triangleIndex, intersection);
+        for (int32_t i = 0; i < leaf.get_primitive_count(); i++) {
+            int32_t primitive_index = primitive_indices[leaf.get_index() + i];
+            primitive_source.intersect(ray, primitive_index, intersection);
         }
     }
 }
@@ -150,27 +150,27 @@ KdTree_Stats KdTree<Primitive_Source>::calculate_stats() const
     KdTree_Stats stats;
 
     stats.nodes_size = nodes.size() * sizeof(KdNode);
-    stats.triangle_indices_size = triangle_indices.size() * sizeof(triangle_indices[0]);
+    stats.primitive_indices_size = primitive_indices.size() * sizeof(primitive_indices[0]);
     stats.node_count = static_cast<int32_t>(nodes.size());
 
-    int64_t triangle_per_leaf_accumulated = 0;
+    int64_t primitive_per_leaf_accumulated = 0;
 
     for (auto node : nodes) {
         if (node.is_leaf()) {
             stats.leaf_count++;
-            triangle_per_leaf_accumulated += node.get_triangle_count();
+            primitive_per_leaf_accumulated += node.get_primitive_count();
 
-            if (node.get_triangle_count() == 0)
+            if (node.get_primitive_count() == 0)
                 stats.empty_leaf_count++;
-            else if (node.get_triangle_count() == 1)
-                stats.single_triangle_leaf_count++;
+            else if (node.get_primitive_count() == 1)
+                stats.single_primitive_leaf_count++;
         }
     }
 
     auto not_empty_leaf_count = stats.leaf_count - stats.empty_leaf_count;
 
     stats.perfect_depth = static_cast<int>(std::ceil(std::log2(stats.leaf_count)));
-    stats.not_empty_leaf_stats.average_triangle_count = float(double(triangle_per_leaf_accumulated) / not_empty_leaf_count);
+    stats.not_empty_leaf_stats.average_primitive_count = float(double(primitive_per_leaf_accumulated) / not_empty_leaf_count);
 
     // Compute depth of each leaf node.
     std::vector<uint8_t> not_empty_leaf_depth_values;
@@ -188,7 +188,7 @@ KdTree_Stats KdTree<Primitive_Source>::calculate_stats() const
         uint8_t depth = depth_info[i].depth;
 
         if (nodes[node_index].is_leaf()) {
-            if (nodes[node_index].get_triangle_count() > 0)
+            if (nodes[node_index].get_primitive_count() > 0)
                 not_empty_leaf_depth_values.push_back(depth);
             else
                 empty_leaf_depth_values.push_back(depth);
@@ -229,13 +229,13 @@ KdTree_Stats KdTree<Primitive_Source>::calculate_stats() const
 template <typename Primitive_Source>
 std::vector<int32_t> KdTree<Primitive_Source>::calculate_path_to_node(int32_t node_index) const
 {
-    assert(node_index >= 0 && node_index < nodes.size());
+    ASSERT(node_index >= 0 && node_index < nodes.size());
 
     std::map<int32_t, int32_t> parent_map;
 
     for (int32_t i = 0; i < int32_t(nodes.size()); i++) {
         auto node = nodes[i];
-        if (node.is_interior_node()) {
+        if (!node.is_leaf()) {
             int32_t below_child = i + 1;
             int32_t above_child = node.get_above_child();
             parent_map[below_child] = i;
@@ -257,19 +257,19 @@ void KdTree_Stats::print()
 {
     printf("[memory consumption]\n");
     printf("\tnodes_size = %zdK\n", nodes_size / 1024);
-    printf("\ttriangle_indices_size = %zdK\n", triangle_indices_size / 1024);
+    printf("\tprimitive_indices_size = %zdK\n", primitive_indices_size / 1024);
 
     printf("[general]\n");
     printf("\tnode_count = %d\n", node_count);
     printf("\tleaf_count = %d\n", leaf_count);
     printf("\tempty_leaf_count = %d\n", empty_leaf_count);
-    printf("\tsingle_triangle_leaf_count = %d\n", single_triangle_leaf_count);
+    printf("\tsingle_primitive_leaf_count = %d\n", single_primitive_leaf_count);
     printf("\tperfect_depth = %d\n", perfect_depth);
 
     printf("[non-empty leaves]\n");
     printf("\taverage_depth = %.2f\n", not_empty_leaf_stats.average_depth);
     printf("\tdepth_standard_deviation = %.2f\n", not_empty_leaf_stats.depth_standard_deviation);
-    printf("\taverage_triangle_count = %.2f\n", not_empty_leaf_stats.average_triangle_count);
+    printf("\taverage_primitive_count = %.2f\n", not_empty_leaf_stats.average_primitive_count);
 
     printf("[empty leaves]\n");
     printf("\taverage_depth = %.2f\n", empty_leaf_stats.average_depth);
@@ -292,22 +292,22 @@ void KdTree<Primitive_Source>::save_to_file(const std::string& file_name) const
     if (!file)
         error("failed to write kdTree nodes: " + file_name);
 
-    // write triangle indices
-    int32_t index_count = static_cast<int32_t>(triangle_indices.size());
+    // write primitive indices
+    int32_t index_count = static_cast<int32_t>(primitive_indices.size());
     file.write(reinterpret_cast<const char*>(&index_count), 4);
 
     size_t indices_byte_count = index_count * 4;
-    file.write(reinterpret_cast<const char*>(triangle_indices.data()),
+    file.write(reinterpret_cast<const char*>(primitive_indices.data()),
         indices_byte_count);
     if (!file)
-        error("failed to write kdTree triangle indices: " + file_name);
+        error("failed to write kdTree primitive indices: " + file_name);
 }
 
-Mesh_KdTree load_mesh_kdtree(const std::string& file_name, const Triangle_Mesh& mesh) {
-    Mesh_KdTree kdtree;
+Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle hgeometry) {
+    Geometry_KdTree kdtree;
 
-    kdtree.primitive_source = Mesh_Source(&mesh);
-    const_cast<Bounding_Box&>(kdtree.bounds) = mesh.get_bounds();
+    kdtree.primitive_source = Geometry_Primitive_Source(geometries, hgeometry);
+    kdtree.bounds = kdtree.primitive_source.calculate_bounds();
 
     std::ifstream file(file_name, std::ios_base::in | std::ios_base::binary);
     if (!file)
@@ -327,22 +327,23 @@ Mesh_KdTree load_mesh_kdtree(const std::string& file_name, const Triangle_Mesh& 
     if (!file)
         error("failed to read kdTree nodes: " + file_name);
 
-    // read triangle indices
+    // read primitive indices
     int32_t index_count;
     file.read(reinterpret_cast<char*>(&index_count), 4);
     if (!file)
-        error("failed to read triangle indices count: " + file_name);
+        error("failed to read primitive indices count: " + file_name);
 
-    auto& mutable_indices = const_cast<std::vector<int32_t>&>(kdtree.triangle_indices);
+    auto& mutable_indices = const_cast<std::vector<int32_t>&>(kdtree.primitive_indices);
     mutable_indices.resize(index_count);
 
     size_t indices_byte_count = index_count * 4;
     file.read(reinterpret_cast<char*>(mutable_indices.data()), indices_byte_count);
     if (!file)
-        error("failed to read kdTree triangle indices: " + file_name);
+        error("failed to read kdTree primitive indices: " + file_name);
 
     return kdtree;
 }
 
-template class KdTree<Mesh_Source>;
-template class KdTree<KdTree_Source>;
+template class KdTree<Geometry_Primitive_Source>;
+template class KdTree<KdTreeList_Primitive_Source>;
+

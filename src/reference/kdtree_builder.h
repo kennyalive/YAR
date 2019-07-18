@@ -8,9 +8,9 @@ struct KdTree_Build_Params {
     float   empty_bonus = 0.3f;
     int     max_depth = -1;
     bool    split_along_the_longest_axis = false;
-    int     leaf_triangles_limit = 2; // the actual amout of leaf triangles can be larger
+    int     leaf_primitive_limit = 2; // the actual amout of leaf primitives can be larger
     bool    split_clipping = true;
 };
 
-Mesh_KdTree build_kdtree(const Triangle_Mesh& mesh, const KdTree_Build_Params& build_params = KdTree_Build_Params());
-TwoLevel_KdTree build_kdtree(const std::vector<Mesh_KdTree>& kdtrees, const KdTree_Build_Params& build_params = KdTree_Build_Params());
+Geometry_KdTree build_kdtree(const Geometries* geometries, Geometry_Handle hgeometry, const KdTree_Build_Params& build_params = KdTree_Build_Params());
+Scene_KdTree build_kdtree(const std::vector<Geometry_KdTree>& kdtrees, const KdTree_Build_Params& build_params = KdTree_Build_Params());

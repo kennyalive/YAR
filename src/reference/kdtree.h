@@ -1,50 +1,51 @@
 #pragma once
 
 #include "intersection.h"
-#include "triangle_mesh.h"
 #include "lib/bounding_box.h"
 #include "lib/common.h"
+#include "lib/matrix.h"
 #include "lib/ray.h"
+#include "lib/render_object.h"
+#include "lib/triangle_mesh.h"
 #include "lib/vector.h"
 
-#include <cassert>
 #include <cstdint>
 #include <vector>
 
 struct Local_Geometry;
-struct Triangle_Intersection;
-struct Mesh_Source;
-struct KdTree_Source;
 
 template <typename Primitive_Source> class KdTree;
 
-using Mesh_KdTree       = KdTree<Mesh_Source>;
-using TwoLevel_KdTree   = KdTree<KdTree_Source>;
+struct Geometry_Primitive_Source;
+using Geometry_KdTree = KdTree<Geometry_Primitive_Source>;
+
+struct KdTreeList_Primitive_Source;
+using Scene_KdTree = KdTree<KdTreeList_Primitive_Source>;
 
 // Contains data collected by KdTree::calculate_stats() function.
 struct KdTree_Stats {
     int64_t nodes_size = 0;
-    int64_t triangle_indices_size = 0;
+    int64_t primitive_indices_size = 0;
 
     int32_t node_count = 0;
     int32_t leaf_count = 0;
     int32_t empty_leaf_count = 0;
-    int32_t single_triangle_leaf_count = 0;
+    int32_t single_primitive_leaf_count = 0;
     int     perfect_depth = 0;
 
     struct Leaf_Stats {
         float average_depth = 0.0f;
         float depth_standard_deviation = 0.0f;
-        float average_triangle_count = 0.0f;
+        float average_primitive_count = 0.0f;
     };
     Leaf_Stats not_empty_leaf_stats;
-    Leaf_Stats empty_leaf_stats; // empty_leaf_stats.average_triangle_count == 0
+    Leaf_Stats empty_leaf_stats; // empty_leaf_stats.average_primitive_count == 0
 
     void print();
 };
 
 // 8 byte kd-tree node.
-// KdTree is a linear array of nodes + an array of triangle indices referenced by the nodes.
+// KdTree is a linear array of nodes + an array of primitive indices referenced by the nodes.
 struct KdNode {
     uint32_t word0;
     uint32_t word1;
@@ -54,8 +55,8 @@ struct KdNode {
 
     void init_interior_node(int axis, int32_t above_child, float split) {
         // 0 - x axis, 1 - y axis, 2 - z axis
-        assert(axis >= 0 && axis < 3);
-        assert(above_child < max_node_count);
+        ASSERT(axis >= 0 && axis < 3);
+        ASSERT(above_child < max_node_count);
 
         word0 = axis | (static_cast<uint32_t>(above_child) << 2);
         word1 = *reinterpret_cast<uint32_t*>(&split);
@@ -63,51 +64,47 @@ struct KdNode {
 
     void init_empty_leaf() {
         word0 = leaf_node_flags; // word0 == 3
-        word1 = 0;             // not used for empty leaf, just set default value
+        word1 = 0; // not used for empty leaf, just sets default value
     }
 
-    void init_leaf_with_single_triangle(int32_t triangle_index) {
+    void init_leaf_with_single_primitive(int32_t primitive_index) {
         word0 = leaf_node_flags | (1 << 2); // word0 == 7
-        word1 = static_cast<uint32_t>(triangle_index);
+        word1 = static_cast<uint32_t>(primitive_index);
     }
 
-    void init_leaf_with_multiple_triangles(int32_t triangle_count, int32_t triangle_indices_offset) {
-        assert(triangle_count > 1);
-        // word0 == 11, 15, 19, ... (for numTriangles = 2, 3, 4, ...)
-        word0 = leaf_node_flags | (static_cast<uint32_t>(triangle_count) << 2);
-        word1 = static_cast<uint32_t>(triangle_indices_offset);
+    void init_leaf_with_multiple_primitives(int32_t primitive_count, int32_t primitive_indices_offset) {
+        ASSERT(primitive_count > 1);
+        // word0 == 11, 15, 19, ... (for primitive_count = 2, 3, 4, ...)
+        word0 = leaf_node_flags | (static_cast<uint32_t>(primitive_count) << 2);
+        word1 = static_cast<uint32_t>(primitive_indices_offset);
     }
 
     bool is_leaf() const {
         return (word0 & leaf_node_flags) == leaf_node_flags;
     }
 
-    bool is_interior_node() const {
-        return !is_leaf();
-    }
-
-    int32_t get_triangle_count() const {
-        assert(is_leaf());
+    int32_t get_primitive_count() const {
+        ASSERT(is_leaf());
         return static_cast<int32_t>(word0 >> 2);
     }
 
     int32_t get_index() const {
-        assert(is_leaf());
+        ASSERT(is_leaf());
         return static_cast<int32_t>(word1);
     }
 
     int get_split_axis() const {
-        assert(is_interior_node());
+        ASSERT(!is_leaf());
         return static_cast<int>(word0 & leaf_node_flags);
     }
 
     float get_split_position() const {
-        assert(is_interior_node());
+        ASSERT(!is_leaf());
         return *reinterpret_cast<const float*>(&word1);
     }
 
     int32_t get_above_child() const {
-        assert(is_interior_node());
+        ASSERT(!is_leaf());
         return static_cast<int32_t>(word0 >> 2);
     }
 };
@@ -126,74 +123,105 @@ public:
 
     const Primitive_Source& get_primitive_source() const { return primitive_source; }
     const Bounding_Box& get_bounds() const { return bounds; }
-
     KdTree_Stats calculate_stats() const;
     std::vector<int32_t> calculate_path_to_node(int32_t node_index) const;
-
     void save_to_file(const std::string& file_name) const;
 
 private:
-    void intersect(const Ray& ray, Triangle_Intersection& intersection) const;
-    void intersect_leaf(const Ray& ray, KdNode leaf, Triangle_Intersection& intersection) const;
+    void intersect(const Ray& ray, Intersection& intersection) const;
+    void intersect_leaf(const Ray& ray, KdNode leaf, Intersection& intersection) const;
 
 private:
-    KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& triangle_indices, const Primitive_Source& primitive_source);
+    KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& primitive_indices, const Primitive_Source& primitive_source);
 
     template <typename Primitive_Source> friend class KdTree_Builder;
-    friend struct KdTree_Source;
-    friend KdTree<Mesh_Source> load_mesh_kdtree(const std::string& file_name, const Triangle_Mesh& mesh);
+    friend struct KdTreeList_Primitive_Source;
+    friend Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle hgeometry);
 
     enum { max_traversal_depth = 64 };
 
 private:
     std::vector<KdNode>   nodes;
-    std::vector<int32_t>  triangle_indices;
+    std::vector<int32_t>  primitive_indices;
     Primitive_Source      primitive_source;
     Bounding_Box          bounds;
 };
 
-Mesh_KdTree load_mesh_kdtree(const std::string& file_name, const Triangle_Mesh& mesh);
+Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle hgeometry);
 
-struct Mesh_Source {
-    const Triangle_Mesh* mesh;
+struct Geometry_Primitive_Source {
+    const Geometries* geometries;
+    Geometry_Handle hgeometry;
+    Matrix3x4 world_to_mesh_transform;
 
-    Mesh_Source() {}
-    Mesh_Source(const Triangle_Mesh* mesh) : mesh(mesh) {}
+    Geometry_Primitive_Source() {}
+    Geometry_Primitive_Source(const Geometries* geometries, Geometry_Handle hgeometry)
+        : geometries(geometries)
+        , hgeometry(hgeometry)
+    {}
 
     int32_t get_primitive_count() const {
-        return mesh->get_triangle_count();
+        if (hgeometry.type == Geometry_Type::triangle_mesh) {
+            return geometries->triangle_meshes[hgeometry.index].get_triangle_count();
+        }
+        else {
+            ASSERT(false);
+            return 0;
+        }
     }
+
     Bounding_Box get_primitive_bounds(int32_t primitive_index) const {
-        return mesh->get_triangle_bounds(primitive_index);
+        if (hgeometry.type == Geometry_Type::triangle_mesh) {
+            return geometries->triangle_meshes[hgeometry.index].get_triangle_bounds(primitive_index);
+        }
+        else {
+            ASSERT(false);
+            return Bounding_Box{};
+        }
     }
+
     Bounding_Box calculate_bounds() const {
-        return mesh->get_bounds();
+        if (hgeometry.type == Geometry_Type::triangle_mesh) {
+            return geometries->triangle_meshes[hgeometry.index].get_bounds();
+        }
+        else {
+            ASSERT(false);
+            return Bounding_Box{};
+        }
     }
-    void intersect(const Ray& ray, int32_t primitive_index, Triangle_Intersection& intersection) const {
-        return intersect_triangle(ray, mesh, primitive_index, intersection);
+
+    void intersect(const Ray& ray, int32_t primitive_index, Intersection& intersection) const {
+        if (hgeometry.type == Geometry_Type::triangle_mesh) {
+            intersect_triangle(ray, &geometries->triangle_meshes[hgeometry.index], primitive_index, intersection);
+        }
+        else {
+            ASSERT(false);
+        }
     }
 };
 
-struct KdTree_Source {
-    std::vector<const Mesh_KdTree*> mesh_kdtrees;
+struct KdTreeList_Primitive_Source {
+    std::vector<const Geometry_KdTree*> geometry_kdtrees;
 
     int32_t get_primitive_count()  const {
-        return (int32_t)mesh_kdtrees.size();
+        return (int32_t)geometry_kdtrees.size();
     }
+
     Bounding_Box get_primitive_bounds(int32_t primitive_index) const {
-        assert(primitive_index >= 0 && primitive_index < mesh_kdtrees.size());
-        return mesh_kdtrees[primitive_index]->get_bounds();
+        ASSERT(primitive_index >= 0 && primitive_index < geometry_kdtrees.size());
+        return geometry_kdtrees[primitive_index]->get_bounds();
     }
+
     Bounding_Box calculate_bounds() const {
         Bounding_Box bounds;
-        for (auto kdtree : mesh_kdtrees) {
+        for (auto kdtree : geometry_kdtrees)
             bounds = Bounding_Box::get_union(bounds, kdtree->get_bounds());
-        }
         return bounds;
     }
-    void intersect(const Ray& ray, int32_t primitive_index, Triangle_Intersection& intersection) const {
-        assert(primitive_index >= 0 && primitive_index < mesh_kdtrees.size());
-        mesh_kdtrees[primitive_index]->intersect(ray, intersection);
 
+    void intersect(const Ray& ray, int32_t primitive_index, Intersection& intersection) const {
+        ASSERT(primitive_index >= 0 && primitive_index < geometry_kdtrees.size());
+        geometry_kdtrees[primitive_index]->intersect(ray, intersection);
     }
 };
+
