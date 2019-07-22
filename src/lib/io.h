@@ -4,8 +4,8 @@
 #include "geometry.h"
 #include "material.h"
 #include "matrix.h"
-#include "mesh.h"
 #include "obj_loader.h"
+#include "render_object.h"
 #include "vector.h"
 
 struct RGB_Point_Light_Data {
@@ -20,10 +20,11 @@ struct RGB_Diffuse_Rectangular_Light_Data {
     int shadow_ray_count;
 };
 
-struct Scene_Data {
+struct Scene {
     std::string project_dir;
-    std::vector<Mesh_Data> meshes;
+    Geometries geometries;
     Materials materials;
+    std::vector<Render_Object> objects;
     std::vector<Matrix3x4> view_points; // predefined camera positions
 
     // Lights
@@ -48,5 +49,5 @@ struct YAR_Project {
 YAR_Project parse_project(const std::string& file_name);
 bool save_project(const std::string& file_name, const YAR_Project& project);
 
-Scene_Data load_scene(const YAR_Project& project);
+Scene load_scene(const YAR_Project& project);
 void write_exr_image(const char* file_name, const ColorRGB* pixels, int w, int h);

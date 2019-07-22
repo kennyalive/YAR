@@ -57,7 +57,7 @@ struct Bounding_Box {
         return true;
     }
 
-    static Bounding_Box get_union(const Bounding_Box& bounds, const Bounding_Box& bounds2) {
+    static Bounding_Box compute_union(const Bounding_Box& bounds, const Bounding_Box& bounds2) {
         return Bounding_Box(
             Vector3(std::min(bounds.min_p.x, bounds2.min_p.x),
                    std::min(bounds.min_p.y, bounds2.min_p.y),
@@ -68,7 +68,7 @@ struct Bounding_Box {
                    std::max(bounds.max_p.z, bounds2.max_p.z)));
     }
 
-    static Bounding_Box get_intersection(const Bounding_Box& bounds, const Bounding_Box& bounds2) {
+    static Bounding_Box compute_intersection(const Bounding_Box& bounds, const Bounding_Box& bounds2) {
         Vector3 min_p;
         min_p.x = std::max(bounds.min_p.x, bounds2.min_p.x);
         min_p.y = std::max(bounds.min_p.y, bounds2.min_p.y);

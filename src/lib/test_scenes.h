@@ -2,8 +2,8 @@
 
 #include "io.h"
 
-Scene_Data load_conference_scene();
-Scene_Data load_bunny_scene();
-Scene_Data load_buddha_scene();
-Scene_Data load_hairball_scene();
-Scene_Data load_mori_knob();
+Scene load_conference_scene();
+Scene load_bunny_scene();
+Scene load_buddha_scene();
+Scene load_hairball_scene();
+Scene load_mori_knob();

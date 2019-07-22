@@ -240,3 +240,17 @@ Ray transform_ray(const Matrix3x4& m, const Ray& ray) {
     ray2.direction = transform_vector(m, ray.direction);
     return ray2;
 }
+
+Bounding_Box transform_bounding_box(const Matrix3x4& m, const Bounding_Box& bounds) {
+    Bounding_Box bounds2;
+    bounds2.add_point(transform_point(m, Vector3(bounds.min_p.x, bounds.min_p.y, bounds.min_p.z)));
+    bounds2.add_point(transform_point(m, Vector3(bounds.min_p.x, bounds.min_p.y, bounds.max_p.z)));
+    bounds2.add_point(transform_point(m, Vector3(bounds.min_p.x, bounds.max_p.y, bounds.min_p.z)));
+    bounds2.add_point(transform_point(m, Vector3(bounds.min_p.x, bounds.max_p.y, bounds.max_p.z)));
+    bounds2.add_point(transform_point(m, Vector3(bounds.max_p.x, bounds.min_p.y, bounds.min_p.z)));
+    bounds2.add_point(transform_point(m, Vector3(bounds.max_p.x, bounds.min_p.y, bounds.max_p.z)));
+    bounds2.add_point(transform_point(m, Vector3(bounds.max_p.x, bounds.max_p.y, bounds.min_p.z)));
+    bounds2.add_point(transform_point(m, Vector3(bounds.max_p.x, bounds.max_p.y, bounds.max_p.z)));
+    return bounds2;
+}
+

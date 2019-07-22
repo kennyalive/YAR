@@ -1,23 +1,35 @@
 #include "std.h"
-#include "common.h"
-#include "mesh.h"
+#include "lib/common.h"
+#include "triangle_mesh.h"
 
-#include <unordered_map>
+void Triangle_Mesh::print_info() const {
+    size_t mesh_size =
+        vertices.size() * sizeof(Vector3) +
+        normals.size() * sizeof(Vector3) +
+        uvs.size() * sizeof(Vector2) +
+        indices.size() * sizeof(int32_t);
 
-static void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, std::vector<uint64_t>& normal_groups, float crease_angle) {
+    printf("[mesh]\n");
+    printf("vertex count = %d\n", get_vertex_count());
+    printf("triangle count = %d\n", get_triangle_count());
+    printf("mesh size = %zdK\n", mesh_size / 1024);
+    printf("\n");
+}
+
+static void duplicate_vertices_due_to_crease_angle_threshold(Triangle_Mesh& mesh, std::vector<uint64_t>& normal_groups, float crease_angle) {
     normal_groups.resize(mesh.vertices.size());
 
     std::unordered_map<Vector3, std::vector<int>> vertex_faces;
     for (int i = 0, face = 0; i < (int)mesh.indices.size(); i += 3, face++) {
-        vertex_faces[mesh.vertices[mesh.indices[i + 0]].pos].push_back(face);
-        vertex_faces[mesh.vertices[mesh.indices[i + 1]].pos].push_back(face);
-        vertex_faces[mesh.vertices[mesh.indices[i + 2]].pos].push_back(face);
+        vertex_faces[mesh.vertices[mesh.indices[i + 0]]].push_back(face);
+        vertex_faces[mesh.vertices[mesh.indices[i + 1]]].push_back(face);
+        vertex_faces[mesh.vertices[mesh.indices[i + 2]]].push_back(face);
     }
 
     auto get_face_normal = [&mesh](int face) {
-        Vector3 a = mesh.vertices[mesh.indices[face*3 + 0]].pos;
-        Vector3 b = mesh.vertices[mesh.indices[face*3 + 1]].pos;
-        Vector3 c = mesh.vertices[mesh.indices[face*3 + 2]].pos;
+        Vector3 a = mesh.vertices[mesh.indices[face*3 + 0]];
+        Vector3 b = mesh.vertices[mesh.indices[face*3 + 1]];
+        Vector3 c = mesh.vertices[mesh.indices[face*3 + 2]];
         return cross(b - a, c - a).normalized();
     };
 
@@ -81,13 +93,13 @@ static void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, st
 
         // update normal_groups for the first mask group
         for (int face : mask_infos[0].faces) {
-            if (uint32_t index = mesh.indices[face*3 + 0]; mesh.vertices[index].pos == pos)
+            if (int index = mesh.indices[face*3 + 0]; mesh.vertices[index] == pos)
                 normal_groups[index] = mask_infos[0].mask;
-            else if (uint32_t index = mesh.indices[face*3 + 1]; mesh.vertices[index].pos == pos)
+            else if (int index = mesh.indices[face*3 + 1]; mesh.vertices[index] == pos)
                 normal_groups[index] = mask_infos[0].mask;
             else 
             {
-                ASSERT(mesh.vertices[mesh.indices[face*3 + 2]].pos == pos);
+                ASSERT(mesh.vertices[mesh.indices[face*3 + 2]] == pos);
                 normal_groups[mesh.indices[face*3 + 2]] = mask_infos[0].mask;
             }
         }
@@ -103,36 +115,38 @@ static void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, st
             int uv_count = 0;
 
             for (int face : grouped_faces) {
-                Mesh_Vertex a = mesh.vertices[mesh.indices[face*3 + 0]];
-                Mesh_Vertex b = mesh.vertices[mesh.indices[face*3 + 1]];
-                Mesh_Vertex c = mesh.vertices[mesh.indices[face*3 + 2]];
+                int ia = mesh.indices[face*3 + 0];
+                int ib = mesh.indices[face*3 + 1];
+                int ic = mesh.indices[face*3 + 2];
 
-                Mesh_Vertex v;
+                int v_index;
                 int v_index_index;
-                if (a.pos == pos) {
-                    v = a;
+                if (mesh.vertices[ia] == pos) {
+                    v_index = ia;
                     v_index_index = face*3 + 0;
-                } else if (b.pos == pos) {
-                    v = b;
+                } else if (mesh.vertices[ib] == pos) {
+                    v_index = ib;
                     v_index_index = face*3 + 1;
                 } else {
-                    ASSERT(c.pos == pos);
-                    v = c;
+                    ASSERT(mesh.vertices[ic] == pos);
+                    v_index = ic;
                     v_index_index = face*3 + 2;
                 }
 
                 bool new_vertex = true;
                 for (int uv_index = 0; uv_index < uv_count; uv_index++) {
-                    if (v.uv == uvs[uv_index]) {
+                    if (mesh.uvs[v_index] == uvs[uv_index]) {
                         new_vertex = false;
                         mesh.indices[v_index_index] = new_vertex_indices[uv_index];
                     }
                 }
                 if (new_vertex) {
                     ASSERT(uv_count < max_uvs);
-                    uvs[uv_count] = v.uv;
+                    uvs[uv_count] = mesh.uvs[v_index];
                     new_vertex_indices[uv_count] = (int)mesh.vertices.size();
-                    mesh.vertices.push_back(v);
+                    mesh.vertices.push_back(mesh.vertices[v_index]);
+                    mesh.normals.push_back(mesh.normals[v_index]);
+                    mesh.uvs.push_back(mesh.uvs[v_index]);
                     mesh.indices[v_index_index] = new_vertex_indices[uv_count];
                     normal_groups.push_back(mask_infos[i].mask);
                     uv_count++;
@@ -142,7 +156,7 @@ static void duplicate_vertices_due_to_crease_angle_threshold(Mesh_Data& mesh, st
     }
 }
 
-void compute_normals(Mesh_Data& mesh, Normal_Average_Mode normal_average_mode, float crease_angle) {
+void compute_normals(Triangle_Mesh& mesh, Normal_Average_Mode normal_average_mode, float crease_angle) {
     struct Vertex_Info {
         Vector3 pos;
         uint64_t normal_group;
@@ -167,32 +181,32 @@ void compute_normals(Mesh_Data& mesh, Normal_Average_Mode normal_average_mode, f
         duplicate_vertices_due_to_crease_angle_threshold(mesh, normal_groups, crease_angle);
 
     // Vertices with the same position and normal group but different texture coordinates.
-    std::unordered_map<Vertex_Info, std::vector<uint32_t>, Vertex_Info_Hasher> duplicated_vertices;
+    std::unordered_map<Vertex_Info, std::vector<int>, Vertex_Info_Hasher> duplicated_vertices;
 
-    for (size_t i = 0; i < mesh.vertices.size(); i++) {
-        Vertex_Info v_info = { mesh.vertices[i].pos, normal_groups[i] };
-        duplicated_vertices[v_info].push_back((uint32_t)i);
+    for (int i = 0; i < (int)mesh.vertices.size(); i++) {
+        Vertex_Info v_info = { mesh.vertices[i], normal_groups[i] };
+        duplicated_vertices[v_info].push_back(i);
     }
 
     std::vector<bool> has_duplicates(mesh.vertices.size());
-    for (size_t i = 0; i < mesh.vertices.size(); i++) {
-        Vertex_Info v_info = { mesh.vertices[i].pos, normal_groups[i] };
+    for (int i = 0; i < mesh.vertices.size(); i++) {
+        Vertex_Info v_info = { mesh.vertices[i], normal_groups[i] };
         size_t vertex_count = duplicated_vertices[v_info].size();
         ASSERT(vertex_count > 0);
         has_duplicates[i] = vertex_count > 1;
     }
 
-    for (Mesh_Vertex& v : mesh.vertices)
-        v.normal = Vector3_Zero;
+    for (Vector3& n : mesh.normals)
+        n = Vector3_Zero;
 
     for (size_t i = 0; i < mesh.indices.size(); i += 3) {
-        uint32_t i0 = mesh.indices[i + 0];
-        uint32_t i1 = mesh.indices[i + 1];
-        uint32_t i2 = mesh.indices[i + 2];
+        int i0 = mesh.indices[i + 0];
+        int i1 = mesh.indices[i + 1];
+        int i2 = mesh.indices[i + 2];
 
-        Vector3 a = mesh.vertices[i0].pos;
-        Vector3 b = mesh.vertices[i1].pos;
-        Vector3 c = mesh.vertices[i2].pos;
+        Vector3 a = mesh.vertices[i0];
+        Vector3 b = mesh.vertices[i1];
+        Vector3 c = mesh.vertices[i2];
 
         Vector3 scaled_n_a;
         Vector3 scaled_n_b;
@@ -221,31 +235,32 @@ void compute_normals(Mesh_Data& mesh, Normal_Average_Mode normal_average_mode, f
         }
 
         if (has_duplicates[i0]) {
-            for (uint32_t vi : duplicated_vertices[{a, normal_groups[i0]}])
-                mesh.vertices[vi].normal += scaled_n_a;
+            for (int vi : duplicated_vertices[{a, normal_groups[i0]}])
+                mesh.normals[vi] += scaled_n_a;
         } else {
-            mesh.vertices[i0].normal += scaled_n_a;
+            mesh.normals[i0] += scaled_n_a;
         }
 
         if (has_duplicates[i1]) {
-            for (uint32_t vi : duplicated_vertices[{b, normal_groups[i1]}])
-                mesh.vertices[vi].normal += scaled_n_b;
+            for (int vi : duplicated_vertices[{b, normal_groups[i1]}])
+                mesh.normals[vi] += scaled_n_b;
         } else {
-            mesh.vertices[i1].normal += scaled_n_b;
+            mesh.normals[i1] += scaled_n_b;
         }
 
         if (has_duplicates[i2]) {
-            for (uint32_t vi : duplicated_vertices[{c, normal_groups[i2]}])
-                mesh.vertices[vi].normal += scaled_n_c;
+            for (int vi : duplicated_vertices[{c, normal_groups[i2]}])
+                mesh.normals[vi] += scaled_n_c;
         } else {
-            mesh.vertices[i2].normal += scaled_n_c;
+            mesh.normals[i2] += scaled_n_c;
         }
     }
 
-    for (Mesh_Vertex& v : mesh.vertices) {
-        if (v.normal == Vector3_Zero) {
-            v.normal = Vector3(0, 0, 1); // default value for degenerated triangle
+    for (Vector3& n : mesh.normals) {
+        if (n == Vector3_Zero) {
+            n = Vector3(0, 0, 1); // default value for degenerated triangle
         }
-        v.normal.normalize();
+        n.normalize();
     }
 }
+

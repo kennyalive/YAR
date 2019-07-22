@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bounding_box.h"
 #include "ray.h"
 #include "vector.h"
 
@@ -47,3 +48,4 @@ Matrix3x4 get_inverted_transform(const Matrix3x4& m);
 Vector3 transform_point(const Matrix3x4& m, Vector3 p);
 Vector3 transform_vector(const Matrix3x4& m, Vector3 v);
 Ray transform_ray(const Matrix3x4& m, const Ray& ray);
+Bounding_Box transform_bounding_box(const Matrix3x4& m, const Bounding_Box& bounds);

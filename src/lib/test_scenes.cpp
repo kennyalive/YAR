@@ -21,38 +21,42 @@ static ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminou
     return ColorRGBFromXYZ(xyz);
 }
 
-static Scene_Data convert_obj_models(const std::vector<Obj_Model>& obj_models) {
-    Scene_Data scene;
+static Scene convert_obj_models(const std::vector<Obj_Model>& obj_models) {
+    Scene scene;
+    scene.geometries.triangle_meshes.resize(obj_models.size());
+    scene.materials.lambertian.resize(obj_models.size());
+    scene.objects.resize(obj_models.size());
 
-    scene.meshes.reserve(obj_models.size());
-    scene.materials.lambertian.reserve(obj_models.size());
-
-    for (const Obj_Model& model : obj_models) {
-        scene.meshes.push_back(model.mesh_data);
-        scene.meshes.back().material = { Material_Type::lambertian, (int)scene.materials.lambertian.size() };
+    for (int i = 0; i < (int)obj_models.size(); i++) {
+        scene.geometries.triangle_meshes[i] = obj_models[i].mesh;
 
         Lambertian_Material mtl;
-        if (model.has_material) {
-            mtl.albedo = model.material.k_diffuse;
+        if (obj_models[i].has_material) {
+            mtl.albedo = obj_models[i].material.k_diffuse;
         }
         else {
             mtl.albedo = Color_White;
         }
         scene.materials.lambertian.push_back(mtl);
+
+        Render_Object render_object;
+        render_object.geometry = { Geometry_Type::triangle_mesh, i};
+        render_object.material = { Material_Type::lambertian, i};
+        scene.objects.push_back(render_object);
     }
     return scene;
 }
 
-Scene_Data load_bunny_scene() {
+Scene load_bunny_scene() {
     RGB_Point_Light_Data light;
     light.position = Vector3(2, -2, 1.5);
     light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
-    Mesh_Load_Params mesh_load_params;
+    Triangle_Mesh_Load_Params mesh_load_params;
     mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
     std::vector<Obj_Model> obj_models = load_obj("bunny/bunny.obj", mesh_load_params);
 
-    Scene_Data scene = convert_obj_models(obj_models);
+    Scene scene = convert_obj_models(obj_models);
     scene.project_dir = "bunny";
     scene.rgb_point_lights.push_back(light);
 
@@ -65,7 +69,7 @@ Scene_Data load_bunny_scene() {
     return scene;
 }
 
-Scene_Data load_conference_scene() {
+Scene load_conference_scene() {
     RGB_Point_Light_Data light;
     light.position = Vector3(2, 0, 1.5);
     light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
@@ -74,12 +78,12 @@ Scene_Data load_conference_scene() {
     light2.position = Vector3(-1, 1, 1.0);
     light2.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
-    Mesh_Load_Params mesh_load_params;
+    Triangle_Mesh_Load_Params mesh_load_params;
     mesh_load_params.crease_angle = radians(60);
     mesh_load_params.transform = uniform_scale(from_obj_to_world, 0.003f);
     std::vector<Obj_Model> obj_models = load_obj("conference/conference.obj", mesh_load_params);
 
-    Scene_Data scene = convert_obj_models(obj_models);
+    Scene scene = convert_obj_models(obj_models);
     scene.project_dir = "conference";
     scene.rgb_point_lights.push_back(light);
     scene.rgb_point_lights.push_back(light2);
@@ -93,16 +97,16 @@ Scene_Data load_conference_scene() {
     return scene;
 }
 
-Scene_Data load_buddha_scene() {
+Scene load_buddha_scene() {
     RGB_Point_Light_Data light;
     light.position = Vector3(2, 2, 1.5);
     light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
-    Mesh_Load_Params mesh_load_params;
+    Triangle_Mesh_Load_Params mesh_load_params;
     mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
     std::vector<Obj_Model> obj_models = load_obj("buddha/buddha.obj", mesh_load_params);
 
-    Scene_Data scene = convert_obj_models(obj_models);
+    Scene scene = convert_obj_models(obj_models);
     scene.project_dir = "buddha";
     scene.rgb_point_lights.push_back(light);
 
@@ -115,17 +119,17 @@ Scene_Data load_buddha_scene() {
     return scene;
 }
 
-Scene_Data load_hairball_scene() {
+Scene load_hairball_scene() {
     RGB_Point_Light_Data light;
     light.position = Vector3(2, 2, 1.5);
     light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
-    Mesh_Load_Params mesh_load_params;
+    Triangle_Mesh_Load_Params mesh_load_params;
     mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
     mesh_load_params.invert_winding_order = true;
     std::vector<Obj_Model> obj_models = load_obj("hairball/hairball.obj", mesh_load_params);
 
-    Scene_Data scene = convert_obj_models(obj_models);
+    Scene scene = convert_obj_models(obj_models);
     scene.project_dir = "hairball";
     scene.rgb_point_lights.push_back(light);
 
@@ -138,7 +142,7 @@ Scene_Data load_hairball_scene() {
     return scene;
 }
 
-Scene_Data load_mori_knob() {
+Scene load_mori_knob() {
     Vector2 light_size { 1, 1 }; // 1 m^2 light
 
     // Convert provided luminous flux to radiant flux assuming constant spectrum.
@@ -149,13 +153,13 @@ Scene_Data load_mori_knob() {
     Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(radiant_exitance_per_wavelength);
     Vector3 xyz = s.emission_spectrum_to_XYZ();
 
-    Mesh_Load_Params mesh_load_params;
+    Triangle_Mesh_Load_Params mesh_load_params;
     mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
     std::vector<Obj_Model> obj_models = load_obj("mori_knob/testObj.obj", mesh_load_params);
 
     obj_models.erase(obj_models.begin() + 3); // remove light geometry
 
-    Scene_Data scene = convert_obj_models(obj_models);
+    Scene scene = convert_obj_models(obj_models);
     scene.project_dir = "mori_knob";
 
     RGB_Diffuse_Rectangular_Light_Data rect_light;

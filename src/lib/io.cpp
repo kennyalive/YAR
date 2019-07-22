@@ -148,7 +148,7 @@ bool save_project(const std::string& file_name, const YAR_Project& project) {
     return true;
 }
 
-Scene_Data load_scene(const YAR_Project& project) {
+Scene load_scene(const YAR_Project& project) {
     if (project.scene_type == Scene_Type::test_scene) {
         if (project.scene_path == "conference")
             return load_conference_scene();
@@ -166,7 +166,7 @@ Scene_Data load_scene(const YAR_Project& project) {
     }
 
     error("load_scene: unknown scene type");
-    return Scene_Data{};
+    return Scene{};
 }
 
 // from third_party/miniexr.cpp

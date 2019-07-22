@@ -195,8 +195,20 @@ struct Vector2 {
 
 constexpr Vector2 Vector2_Zero = Vector2(0.f);
 
+inline Vector2 operator+(Vector2 a, Vector2 b) {
+    return Vector2{a.x + b.x, a.y + b.y};
+}
+
 inline Vector2 operator-(Vector2 a, Vector2 b) {
     return Vector2{a.x - b.x, a.y - b.y};
+}
+
+inline Vector2 operator*(const Vector2& v, float t) {
+    return Vector2(v.x * t, v.y * t);
+}
+
+inline Vector2 operator*(float t, const Vector2& v) {
+    return v * t;
 }
 
 namespace std {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "lib/color.h"
-#include "lib/mesh.h"
+#include "lib/triangle_mesh.h"
 
 struct Obj_Material {
     ColorRGB k_diffuse;
@@ -10,9 +10,9 @@ struct Obj_Material {
 
 struct Obj_Model {
     std::string name;
-    Mesh_Data mesh_data;
+    Triangle_Mesh mesh;
     bool has_material;
     Obj_Material material;
 };
 
-std::vector<Obj_Model> load_obj(const std::string& obj_file, const Mesh_Load_Params params = Mesh_Load_Params{});
+std::vector<Obj_Model> load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params params = Triangle_Mesh_Load_Params{});

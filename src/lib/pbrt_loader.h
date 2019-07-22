@@ -2,4 +2,4 @@
 
 #include "io.h"
 
-Scene_Data load_pbrt_scene(const YAR_Project& project);
+Scene load_pbrt_scene(const YAR_Project& project);
