@@ -1,11 +1,9 @@
 #include "std.h"
 #include "common.h"
-#include "io.h"
+#include "project.h"
 
 #include "pbrt_loader.h"
 #include "test_scenes.h"
-
-#include "half/half.h"
 
 #include <charconv> // from_chars
 
@@ -96,17 +94,17 @@ YAR_Project parse_project(const std::string& file_name) {
         if (token == "scene_type") {
             token = parser.next_token();
             if (token == "test") {
-                project.scene_type = Scene_Type::test_scene;
+                project.type = Project_Type::test;
             } 
             else if (token == "pbrt") {
-                project.scene_type = Scene_Type::pbrt_scene;
+                project.type = Project_Type::pbrt;
             }
             else {
                 error("uknown scene_type: %s", std::string(token).c_str());
             }
         }
         else if (token == "scene_path") {
-            project.scene_path = parser.next_token();
+            project.path = parser.next_token();
         }
         else if (token == "image_resolution") {
             parser.parse_integers(&project.image_resolution.x, 2);
@@ -130,14 +128,14 @@ bool save_project(const std::string& file_name, const YAR_Project& project) {
     if (!file)
         return false;
 
-    if (project.scene_type == Scene_Type::test_scene)
+    if (project.type == Project_Type::test)
         file << "scene_type test\n";
-    else if (project.scene_type == Scene_Type::pbrt_scene)
+    else if (project.type == Project_Type::pbrt)
         file << "scene_type pbrt\n";
     else
         error("save_project: unknown scene type");
 
-    file << "scene_path " << project.scene_path << "\n";
+    file << "scene_path " << project.path << "\n";
     file << "image_resolution " << project.image_resolution.x << " " << project.image_resolution.y << "\n";
 
     file << "camera_to_world\n";
@@ -148,54 +146,24 @@ bool save_project(const std::string& file_name, const YAR_Project& project) {
     return true;
 }
 
-Scene load_scene(const YAR_Project& project) {
-    if (project.scene_type == Scene_Type::test_scene) {
-        if (project.scene_path == "conference")
+Scene load_project(const YAR_Project& project) {
+    if (project.type == Project_Type::test) {
+        if (project.path == "conference")
             return load_conference_scene();
-        else if (project.scene_path == "bunny")
+        else if (project.path == "bunny")
             return load_bunny_scene();
-        else if (project.scene_path == "buddha")
+        else if (project.path == "buddha")
             return load_buddha_scene();
-        else if (project.scene_path == "hairball")
+        else if (project.path == "hairball")
             return load_hairball_scene();
-        else if (project.scene_path == "mori_knob")
+        else if (project.path == "mori_knob")
             return load_mori_knob();
     }
-    else if (project.scene_type == Scene_Type::pbrt_scene) {
-        return load_pbrt_scene(project);
+    else if (project.type == Project_Type::pbrt) {
+        return load_pbrt_project(project);
     }
 
-    error("load_scene: unknown scene type");
+    error("load_scene: unknown project type");
     return Scene{};
 }
 
-// from third_party/miniexr.cpp
-unsigned char* miniexr_write(unsigned width, unsigned height, unsigned channels, const void* rgba16f, size_t* out_size);
-
-void write_exr_image(const char* file_name, const ColorRGB* pixels, int w, int h) {
-    FILE* file;
-    if (fopen_s(&file, file_name, "wb") != 0)
-        return;
-
-    std::vector<unsigned short> rgb16f(w * h * 3);
-
-    unsigned short* p = rgb16f.data();
-    const ColorRGB* pixel = pixels;
-    for (int i = 0; i < h; i++) {
-        for (int j = 0; j < w; j++) {
-            *p++ = float_to_half(pixel->r);
-            *p++ = float_to_half(pixel->g);
-            *p++ = float_to_half(pixel->b);
-            pixel++;
-        }
-    }
-
-    size_t exr_size;
-    unsigned char* exr_data = miniexr_write(w, h, 3, rgb16f.data(), &exr_size);
-
-    size_t bytes_written = fwrite(exr_data, 1, exr_size, file);
-    ASSERT(bytes_written == exr_size);
-
-    free(exr_data);
-    fclose(file);
-}

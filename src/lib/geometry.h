@@ -1,32 +1,21 @@
 #pragma once
 
-#include "vector.h"
+#include "triangle_mesh.h"
 
-struct Bounds2i {
-    Vector2i p0; // inclusive
-    Vector2i p1; // exclusive
-
-    Vector2i size() const {
-        return p1 - p0;
-    }
-
-    int area() const {
-        Vector2i d = size();
-        return d.x * d.y;
-    }
-
-    bool operator==(const Bounds2i& other) const {
-        return p0 == other.p0 && p1 == other.p1;
-    }
+enum class Geometry_Type : uint32_t {
+    none,
+    triangle_mesh
 };
 
-inline Bounds2i intersect_bounds(const Bounds2i& a, const Bounds2i& b) {
-    return Bounds2i {
-        Vector2i{ std::max(a.p0.x, b.p0.x), std::max(a.p0.y, b.p0.y) },
-        Vector2i{ std::min(a.p1.x, b.p1.x), std::min(a.p1.y, b.p1.y) }
-    };
-}
+struct Geometry_Handle {
+    Geometry_Type type;
+    int index;
+};
 
-inline bool is_inside_bounds(const Bounds2i& b, Vector2i p) {
-    return p >= b.p0 && p < b.p1;
-}
+struct Geometries {
+    std::vector<Triangle_Mesh> triangle_meshes;
+};
+
+static_assert(sizeof(Geometry_Handle) == 8);
+constexpr Geometry_Handle Null_Geometry = {Geometry_Type::none, -1};
+

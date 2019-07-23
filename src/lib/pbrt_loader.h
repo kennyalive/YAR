@@ -1,5 +1,8 @@
 #pragma once
 
-#include "io.h"
+#include "scene.h"
 
-Scene load_pbrt_scene(const YAR_Project& project);
+struct YAR_Project;
+
+Scene load_pbrt_project(const YAR_Project& project);
+

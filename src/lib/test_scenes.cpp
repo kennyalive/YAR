@@ -25,7 +25,7 @@ static Scene convert_obj_models(const std::vector<Obj_Model>& obj_models) {
     Scene scene;
     scene.geometries.triangle_meshes.resize(obj_models.size());
     scene.materials.lambertian.resize(obj_models.size());
-    scene.objects.resize(obj_models.size());
+    scene.render_objects.resize(obj_models.size());
 
     for (int i = 0; i < (int)obj_models.size(); i++) {
         scene.geometries.triangle_meshes[i] = obj_models[i].mesh;
@@ -42,13 +42,15 @@ static Scene convert_obj_models(const std::vector<Obj_Model>& obj_models) {
         Render_Object render_object;
         render_object.geometry = { Geometry_Type::triangle_mesh, i};
         render_object.material = { Material_Type::lambertian, i};
-        scene.objects.push_back(render_object);
+        render_object.world_to_object_transform = Matrix3x4::identity;
+        render_object.object_to_world_transform = Matrix3x4::identity;
+        scene.render_objects.push_back(render_object);
     }
     return scene;
 }
 
 Scene load_bunny_scene() {
-    RGB_Point_Light_Data light;
+    Point_Light light;
     light.position = Vector3(2, -2, 1.5);
     light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
@@ -58,7 +60,7 @@ Scene load_bunny_scene() {
 
     Scene scene = convert_obj_models(obj_models);
     scene.project_dir = "bunny";
-    scene.rgb_point_lights.push_back(light);
+    scene.lights.point_lights.push_back(light);
 
     Matrix3x4 view_point {
         0.942210f, -0.318238f, -0.104785f, 0.466048f,
@@ -70,11 +72,11 @@ Scene load_bunny_scene() {
 }
 
 Scene load_conference_scene() {
-    RGB_Point_Light_Data light;
+    Point_Light light;
     light.position = Vector3(2, 0, 1.5);
     light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
-    RGB_Point_Light_Data light2;
+    Point_Light light2;
     light2.position = Vector3(-1, 1, 1.0);
     light2.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
@@ -85,8 +87,8 @@ Scene load_conference_scene() {
 
     Scene scene = convert_obj_models(obj_models);
     scene.project_dir = "conference";
-    scene.rgb_point_lights.push_back(light);
-    scene.rgb_point_lights.push_back(light2);
+    scene.lights.point_lights.push_back(light);
+    scene.lights.point_lights.push_back(light2);
 
     Matrix3x4 view_point{
         -0.786632f, 0.589048f, 0.185115f, -0.329195f,
@@ -98,7 +100,7 @@ Scene load_conference_scene() {
 }
 
 Scene load_buddha_scene() {
-    RGB_Point_Light_Data light;
+    Point_Light light;
     light.position = Vector3(2, 2, 1.5);
     light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
@@ -108,7 +110,7 @@ Scene load_buddha_scene() {
 
     Scene scene = convert_obj_models(obj_models);
     scene.project_dir = "buddha";
-    scene.rgb_point_lights.push_back(light);
+    scene.lights.point_lights.push_back(light);
 
     Matrix3x4 view_point {
         -0.990574f, 0.136961f, 0.003766f, -0.147305f,
@@ -120,7 +122,7 @@ Scene load_buddha_scene() {
 }
 
 Scene load_hairball_scene() {
-    RGB_Point_Light_Data light;
+    Point_Light light;
     light.position = Vector3(2, 2, 1.5);
     light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(1600 /*Lm*/);
 
@@ -131,7 +133,7 @@ Scene load_hairball_scene() {
 
     Scene scene = convert_obj_models(obj_models);
     scene.project_dir = "hairball";
-    scene.rgb_point_lights.push_back(light);
+    scene.lights.point_lights.push_back(light);
 
     Matrix3x4 view_point {
         -0.981547f, -0.190761f, -0.013507f, 1.663855f,
@@ -162,7 +164,7 @@ Scene load_mori_knob() {
     Scene scene = convert_obj_models(obj_models);
     scene.project_dir = "mori_knob";
 
-    RGB_Diffuse_Rectangular_Light_Data rect_light;
+    Diffuse_Rectangular_Light rect_light;
     rect_light.light_to_world_transform = Matrix3x4{
         -1, 0, 0, 0,
         0, 1, 0, 0,
@@ -171,7 +173,7 @@ Scene load_mori_knob() {
     rect_light.emitted_radiance = ColorRGBFromXYZ(xyz);
     rect_light.size = light_size;
     rect_light.shadow_ray_count = 4;
-    scene.rgb_diffuse_rectangular_lights.push_back(rect_light);
+    scene.lights.diffuse_rectangular_lights.push_back(rect_light);
 
     Matrix3x4 view_point{
         -0.788123f, 0.606466f, -0.105479f, -0.945053f,
@@ -181,3 +183,4 @@ Scene load_mori_knob() {
     scene.view_points.push_back(view_point);
     return scene;
 }
+

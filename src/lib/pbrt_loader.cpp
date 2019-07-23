@@ -1,11 +1,13 @@
 #include "std.h"
 #include "common.h"
 #include "pbrt_loader.h"
+
+#include "colorimetry.h"
+#include "project.h"
 #include "render_object.h"
 
 #include "pbrt-parser/pbrt_parser.h"
 
-#include "colorimetry.h"
 static ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminous_flux) {
     float radiant_flux_per_wavelength = luminous_flux / (683.f * CIE_Y_integral); // [W/m]
                                                                                   // Get constant spectrum that produces given luminous_flux.
@@ -15,9 +17,9 @@ static ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminou
     return ColorRGBFromXYZ(xyz);
 }
 
-Scene load_pbrt_scene(const YAR_Project& project) {
+Scene load_pbrt_project(const YAR_Project& project) {
     using namespace pbrt::semantic;
-    std::shared_ptr<pbrt::semantic::Scene> pbrt_scene = importPBRT(project.scene_path);
+    std::shared_ptr<pbrt::semantic::Scene> pbrt_scene = importPBRT(project.path);
 
     ::Scene scene;
     scene.project_dir = "pbrt-dragon"; // TODO: temporarily hardcoded
@@ -59,7 +61,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
             Render_Object render_object;
             render_object.geometry = {Geometry_Type::triangle_mesh, (int)scene.geometries.triangle_meshes.size() - 1};
             render_object.material = {Material_Type::lambertian, (int)scene.materials.lambertian.size() - 1};
-            scene.objects.push_back(render_object);
+            scene.render_objects.push_back(render_object);
         }
     }
 
@@ -70,10 +72,10 @@ Scene load_pbrt_scene(const YAR_Project& project) {
     };
     scene.view_points.push_back(view_point);
 
-    RGB_Point_Light_Data light;
+    Point_Light light;
     light.position = Vector3(2.f, 2.f, 2.f);
     light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(2000 /*Lm*/);
-    scene.rgb_point_lights.push_back(light);
+    scene.lights.point_lights.push_back(light);
 
     return scene;
 }
