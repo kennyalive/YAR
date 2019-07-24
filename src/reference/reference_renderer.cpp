@@ -3,30 +3,60 @@
 #include "reference_renderer.h"
 
 #include "camera.h"
+#include "direct_lighting.h"
 #include "film.h"
 #include "intersection.h"
 #include "kdtree.h"
 #include "kdtree_builder.h"
-#include "light.h"
 #include "render_context.h"
-#include "triangle_mesh.h"
 
-#include "lib/io.h"
-#include "lib/common.h"
 #include "lib/geometry.h"
-#include "lib/mesh.h"
+#include "lib/project.h"
 #include "lib/random.h"
+#include "lib/triangle_mesh.h"
 #include "lib/vector.h"
 
 #include "enkiTS/TaskScheduler.h"
+#include "half/half.h"
 
 constexpr int Tile_Size = 64;
+
+// from third_party/miniexr.cpp
+unsigned char* miniexr_write(unsigned width, unsigned height, unsigned channels, const void* rgba16f, size_t* out_size);
+
+static void write_exr_image(const char* file_name, const ColorRGB* pixels, int w, int h) {
+    FILE* file;
+    if (fopen_s(&file, file_name, "wb") != 0)
+        return;
+
+    std::vector<unsigned short> rgb16f(w * h * 3);
+
+    unsigned short* p = rgb16f.data();
+    const ColorRGB* pixel = pixels;
+    for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+            *p++ = float_to_half(pixel->r);
+            *p++ = float_to_half(pixel->g);
+            *p++ = float_to_half(pixel->b);
+            pixel++;
+        }
+    }
+
+    size_t exr_size;
+    unsigned char* exr_data = miniexr_write(w, h, 3, rgb16f.data(), &exr_size);
+
+    size_t bytes_written = fwrite(exr_data, 1, exr_size, file);
+    ASSERT(bytes_written == exr_size);
+
+    free(exr_data);
+    fclose(file);
+}
 
 static fs::path get_kdtree_cache_path(const std::string& project_dir) {
     return get_data_dir_path() / project_dir / "kdtrees";
 }
 
-static bool create_kdtree_cache(const std::string& project_dir, const std::vector<Triangle_Mesh>& meshes) {
+static bool create_kdtree_cache(const std::string& project_dir, const Geometries* geometries) {
     const fs::path kdtree_cache_dir = get_kdtree_cache_path(project_dir);
 
     if (fs_exists(kdtree_cache_dir) && !fs_remove_all(kdtree_cache_dir))
@@ -34,21 +64,21 @@ static bool create_kdtree_cache(const std::string& project_dir, const std::vecto
     if (!fs_create_directory(kdtree_cache_dir))
         return false;
 
-    for (int i = 0; i < (int)meshes.size(); i++) {
-        Mesh_KdTree kdtree = build_kdtree(meshes[i]);
+    for (int i = 0; i < (int)geometries->triangle_meshes.size(); i++) {
+        Geometry_KdTree kdtree = build_geometry_kdtree(geometries, {Geometry_Type::triangle_mesh, i});
         fs::path kdtree_file = kdtree_cache_dir / (std::to_string(i) + ".kdtree");
         kdtree.save_to_file(kdtree_file.string());
     }
     return true;
 }
 
-static std::vector<Mesh_KdTree> load_kdtree_cache(const std::string& project_dir, const std::vector<Triangle_Mesh>& meshes) {
+static std::vector<Geometry_KdTree> load_kdtree_cache(const std::string& project_dir, const Geometries* geometries) {
     const fs::path kdtree_cache_dir = get_kdtree_cache_path(project_dir);
 
-    std::vector<Mesh_KdTree> kdtrees(meshes.size());
-    for (int i = 0; i < (int)meshes.size(); i++) {
+    std::vector<Geometry_KdTree> kdtrees(geometries->triangle_meshes.size());
+    for (int i = 0; i < (int)geometries->triangle_meshes.size(); i++) {
         fs::path kdtree_file = kdtree_cache_dir / (std::to_string(i) + ".kdtree");
-        kdtrees[i] = load_mesh_kdtree(kdtree_file.string(), meshes[i]);
+        kdtrees[i] = load_geometry_kdtree(kdtree_file.string(), geometries, {Geometry_Type::triangle_mesh, i});
     }
     return kdtrees;
 }
@@ -78,33 +108,26 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
 }
 
 void render_reference_image(const YAR_Project& project, const Renderer_Options& options) {
-    Scene_Data scene_data = load_scene(project);
+    Scene scene = load_project(project);
 
     printf("Preparing meshes\n");
-    std::vector<Triangle_Mesh> meshes(scene_data.meshes.size() + scene_data.rgb_diffuse_rectangular_lights.size());
-
-    int mesh_index = 0;
-    for (size_t i = 0; i < scene_data.meshes.size(); i++, mesh_index++) {
-        meshes[mesh_index] = Triangle_Mesh::from_mesh_data(scene_data.meshes[i]);
-    }
-    for (auto [i, light] : enumerate(scene_data.rgb_diffuse_rectangular_lights)) {
-        meshes[mesh_index] = Triangle_Mesh::from_diffuse_rectangular_light(light, (int)i);
-        mesh_index++;
+    for (auto [i, light] : enumerate(scene.lights.diffuse_rectangular_lights)) {
+        scene.geometries.triangle_meshes.emplace_back(light.get_geometry());
     }
 
-    if (!fs_exists(get_kdtree_cache_path(scene_data.project_dir))) {
+    if (!fs_exists(get_kdtree_cache_path(scene.project_dir))) {
         printf("Creating kdtree cache...\n");
         Timestamp t;
-        if (!create_kdtree_cache(scene_data.project_dir, meshes)) {
+        if (!create_kdtree_cache(scene.project_dir, &scene.geometries)) {
             printf("failed to create kdtree cache\n");
             return;
         }
         printf("KdTree cache build time = %.2f s\n", elapsed_milliseconds(t) / 1e3f);
     }
-    std::vector<Mesh_KdTree> kdtrees = load_kdtree_cache(scene_data.project_dir, meshes);
+    std::vector<Geometry_KdTree> kdtrees = load_kdtree_cache(scene.project_dir, &scene.geometries);
 
-    TwoLevel_KdTree kdtree = build_kdtree(kdtrees);
-    printf("two-level tree created\n");
+    Scene_KdTree scene_kdtree = build_scene_kdtree(&scene, kdtrees);
+    printf("scene tree created\n");
 
     Matrix3x4 camera_to_world = project.camera_to_world;
     for (int i = 0; i < 3; i++) {
@@ -113,19 +136,6 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
         camera_to_world.a[i][2] = tmp;
     }
     Camera camera(camera_to_world, Vector2(project.image_resolution), 60.f);
-
-    Lights lights;
-    {
-        for (const RGB_Point_Light_Data& point_light_data : scene_data.rgb_point_lights) {
-            Point_Light light;
-            light.position = point_light_data.position;
-            light.intensity = point_light_data.intensity;
-            lights.point_lights.push_back(light);
-        }
-        for (const RGB_Diffuse_Rectangular_Light_Data& light_data : scene_data.rgb_diffuse_rectangular_lights) {
-            lights.diffuse_rectangular_lights.push_back(Diffuse_Rectangular_Light(light_data));
-        }
-    }
 
     Bounds2i render_region = project.render_region;
     if (render_region == Bounds2i{})
@@ -157,9 +167,9 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
 
     Render_Context ctx;
     ctx.camera = &camera;
-    ctx.acceleration_structure = &kdtree;
-    ctx.lights = lights;
-    ctx.materials = scene_data.materials;
+    ctx.acceleration_structure = &scene_kdtree;
+    ctx.lights = scene.lights;
+    ctx.materials = scene.materials;
 
     Timestamp t;
 

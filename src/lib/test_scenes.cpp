@@ -37,14 +37,13 @@ static Scene convert_obj_models(const std::vector<Obj_Model>& obj_models) {
         else {
             mtl.albedo = Color_White;
         }
-        scene.materials.lambertian.push_back(mtl);
+        scene.materials.lambertian[i] = mtl;
 
-        Render_Object render_object;
+        Render_Object& render_object = scene.render_objects[i];
         render_object.geometry = { Geometry_Type::triangle_mesh, i};
         render_object.material = { Material_Type::lambertian, i};
         render_object.world_to_object_transform = Matrix3x4::identity;
         render_object.object_to_world_transform = Matrix3x4::identity;
-        scene.render_objects.push_back(render_object);
     }
     return scene;
 }

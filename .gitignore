@@ -4,4 +4,6 @@ build/
 data/*
 !data/links/
 
+*.exr
+*.user
 imgui.ini

@@ -1,17 +1,19 @@
 #include "std.h"
 #include "lib/common.h"
 #include "lib/obj_loader.h"
+#include "lib/random.h"
+#include "lib/triangle_mesh.h"
 #include "lib/vector.h"
 #include "../intersection.h"
 #include "../kdtree.h"
 #include "../kdtree_builder.h"
 #include "../sampling.h"
-#include "../triangle_mesh.h"
 
 #ifdef _WIN32
 #include <pmmintrin.h>
 #endif
 
+namespace {
 class Ray_Generator {
 public:
     Ray_Generator(const Bounding_Box& mesh_bounds);
@@ -21,6 +23,7 @@ private:
     pcg32_random_t rng;
     Bounding_Box ray_bounds;
 };
+} // namesapce
 
 Ray_Generator::Ray_Generator(const Bounding_Box& mesh_bounds) {
     pcg32_srandom_r(&rng, 0, 0);
@@ -67,18 +70,18 @@ Ray Ray_Generator::generate_ray(const Vector3& last_hit, float last_hit_epsilon)
 
 const int benchmark_ray_count = 1'000'000;
 
-struct Model_Info {
+struct Triangle_Mesh_Info {
     std::string file_name;
     int validation_ray_count;
 };
 
-static std::vector<Model_Info> model_infos {
+static std::vector<Triangle_Mesh_Info> triangle_mesh_infos {
     { "test-files/teapot.obj", 100'000 },
     { "test-files/bunny.obj", 10'000 },
     { "test-files/dragon.obj", 5'000 },
 };
 
-int benchmark_mesh_kdtree(const Mesh_KdTree& kdtree) {
+static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
     const bool debug_rays = false;
     const int debug_ray_count = 4;
 
@@ -126,10 +129,13 @@ int benchmark_mesh_kdtree(const Mesh_KdTree& kdtree) {
     return (int)(time_ns / 1'000'000);
 }
 
-void validate_mesh_kdtree(const Mesh_KdTree& kdtree, int ray_count) {
-    printf("Running kdtree validation... ");
+static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray_count) {
+    const Geometry_Primitive_Source& primitive_source = kdtree.get_primitive_source();
+    ASSERT(primitive_source.geometry.type == Geometry_Type::triangle_mesh);
+
+    printf("Running triangle mesh kdtree validation... ");
     auto bounds = kdtree.get_bounds();
-    Vector3 last_hit = (bounds.min_p + bounds.max_p) * 0.5;
+    Vector3 last_hit = (bounds.min_p + bounds.max_p) * 0.5f;
     float last_hit_epsilon = 0.0f;
 
     auto ray_generator = Ray_Generator(bounds);
@@ -140,17 +146,16 @@ void validate_mesh_kdtree(const Mesh_KdTree& kdtree, int ray_count) {
         Local_Geometry kdtree_intersection;
         float kdtree_hit_distance = kdtree.intersect(ray, kdtree_intersection);
 
-        Triangle_Intersection brute_force_intersection;
+        Intersection brute_force_intersection;
 
         int hit_k = -1;
-        for (int32_t k = 0; k < kdtree.get_primitive_source().get_primitive_count(); k++) {
+        for (int k = 0; k < primitive_source.get_primitive_count(); k++) {
             float old_t = brute_force_intersection.t;
 
-            intersect_triangle(ray, kdtree.get_primitive_source().mesh, k, brute_force_intersection);
+            intersect_geometry(ray, primitive_source.geometries, primitive_source.geometry, k, brute_force_intersection);
 
-            if (brute_force_intersection.t != old_t) {
+            if (brute_force_intersection.t != old_t)
                 hit_k = k;
-            }
         }
 
         if (kdtree_hit_distance != brute_force_intersection.t) {
@@ -179,13 +184,17 @@ void validate_mesh_kdtree(const Mesh_KdTree& kdtree, int ray_count) {
     printf("DONE\n");
 }
 
-TwoLevel_KdTree get_toplevel_kdtree(const std::string& model_file_name, const std::vector<Triangle_Mesh>& model_meshes, std::vector<Mesh_KdTree>& mesh_kdtrees) {
+/*
+static Scene_KdTree get_scene_kdtree(const std::string& model_file_name,
+    const std::vector<Triangle_Mesh>& model_meshes,
+    std::vector<Geometry_KdTree>& triangle_mesh_kdtrees)
+{
     // Build kdtrees for all meshes.
     Timestamp t;
     KdTree_Build_Params build_params;
-    mesh_kdtrees.resize(model_meshes.size());
+    triangle_mesh_kdtrees.resize(model_meshes.size());
     for (auto [i, mesh] : enumerate(model_meshes)) {
-        mesh_kdtrees[i] = build_kdtree(mesh, build_params);
+        triangle_mesh_kdtrees[i] = build_geometry_kdtree(mesh, build_params);
         printf("kdtree %d\n", static_cast<int>(i));
         mesh_kdtrees[i].calculate_stats().print();
     }
@@ -199,28 +208,28 @@ TwoLevel_KdTree get_toplevel_kdtree(const std::string& model_file_name, const st
     printf("Top level kdtree build time = %.2fs\n", elapsed_milliseconds(t2) / 1000.f);
     return top_level_kdtree;
 }
-
-void test_model(const Model_Info& model_info) {
-    std::vector<Triangle_Mesh> meshes;
+*/
+static void test_triangle_mesh(const Triangle_Mesh_Info& triangle_mesh_info) {
+    Geometries geometries;
     {
-        std::vector<Obj_Model> obj_models = load_obj(model_info.file_name);
+        std::vector<Obj_Model> obj_models = load_obj(triangle_mesh_info.file_name);
         for (const Obj_Model& obj_model : obj_models) {
-            meshes.push_back(Triangle_Mesh::from_mesh_data(obj_model.mesh_data));
+            geometries.triangle_meshes.push_back(obj_model.mesh);
         }
     }
 
     Timestamp t;
     KdTree_Build_Params build_params;
-    Mesh_KdTree mesh_kdtree = build_kdtree(meshes[0], build_params);
+    Geometry_KdTree triangle_mesh_kdtree = build_geometry_kdtree(&geometries, {Geometry_Type::triangle_mesh, 0}, build_params);
     printf("kdtree build time = %.2fs\n\n", elapsed_milliseconds(t) / 1000.f);
-    mesh_kdtree.calculate_stats().print();
+    triangle_mesh_kdtree.calculate_stats().print();
 
     printf("\nshooting rays (kdtree)...\n");
-    int time_msec = benchmark_mesh_kdtree(mesh_kdtree);
+    int time_msec = benchmark_geometry_kdtree(triangle_mesh_kdtree);
     double speed = (benchmark_ray_count / 1000000.0) / (time_msec / 1000.0);
-    printf("raycast performance [%-6s]: %.2f MRays/sec\n", model_info.file_name.c_str(), speed);
+    printf("raycast performance [%-6s]: %.2f MRays/sec\n", triangle_mesh_info.file_name.c_str(), speed);
 
-    validate_mesh_kdtree(mesh_kdtree, model_info.validation_ray_count);
+    validate_triangle_mesh_kdtree(triangle_mesh_kdtree, triangle_mesh_info.validation_ray_count);
 }
 
 void test_kdtree() {
@@ -229,9 +238,10 @@ void test_kdtree() {
     _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
 #endif
 
-    for (const Model_Info& model_info : model_infos) {
+    for (const Triangle_Mesh_Info& info : triangle_mesh_infos) {
         printf("---------------------\n");
-        printf("Model: %s\n", model_info.file_name.c_str());
-        test_model(model_info);
+        printf("Triangle mesh: %s\n", info.file_name.c_str());
+        test_triangle_mesh(info);
     }
  }
+

@@ -6,11 +6,9 @@
 #include "lib/matrix.h"
 #include "lib/ray.h"
 #include "lib/render_object.h"
+#include "lib/scene.h"
 #include "lib/triangle_mesh.h"
 #include "lib/vector.h"
-
-#include <cstdint>
-#include <vector>
 
 struct Local_Geometry;
 
@@ -19,19 +17,19 @@ template <typename Primitive_Source> class KdTree;
 struct Geometry_Primitive_Source;
 using Geometry_KdTree = KdTree<Geometry_Primitive_Source>;
 
-struct KdTreeList_Primitive_Source;
-using Scene_KdTree = KdTree<KdTreeList_Primitive_Source>;
+struct Scene_Primitive_Source;
+using Scene_KdTree = KdTree<Scene_Primitive_Source>;
 
 // Contains data collected by KdTree::calculate_stats() function.
 struct KdTree_Stats {
     int64_t nodes_size = 0;
     int64_t primitive_indices_size = 0;
 
-    int32_t node_count = 0;
-    int32_t leaf_count = 0;
-    int32_t empty_leaf_count = 0;
-    int32_t single_primitive_leaf_count = 0;
-    int     perfect_depth = 0;
+    int node_count = 0;
+    int leaf_count = 0;
+    int empty_leaf_count = 0;
+    int single_primitive_leaf_count = 0;
+    int perfect_depth = 0;
 
     struct Leaf_Stats {
         float average_depth = 0.0f;
@@ -135,34 +133,33 @@ private:
     KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& primitive_indices, const Primitive_Source& primitive_source);
 
     template <typename Primitive_Source> friend class KdTree_Builder;
-    friend struct KdTreeList_Primitive_Source;
-    friend Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle hgeometry);
+    friend struct Scene_Primitive_Source;
+    friend Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle geometry);
 
     enum { max_traversal_depth = 64 };
 
 private:
-    std::vector<KdNode>   nodes;
-    std::vector<int32_t>  primitive_indices;
-    Primitive_Source      primitive_source;
-    Bounding_Box          bounds;
+    std::vector<KdNode> nodes;
+    std::vector<int> primitive_indices;
+    Primitive_Source primitive_source;
+    Bounding_Box bounds;
 };
 
-Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle hgeometry);
+Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle geometry);
 
 struct Geometry_Primitive_Source {
     const Geometries* geometries;
-    Geometry_Handle hgeometry;
-    Matrix3x4 world_to_mesh_transform;
+    Geometry_Handle geometry;
 
     Geometry_Primitive_Source() {}
-    Geometry_Primitive_Source(const Geometries* geometries, Geometry_Handle hgeometry)
+    Geometry_Primitive_Source(const Geometries* geometries, Geometry_Handle geometry)
         : geometries(geometries)
-        , hgeometry(hgeometry)
+        , geometry(geometry) 
     {}
 
-    int32_t get_primitive_count() const {
-        if (hgeometry.type == Geometry_Type::triangle_mesh) {
-            return geometries->triangle_meshes[hgeometry.index].get_triangle_count();
+    int get_primitive_count() const {
+        if (geometry.type == Geometry_Type::triangle_mesh) {
+            return geometries->triangle_meshes[geometry.index].get_triangle_count();
         }
         else {
             ASSERT(false);
@@ -170,9 +167,9 @@ struct Geometry_Primitive_Source {
         }
     }
 
-    Bounding_Box get_primitive_bounds(int32_t primitive_index) const {
-        if (hgeometry.type == Geometry_Type::triangle_mesh) {
-            return geometries->triangle_meshes[hgeometry.index].get_triangle_bounds(primitive_index);
+    Bounding_Box get_primitive_bounds(int primitive_index) const {
+        if (geometry.type == Geometry_Type::triangle_mesh) {
+            return geometries->triangle_meshes[geometry.index].get_triangle_bounds(primitive_index);
         }
         else {
             ASSERT(false);
@@ -181,8 +178,8 @@ struct Geometry_Primitive_Source {
     }
 
     Bounding_Box calculate_bounds() const {
-        if (hgeometry.type == Geometry_Type::triangle_mesh) {
-            return geometries->triangle_meshes[hgeometry.index].get_bounds();
+        if (geometry.type == Geometry_Type::triangle_mesh) {
+            return geometries->triangle_meshes[geometry.index].get_bounds();
         }
         else {
             ASSERT(false);
@@ -190,38 +187,45 @@ struct Geometry_Primitive_Source {
         }
     }
 
-    void intersect(const Ray& ray, int32_t primitive_index, Intersection& intersection) const {
-        if (hgeometry.type == Geometry_Type::triangle_mesh) {
-            intersect_triangle(ray, &geometries->triangle_meshes[hgeometry.index], primitive_index, intersection);
-        }
-        else {
-            ASSERT(false);
-        }
+    void intersect(const Ray& ray, int primitive_index, Intersection& intersection) const {
+        intersect_geometry(ray, geometries, geometry, primitive_index, intersection);
     }
 };
 
-struct KdTreeList_Primitive_Source {
+struct Scene_Primitive_Source {
+    const Scene* scene;
     std::vector<const Geometry_KdTree*> geometry_kdtrees;
 
-    int32_t get_primitive_count()  const {
-        return (int32_t)geometry_kdtrees.size();
+    int get_primitive_count()  const {
+        return (int)scene->render_objects.size();
     }
 
-    Bounding_Box get_primitive_bounds(int32_t primitive_index) const {
-        ASSERT(primitive_index >= 0 && primitive_index < geometry_kdtrees.size());
-        return geometry_kdtrees[primitive_index]->get_bounds();
+    Bounding_Box get_primitive_bounds(int primitive_index) const {
+        ASSERT(primitive_index >= 0 && primitive_index < scene->render_objects.size());
+        int geometry_index = scene->render_objects[primitive_index].geometry.index;
+        Bounding_Box local_bounds = geometry_kdtrees[geometry_index]->get_bounds();
+        Bounding_Box world_bounds = transform_bounding_box(scene->render_objects[primitive_index].object_to_world_transform, local_bounds);
+        return world_bounds;
     }
 
     Bounding_Box calculate_bounds() const {
         Bounding_Box bounds;
-        for (auto kdtree : geometry_kdtrees)
-            bounds = Bounding_Box::get_union(bounds, kdtree->get_bounds());
+        for (int i = 0; i < (int)scene->render_objects.size(); i++)
+            bounds = Bounding_Box::compute_union(bounds, get_primitive_bounds(i));
         return bounds;
     }
 
-    void intersect(const Ray& ray, int32_t primitive_index, Intersection& intersection) const {
-        ASSERT(primitive_index >= 0 && primitive_index < geometry_kdtrees.size());
-        geometry_kdtrees[primitive_index]->intersect(ray, intersection);
+    void intersect(const Ray& ray, int primitive_index, Intersection& intersection) const {
+        ASSERT(primitive_index >= 0 && primitive_index < scene->render_objects.size());
+        const Render_Object* render_object = &scene->render_objects[primitive_index];
+        Ray local_ray = transform_ray(render_object->world_to_object_transform, ray);
+
+        float last_t = intersection.t;
+
+        geometry_kdtrees[render_object->geometry.index]->intersect(local_ray, intersection);
+
+        if (last_t != intersection.t)
+            intersection.render_object = render_object;
     }
 };
 

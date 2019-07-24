@@ -303,10 +303,10 @@ void KdTree<Primitive_Source>::save_to_file(const std::string& file_name) const
         error("failed to write kdTree primitive indices: " + file_name);
 }
 
-Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle hgeometry) {
+Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle geometry) {
     Geometry_KdTree kdtree;
 
-    kdtree.primitive_source = Geometry_Primitive_Source(geometries, hgeometry);
+    kdtree.primitive_source = Geometry_Primitive_Source(geometries, geometry);
     kdtree.bounds = kdtree.primitive_source.calculate_bounds();
 
     std::ifstream file(file_name, std::ios_base::in | std::ios_base::binary);
@@ -345,5 +345,5 @@ Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometr
 }
 
 template class KdTree<Geometry_Primitive_Source>;
-template class KdTree<KdTreeList_Primitive_Source>;
+template class KdTree<Scene_Primitive_Source>;
 

@@ -1,8 +1,8 @@
 #include "std.h"
 #include "lib/common.h"
 #include "reference_renderer.h"
-#include "lib/io.h"
 #include "tests/test.h"
+#include "lib/project.h"
 
 #include "getopt/getopt.h"
 

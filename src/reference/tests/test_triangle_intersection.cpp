@@ -14,8 +14,6 @@ void test_triangle_intersection()
     };
 
     const int N = 10'000'000;
-    Triangle_Intersection isect;
-
     Timestamp t;
 
     float b1, b2;

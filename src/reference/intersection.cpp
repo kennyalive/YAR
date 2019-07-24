@@ -1,8 +1,9 @@
 #include "std.h"
 #include "lib/common.h"
 #include "intersection.h"
-#include "triangle_mesh.h"
 #include "lib/ray.h"
+#include "lib/render_object.h"
+#include "lib/triangle_mesh.h"
 
 //
 // Möller-Trumbore triangle intersection algorithm.
@@ -41,25 +42,50 @@ float intersect_triangle_moller_trumbore(const Ray& ray, const Vector3& p0, cons
     return distance;
 }
 
-void intersect_triangle(const Ray& ray, const Triangle_Mesh* mesh, int32_t triangle_index, Triangle_Intersection& intersection) {
-    Vector3 p0, p1, p2;
-    mesh->get_triangle(triangle_index, p0, p1, p2);
+void intersect_geometry(const Ray& ray, const Geometries* geometries, Geometry_Handle geometry, int primitive_index, Intersection& intersection) {
+    if (geometry.type == Geometry_Type::triangle_mesh) {
+        const Triangle_Mesh* mesh = &geometries->triangle_meshes[geometry.index];
+        Vector3 p0, p1, p2;
+        mesh->get_triangle(primitive_index, p0, p1, p2);
 
-    float b1, b2;
-    float t = intersect_triangle_moller_trumbore(ray, p0, p1, p2, b1, b2);
+        float b1, b2;
+        float t = intersect_triangle_moller_trumbore(ray, p0, p1, p2, b1, b2);
 
-    if (t < intersection.t) {
-        intersection.t = t;
-        intersection.b1 = b1;
-        intersection.b2 = b2;
-        intersection.mesh = mesh;
-        intersection.triangle_index = triangle_index;
+        if (t < intersection.t) {
+            intersection.t = t;
+            intersection.geometry_type = geometry.type;
+
+            intersection.triangle_intersection.b1 = b1;
+            intersection.triangle_intersection.b2 = b2;
+            intersection.triangle_intersection.mesh = mesh;
+            intersection.triangle_intersection.triangle_index = primitive_index;
+        }
+    }
+    else {
+        ASSERT(false);
     }
 }
 
-Local_Geometry::Local_Geometry(const Ray& ray, const Triangle_Intersection& triangle_intersection) {
-    position = ray.get_point(triangle_intersection.t);
-    normal = triangle_intersection.mesh->get_normal(triangle_intersection.triangle_index, triangle_intersection.b1, triangle_intersection.b2);
-    material = triangle_intersection.mesh->material;
-    area_light = triangle_intersection.mesh->area_light;
+Local_Geometry::Local_Geometry(const Ray& ray, const Intersection& intersection) {
+    if (intersection.geometry_type == Geometry_Type::triangle_mesh) {
+        const Triangle_Intersection& ti = intersection.triangle_intersection;
+        position = ray.get_point(intersection.t);
+        normal = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
+        uv = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
+
+        if (intersection.render_object != nullptr) {
+            position = transform_point(intersection.render_object->object_to_world_transform, position);
+            normal = transform_vector(intersection.render_object->object_to_world_transform, normal);
+            material = intersection.render_object->material;
+            area_light = intersection.render_object->area_light;
+        }
+        else {
+            material = Null_Material;
+            area_light = Null_Light;
+        }
+    }
+    else {
+        ASSERT(false);
+    }
 }
+

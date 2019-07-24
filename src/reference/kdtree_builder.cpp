@@ -75,19 +75,20 @@ private:
     std::vector<int32_t> primitive_indices;
 };
 
-Geometry_KdTree build_kdtree(const Geometries* geometries, Geometry_Handle hgeometry, const KdTree_Build_Params& build_params) {
+Geometry_KdTree build_geometry_kdtree(const Geometries* geometries, Geometry_Handle hgeometry, const KdTree_Build_Params& build_params) {
     Geometry_Primitive_Source primitive_source {geometries, hgeometry};
     KdTree_Builder<Geometry_Primitive_Source> builder(primitive_source, build_params);
     return builder.build();
 }
 
-Scene_KdTree build_kdtree(const std::vector<Geometry_KdTree>& kdtrees, const KdTree_Build_Params& build_params) {
-    KdTreeList_Primitive_Source primitive_source;
+Scene_KdTree build_scene_kdtree(const Scene* scene, const std::vector<Geometry_KdTree>& kdtrees, const KdTree_Build_Params& build_params) {
+    Scene_Primitive_Source primitive_source;
+    primitive_source.scene = scene;
     primitive_source.geometry_kdtrees.resize(kdtrees.size());
     for (size_t i = 0; i < kdtrees.size(); i++) {
         primitive_source.geometry_kdtrees[i] = &kdtrees[i];
     }
-    KdTree_Builder<KdTreeList_Primitive_Source> builder(primitive_source, build_params);
+    KdTree_Builder<Scene_Primitive_Source> builder(primitive_source, build_params);
     return builder.build();
 }
 
@@ -133,7 +134,7 @@ KdTree<Primitive_Source> KdTree_Builder<Primitive_Source>::build()
     for (int32_t i = 0; i < primitive_count; i++) {
         Bounding_Box bounds = primitive_source.get_primitive_bounds(i);
         primitive_buffer[i] = { i, bounds };
-        mesh_bounds = Bounding_Box::get_union(mesh_bounds, bounds);
+        mesh_bounds = Bounding_Box::compute_union(mesh_bounds, bounds);
     }
 
     //
@@ -159,12 +160,12 @@ void clip_bounds(const Geometry_Primitive_Source& primitive_source, int32_t tria
     else
         bounds.min_p[axis] = split_position;
 
-    if (primitive_source.hgeometry.type != Geometry_Type::triangle_mesh)
+    if (primitive_source.geometry.type != Geometry_Type::triangle_mesh)
         return;
 
     // sort triangle vertices along the split dimension
     Vector3 p[3];
-    primitive_source.geometries->triangle_meshes[primitive_source.hgeometry.index].get_triangle(triangle_index, p[0], p[1], p[2]);
+    primitive_source.geometries->triangle_meshes[primitive_source.geometry.index].get_triangle(triangle_index, p[0], p[1], p[2]);
 
     if (p[1][axis] < p[0][axis])
         std::swap(p[1], p[0]);
@@ -217,10 +218,10 @@ void clip_bounds(const Geometry_Primitive_Source& primitive_source, int32_t tria
         if (!middle_on_the_left)
             bounds2.add_point(p[1]);
     }
-    bounds = Bounding_Box::get_intersection(bounds, bounds2);
+    bounds = Bounding_Box::compute_intersection(bounds, bounds2);
 }
 
-void clip_bounds(const KdTreeList_Primitive_Source&, int32_t, float split_position, int axis, bool left, Bounding_Box& bounds) {
+void clip_bounds(const Scene_Primitive_Source&, int32_t, float split_position, int axis, bool left, Bounding_Box& bounds) {
     ASSERT(split_position > bounds.min_p[axis] && split_position < bounds.max_p[axis]);
 
     if (left)
