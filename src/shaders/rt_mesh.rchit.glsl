@@ -92,7 +92,7 @@ void main() {
         if (shadow_ray_payload.shadow_factor == 0.0)
             continue;
 
-        Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].mtl_handle;
+        Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
         vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
         vec3 irradiance = point_lights[i].intensity * (n_dot_l / (light_dist * light_dist));
         L += shadow_ray_payload.shadow_factor * irradiance * bsdf;
@@ -111,7 +111,7 @@ void main() {
             u = 2.0*u - 1.0;
 
             vec3 local_light_point = vec3(light.size.x/2.0 * u.x, light.size.y/2.0 * u.y, 0.f);
-            vec3 light_point = light.light_to_world * vec4(local_light_point, 1.0);
+            vec3 light_point = light.light_to_world_transform * vec4(local_light_point, 1.0);
 
             vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV + 1e-3*n;
 
@@ -119,7 +119,7 @@ void main() {
             float light_dist = length(light_vec);
             vec3 light_dir = light_vec / light_dist;
 
-            vec3 light_normal = light.light_to_world[2];
+            vec3 light_normal = light.light_to_world_transform[2];
             float light_n_dot_l = dot(light_normal, -light_dir);
             if (light_n_dot_l <= 0.f)
                 continue;
@@ -135,7 +135,7 @@ void main() {
             if (shadow_ray_payload.shadow_factor == 0.0)
                 continue;
 
-            Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].mtl_handle;
+            Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
             vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
             L += shadow_ray_payload.shadow_factor * bsdf * light.area * light.emitted_radiance * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }

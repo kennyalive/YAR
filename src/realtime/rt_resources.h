@@ -1,10 +1,10 @@
 #pragma once
 
 #include "common.h"
-#include "lib/io.h"
 #include "lib/matrix.h"
 
 struct Rt_Uniform_Buffer;
+struct Scene;
 
 struct VkGeometryInstanceNV {
     Matrix3x4      transform;
@@ -46,7 +46,7 @@ struct Raytracing_Resources {
 
     Vk_Buffer instance_info_buffer;
 
-    void create(const Scene_Data& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout);
+    void create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout);
     void destroy();
     void update_output_image_descriptor(VkImageView output_image_view);
     void update_camera_transform(const Matrix3x4& camera_to_world_transform);

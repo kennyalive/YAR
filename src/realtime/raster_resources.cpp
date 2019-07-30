@@ -3,9 +3,7 @@
 #include "raster_resources.h"
 #include "../shaders/gpu_types.h"
 #include "utils.h"
-#include "lib/io.h"
 #include "lib/matrix.h"
-#include "lib/mesh.h"
 
 namespace {
 struct Global_Uniform_Buffer {
@@ -17,6 +15,13 @@ struct Global_Uniform_Buffer {
     Vector2         pad0;
 };
 }
+
+    // TODO: temp structure. Use separate buffer per attribute.
+    struct GPU_Vertex {
+        Vector3 position;
+        Vector3 normal;
+        Vector2 uv;
+    };
 
 void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_set_layout) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Global_Uniform_Buffer)),
@@ -101,7 +106,7 @@ void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_s
 
         // VkVertexInputBindingDescription
         state.vertex_bindings[0].binding = 0;
-        state.vertex_bindings[0].stride = sizeof(Mesh_Vertex);
+        state.vertex_bindings[0].stride = sizeof(GPU_Vertex);
         state.vertex_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         state.vertex_binding_count = 1;
 

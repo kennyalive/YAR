@@ -2,7 +2,8 @@
     #pragma once
     #include "vk.h"
     #include "lib/color.h"
-    #include "lib/io.h"
+    #include "lib/light.h"
+    #include "lib/material.h"
     #include "lib/vector.h"
 #else
     #define ColorRGB vec3
@@ -22,7 +23,7 @@ struct Point_Light {
     float       pad1;
 
 #ifdef __cplusplus
-    void init(const RGB_Point_Light_Data& data) {
+    void init(const ::Point_Light& data) {
         position    = data.position;
         pad0        = 0.f;
 
@@ -33,7 +34,7 @@ struct Point_Light {
 };
 
 struct Diffuse_Rectangular_Light {
-    Matrix3x4   light_to_world;
+    Matrix3x4   light_to_world_transform;
 
     ColorRGB    emitted_radiance;
     float       pad0;
@@ -43,8 +44,8 @@ struct Diffuse_Rectangular_Light {
     int         shadow_ray_count;
 
 #ifdef __cplusplus
-    void init(const RGB_Diffuse_Rectangular_Light_Data& data) {
-        light_to_world      = data.light_to_world_transform;
+    void init(const ::Diffuse_Rectangular_Light& data) {
+        light_to_world_transform = data.light_to_world_transform;
 
         emitted_radiance    = data.emitted_radiance;
         pad0                = 0.f;
@@ -57,7 +58,7 @@ struct Diffuse_Rectangular_Light {
 };
 
 struct Instance_Info {
-    Material_Handle mtl_handle;
+    Material_Handle material;
     int area_light_index; // -1 if not an area light
 };
 

@@ -3,7 +3,6 @@
 
 #include "rt_resources.h"
 #include "utils.h"
-#include "lib/mesh.h"
 #include "shaders/gpu_types.h"
 
 struct Rt_Uniform_Buffer {
@@ -13,7 +12,14 @@ struct Rt_Uniform_Buffer {
     Vector2     pad0;
 };
 
-void Raytracing_Resources::create(const Scene_Data& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout) {
+    // TODO: temp structure. Use separate buffer per attribute.
+    struct GPU_Vertex {
+        Vector3 position;
+        Vector3 normal;
+        Vector2 uv;
+    };
+
+void Raytracing_Resources::create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Rt_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &(void*&)mapped_uniform_buffer, "rt_uniform_buffer");
 
@@ -21,7 +27,7 @@ void Raytracing_Resources::create(const Scene_Data& scene, const std::vector<GPU
     {
         std::vector<GPU_Types::Instance_Info> instance_infos(gpu_meshes.size());
         for (auto [i, mesh] : enumerate(gpu_meshes)) {
-            instance_infos[i].mtl_handle = mesh.material;
+            instance_infos[i].material = mesh.material;
             instance_infos[i].area_light_index = mesh.area_light_index;
         }
         VkDeviceSize size = gpu_meshes.size() * sizeof(GPU_Types::Instance_Info); 
@@ -121,7 +127,7 @@ void Raytracing_Resources::create_acceleration_structure(const std::vector<GPU_M
         triangle_geom.vertexData = gpu_meshes[i].vertex_buffer.handle;
         triangle_geom.vertexOffset = 0;
         triangle_geom.vertexCount = gpu_meshes[i].model_vertex_count;
-        triangle_geom.vertexStride = sizeof(Mesh_Vertex);
+        triangle_geom.vertexStride = sizeof(GPU_Vertex);
         triangle_geom.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
         triangle_geom.indexData = gpu_meshes[i].index_buffer.handle;
         triangle_geom.indexOffset = 0;
@@ -394,7 +400,7 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
         for (auto [i, gpu_mesh] : enumerate(gpu_meshes)) {
             vertex_buffer_infos[i].buffer = gpu_mesh.vertex_buffer.handle;
             vertex_buffer_infos[i].offset = 0;
-            vertex_buffer_infos[i].range = gpu_mesh.model_vertex_count * sizeof(Mesh_Vertex);
+            vertex_buffer_infos[i].range = gpu_mesh.model_vertex_count * sizeof(GPU_Vertex);
 
             index_buffer_infos[i].buffer = gpu_mesh.index_buffer.handle;
             index_buffer_infos[i].offset = 0;

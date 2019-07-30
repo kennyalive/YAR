@@ -146,24 +146,33 @@ bool save_project(const std::string& file_name, const YAR_Project& project) {
     return true;
 }
 
+static void finalize_scene(Scene& scene) {
+    for (auto [i, light] : enumerate(scene.lights.diffuse_rectangular_lights)) {
+        scene.geometries.triangle_meshes.emplace_back(light.get_geometry());
+    }
+}
+
 Scene load_project(const YAR_Project& project) {
+    Scene scene;
     if (project.type == Project_Type::test) {
         if (project.path == "conference")
-            return load_conference_scene();
+            scene = load_conference_scene();
         else if (project.path == "bunny")
-            return load_bunny_scene();
+            scene = load_bunny_scene();
         else if (project.path == "buddha")
-            return load_buddha_scene();
+            scene = load_buddha_scene();
         else if (project.path == "hairball")
-            return load_hairball_scene();
+            scene = load_hairball_scene();
         else if (project.path == "mori_knob")
-            return load_mori_knob();
+            scene = load_mori_knob();
     }
     else if (project.type == Project_Type::pbrt) {
-        return load_pbrt_project(project);
+        scene = load_pbrt_project(project);
     }
-
-    error("load_scene: unknown project type");
-    return Scene{};
+    else {
+        error("load_scene: unknown project type");
+    }
+    finalize_scene(scene);
+    return scene;
 }
 

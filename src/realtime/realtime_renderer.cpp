@@ -5,7 +5,6 @@
 #include "utils.h"
 
 #include "lib/matrix.h"
-#include "lib/mesh.h"
 #include "lib/test_scenes.h"
 #include "reference/reference_renderer.h"
 
@@ -205,65 +204,57 @@ void Realtime_Renderer::restore_resolution_dependent_resources() {
 
 void Realtime_Renderer::load_project(const std::string& yar_file_name) {
     project = parse_project(yar_file_name);
-    scene_data = load_scene(project);
+    scene = ::load_project(project);
 
-    flying_camera.initialize(scene_data.view_points[0]);
+    flying_camera.initialize(scene.view_points[0]);
+
+    // TODO: temp structure. Use separate buffer per attribute.
+    struct GPU_Vertex {
+        Vector3 position;
+        Vector3 normal;
+        Vector2 uv;
+    };
 
     // Create geometry.
-    gpu_meshes.resize(scene_data.meshes.size() + scene_data.rgb_diffuse_rectangular_lights.size());
-    int mesh_index = 0;
-    for (size_t i = 0; i < scene_data.meshes.size(); i++, mesh_index++) {
-        const Mesh_Data& mesh_data = scene_data.meshes[i];
-        GPU_Mesh& mesh  = gpu_meshes[i];
+    gpu_meshes.resize(scene.geometries.triangle_meshes.size());
+    for (int i = 0; i < (int)scene.geometries.triangle_meshes.size(); i++) {
+        const Triangle_Mesh& triangle_mesh = scene.geometries.triangle_meshes[i];
+        GPU_Mesh& gpu_mesh = gpu_meshes[i];
 
-        mesh.model_vertex_count = static_cast<uint32_t>(mesh_data.vertices.size());
-        mesh.model_index_count = static_cast<uint32_t>(mesh_data.indices.size());
+        gpu_mesh.model_vertex_count = static_cast<uint32_t>(triangle_mesh.vertices.size());
+        gpu_mesh.model_index_count = static_cast<uint32_t>(triangle_mesh.indices.size());
 
-        const VkDeviceSize vertex_buffer_size = mesh_data.vertices.size() * sizeof(mesh_data.vertices[0]);
-        mesh.vertex_buffer = vk_create_buffer(vertex_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mesh_data.vertices.data(), "vertex_buffer");
-
-        const VkDeviceSize index_buffer_size = mesh_data.indices.size() * sizeof(mesh_data.indices[0]);
-        mesh.index_buffer = vk_create_buffer(index_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mesh_data.indices.data(), "index_buffer");
-
-        mesh.material = scene_data.meshes[i].material;
-    }
-
-    for (auto [i, light] : enumerate(scene_data.rgb_diffuse_rectangular_lights)) {
-        GPU_Mesh& mesh = gpu_meshes[mesh_index++];
-
-        mesh.model_vertex_count = 4;
-        mesh.model_index_count = 6;
-
-        Mesh_Vertex vertices[4];
-        float x = light.size.x / 2.0f;
-        float y = light.size.y / 2.0f;
-        vertices[0].pos = transform_point(light.light_to_world_transform, Vector3(-x, -y, 0.f));
-        vertices[1].pos = transform_point(light.light_to_world_transform, Vector3( x, -y, 0.f));
-        vertices[2].pos = transform_point(light.light_to_world_transform, Vector3( x,  y, 0.f));
-        vertices[3].pos = transform_point(light.light_to_world_transform, Vector3(-x,  y, 0.f));
-
-        Vector3 n = light.light_to_world_transform.get_column(2);
-        for (int i = 0; i < 4; i++) {
-            vertices[i].normal = n;
-            vertices[i].uv = Vector2_Zero;
+        // TODO: Create separate buffers per attribute instead of single bufffer:
+        // better cache coherency when working only with subset of vertex attributes,
+        // also it will match Triangle_Mesh data layout, so no conversion will be needed.
+        std::vector<GPU_Vertex> gpu_vertices(gpu_mesh.model_vertex_count);
+        for (int k = 0; k < gpu_mesh.model_vertex_count; k++) {
+            gpu_vertices[k].position = triangle_mesh.vertices[k];
+            gpu_vertices[k].normal = triangle_mesh.normals[k];
+            if (!triangle_mesh.uvs.empty())
+                gpu_vertices[k].uv = triangle_mesh.uvs[k];
         }
 
-        uint32_t indices[6] = {0, 1, 2, 0, 2, 3};
+        const VkDeviceSize vertex_buffer_size = gpu_vertices.size() * sizeof(GPU_Vertex);
+        gpu_mesh.vertex_buffer = vk_create_buffer(vertex_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, gpu_vertices.data(), "vertex_buffer");
 
-        const VkDeviceSize vertex_buffer_size = std::size(vertices) * sizeof(vertices[0]);
-        mesh.vertex_buffer = vk_create_buffer(vertex_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vertices, "vertex_buffer");
+        const VkDeviceSize index_buffer_size = triangle_mesh.indices.size() * sizeof(triangle_mesh.indices[0]);
+        gpu_mesh.index_buffer = vk_create_buffer(index_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, triangle_mesh.indices.data(), "index_buffer");
 
-        const VkDeviceSize index_buffer_size = std::size(indices) * sizeof(indices[0]);
-        mesh.index_buffer = vk_create_buffer(index_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, indices, "index_buffer");
-
-        mesh.area_light_index = (int)i;
+        // TODO: this is wrong! render objects list should not be indexed by geometry index. 
+        // Will be fixed when gpu renderer will support Render_Objects (i.e. instancing).
+        int area_light_index = i - int(scene.geometries.triangle_meshes.size() - scene.lights.diffuse_rectangular_lights.size());
+        if (area_light_index >= 0)
+            gpu_mesh.area_light_index = area_light_index;
+        else
+            gpu_mesh.material = scene.render_objects[i].material;
     }
 
     // Materials.
     {
-        VkDeviceSize size = scene_data.materials.lambertian.size() * sizeof(Lambertian_Material);
+        VkDeviceSize size = scene.materials.lambertian.size() * sizeof(Lambertian_Material);
         gpu_scene.lambertian_material_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            scene_data.materials.lambertian.data(), "lambertian_material_buffer");
+            scene.materials.lambertian.data(), "lambertian_material_buffer");
 
         gpu_scene.material_descriptor_set_layout = Descriptor_Set_Layout()
             .storage_buffer(0, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // lambertian materials
@@ -280,18 +271,18 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
     }
 
     // Create light data.
-    if (!scene_data.rgb_point_lights.empty()) {
-        std::vector<GPU_Types::Point_Light> lights(scene_data.rgb_point_lights.size());
-        for (auto [i, data] : enumerate(scene_data.rgb_point_lights))
+    if (!scene.lights.point_lights.empty()) {
+        std::vector<GPU_Types::Point_Light> lights(scene.lights.point_lights.size());
+        for (auto [i, data] : enumerate(scene.lights.point_lights))
             lights[i].init(data);
 
         gpu_scene.point_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
             VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
             lights.data(), "point_light_buffer");
     }
-    if (!scene_data.rgb_diffuse_rectangular_lights.empty()) {
-        std::vector<GPU_Types::Diffuse_Rectangular_Light> lights(scene_data.rgb_diffuse_rectangular_lights.size());
-        for (auto [i, data] : enumerate(scene_data.rgb_diffuse_rectangular_lights))
+    if (!scene.lights.diffuse_rectangular_lights.empty()) {
+        std::vector<GPU_Types::Diffuse_Rectangular_Light> lights(scene.lights.diffuse_rectangular_lights.size());
+        for (auto [i, data] : enumerate(scene.lights.diffuse_rectangular_lights))
             lights[i].init(data);
 
         gpu_scene.diffuse_rectangular_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
@@ -301,14 +292,14 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
 
     raster.create(gpu_scene.material_descriptor_set_layout);
     raster.create_framebuffer(output_image.view);
-    raster.update_point_lights(gpu_scene.point_lights.handle, (int)scene_data.rgb_point_lights.size());
-    raster.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene_data.rgb_diffuse_rectangular_lights.size());
+    raster.update_point_lights(gpu_scene.point_lights.handle, (int)scene.lights.point_lights.size());
+    raster.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene.lights.diffuse_rectangular_lights.size());
 
     if (vk.raytracing_supported) {
-        rt.create(scene_data, gpu_meshes, gpu_scene.material_descriptor_set_layout);
+        rt.create(scene, gpu_meshes, gpu_scene.material_descriptor_set_layout);
         rt.update_output_image_descriptor(output_image.view);
-        rt.update_point_lights(gpu_scene.point_lights.handle, (int)scene_data.rgb_point_lights.size());
-        rt.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene_data.rgb_diffuse_rectangular_lights.size());
+        rt.update_point_lights(gpu_scene.point_lights.handle, (int)scene.lights.point_lights.size());
+        rt.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene.lights.diffuse_rectangular_lights.size());
     }
 
     project_loaded = true;
@@ -409,7 +400,7 @@ void Realtime_Renderer::draw_rasterized_image() {
     const VkDeviceSize zero_offset = 0;
     for (const GPU_Mesh& mesh : gpu_meshes) {
         GPU_Types::Instance_Info instance_info;
-        instance_info.mtl_handle = mesh.material;
+        instance_info.material = mesh.material;
         instance_info.area_light_index = mesh.area_light_index;
 
         vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &mesh.vertex_buffer.handle, &zero_offset);

@@ -8,8 +8,7 @@
 
 #include "lib/flying_camera.h"
 #include "lib/matrix.h"
-#include "lib/mesh.h"
-#include "lib/io.h"
+#include "lib/project.h"
 
 struct GLFWwindow;
 
@@ -78,5 +77,6 @@ private:
 
     bool project_loaded = false;
     YAR_Project project;
-    Scene_Data scene_data;
+    Scene scene;
 };
+

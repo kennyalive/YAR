@@ -110,11 +110,6 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
 void render_reference_image(const YAR_Project& project, const Renderer_Options& options) {
     Scene scene = load_project(project);
 
-    printf("Preparing meshes\n");
-    for (auto [i, light] : enumerate(scene.lights.diffuse_rectangular_lights)) {
-        scene.geometries.triangle_meshes.emplace_back(light.get_geometry());
-    }
-
     if (!fs_exists(get_kdtree_cache_path(scene.project_dir))) {
         printf("Creating kdtree cache...\n");
         Timestamp t;
