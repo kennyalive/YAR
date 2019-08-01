@@ -156,6 +156,25 @@ Matrix3x4 rotate_z(const Matrix3x4& m, float angle) {
     return m2;
 }
 
+Matrix3x4 translate(const Matrix3x4& m, const Vector3& translation) {
+    Matrix3x4 m2;
+    m2.a[0][0] = m.a[0][0];
+    m2.a[0][1] = m.a[0][1];
+    m2.a[0][2] = m.a[0][2];
+    m2.a[0][3] = m.a[0][3] + translation[0];
+
+    m2.a[1][0] = m.a[1][0];
+    m2.a[1][1] = m.a[1][1];
+    m2.a[1][2] = m.a[1][2];
+    m2.a[1][3] = m.a[1][3] + translation[1];
+
+    m2.a[2][0] = m.a[2][0];
+    m2.a[2][1] = m.a[2][1];
+    m2.a[2][2] = m.a[2][2];
+    m2.a[2][3] = m.a[2][3] + translation[2];
+    return m2;
+}
+
 Matrix3x4 uniform_scale(const Matrix3x4& m, float scale) {
     Matrix3x4 m2;
     for (int i = 0; i < 3; i++)

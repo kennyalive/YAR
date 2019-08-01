@@ -28,6 +28,9 @@ Matrix3x4 rotate_x(const Matrix3x4& m, float angle);
 Matrix3x4 rotate_y(const Matrix3x4& m, float angle);
 Matrix3x4 rotate_z(const Matrix3x4& m, float angle);
 
+// premultiplies the given matrix by translation transform
+Matrix3x4 translate(const Matrix3x4& m, const Vector3& translation);
+
 Matrix3x4 uniform_scale(const Matrix3x4& m, float scale);
 
 // Computes world space->eye space transform that positions the camera at point 'from'

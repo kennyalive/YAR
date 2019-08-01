@@ -116,6 +116,18 @@ Scene load_buddha_scene() {
         -0.137013f, -0.990206f, -0.027226f, 1.083111f,
         0.000000f, -0.027486f, 0.999627f, 0.058400f,
     };
+    
+    // Configure instances.
+    Matrix3x4 translation = translate(Matrix3x4::identity, Vector3{-0.5f, 0, 0});
+    scene.render_objects[0].object_to_world_transform = translation;
+    scene.render_objects[0].world_to_object_transform = get_inverted_transform(translation);
+
+    Render_Object render_object = scene.render_objects[0];
+    translation = translate(Matrix3x4::identity, Vector3{0.5f, 0, 0});
+    render_object.object_to_world_transform = translation;
+    render_object.world_to_object_transform = get_inverted_transform(translation);
+    scene.render_objects.push_back(render_object);
+
     scene.view_points.push_back(view_point);
     return scene;
 }
