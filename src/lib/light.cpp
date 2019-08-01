@@ -17,6 +17,9 @@ Triangle_Mesh Diffuse_Rectangular_Light::get_geometry() const {
     Vector3 n = light_to_world_transform.get_column(2);
     std::fill(mesh.normals.begin(), mesh.normals.end(), n);
 
+    mesh.uvs.resize(4);
+    std::fill(mesh.uvs.begin(), mesh.uvs.end(), Vector2{0, 0});
+
     mesh.indices = { 0, 1, 2, 0, 2, 3};
     return mesh;
 }
