@@ -398,15 +398,25 @@ void Realtime_Renderer::draw_rasterized_image() {
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, raster.pipeline);
 
     const VkDeviceSize zero_offset = 0;
-    for (const GPU_Mesh& mesh : gpu_meshes) {
-        GPU_Types::Instance_Info instance_info;
-        instance_info.material = mesh.material;
-        instance_info.area_light_index = mesh.area_light_index;
+    for (int i = 0; i < (int)scene.render_objects.size(); i++) {
+        const Render_Object& render_object = scene.render_objects[i];
+        if (render_object.geometry.type != Geometry_Type::triangle_mesh)
+            continue;
+        if (render_object.area_light != Null_Light && render_object.area_light.type != Light_Type::diffuse_rectangular)
+            continue;
 
-        vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &mesh.vertex_buffer.handle, &zero_offset);
-        vkCmdBindIndexBuffer(vk.command_buffer, mesh.index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(GPU_Types::Instance_Info), &instance_info);
-        vkCmdDrawIndexed(vk.command_buffer, mesh.model_index_count, 1, 0, 0, 0);
+        GPU_Types::Instance_Info instance_info;
+        instance_info.material = render_object.material;
+        instance_info.area_light_index = render_object.area_light.index;
+        instance_info.pad0 = 0.f;
+        instance_info.object_to_world_transform = render_object.object_to_world_transform;
+
+        const GPU_Mesh& gpu_mesh = gpu_meshes[render_object.geometry.index];
+
+        vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &gpu_mesh.vertex_buffer.handle, &zero_offset);
+        vkCmdBindIndexBuffer(vk.command_buffer, gpu_mesh.index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdPushConstants(vk.command_buffer, raster.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(GPU_Types::Instance_Info), &instance_info);
+        vkCmdDrawIndexed(vk.command_buffer, gpu_mesh.model_index_count, 1, 0, 0, 0);
     }
 
     vkCmdEndRenderPass(vk.command_buffer);

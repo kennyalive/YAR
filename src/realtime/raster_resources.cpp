@@ -35,10 +35,10 @@ void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_s
 
     // Pipeline layout.
     {
-        VkPushConstantRange push_constant_range; // show_texture_lods value
-        push_constant_range.stageFlags  = VK_SHADER_STAGE_FRAGMENT_BIT;
+        VkPushConstantRange push_constant_range;
+        push_constant_range.stageFlags  = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         push_constant_range.offset      = 0;
-        push_constant_range.size        = 12;
+        push_constant_range.size        = 64;
 
         VkDescriptorSetLayout set_layouts[] = {descriptor_set_layout, material_descriptor_set_layout};
 

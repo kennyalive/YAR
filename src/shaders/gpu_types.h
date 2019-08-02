@@ -60,6 +60,9 @@ struct Diffuse_Rectangular_Light {
 struct Instance_Info {
     Material_Handle material;
     int area_light_index; // -1 if not an area light
+    float pad0;
+
+    Matrix3x4 object_to_world_transform;
 };
 
 #ifdef __cplusplus
