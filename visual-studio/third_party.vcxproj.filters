@@ -25,6 +25,15 @@
     <Filter Include="getopt">
       <UniqueIdentifier>{d51f4701-0e8b-474e-b6f3-7df275046530}</UniqueIdentifier>
     </Filter>
+    <Filter Include="pbrt-parser\impl">
+      <UniqueIdentifier>{5cf85e79-24e7-42c8-ba53-4f8772c6cf46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pbrt-parser\impl\semantic">
+      <UniqueIdentifier>{1902c3a5-932b-45cc-bfc9-24f07c69f903}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="pbrt-parser\impl\syntactic">
+      <UniqueIdentifier>{b88f5c3c-2373-498c-9639-9eb75bb15403}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\enkiTS\TaskScheduler.cpp">
@@ -103,11 +112,41 @@
     <ClCompile Include="..\third_party\imgui\imgui_impl_vulkan.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\pbrt_parser.cpp">
-      <Filter>pbrt-parser</Filter>
-    </ClCompile>
     <ClCompile Include="..\third_party\getopt\getopt.c">
       <Filter>getopt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\BinaryFileFormat.cpp">
+      <Filter>pbrt-parser\impl\semantic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Camera.cpp">
+      <Filter>pbrt-parser\impl\semantic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Geometry.cpp">
+      <Filter>pbrt-parser\impl\semantic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\importPBRT.cpp">
+      <Filter>pbrt-parser\impl\semantic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Lights.cpp">
+      <Filter>pbrt-parser\impl\semantic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Materials.cpp">
+      <Filter>pbrt-parser\impl\semantic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Scene.cpp">
+      <Filter>pbrt-parser\impl\semantic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Textures.cpp">
+      <Filter>pbrt-parser\impl\semantic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\impl\syntactic\Lexer.cpp">
+      <Filter>pbrt-parser\impl\syntactic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\impl\syntactic\Parser.cpp">
+      <Filter>pbrt-parser\impl\syntactic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third_party\pbrt-parser\impl\syntactic\Scene.cpp">
+      <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -183,11 +222,26 @@
     <ClInclude Include="..\third_party\imgui\imgui_impl_vulkan.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\pbrt-parser\pbrt_parser.h">
-      <Filter>pbrt-parser</Filter>
-    </ClInclude>
     <ClInclude Include="..\third_party\getopt\getopt.h">
       <Filter>getopt</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\pbrt-parser\include\pbrtParser\math.h">
+      <Filter>pbrt-parser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\pbrt-parser\include\pbrtParser\Scene.h">
+      <Filter>pbrt-parser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\pbrt-parser\impl\semantic\SemanticParser.h">
+      <Filter>pbrt-parser\impl\semantic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\pbrt-parser\impl\syntactic\Lexer.h">
+      <Filter>pbrt-parser\impl\syntactic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\pbrt-parser\impl\syntactic\Parser.h">
+      <Filter>pbrt-parser\impl\syntactic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\pbrt-parser\impl\syntactic\Scene.h">
+      <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

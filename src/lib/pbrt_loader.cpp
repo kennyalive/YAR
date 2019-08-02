@@ -6,7 +6,7 @@
 #include "project.h"
 #include "render_object.h"
 
-#include "pbrt-parser/pbrt_parser.h"
+#include "pbrtParser/Scene.h"
 
 static ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminous_flux) {
     float radiant_flux_per_wavelength = luminous_flux / (683.f * CIE_Y_integral); // [W/m]
@@ -18,14 +18,13 @@ static ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminou
 }
 
 Scene load_pbrt_project(const YAR_Project& project) {
-    using namespace pbrt::semantic;
-    std::shared_ptr<pbrt::semantic::Scene> pbrt_scene = importPBRT(project.path);
+    std::shared_ptr<pbrt::Scene> pbrt_scene = pbrt::importPBRT(project.path);
 
     ::Scene scene;
     scene.project_dir = "pbrt-dragon"; // TODO: temporarily hardcoded
 
-    for (Shape::SP geom : pbrt_scene->world->shapes) {
-        if (TriangleMesh::SP triangle_mesh = std::dynamic_pointer_cast<TriangleMesh>(geom); triangle_mesh != nullptr) {
+    for (pbrt::Shape::SP geom : pbrt_scene->world->shapes) {
+        if (pbrt::TriangleMesh::SP triangle_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(geom); triangle_mesh != nullptr) {
             Triangle_Mesh mesh;
 
             mesh.indices.resize(triangle_mesh->index.size() * 3);
@@ -61,6 +60,8 @@ Scene load_pbrt_project(const YAR_Project& project) {
             Render_Object render_object;
             render_object.geometry = {Geometry_Type::triangle_mesh, (int)scene.geometries.triangle_meshes.size() - 1};
             render_object.material = {Material_Type::lambertian, (int)scene.materials.lambertian.size() - 1};
+            render_object.object_to_world_transform = Matrix3x4::identity;
+            render_object.world_to_object_transform = Matrix3x4::identity;
             scene.render_objects.push_back(render_object);
         }
     }
