@@ -21,7 +21,7 @@ Scene load_pbrt_project(const YAR_Project& project) {
     std::shared_ptr<pbrt::Scene> pbrt_scene = pbrt::importPBRT(project.path);
 
     ::Scene scene;
-    scene.project_dir = "pbrt-dragon"; // TODO: temporarily hardcoded
+    scene.project_dir = "pbrt-killeroo"; // TODO: temporarily hardcoded
 
     for (pbrt::Shape::SP geom : pbrt_scene->world->shapes) {
         if (pbrt::TriangleMesh::SP triangle_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(geom); triangle_mesh != nullptr) {
@@ -30,8 +30,10 @@ Scene load_pbrt_project(const YAR_Project& project) {
             mesh.indices.resize(triangle_mesh->index.size() * 3);
             for (auto [i, triangle_indices] : enumerate(triangle_mesh->index)) {
                 mesh.indices[i*3 + 0] = triangle_indices.x;
-                mesh.indices[i*3 + 1] = triangle_indices.y;
-                mesh.indices[i*3 + 2] = triangle_indices.z;
+                // change winding order (z <-> y) because we will flip geometry
+                // to get geometry data in right-handed coordinate system.
+                mesh.indices[i*3 + 1] = triangle_indices.z;
+                mesh.indices[i*3 + 2] = triangle_indices.y;
             }
 
             bool has_normals = !triangle_mesh->normal.empty();
@@ -41,10 +43,14 @@ Scene load_pbrt_project(const YAR_Project& project) {
             mesh.uvs.resize(triangle_mesh->vertex.size());
             ASSERT(!has_normals || triangle_mesh->vertex.size() == triangle_mesh->normal.size());
             for (size_t i = 0; i < triangle_mesh->vertex.size(); i++) {
-                mesh.vertices[i] = 0.01f * Vector3(&triangle_mesh->vertex[i].x);
-                if (has_normals) {
+                mesh.vertices[i] = Vector3(&triangle_mesh->vertex[i].x);
+
+                // Flip geometry around x axis to get coordinates in right-handed coordinate system.
+                mesh.vertices[i].x = -mesh.vertices[i].x;
+
+                if (has_normals) 
                     mesh.normals[i] = Vector3(&triangle_mesh->normal[i].x);
-                }
+
                 mesh.uvs[i] = Vector2_Zero;
             }
 
@@ -66,16 +72,25 @@ Scene load_pbrt_project(const YAR_Project& project) {
         }
     }
 
-    Matrix3x4 view_point{
-        -0.775517f, -0.538342f, -0.329897f, 1.714088f,
-        0.631373f, -0.661252f, -0.405215f, 1.813797f,
-        0.000000f, -0.522510f, 0.852659f, 1.208899f,
-    };
+    ASSERT(!pbrt_scene->cameras.empty());
+    pbrt::Camera::SP pbrt_camera = pbrt_scene->cameras[0];
+    const pbrt::math::vec3f& pos = pbrt_camera->frame.p;
+    const pbrt::math::mat3f& rot = pbrt_camera->frame.l;
+
+    Matrix3x4 view_point;
+    {
+        view_point.set_column(0, Vector3(&rot.vx.x));
+        view_point.set_column(1, Vector3(&rot.vz.x));
+        view_point.set_column(2, Vector3(&rot.vy.x));
+        view_point.set_column(3, Vector3(&pos.x));
+        view_point = get_mirrored_transform(view_point, 0);
+    }
+
     scene.view_points.push_back(view_point);
 
     Point_Light light;
-    light.position = Vector3(2.f, 2.f, 2.f);
-    light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(2000 /*Lm*/);
+    light.position = Vector3(-pos.x, pos.y, pos.z);
+    light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(8000000 /*Lm*/);
     scene.lights.point_lights.push_back(light);
 
     return scene;

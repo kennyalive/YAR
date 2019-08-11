@@ -237,6 +237,26 @@ Matrix3x4 get_inverted_transform(const Matrix3x4& m) {
     return m_inv;
 }
 
+Matrix3x4 get_mirrored_transform(const Matrix3x4& m, int flip_axis) {
+    // Mirrored transform = F * M * F
+    // F - transform that flips along flip_axis axis.
+    // For example F_y_axix =
+    //   1  0  0
+    //   0 -1  0
+    //   0  0  1
+    //
+    Matrix3x4 m2 = m;
+    m2.a[0][flip_axis] = -m2.a[0][flip_axis];
+    m2.a[1][flip_axis] = -m2.a[1][flip_axis];
+    m2.a[2][flip_axis] = -m2.a[2][flip_axis];
+
+    m2.a[flip_axis][0] = -m2.a[flip_axis][0];
+    m2.a[flip_axis][1] = -m2.a[flip_axis][1];
+    m2.a[flip_axis][2] = -m2.a[flip_axis][2];
+    m2.a[flip_axis][3] = -m2.a[flip_axis][3];
+    return m2;
+}
+
 Vector3 transform_point(const Matrix3x4& m, Vector3 p) {
     Vector3 p2;
     p2.x = m.a[0][0]*p.x + m.a[0][1]*p.y + m.a[0][2]*p.z + m.a[0][3];

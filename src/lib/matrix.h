@@ -48,6 +48,12 @@ Matrix4x4 perspective_transform_opengl_z01(float fovy_radians, float aspect_rati
 // Assumes that input matrix constains only rotation, translation and uniform scale.
 Matrix3x4 get_inverted_transform(const Matrix3x4& m);
 
+// Computes transform which when applied to mirrored geometry gives the same 
+// result as at first transforming original object with original transform and then mirroring it.
+// This helps when geometry handedness need to be changed. To do this the geometry is fliped around
+// an axis and transform is computed by this function.
+Matrix3x4 get_mirrored_transform(const Matrix3x4& m, int flip_axis);
+
 Vector3 transform_point(const Matrix3x4& m, Vector3 p);
 Vector3 transform_vector(const Matrix3x4& m, Vector3 v);
 Ray transform_ray(const Matrix3x4& m, const Ray& ray);
