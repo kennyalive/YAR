@@ -203,8 +203,8 @@ void Realtime_Renderer::restore_resolution_dependent_resources() {
 }
 
 void Realtime_Renderer::load_project(const std::string& yar_file_name) {
-    project = parse_project(yar_file_name);
-    scene = ::load_project(project);
+    project = initialize_project(yar_file_name);
+    scene = create_scene(project);
 
     flying_camera.initialize(scene.view_points[0]);
 
@@ -599,7 +599,7 @@ void Realtime_Renderer::start_reference_renderer() {
     YAR_Project temp_project = project;
     temp_project.image_resolution = Vector2i{(int)vk.surface_size.width, (int)vk.surface_size.height};
     temp_project.camera_to_world = flying_camera.get_camera_pose();
-    save_project(temp_project_name, temp_project);
+    save_yar_file(temp_project_name, temp_project);
 
 #ifdef _WIN32
     std::string temp_project_path = get_resource_path(temp_project_name);

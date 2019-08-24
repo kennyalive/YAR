@@ -108,7 +108,7 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
 }
 
 void render_reference_image(const YAR_Project& project, const Renderer_Options& options) {
-    Scene scene = load_project(project);
+    Scene scene = create_scene(project);
 
     if (!fs_exists(get_kdtree_cache_path(scene.project_dir))) {
         printf("Creating kdtree cache...\n");

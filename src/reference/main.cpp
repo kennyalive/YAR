@@ -54,13 +54,17 @@ int main(int argc, char** argv) {
     }
 
     if (files.empty()) {
-        printf("yar file is not specified\n");
+        printf("input file(s) is not specified\n");
         print_help_string(&ctx);
         return 1;
     }
 
-    YAR_Project project = parse_project(files[0]);
-    Renderer_Options options;
-    render_reference_image(project, options);
+    for (const std::string& file : files) {
+        printf("Running pixel magic on: %s\n", file.c_str());
+        YAR_Project project = initialize_project(file);
+        Renderer_Options options;
+        render_reference_image(project, options);
+    }
     return 0;
 }
+

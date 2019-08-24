@@ -2,9 +2,6 @@
 #include "common.h"
 #include "project.h"
 
-#include "pbrt_loader.h"
-#include "test_scenes.h"
-
 #include <charconv> // from_chars
 
 struct Text_File_Parser {
@@ -84,8 +81,8 @@ private:
     }
 };
 
-YAR_Project parse_project(const std::string& file_name) {
-    Text_File_Lines text_file = read_text_file_by_lines(file_name);
+static YAR_Project parse_yar_project(const std::string& yar_file_name) {
+    Text_File_Lines text_file = read_text_file_by_lines(yar_file_name);
     Text_File_Parser parser(&text_file);
 
     YAR_Project project{};
@@ -93,18 +90,18 @@ YAR_Project parse_project(const std::string& file_name) {
     while (!(token = parser.next_token()).empty()) {
         if (token == "scene_type") {
             token = parser.next_token();
-            if (token == "test") {
-                project.type = Project_Type::test;
-            } 
-            else if (token == "pbrt") {
-                project.type = Project_Type::pbrt;
+            if (token == "pbrt") {
+                project.scene_type = Scene_Type::pbrt;
             }
+            else if (token == "test") {
+                project.scene_type = Scene_Type::test;
+            } 
             else {
                 error("uknown scene_type: %s", std::string(token).c_str());
             }
         }
         else if (token == "scene_path") {
-            project.path = parser.next_token();
+            project.scene_path = parser.next_token();
         }
         else if (token == "image_resolution") {
             parser.parse_integers(&project.image_resolution.x, 2);
@@ -122,20 +119,43 @@ YAR_Project parse_project(const std::string& file_name) {
     return project;
 }
 
-bool save_project(const std::string& file_name, const YAR_Project& project) {
-    std::string abs_path = get_resource_path(file_name);
+YAR_Project initialize_project(const std::string& file_name) {
+    fs::path path(file_name);
+    if (!path.has_extension())
+        error("Unknown file type: %s", file_name.c_str());
+
+    std::string ext = path.extension().string();
+    to_lower(ext);
+
+    if (ext == ".yar") {
+        return parse_yar_project(file_name);
+    }
+    else if (ext == ".pbrt") {
+        YAR_Project project;
+        project.scene_type = Scene_Type::pbrt;
+        project.scene_path = file_name;
+        return project;
+    }
+    else {
+        error("Unsupported file extension: %s", ext.c_str());
+        return YAR_Project{};
+    }
+}
+
+bool save_yar_file(const std::string& yar_file_name, const YAR_Project& project) {
+    std::string abs_path = get_resource_path(yar_file_name);
     std::ofstream file(abs_path);
     if (!file)
         return false;
 
-    if (project.type == Project_Type::test)
-        file << "scene_type test\n";
-    else if (project.type == Project_Type::pbrt)
+    if (project.scene_type == Scene_Type::pbrt)
         file << "scene_type pbrt\n";
+    else if (project.scene_type == Scene_Type::test)
+        file << "scene_type test\n";
     else
-        error("save_project: unknown scene type");
+        error("save_yar_project: unknown scene type");
 
-    file << "scene_path " << project.path << "\n";
+    file << "scene_path " << project.scene_path << "\n";
     file << "image_resolution " << project.image_resolution.x << " " << project.image_resolution.y << "\n";
 
     file << "camera_to_world\n";
@@ -145,42 +165,3 @@ bool save_project(const std::string& file_name, const YAR_Project& project) {
     }
     return true;
 }
-
-static void finalize_scene(Scene& scene) {
-    for (auto [i, light] : enumerate(scene.lights.diffuse_rectangular_lights)) {
-        scene.geometries.triangle_meshes.emplace_back(light.get_geometry());
-        
-        Render_Object render_object;
-        render_object.area_light = {Light_Type::diffuse_rectangular, (int)i};
-        render_object.geometry = {Geometry_Type::triangle_mesh, (int)scene.geometries.triangle_meshes.size()-1};
-        render_object.object_to_world_transform = Matrix3x4::identity;
-        render_object.world_to_object_transform = Matrix3x4::identity;
-
-        scene.render_objects.push_back(render_object);
-    }
-}
-
-Scene load_project(const YAR_Project& project) {
-    Scene scene;
-    if (project.type == Project_Type::test) {
-        if (project.path == "conference")
-            scene = load_conference_scene();
-        else if (project.path == "bunny")
-            scene = load_bunny_scene();
-        else if (project.path == "buddha")
-            scene = load_buddha_scene();
-        else if (project.path == "hairball")
-            scene = load_hairball_scene();
-        else if (project.path == "mori_knob")
-            scene = load_mori_knob();
-    }
-    else if (project.type == Project_Type::pbrt) {
-        scene = load_pbrt_project(project);
-    }
-    else {
-        error("load_scene: unknown project type");
-    }
-    finalize_scene(scene);
-    return scene;
-}
-

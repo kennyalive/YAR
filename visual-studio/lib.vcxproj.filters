@@ -55,6 +55,7 @@
     <ClCompile Include="..\src\lib\project.cpp">
       <Filter>project</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\lib\scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="project">

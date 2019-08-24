@@ -9,6 +9,7 @@
 #include "lib/flying_camera.h"
 #include "lib/matrix.h"
 #include "lib/project.h"
+#include "lib/scene.h"
 
 struct GLFWwindow;
 

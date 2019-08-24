@@ -129,6 +129,7 @@
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244</DisableSpecificWarnings>
     </ClCompile>
+    <ClCompile Include="..\src\lib\scene.cpp" />
     <ClCompile Include="..\src\lib\spectrum.cpp" />
     <ClCompile Include="..\src\lib\test_scenes.cpp" />
     <ClCompile Include="..\src\lib\triangle_mesh.cpp" />

@@ -23,6 +23,11 @@ inline float lerp(float t, float a, float b) {
     return a + (b - a)*t;
 }
 
+inline void to_lower(std::string& s) {
+    for (char& c : s)
+        c = tolower(c);
+}
+
 void error(const std::string& message);
 void error(const char* format, ...);
 
