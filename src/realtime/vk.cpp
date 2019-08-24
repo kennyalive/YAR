@@ -255,7 +255,12 @@ static void create_device(GLFWwindow* window) {
         VkPhysicalDeviceFeatures features {};
         features.vertexPipelineStoresAndAtomics = VK_TRUE; // to shut up improper validation warning (image store is in the raygen shader not in the vertex stage)
 
+        VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing_features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT };
+        descriptor_indexing_features.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
+        descriptor_indexing_features.runtimeDescriptorArray = VK_TRUE;
+
         VkDeviceCreateInfo device_desc { VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+        device_desc.pNext = &descriptor_indexing_features;
         device_desc.queueCreateInfoCount    = 1;
         device_desc.pQueueCreateInfos       = &queue_desc;
         device_desc.enabledExtensionCount   = (uint32_t)device_extensions.size();

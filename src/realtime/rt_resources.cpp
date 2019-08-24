@@ -181,7 +181,7 @@ void Raytracing_Resources::create_acceleration_structure(const std::vector<GPU_M
         {
             VkAccelerationStructureInfoNV accel_info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
             accel_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-            accel_info.instanceCount = 1;
+            accel_info.instanceCount = (uint32_t)geometries.size();
 
             VkAccelerationStructureCreateInfoNV create_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV };
             create_info.info = accel_info;

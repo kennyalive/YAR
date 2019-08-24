@@ -222,6 +222,7 @@ void GPU_Time_Keeper::initialize_time_scopes() {
         for (uint32_t i = 0; i < scope_count; i++) {
             vkCmdWriteTimestamp(command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk.timestamp_query_pool, scopes[i].start_query);
             vkCmdWriteTimestamp(command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk.timestamp_query_pool, scopes[i].start_query + 1);
+            frame_active_scopes[frame_active_scope_count++] = &scopes[i];
         }
     });
 }
@@ -232,15 +233,17 @@ void GPU_Time_Keeper::retrieve_query_results() {
     for (int i = 0; i < frame_active_scope_count; i++) {
         uint32_t start_query = frame_active_scopes[i]->start_query;
 
-        uint64_t timestamps[2]; // scope start/end timestamps
-        VkResult result = vkGetQueryPoolResults(vk.device, vk.timestamp_query_pool, start_query, 2, 2*sizeof(uint64_t), timestamps, 0, VK_QUERY_RESULT_64_BIT);
+        uint64_t query_results[2/*query result + availability*/ * 2/*start+end timestamps*/];
+        VkResult result = vkGetQueryPoolResults(vk.device, vk.timestamp_query_pool, start_query, 2,
+            4*sizeof(uint64_t), query_results, 2*sizeof(uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
         VK_CHECK_RESULT(result);
-        ASSERT(result != VK_NOT_READY);
+        ASSERT(result == VK_SUCCESS);
 
-        ASSERT(timestamps[1] >= timestamps[0]); // check that end time >= start time
-        float measured_duration = float(double(timestamps[1] - timestamps[0]) * vk.timestamp_period_ms);
-        scopes[start_query/2].length_ms = lerp(0.25f, scopes[start_query/2].length_ms, measured_duration);
+        ASSERT(query_results[2] >= query_results[0]); // check that end time >= start time
+        float measured_duration = float(double(query_results[2] - query_results[0]) * vk.timestamp_period_ms);
+        scopes[start_query / 2].length_ms = lerp(0.25f, scopes[start_query / 2].length_ms, measured_duration);
         vkCmdResetQueryPool(vk.command_buffer, vk.timestamp_query_pool, start_query, 2);
     }
     frame_active_scope_count = 0;
 }
+
