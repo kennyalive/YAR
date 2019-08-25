@@ -34,6 +34,9 @@
     <Filter Include="pbrt-parser\impl\syntactic">
       <UniqueIdentifier>{b88f5c3c-2373-498c-9639-9eb75bb15403}</UniqueIdentifier>
     </Filter>
+    <Filter Include="meow-hash">
+      <UniqueIdentifier>{393ebdb5-015e-491f-b183-b7837c4578b8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third_party\enkiTS\TaskScheduler.cpp">
@@ -242,6 +245,9 @@
     </ClInclude>
     <ClInclude Include="..\third_party\pbrt-parser\impl\syntactic\Scene.h">
       <Filter>pbrt-parser\impl\syntactic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third_party\meow-hash\meow_hash_x64_aesni.h">
+      <Filter>meow-hash</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

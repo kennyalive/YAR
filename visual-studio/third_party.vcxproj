@@ -195,6 +195,7 @@
     <ClInclude Include="..\third_party\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\third_party\imgui\imstb_textedit.h" />
     <ClInclude Include="..\third_party\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\third_party\meow-hash\meow_hash_x64_aesni.h" />
     <ClInclude Include="..\third_party\pbrt-parser\impl\semantic\SemanticParser.h" />
     <ClInclude Include="..\third_party\pbrt-parser\impl\syntactic\Lexer.h" />
     <ClInclude Include="..\third_party\pbrt-parser\impl\syntactic\Parser.h" />
