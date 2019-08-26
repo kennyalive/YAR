@@ -124,9 +124,7 @@ YAR_Project initialize_project(const std::string& file_name) {
     if (!path.has_extension())
         error("Unknown file type: %s", file_name.c_str());
 
-    std::string ext = path.extension().string();
-    to_lower(ext);
-
+    std::string ext = to_lower(path.extension().string());
     if (ext == ".yar") {
         return parse_yar_project(file_name);
     }

@@ -130,7 +130,7 @@ private:
     void intersect_leaf(const Ray& ray, KdNode leaf, Intersection& intersection) const;
 
 private:
-    KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& primitive_indices, const Primitive_Source& primitive_source);
+    KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& primitive_indices, Primitive_Source&& primitive_source);
 
     template <typename Primitive_Source> friend class KdTree_Builder;
     friend struct Scene_Primitive_Source;
@@ -194,7 +194,7 @@ struct Geometry_Primitive_Source {
 
 struct Scene_Primitive_Source {
     const Scene* scene;
-    std::vector<const Geometry_KdTree*> geometry_kdtrees;
+    std::vector<Geometry_KdTree> geometry_kdtrees;
 
     int get_primitive_count()  const {
         return (int)scene->render_objects.size();
@@ -203,7 +203,7 @@ struct Scene_Primitive_Source {
     Bounding_Box get_primitive_bounds(int primitive_index) const {
         ASSERT(primitive_index >= 0 && primitive_index < scene->render_objects.size());
         int geometry_index = scene->render_objects[primitive_index].geometry.index;
-        Bounding_Box local_bounds = geometry_kdtrees[geometry_index]->get_bounds();
+        Bounding_Box local_bounds = geometry_kdtrees[geometry_index].get_bounds();
         Bounding_Box world_bounds = transform_bounding_box(scene->render_objects[primitive_index].object_to_world_transform, local_bounds);
         return world_bounds;
     }
@@ -222,7 +222,7 @@ struct Scene_Primitive_Source {
 
         float last_t = intersection.t;
 
-        geometry_kdtrees[render_object->geometry.index]->intersect(local_ray, intersection);
+        geometry_kdtrees[render_object->geometry.index].intersect(local_ray, intersection);
 
         if (last_t != intersection.t)
             intersection.render_object = render_object;

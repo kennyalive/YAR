@@ -20,7 +20,7 @@ static void finalize_scene(Scene& scene) {
     }
 }
 
-Scene create_scene(const YAR_Project& project) {
+Scene load_scene(const YAR_Project& project) {
     Scene scene;
     if (project.scene_type == Scene_Type::pbrt) {
         scene = load_pbrt_project(project);

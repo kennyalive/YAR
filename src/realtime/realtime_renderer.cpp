@@ -204,7 +204,7 @@ void Realtime_Renderer::restore_resolution_dependent_resources() {
 
 void Realtime_Renderer::load_project(const std::string& yar_file_name) {
     project = initialize_project(yar_file_name);
-    scene = create_scene(project);
+    scene = load_scene(project);
 
     flying_camera.initialize(scene.view_points[0]);
 

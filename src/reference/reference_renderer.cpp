@@ -18,6 +18,7 @@
 
 #include "enkiTS/TaskScheduler.h"
 #include "half/half.h"
+#include "meow-hash/meow_hash_x64_aesni.h"
 
 constexpr int Tile_Size = 64;
 
@@ -52,35 +53,65 @@ static void write_exr_image(const char* file_name, const ColorRGB* pixels, int w
     fclose(file);
 }
 
-static fs::path get_kdtree_cache_path(const std::string& project_dir) {
-    return get_data_dir_path() / project_dir / "kdtrees";
+// Returns a name that can be used to create a directory to store additional/generated project data.
+// The name is based on the hash of the scene's full path. So, for different project files that
+// reference the same scene this function will return the same string.
+//
+// NOTE: if per project temp directories are needed then one option is to create project
+// specific subdirectories inside temp scene directory - in this case we can share 
+// scene's additional data between multiple projects.
+static std::string get_project_unique_name(const YAR_Project& project) {
+    std::string file_name = to_lower(fs::path(project.scene_path).filename().string());
+    if (file_name.empty())
+        error("Failed to extract filename from project path: %s", project.scene_path.c_str());
+
+    std::string path_lowercase = to_lower(project.scene_path);
+    meow_u128 hash_128 = MeowHash(MeowDefaultSeed, path_lowercase.size(), (void*)path_lowercase.c_str());
+    uint32_t hash_32 = MeowU32From(hash_128, 0);
+
+    std::ostringstream oss;
+    oss << std::setfill('0') << std::setw(8) << std::hex << hash_32;
+    oss << "-" << file_name;
+    return oss.str();
 }
 
-static bool create_kdtree_cache(const std::string& project_dir, const Geometries* geometries) {
-    const fs::path kdtree_cache_dir = get_kdtree_cache_path(project_dir);
+static Scene_KdTree load_scene_kdtree(const YAR_Project& project, const Scene& scene) {
+    fs::path kdtree_cache_directory = get_data_directory() / "kdtree-cache" / get_project_unique_name(project);
 
-    if (fs_exists(kdtree_cache_dir) && !fs_remove_all(kdtree_cache_dir))
-        return false;
-    if (!fs_create_directory(kdtree_cache_dir))
-        return false;
+    // If kdtrees are not cached then build a cache.
+    if (!fs_exists(kdtree_cache_directory)) {
+        Timestamp t;
+        printf("Kdtree cache is not found. Building kdtree cache: ");
+        
+        if (!fs_create_directories(kdtree_cache_directory))
+            error("Failed to create kdtree cache directory: %s\n", kdtree_cache_directory.string().c_str());
 
-    for (int i = 0; i < (int)geometries->triangle_meshes.size(); i++) {
-        Geometry_KdTree kdtree = build_geometry_kdtree(geometries, {Geometry_Type::triangle_mesh, i});
-        fs::path kdtree_file = kdtree_cache_dir / (std::to_string(i) + ".kdtree");
-        kdtree.save_to_file(kdtree_file.string());
+        for (int i = 0; i < (int)scene.geometries.triangle_meshes.size(); i++) {
+            Geometry_KdTree kdtree = build_geometry_kdtree(&scene.geometries, {Geometry_Type::triangle_mesh, i});
+            fs::path kdtree_file = kdtree_cache_directory / (std::to_string(i) + ".kdtree");
+            kdtree.save_to_file(kdtree_file.string());
+        }
+        printf("%.2fs\n", elapsed_milliseconds(t) / 1e3f);
     }
-    return true;
-}
 
-static std::vector<Geometry_KdTree> load_kdtree_cache(const std::string& project_dir, const Geometries* geometries) {
-    const fs::path kdtree_cache_dir = get_kdtree_cache_path(project_dir);
-
-    std::vector<Geometry_KdTree> kdtrees(geometries->triangle_meshes.size());
-    for (int i = 0; i < (int)geometries->triangle_meshes.size(); i++) {
-        fs::path kdtree_file = kdtree_cache_dir / (std::to_string(i) + ".kdtree");
-        kdtrees[i] = load_geometry_kdtree(kdtree_file.string(), geometries, {Geometry_Type::triangle_mesh, i});
+    // Load kdtrees from the cache.
+    printf("Loading kdtree cache: ");
+    std::vector<Geometry_KdTree> kdtrees(scene.geometries.triangle_meshes.size());
+    for (int i = 0; i < (int)scene.geometries.triangle_meshes.size(); i++) {
+        fs::path kdtree_file = kdtree_cache_directory / (std::to_string(i) + ".kdtree");
+        kdtrees[i] = load_geometry_kdtree(kdtree_file.string(), &scene.geometries, {Geometry_Type::triangle_mesh, i});
     }
-    return kdtrees;
+    printf("done\n");
+
+    // Build top-level scene kdtree.
+    Scene_KdTree scene_kdtree;
+    {
+        Timestamp t;
+        printf("Building scene kdtree: ");
+        scene_kdtree = build_scene_kdtree(&scene, std::move(kdtrees));
+        printf("%.2fs\n", elapsed_milliseconds(t) / 1e3f);
+    }
+    return scene_kdtree;
 }
 
 static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, uint64_t rng_seed, Film& film) {
@@ -108,21 +139,8 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
 }
 
 void render_reference_image(const YAR_Project& project, const Renderer_Options& options) {
-    Scene scene = create_scene(project);
-
-    if (!fs_exists(get_kdtree_cache_path(scene.project_dir))) {
-        printf("Creating kdtree cache...\n");
-        Timestamp t;
-        if (!create_kdtree_cache(scene.project_dir, &scene.geometries)) {
-            printf("failed to create kdtree cache\n");
-            return;
-        }
-        printf("KdTree cache build time = %.2f s\n", elapsed_milliseconds(t) / 1e3f);
-    }
-    std::vector<Geometry_KdTree> kdtrees = load_kdtree_cache(scene.project_dir, &scene.geometries);
-
-    Scene_KdTree scene_kdtree = build_scene_kdtree(&scene, kdtrees);
-    printf("scene tree created\n");
+    Scene scene = load_scene(project);
+    Scene_KdTree scene_kdtree = load_scene_kdtree(project, scene);
 
     Matrix3x4 camera_to_world = project.camera_to_world;
     for (int i = 0; i < 3; i++) {
@@ -236,7 +254,7 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
     std::vector<ColorRGB> image = film.get_image();
 
     int time = int(elapsed_milliseconds(t));
-    printf("image rendered in %d ms\n", time);
+    printf("Image rendered in %d ms\n", time);
 
     write_exr_image("image.exr",  image.data(), render_region.size().x, render_region.size().y);
 }

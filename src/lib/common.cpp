@@ -10,7 +10,7 @@
 std::string g_data_dir = "./../data";
 
 void error(const std::string& message) {
-    printf("error: %s\n", message.c_str());
+    printf("\nError: %s\n", message.c_str());
 #ifdef _WIN32
     __debugbreak();
 #endif
@@ -18,6 +18,7 @@ void error(const std::string& message) {
 }
 
 void error(const char* format, ...) {
+    printf("\nError: ");
     va_list args;
     va_start(args, format);
     vprintf(format, args);
@@ -41,6 +42,11 @@ bool fs_remove_all(const fs::path& path) {
 bool fs_create_directory(const fs::path& path) {
     std::error_code ec;
     return fs::create_directory(path, ec);
+}
+
+bool fs_create_directories(const fs::path& path) {
+    std::error_code ec;
+    return fs::create_directories(path, ec);
 }
 
 static std::string join_paths(std::string path1, std::string path2) {
@@ -67,7 +73,7 @@ size_t get_last_slash_pos(const std::string& path) {
         return std::max(pos1, pos2);
 }
 
-fs::path get_data_dir_path() {
+fs::path get_data_directory() {
     return g_data_dir;
 }
 

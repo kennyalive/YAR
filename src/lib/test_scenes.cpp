@@ -58,7 +58,6 @@ Scene load_bunny_scene() {
     std::vector<Obj_Model> obj_models = load_obj("bunny/bunny.obj", mesh_load_params);
 
     Scene scene = convert_obj_models(obj_models);
-    scene.project_dir = "bunny";
     scene.lights.point_lights.push_back(light);
 
     Matrix3x4 view_point {
@@ -85,7 +84,6 @@ Scene load_conference_scene() {
     std::vector<Obj_Model> obj_models = load_obj("conference/conference.obj", mesh_load_params);
 
     Scene scene = convert_obj_models(obj_models);
-    scene.project_dir = "conference";
     scene.lights.point_lights.push_back(light);
     scene.lights.point_lights.push_back(light2);
 
@@ -108,7 +106,6 @@ Scene load_buddha_scene() {
     std::vector<Obj_Model> obj_models = load_obj("buddha/buddha.obj", mesh_load_params);
 
     Scene scene = convert_obj_models(obj_models);
-    scene.project_dir = "buddha";
     scene.lights.point_lights.push_back(light);
 
     Matrix3x4 view_point {
@@ -143,7 +140,6 @@ Scene load_hairball_scene() {
     std::vector<Obj_Model> obj_models = load_obj("hairball/hairball.obj", mesh_load_params);
 
     Scene scene = convert_obj_models(obj_models);
-    scene.project_dir = "hairball";
     scene.lights.point_lights.push_back(light);
 
     Matrix3x4 view_point {
@@ -168,12 +164,11 @@ Scene load_mori_knob() {
 
     Triangle_Mesh_Load_Params mesh_load_params;
     mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
-    std::vector<Obj_Model> obj_models = load_obj("mori_knob/testObj.obj", mesh_load_params);
+    std::vector<Obj_Model> obj_models = load_obj("projects/mori_knob/testObj.obj", mesh_load_params);
 
     obj_models.erase(obj_models.begin() + 3); // remove light geometry
 
     Scene scene = convert_obj_models(obj_models);
-    scene.project_dir = "mori_knob";
 
     Diffuse_Rectangular_Light rect_light;
     rect_light.light_to_world_transform = Matrix3x4{

@@ -4,12 +4,12 @@
 #include "kdtree.h"
 
 template <typename Primitive_Source>
-KdTree<Primitive_Source>::KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& primitive_indices, const Primitive_Source& primitive_source)
+KdTree<Primitive_Source>::KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& primitive_indices, Primitive_Source&& primitive_source)
 : nodes(std::move(nodes))
 , primitive_indices(std::move(primitive_indices))
-, primitive_source(primitive_source)
-, bounds(primitive_source.calculate_bounds())
+, primitive_source(std::move(primitive_source))
 {
+    bounds = this->primitive_source.calculate_bounds();
 }
 
 template <typename Primitive_Source>

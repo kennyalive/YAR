@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
     }
 
     for (const std::string& file : files) {
-        printf("Running pixel magic on: %s\n", file.c_str());
+        printf("Loading project: %s\n", file.c_str());
         YAR_Project project = initialize_project(file);
         Renderer_Options options;
         render_reference_image(project, options);

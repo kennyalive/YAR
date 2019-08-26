@@ -23,9 +23,10 @@ inline float lerp(float t, float a, float b) {
     return a + (b - a)*t;
 }
 
-inline void to_lower(std::string& s) {
+inline std::string to_lower(std::string s) {
     for (char& c : s)
         c = tolower(c);
+    return s;
 }
 
 void error(const std::string& message);
@@ -34,8 +35,13 @@ void error(const char* format, ...);
 bool fs_exists(const fs::path& path);
 bool fs_remove_all(const fs::path& path);
 bool fs_create_directory(const fs::path& path);
+bool fs_create_directories(const fs::path& path); 
 
-fs::path get_data_dir_path();
+// The 'data' directory is a place that the application can write to, for example,
+// kdtree cache is created in this directory. As a convenience it can be used 
+// to store yar projet files, 3d data, etc. but that's not a requirement.
+fs::path get_data_directory();
+
 std::string get_directory(const std::string& path);
 std::string get_resource_path(const std::string& resource_relative_path);
 std::vector<uint8_t> read_binary_file(const std::string& file_name);

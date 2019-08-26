@@ -19,9 +19,7 @@ static ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminou
 
 Scene load_pbrt_project(const YAR_Project& project) {
     std::shared_ptr<pbrt::Scene> pbrt_scene = pbrt::importPBRT(project.scene_path);
-
-    ::Scene scene;
-    scene.project_dir = "pbrt-killeroo"; // TODO: temporarily hardcoded
+    Scene scene;
 
     for (pbrt::Shape::SP geom : pbrt_scene->world->shapes) {
         if (pbrt::TriangleMesh::SP triangle_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(geom); triangle_mesh != nullptr) {

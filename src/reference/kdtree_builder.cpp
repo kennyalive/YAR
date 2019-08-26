@@ -52,7 +52,7 @@ struct Primitive_Info {
 template <typename Primitive_Source>
 class KdTree_Builder {
 public:
-    KdTree_Builder(const Primitive_Source& primitive_source, const KdTree_Build_Params& build_params);
+    KdTree_Builder(Primitive_Source&& primitive_source, const KdTree_Build_Params& build_params);
     KdTree<Primitive_Source> build();
 
 private:
@@ -64,7 +64,7 @@ private:
     Split select_split_for_axis(const Bounding_Box& node_bounds, int32_t primitive_count, int axis) const;
 
 private:
-    const Primitive_Source& primitive_source;
+    Primitive_Source&& primitive_source;
     KdTree_Build_Params build_params;
 
     std::vector<Edge> edges[3]; // edges for each axis
@@ -77,18 +77,15 @@ private:
 
 Geometry_KdTree build_geometry_kdtree(const Geometries* geometries, Geometry_Handle hgeometry, const KdTree_Build_Params& build_params) {
     Geometry_Primitive_Source primitive_source {geometries, hgeometry};
-    KdTree_Builder<Geometry_Primitive_Source> builder(primitive_source, build_params);
+    KdTree_Builder<Geometry_Primitive_Source> builder(std::move(primitive_source), build_params);
     return builder.build();
 }
 
-Scene_KdTree build_scene_kdtree(const Scene* scene, const std::vector<Geometry_KdTree>& kdtrees, const KdTree_Build_Params& build_params) {
+Scene_KdTree build_scene_kdtree(const Scene* scene, std::vector<Geometry_KdTree>&& kdtrees, const KdTree_Build_Params& build_params) {
     Scene_Primitive_Source primitive_source;
     primitive_source.scene = scene;
-    primitive_source.geometry_kdtrees.resize(kdtrees.size());
-    for (size_t i = 0; i < kdtrees.size(); i++) {
-        primitive_source.geometry_kdtrees[i] = &kdtrees[i];
-    }
-    KdTree_Builder<Scene_Primitive_Source> builder(primitive_source, build_params);
+    primitive_source.geometry_kdtrees = std::move(kdtrees);
+    KdTree_Builder<Scene_Primitive_Source> builder(std::move(primitive_source), build_params);
     return builder.build();
 }
 
@@ -99,8 +96,8 @@ enum {
 };
 
 template <typename Primitive_Source>
-KdTree_Builder<Primitive_Source>::KdTree_Builder(const Primitive_Source& primitive_source, const KdTree_Build_Params& build_params)
-: primitive_source(primitive_source)
+KdTree_Builder<Primitive_Source>::KdTree_Builder(Primitive_Source&& primitive_source, const KdTree_Build_Params& build_params)
+: primitive_source(std::move(primitive_source))
 , build_params(build_params)
 {
     if (primitive_source.get_primitive_count() > max_primitive_count) {
@@ -142,7 +139,7 @@ KdTree<Primitive_Source> KdTree_Builder<Primitive_Source>::build()
     //
     build_node(mesh_bounds, 0, primitive_count, build_params.max_depth, primitive_count);
 
-    return KdTree<Primitive_Source>(std::move(nodes), std::move(primitive_indices), primitive_source);
+    return KdTree<Primitive_Source>(std::move(nodes), std::move(primitive_indices), std::move(primitive_source));
 }
 
 //

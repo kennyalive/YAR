@@ -9,7 +9,6 @@
 struct YAR_Project;
 
 struct Scene {
-    std::string project_dir;
     Geometries geometries;
     Materials materials;
     Lights lights;
@@ -17,5 +16,5 @@ struct Scene {
     std::vector<Matrix3x4> view_points; // predefined camera positions
 };
 
-Scene create_scene(const YAR_Project& project);
+Scene load_scene(const YAR_Project& project);
 
