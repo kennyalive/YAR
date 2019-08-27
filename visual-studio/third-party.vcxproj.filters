@@ -39,214 +39,214 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\third_party\enkiTS\TaskScheduler.cpp">
+    <ClCompile Include="..\third-party\enkiTS\TaskScheduler.cpp">
       <Filter>enkiTS</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\context.c">
+    <ClCompile Include="..\third-party\glfw\context.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\egl_context.c">
+    <ClCompile Include="..\third-party\glfw\egl_context.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\init.c">
+    <ClCompile Include="..\third-party\glfw\init.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\input.c">
+    <ClCompile Include="..\third-party\glfw\input.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\monitor.c">
+    <ClCompile Include="..\third-party\glfw\monitor.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\osmesa_context.c">
+    <ClCompile Include="..\third-party\glfw\osmesa_context.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\vulkan.c">
+    <ClCompile Include="..\third-party\glfw\vulkan.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\wgl_context.c">
+    <ClCompile Include="..\third-party\glfw\wgl_context.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\win32_init.c">
+    <ClCompile Include="..\third-party\glfw\win32_init.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\win32_joystick.c">
+    <ClCompile Include="..\third-party\glfw\win32_joystick.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\win32_monitor.c">
+    <ClCompile Include="..\third-party\glfw\win32_monitor.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\win32_thread.c">
+    <ClCompile Include="..\third-party\glfw\win32_thread.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\win32_time.c">
+    <ClCompile Include="..\third-party\glfw\win32_time.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\win32_window.c">
+    <ClCompile Include="..\third-party\glfw\win32_window.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\glfw\window.c">
+    <ClCompile Include="..\third-party\glfw\window.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\half\half.cpp">
+    <ClCompile Include="..\third-party\half\half.cpp">
       <Filter>half</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\imgui\imgui.cpp">
+    <ClCompile Include="..\third-party\imgui\imgui.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\imgui\imgui_demo.cpp">
+    <ClCompile Include="..\third-party\imgui\imgui_demo.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\imgui\imgui_draw.cpp">
+    <ClCompile Include="..\third-party\imgui\imgui_draw.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\imgui\imgui_widgets.cpp">
+    <ClCompile Include="..\third-party\imgui\imgui_widgets.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pcg\pcg_basic.c">
+    <ClCompile Include="..\third-party\pcg\pcg_basic.c">
       <Filter>pcg</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\volk\volk.c">
+    <ClCompile Include="..\third-party\volk\volk.c">
       <Filter>volk</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\miniexr.cpp" />
-    <ClCompile Include="..\third_party\imgui\imgui_impl_glfw.cpp">
+    <ClCompile Include="..\third-party\miniexr.cpp" />
+    <ClCompile Include="..\third-party\imgui\imgui_impl_glfw.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\imgui\imgui_impl_vulkan.cpp">
+    <ClCompile Include="..\third-party\imgui\imgui_impl_vulkan.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\getopt\getopt.c">
+    <ClCompile Include="..\third-party\getopt\getopt.c">
       <Filter>getopt</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\BinaryFileFormat.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\BinaryFileFormat.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Camera.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Camera.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Geometry.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Geometry.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\importPBRT.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\importPBRT.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Lights.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Lights.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Materials.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Materials.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Scene.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Scene.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\impl\semantic\Textures.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Textures.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\impl\syntactic\Lexer.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\Lexer.cpp">
       <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\impl\syntactic\Parser.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\Parser.cpp">
       <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third_party\pbrt-parser\impl\syntactic\Scene.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\Scene.cpp">
       <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\third_party\enkiTS\Atomics.h">
+    <ClInclude Include="..\third-party\enkiTS\Atomics.h">
       <Filter>enkiTS</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\enkiTS\LockLessMultiReadPipe.h">
+    <ClInclude Include="..\third-party\enkiTS\LockLessMultiReadPipe.h">
       <Filter>enkiTS</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\enkiTS\TaskScheduler.h">
+    <ClInclude Include="..\third-party\enkiTS\TaskScheduler.h">
       <Filter>enkiTS</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\enkiTS\Threads.h">
+    <ClInclude Include="..\third-party\enkiTS\Threads.h">
       <Filter>enkiTS</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\glfw\egl_context.h">
+    <ClInclude Include="..\third-party\glfw\egl_context.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\glfw\glfw3.h">
+    <ClInclude Include="..\third-party\glfw\glfw3.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\glfw\glfw3native.h">
+    <ClInclude Include="..\third-party\glfw\glfw3native.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\glfw\internal.h">
+    <ClInclude Include="..\third-party\glfw\internal.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\glfw\mappings.h">
+    <ClInclude Include="..\third-party\glfw\mappings.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\glfw\osmesa_context.h">
+    <ClInclude Include="..\third-party\glfw\osmesa_context.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\glfw\wgl_context.h">
+    <ClInclude Include="..\third-party\glfw\wgl_context.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\glfw\win32_joystick.h">
+    <ClInclude Include="..\third-party\glfw\win32_joystick.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\glfw\win32_platform.h">
+    <ClInclude Include="..\third-party\glfw\win32_platform.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\half\half.h">
+    <ClInclude Include="..\third-party\half\half.h">
       <Filter>half</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\imgui\imconfig.h">
+    <ClInclude Include="..\third-party\imgui\imconfig.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\imgui\imgui.h">
+    <ClInclude Include="..\third-party\imgui\imgui.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\imgui\imgui_internal.h">
+    <ClInclude Include="..\third-party\imgui\imgui_internal.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\imgui\imstb_rectpack.h">
+    <ClInclude Include="..\third-party\imgui\imstb_rectpack.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\imgui\imstb_textedit.h">
+    <ClInclude Include="..\third-party\imgui\imstb_textedit.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\imgui\imstb_truetype.h">
+    <ClInclude Include="..\third-party\imgui\imstb_truetype.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\pcg\pcg_basic.h">
+    <ClInclude Include="..\third-party\pcg\pcg_basic.h">
       <Filter>pcg</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\volk\volk.h">
+    <ClInclude Include="..\third-party\volk\volk.h">
       <Filter>volk</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\imgui\imgui_impl_glfw.h">
+    <ClInclude Include="..\third-party\imgui\imgui_impl_glfw.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\imgui\imgui_impl_vulkan.h">
+    <ClInclude Include="..\third-party\imgui\imgui_impl_vulkan.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\getopt\getopt.h">
+    <ClInclude Include="..\third-party\getopt\getopt.h">
       <Filter>getopt</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\pbrt-parser\include\pbrtParser\math.h">
+    <ClInclude Include="..\third-party\pbrt-parser\include\pbrtParser\math.h">
       <Filter>pbrt-parser</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\pbrt-parser\include\pbrtParser\Scene.h">
+    <ClInclude Include="..\third-party\pbrt-parser\include\pbrtParser\Scene.h">
       <Filter>pbrt-parser</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\pbrt-parser\impl\semantic\SemanticParser.h">
+    <ClInclude Include="..\third-party\pbrt-parser\impl\semantic\SemanticParser.h">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\pbrt-parser\impl\syntactic\Lexer.h">
+    <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Lexer.h">
       <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\pbrt-parser\impl\syntactic\Parser.h">
+    <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Parser.h">
       <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\pbrt-parser\impl\syntactic\Scene.h">
+    <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Scene.h">
       <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClInclude>
-    <ClInclude Include="..\third_party\meow-hash\meow_hash_x64_aesni.h">
+    <ClInclude Include="..\third-party\meow-hash\meow_hash_x64_aesni.h">
       <Filter>meow-hash</Filter>
     </ClInclude>
   </ItemGroup>

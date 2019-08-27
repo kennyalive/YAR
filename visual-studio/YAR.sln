@@ -17,7 +17,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RAY", "RAY.vcxproj", "{6DDB
 		{BB5FD379-295D-4971-841C-BA6567147146} = {BB5FD379-295D-4971-841C-BA6567147146}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "third_party", "third_party.vcxproj", "{BB5FD379-295D-4971-841C-BA6567147146}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "third-party", "third-party.vcxproj", "{BB5FD379-295D-4971-841C-BA6567147146}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
