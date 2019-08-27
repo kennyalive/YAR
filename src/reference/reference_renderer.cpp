@@ -142,13 +142,7 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
     Scene scene = load_scene(project);
     Scene_KdTree scene_kdtree = load_scene_kdtree(project, scene);
 
-    Matrix3x4 camera_to_world = project.camera_to_world;
-    for (int i = 0; i < 3; i++) {
-        float tmp = camera_to_world.a[i][1];
-        camera_to_world.a[i][1] = -camera_to_world.a[i][2];
-        camera_to_world.a[i][2] = tmp;
-    }
-    Camera camera(camera_to_world, Vector2(project.image_resolution), 60.f);
+    Camera camera(scene.view_points[0], Vector2(project.image_resolution), 60.f);
 
     Bounds2i render_region = project.render_region;
     if (render_region == Bounds2i{})

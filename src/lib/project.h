@@ -13,9 +13,14 @@ struct YAR_Project {
     Scene_Type scene_type;
     std::string scene_path;
 
-    Vector2i image_resolution;
-    Bounds2i render_region;
-    Matrix3x4 camera_to_world;
+    bool has_image_resolution = false;
+    Vector2i image_resolution = Vector2i{};
+
+    bool has_render_region = false;
+    Bounds2i render_region = Bounds2i{};
+
+    bool has_camera_to_world = false;
+    Matrix3x4 camera_to_world = Matrix3x4::identity;
 };
 
 // Creates project description based on input file type.

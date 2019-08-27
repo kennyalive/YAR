@@ -22,6 +22,7 @@ static void finalize_scene(Scene& scene) {
 
 Scene load_scene(const YAR_Project& project) {
     Scene scene;
+
     if (project.scene_type == Scene_Type::pbrt) {
         scene = load_pbrt_project(project);
     }
@@ -40,6 +41,10 @@ Scene load_scene(const YAR_Project& project) {
     else {
         error("load_scene: unknown scene type");
     }
+
+    if (project.has_camera_to_world)
+        scene.view_points = {project.camera_to_world};
+
     finalize_scene(scene);
     return scene;
 }

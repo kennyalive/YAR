@@ -20,9 +20,9 @@ Ray Camera::generate_ray(Vector2 film_position) const {
     float v = 2.f * (film_position.y / image_extent.y) - 1.f;
 
     float dir_x = u * horz_half_dist;
-    float dir_y = v * vert_half_dist;
+    float dir_z = -v * vert_half_dist;
 
-    Vector3 dir = Vector3(dir_x, dir_y, 1.f).normalized();
+    Vector3 dir = Vector3(dir_x, 1.f, dir_z).normalized();
 
     Ray camera_ray = Ray(Vector3_Zero, dir);
     Ray world_ray = transform_ray(camera_to_world, camera_ray);

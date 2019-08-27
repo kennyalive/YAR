@@ -105,12 +105,15 @@ static YAR_Project parse_yar_project(const std::string& yar_file_name) {
         }
         else if (token == "image_resolution") {
             parser.parse_integers(&project.image_resolution.x, 2);
+            project.has_image_resolution = true;
         }
         else if (token == "render_region") {
             parser.parse_integers(&project.render_region.p0.x, 4);
+            project.has_render_region = true;
         }
         else if (token == "camera_to_world") {
             parser.parse_floats(&project.camera_to_world.a[0][0], 12);
+            project.has_camera_to_world = true;
         }
         else {
             error("unknown token: %s\n", std::string(token).c_str());
@@ -154,12 +157,17 @@ bool save_yar_file(const std::string& yar_file_name, const YAR_Project& project)
         error("save_yar_project: unknown scene type");
 
     file << "scene_path " << project.scene_path << "\n";
-    file << "image_resolution " << project.image_resolution.x << " " << project.image_resolution.y << "\n";
 
-    file << "camera_to_world\n";
-    for (int i = 0; i < 3; i++) {
-        const float* row = project.camera_to_world.a[i];
-        file << row[0] << " " << row[1] << " " << row[2] << " " << row[3] << "\n";
+    if (project.has_image_resolution)
+        file << "image_resolution " << project.image_resolution.x << " " << project.image_resolution.y << "\n";
+
+    if (project.has_camera_to_world) {
+        file << "camera_to_world\n";
+        for (int i = 0; i < 3; i++) {
+            const float* row = project.camera_to_world.a[i];
+            file << row[0] << " " << row[1] << " " << row[2] << " " << row[3] << "\n";
+        }
     }
     return true;
 }
+
