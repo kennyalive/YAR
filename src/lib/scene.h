@@ -14,6 +14,7 @@ struct Scene {
     Lights lights;
     std::vector<Render_Object> render_objects;
     std::vector<Matrix3x4> view_points; // predefined camera positions
+    float fovy;
 };
 
 Scene load_scene(const YAR_Project& project);

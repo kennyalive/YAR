@@ -286,10 +286,11 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
     // pipeline layout
     {
         VkPushConstantRange push_constant_ranges[1];
-        // spp (samples per pixel)
+        // offset 0: spp (samples per pixel)
+        // offset 4: fovy
         push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         push_constant_ranges[0].offset = 0;
-        push_constant_ranges[0].size = 4;
+        push_constant_ranges[0].size = 8;
 
         VkDescriptorSetLayout set_layouts[] = {
             descriptor_set_layout,

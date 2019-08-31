@@ -142,7 +142,7 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
     Scene scene = load_scene(project);
     Scene_KdTree scene_kdtree = load_scene_kdtree(project, scene);
 
-    Camera camera(scene.view_points[0], Vector2(project.image_resolution), 60.f);
+    Camera camera(scene.view_points[0], Vector2(project.image_resolution), scene.fovy);
 
     Bounds2i render_region = project.render_region;
     if (render_region == Bounds2i{})

@@ -4,12 +4,13 @@
 
 #include "common.glsl"
 
-#define RGEN_SHADER
-#include "rt_utils.glsl"
-
 layout(push_constant) uniform Push_Constants {
       layout(offset = 0) uint spp4;
+      layout(offset = 4) float tan_fovy_over_2; 
 };
+
+#define RGEN_SHADER
+#include "rt_utils.glsl"
 
 layout(binding = 0, rgba8) uniform image2D image;
 layout(set=0, binding = 1) uniform accelerationStructureNV accel;

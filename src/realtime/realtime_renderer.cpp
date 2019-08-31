@@ -331,7 +331,7 @@ void Realtime_Renderer::run_frame() {
     flying_camera.update(dt);
 
     if (project_loaded)
-        raster.update(flying_camera.get_view_transform());
+        raster.update(flying_camera.get_view_transform(), scene.fovy);
 
     if (project_loaded && vk.raytracing_supported)
         rt.update_camera_transform(flying_camera.get_camera_pose());
@@ -429,8 +429,9 @@ void Realtime_Renderer::draw_raytraced_image() {
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rt.pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rt.pipeline);
 
-    uint32_t push_constants[1] = { spp4 };
-    vkCmdPushConstants(vk.command_buffer, rt.pipeline_layout, VK_SHADER_STAGE_RAYGEN_BIT_NV, 0, 4, &push_constants[0]);
+    float tan_fovy_over2 = std::tan(radians(scene.fovy/2.f));
+    uint32_t push_constants[2] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2) };
+    vkCmdPushConstants(vk.command_buffer, rt.pipeline_layout, VK_SHADER_STAGE_RAYGEN_BIT_NV, 0, 8, &push_constants[0]);
 
     const VkBuffer sbt = rt.shader_binding_table.handle;
     const uint32_t sbt_slot_size = rt.properties.shaderGroupHandleSize;

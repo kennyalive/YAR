@@ -23,8 +23,6 @@ struct Ray {
 
 #ifdef RGEN_SHADER
 vec3 get_direction(vec2 film_position) {
-    const float tan_fovy_over_2 = 0.5774; // tan(60/2)
-
     vec2 uv = 2.0 * (film_position / vec2(gl_LaunchSizeNV.xy)) - 1.0;
     float aspect_ratio = float(gl_LaunchSizeNV.x) / float(gl_LaunchSizeNV.y);
 

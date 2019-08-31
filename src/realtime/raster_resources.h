@@ -24,5 +24,5 @@ struct Rasterization_Resources {
     void destroy_framebuffer();
     void update_point_lights(VkBuffer light_buffer, int light_count);
     void update_diffuse_rectangular_lights(VkBuffer light_buffer, int light_count);
-    void update(const Matrix3x4& view_transform);
+    void update(const Matrix3x4& view_transform, float fov);
 };
