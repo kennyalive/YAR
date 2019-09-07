@@ -23,7 +23,7 @@ struct Global_Uniform_Buffer {
         Vector2 uv;
     };
 
-void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_set_layout) {
+void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_set_layout, bool front_face_has_clockwise_winding) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Global_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &mapped_uniform_buffer, "raster_uniform_buffer");
 
@@ -126,6 +126,9 @@ void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_s
         state.vertex_attributes[2].format = VK_FORMAT_R32G32_SFLOAT;
         state.vertex_attributes[2].offset = 24;
         state.vertex_attribute_count = 3;
+
+        if (front_face_has_clockwise_winding)
+            state.rasterization_state.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
         pipeline = vk_create_graphics_pipeline(state, pipeline_layout, render_pass, vertex_shader, fragment_shader);
 

@@ -54,6 +54,8 @@ Matrix3x4 get_inverted_transform(const Matrix3x4& m);
 // an axis and transform is computed by this function.
 Matrix3x4 get_mirrored_transform(const Matrix3x4& m, int flip_axis);
 
+bool is_transform_changes_handedness(const Matrix3x4& m);
+
 Vector3 transform_point(const Matrix3x4& m, Vector3 p);
 Vector3 transform_vector(const Matrix3x4& m, Vector3 v);
 Ray transform_ray(const Matrix3x4& m, const Ray& ray);

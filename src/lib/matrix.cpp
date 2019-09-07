@@ -257,6 +257,12 @@ Matrix3x4 get_mirrored_transform(const Matrix3x4& m, int flip_axis) {
     return m2;
 }
 
+bool is_transform_changes_handedness(const Matrix3x4& m) {
+    return  m.a[0][0] * (m.a[1][1]*m.a[2][2] - m.a[1][2]*m.a[2][1]) +
+            m.a[0][1] * (m.a[1][2]*m.a[2][0] - m.a[1][0]*m.a[2][2]) +
+            m.a[0][2] * (m.a[1][0]*m.a[2][1] - m.a[1][1]*m.a[2][0]) < 0.f;
+}
+
 Vector3 transform_point(const Matrix3x4& m, Vector3 p) {
     Vector3 p2;
     p2.x = m.a[0][0]*p.x + m.a[0][1]*p.y + m.a[0][2]*p.z + m.a[0][3];

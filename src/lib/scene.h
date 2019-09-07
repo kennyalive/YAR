@@ -13,8 +13,10 @@ struct Scene {
     Materials materials;
     Lights lights;
     std::vector<Render_Object> render_objects;
-    std::vector<Matrix3x4> view_points; // predefined camera positions
+    // Predefined camera positions.
+    std::vector<Matrix3x4> view_points; 
     float fovy;
+    bool front_face_has_clockwise_winding{ false };
 };
 
 Scene load_scene(const YAR_Project& project);

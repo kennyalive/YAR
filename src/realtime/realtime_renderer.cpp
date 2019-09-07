@@ -290,7 +290,7 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
             lights.data(), "diffuse_rectangular_light_buffer");
     }
 
-    raster.create(gpu_scene.material_descriptor_set_layout);
+    raster.create(gpu_scene.material_descriptor_set_layout, scene.front_face_has_clockwise_winding);
     raster.create_framebuffer(output_image.view);
     raster.update_point_lights(gpu_scene.point_lights.handle, (int)scene.lights.point_lights.size());
     raster.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene.lights.diffuse_rectangular_lights.size());

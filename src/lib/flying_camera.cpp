@@ -14,6 +14,7 @@ constexpr float ZAxis_Rotate_Speed = radians(90.f);
 
 void Flying_Camera::initialize(Matrix3x4 camera_pose) {
     this->camera_pose = camera_pose;
+    camera_transform_changes_handedness = is_transform_changes_handedness(camera_pose);
     velocity = {X_Speed, Y_Speed, Z_Speed};
 }
 
@@ -83,7 +84,7 @@ void Flying_Camera::update(double dt) {
     if (dx_angle || dz_angle) {
         Vector3 position = camera_pose.get_column(3);
         camera_pose.set_column(3, Vector3_Zero);
-        Matrix3x4 z_rotation = rotate_z(Matrix3x4::identity, dz_angle);
+        Matrix3x4 z_rotation = rotate_z(Matrix3x4::identity, dz_angle * (camera_transform_changes_handedness ? -1.f : 1.f));
         Matrix3x4 x_rotation = rotate_x(Matrix3x4::identity, dx_angle);
         camera_pose = z_rotation * camera_pose * x_rotation;
         camera_pose.set_column(3, position);

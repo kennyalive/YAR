@@ -11,6 +11,7 @@ public:
 
 private:
     Matrix3x4 camera_pose;
+    bool camera_transform_changes_handedness{ false };
     Vector2 last_mouse_pos{ -1.f };
     Vector3 velocity;
 };
