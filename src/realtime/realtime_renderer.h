@@ -56,6 +56,7 @@ private:
 
     std::vector<GPU_Mesh> gpu_meshes;
 
+
     struct GPU_Scene_Resources {
         Vk_Buffer point_lights;
         Vk_Buffer diffuse_rectangular_lights;

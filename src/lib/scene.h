@@ -15,7 +15,7 @@ struct Scene {
     std::vector<Render_Object> render_objects;
     // Predefined camera positions.
     std::vector<Matrix3x4> view_points; 
-    float fovy;
+    float fovy{ 0.f };
     bool front_face_has_clockwise_winding{ false };
 };
 

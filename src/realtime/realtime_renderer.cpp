@@ -400,6 +400,7 @@ void Realtime_Renderer::draw_rasterized_image() {
     const VkDeviceSize zero_offset = 0;
     for (int i = 0; i < (int)scene.render_objects.size(); i++) {
         const Render_Object& render_object = scene.render_objects[i];
+        // Skip objects that we don't support yet...
         if (render_object.geometry.type != Geometry_Type::triangle_mesh)
             continue;
         if (render_object.area_light != Null_Light && render_object.area_light.type != Light_Type::diffuse_rectangular)

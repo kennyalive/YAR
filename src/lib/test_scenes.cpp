@@ -103,29 +103,30 @@ Scene load_buddha_scene() {
 
     Triangle_Mesh_Load_Params mesh_load_params;
     mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
-    std::vector<Obj_Model> obj_models = load_obj("buddha/buddha.obj", mesh_load_params);
+    std::vector<Obj_Model> obj_models = load_obj("projects/buddha/buddha.obj", mesh_load_params);
 
     Scene scene = convert_obj_models(obj_models);
     scene.lights.point_lights.push_back(light);
 
     Matrix3x4 view_point {
         -0.990574f, 0.136961f, 0.003766f, -0.147305f,
-        -0.137013f, -0.990206f, -0.027226f, 1.083111f,
+        -0.137013f, -0.990206f, -0.027226f, 2.083111f,
         0.000000f, -0.027486f, 0.999627f, 0.058400f,
     };
     
     // Configure instances.
-    Matrix3x4 translation = translate(Matrix3x4::identity, Vector3{-0.5f, 0, 0});
+    Matrix3x4 translation = translate(Matrix3x4::identity, Vector3{-0.3f, 0, 0});
     scene.render_objects[0].object_to_world_transform = translation;
     scene.render_objects[0].world_to_object_transform = get_inverted_transform(translation);
 
     Render_Object render_object = scene.render_objects[0];
-    translation = translate(Matrix3x4::identity, Vector3{0.5f, 0, 0});
+    translation = translate(Matrix3x4::identity, Vector3{0.8f, 0, 0});
     render_object.object_to_world_transform = translation;
     render_object.world_to_object_transform = get_inverted_transform(translation);
     scene.render_objects.push_back(render_object);
 
     scene.view_points.push_back(view_point);
+    scene.fovy = 45.f;
     return scene;
 }
 
@@ -137,7 +138,7 @@ Scene load_hairball_scene() {
     Triangle_Mesh_Load_Params mesh_load_params;
     mesh_load_params.transform = uniform_scale(from_obj_to_world, 1.f);
     mesh_load_params.invert_winding_order = true;
-    std::vector<Obj_Model> obj_models = load_obj("hairball/hairball.obj", mesh_load_params);
+    std::vector<Obj_Model> obj_models = load_obj("projects/hairball/hairball.obj", mesh_load_params);
 
     Scene scene = convert_obj_models(obj_models);
     scene.lights.point_lights.push_back(light);
