@@ -42,6 +42,9 @@
     <None Include="..\src\shaders\material.glsl">
       <Filter>shaders</Filter>
     </None>
+    <None Include="..\src\shaders\geometry.glsl">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\src\shaders\raster_mesh.frag.glsl">

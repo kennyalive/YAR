@@ -1,9 +1,11 @@
 #include "std.h"
 #include "lib/common.h"
-
 #include "rt_resources.h"
+
 #include "utils.h"
 #include "shaders/gpu_types.h"
+
+#include "lib/scene.h"
 
 struct Rt_Uniform_Buffer {
     Matrix3x4   camera_to_world;
@@ -25,25 +27,30 @@ void Raytracing_Resources::create(const Scene& scene, const std::vector<GPU_Mesh
 
     // Material handles.
     {
-        std::vector<GPU_Types::Instance_Info> instance_infos(gpu_meshes.size());
-        for (auto [i, mesh] : enumerate(gpu_meshes)) {
-            instance_infos[i].material = mesh.material;
-            instance_infos[i].area_light_index = mesh.area_light_index;
+        std::vector<GPU_Types::Instance_Info> instance_infos(scene.render_objects.size());
+        for (auto [i, render_object] : enumerate(scene.render_objects)) {
+            instance_infos[i].material = render_object.material;
+            instance_infos[i].geometry = render_object.geometry;
+            // TODO: this should be Light_Handle not just light_index, since we could have multiple types of area lights. 
+            instance_infos[i].area_light_index = render_object.area_light.index;
+            instance_infos[i].pad0 = 0.f;
+            instance_infos[i].pad1 = 0.f;
+            instance_infos[i].pad2 = 0.f;
         }
-        VkDeviceSize size = gpu_meshes.size() * sizeof(GPU_Types::Instance_Info); 
+        VkDeviceSize size = scene.render_objects.size() * sizeof(GPU_Types::Instance_Info); 
         instance_info_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             instance_infos.data(), "instance_info_buffer");
     }
 
     // Instance buffer.
     {
-        VkDeviceSize instance_buffer_size = gpu_meshes.size() * sizeof(VkGeometryInstanceNV);
+        VkDeviceSize instance_buffer_size = scene.render_objects.size() * sizeof(VkGeometryInstanceNV);
         void* buffer_ptr;
         instance_buffer = vk_create_mapped_buffer(instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, &buffer_ptr, "instance_buffer");
         instance_buffer_ptr = static_cast<VkGeometryInstanceNV*>(buffer_ptr);
     }
 
-    create_acceleration_structure(gpu_meshes);
+    create_acceleration_structure(scene.render_objects, gpu_meshes);
     create_pipeline(gpu_meshes, material_descriptor_set_layout);
 
     // Shader binding table.
@@ -93,10 +100,10 @@ void Raytracing_Resources::update_camera_transform(const Matrix3x4& camera_to_wo
     mapped_uniform_buffer->camera_to_world = camera_to_world_transform;
 }
 
-void Raytracing_Resources::update_mesh_transform(uint32_t mesh_index, const Matrix3x4& mesh_transform) {
-    VkGeometryInstanceNV& instance = instance_buffer_ptr[mesh_index];
-    instance.transform = mesh_transform;
-    instance.instanceCustomIndex = mesh_index;
+void Raytracing_Resources::update_instance_transform(uint32_t mesh_index, uint32_t instance_index, const Matrix3x4& instance_transform) {
+    VkGeometryInstanceNV& instance = instance_buffer_ptr[instance_index];
+    instance.transform = instance_transform;
+    instance.instanceCustomIndex = instance_index;
     instance.mask = 0xff;
     instance.instanceOffset = 0;
     instance.flags = 0;
@@ -113,7 +120,7 @@ void Raytracing_Resources::update_diffuse_rectangular_lights(VkBuffer light_buff
     mapped_uniform_buffer->diffuse_rectangular_light_count = light_count;
 }
 
-void Raytracing_Resources::create_acceleration_structure(const std::vector<GPU_Mesh>& gpu_meshes) {
+void Raytracing_Resources::create_acceleration_structure(const std::vector<Render_Object>& render_objects, const std::vector<GPU_Mesh>& gpu_meshes) {
     // Initialize VKGeometryNV structures.
     std::vector<VkGeometryNV> geometries(gpu_meshes.size());
     for (auto [i, geom] : enumerate(geometries)) {
@@ -174,14 +181,13 @@ void Raytracing_Resources::create_acceleration_structure(const std::vector<GPU_M
             vk_set_debug_name(mesh_accels[i].accel, ("mesh_accel " + std::to_string(i)).c_str());
 
             VK_CHECK(vkGetAccelerationStructureHandleNV(vk.device, mesh_accels[i].accel, sizeof(uint64_t), &mesh_accels[i].handle));
-            update_mesh_transform((uint32_t)i, Matrix3x4::identity);
         }
 
         // Top level.
         {
             VkAccelerationStructureInfoNV accel_info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
             accel_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-            accel_info.instanceCount = (uint32_t)geometries.size();
+            accel_info.instanceCount = (uint32_t)render_objects.size();
 
             VkAccelerationStructureCreateInfoNV create_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV };
             create_info.info = accel_info;
@@ -190,6 +196,11 @@ void Raytracing_Resources::create_acceleration_structure(const std::vector<GPU_M
             allocate_acceleration_structure_memory(top_level_accel, &top_level_accel_allocation);
             vk_set_debug_name(top_level_accel, "top_level_accel");
         }
+    }
+
+    for (auto [i, render_object] : enumerate(render_objects)) {
+        ASSERT(render_object.geometry.type == Geometry_Type::triangle_mesh);
+        update_instance_transform(render_object.geometry.index, (uint32_t)i, render_object.object_to_world_transform);
     }
 
     // Create scratch buffert required to build acceleration structures.
@@ -216,7 +227,7 @@ void Raytracing_Resources::create_acceleration_structure(const std::vector<GPU_M
     Timestamp t;
 
     vk_execute(vk.command_pool, vk.queue,
-        [this, &geometries, &scratch_buffer](VkCommandBuffer command_buffer)
+        [this, &geometries, &render_objects, &scratch_buffer](VkCommandBuffer command_buffer)
     {
         VkMemoryBarrier barrier { VK_STRUCTURE_TYPE_MEMORY_BARRIER };
         barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
@@ -245,7 +256,7 @@ void Raytracing_Resources::create_acceleration_structure(const std::vector<GPU_M
 
         VkAccelerationStructureInfoNV top_accel_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
         top_accel_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-        top_accel_info.instanceCount = (uint32_t)geometries.size();
+        top_accel_info.instanceCount = (uint32_t)render_objects.size();
 
         vkCmdBuildAccelerationStructureNV(command_buffer,
             &top_accel_info,
@@ -264,7 +275,6 @@ void Raytracing_Resources::create_acceleration_structure(const std::vector<GPU_M
         vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV,
             0, 1, &barrier, 0, nullptr, 0, nullptr);
     });
-
 
     scratch_buffer.destroy();
     printf("\nAcceleration structures build time = %lld microseconds\n", elapsed_microseconds(t));

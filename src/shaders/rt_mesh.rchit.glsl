@@ -4,6 +4,7 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include "common.glsl"
+#include "geometry.glsl"
 #include "material.glsl"
 #include "gpu_types.h"
 
@@ -51,8 +52,9 @@ layout(std430, binding=7) readonly buffer Instance_Info_Buffer {
 };
 
 Vertex fetch_vertex(int index) {
-    uint vertex_index = index_buffers[nonuniformEXT(gl_InstanceCustomIndexNV)].indices[index];
-    Mesh_Vertex bv = vertex_buffers[nonuniformEXT(gl_InstanceCustomIndexNV)].vertices[vertex_index];
+    int geometry_buffer_index = instance_infos[gl_InstanceCustomIndexNV].geometry.index; // TODO: do this only if geometry.type is Triangle_Mesh.
+    uint vertex_index = index_buffers[geometry_buffer_index].indices[index];
+    Mesh_Vertex bv = vertex_buffers[geometry_buffer_index].vertices[vertex_index];
 
     Vertex v;
     v.p = vec3(bv.x, bv.y, bv.z);
@@ -75,6 +77,7 @@ void main() {
     vec3 wo = -gl_WorldRayDirectionNV;
 
     vec3 L = vec3(0);
+   
     for (int i = 0; i < point_light_count; i++) {
         vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV + 1e-3*n;
         vec3 light_vec = point_lights[i].position - p;
@@ -87,6 +90,7 @@ void main() {
 
         // trace shadow ray
         const float tmin = 1e-3;
+
         shadow_ray_payload.shadow_factor = 1.0f;
         traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, p, tmin, light_dir, light_dist - tmin, 1);
         if (shadow_ray_payload.shadow_factor == 0.0)

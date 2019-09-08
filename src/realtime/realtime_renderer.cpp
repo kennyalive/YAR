@@ -408,8 +408,11 @@ void Realtime_Renderer::draw_rasterized_image() {
 
         GPU_Types::Instance_Info instance_info;
         instance_info.material = render_object.material;
+        instance_info.geometry = render_object.geometry;
         instance_info.area_light_index = render_object.area_light.index;
         instance_info.pad0 = 0.f;
+        instance_info.pad1 = 0.f;
+        instance_info.pad2 = 0.f;
         instance_info.object_to_world_transform = render_object.object_to_world_transform;
 
         const GPU_Mesh& gpu_mesh = gpu_meshes[render_object.geometry.index];

@@ -1,6 +1,7 @@
 #version 460
 #extension GL_GOOGLE_include_directive : require
 #include "common.glsl"
+#include "geometry.glsl"
 #include "material.glsl"
 #include "gpu_types.h"
 

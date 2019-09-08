@@ -38,7 +38,7 @@ void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_s
         VkPushConstantRange push_constant_range;
         push_constant_range.stageFlags  = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         push_constant_range.offset      = 0;
-        push_constant_range.size        = 64;
+        push_constant_range.size        = sizeof(GPU_Types::Instance_Info);
 
         VkDescriptorSetLayout set_layouts[] = {descriptor_set_layout, material_descriptor_set_layout};
 

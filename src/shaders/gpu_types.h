@@ -2,6 +2,7 @@
     #pragma once
     #include "vk.h"
     #include "lib/color.h"
+    #include "lib/geometry.h"
     #include "lib/light.h"
     #include "lib/material.h"
     #include "lib/vector.h"
@@ -59,9 +60,13 @@ struct Diffuse_Rectangular_Light {
 
 struct Instance_Info {
     Material_Handle material;
+    Geometry_Handle geometry;
+    
     int area_light_index; // -1 if not an area light
     float pad0;
-
+    float pad1;
+    float pad2;
+   
     Matrix3x4 object_to_world_transform;
 };
 
