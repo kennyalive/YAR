@@ -119,10 +119,11 @@ Scene load_pbrt_project(const YAR_Project& project) {
         view_point.a[2][0] = -view_point.a[2][0];
     }
 
+    if (is_transform_changes_handedness(view_point))
+        scene.front_face_has_clockwise_winding = true;
+
     scene.view_points.push_back(view_point);
     scene.fovy = pbrt_scene->cameras[0]->fov;
-    // We need to change winding due to mirroring.
-    scene.front_face_has_clockwise_winding = true;
 
     Point_Light light;
     light.position = Vector3(pos.x, pos.y, pos.z);
