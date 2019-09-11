@@ -55,7 +55,7 @@ void Flying_Camera::update(double dt) {
         Vector2 mouse_delta = mouse_pos - last_mouse_pos;
         last_mouse_pos = mouse_pos;
 
-        if (mouse_delta != Vector2_Zero && ImGui::IsMouseDown(0)) {
+        if (mouse_delta != Vector2_Zero && ImGui::IsMouseDown(0) && !ImGui::IsMouseClicked(0)) {
             dz_angle = (-mouse_delta.x / ImGui::GetWindowWidth()) * ZAxis_Rotate_Speed;
             dx_angle = (-mouse_delta.y / ImGui::GetWindowHeight()) * XAxis_Rotate_Speed;
         }
