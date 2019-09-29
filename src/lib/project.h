@@ -1,12 +1,13 @@
 #pragma once
 
 #include "bounding_box.h"
+#include "light.h"
 #include "matrix.h"
 #include "vector.h"
 
 enum class Scene_Type {
     pbrt,
-    test
+    obj,
 };
 
 struct YAR_Project {
@@ -21,6 +22,14 @@ struct YAR_Project {
 
     bool has_camera_to_world = false;
     Matrix3x4 camera_to_world = Matrix3x4::identity;
+
+    float world_scale = 1.f;
+
+    // Lights defined in yar project file. The other source of lights is the
+    // scene itself, for example, pbrt scene usually defines the lights. The
+    // lights from yar project are merged with the native scene's lights in
+    // the final Scene object.
+    Lights lights; 
 };
 
 // Creates project description based on input file type.
