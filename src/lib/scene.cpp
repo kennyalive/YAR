@@ -3,6 +3,7 @@
 #include "scene.h"
 #include "project.h"
 
+#include "obj_loader.h"
 #include "pbrt_loader.h"
 #include "test_scenes.h"
 
@@ -26,17 +27,8 @@ Scene load_scene(const YAR_Project& project) {
     if (project.scene_type == Scene_Type::pbrt) {
         scene = load_pbrt_project(project);
     }
-    else if (project.scene_type == Scene_Type::test) {
-        if (project.scene_path == "conference")
-            scene = load_conference_scene();
-        else if (project.scene_path == "bunny")
-            scene = load_bunny_scene();
-        else if (project.scene_path == "buddha")
-            scene = load_buddha_scene();
-        else if (project.scene_path == "hairball")
-            scene = load_hairball_scene();
-        else if (project.scene_path == "mori_knob")
-            scene = load_mori_knob();
+    else if (project.scene_type == Scene_Type::obj) {
+        scene = load_obj_project(project);
     }
     else {
         error("load_scene: unknown scene type");

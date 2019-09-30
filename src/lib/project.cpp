@@ -1,6 +1,7 @@
 #include "std.h"
 #include "common.h"
 #include "project.h"
+#include "spectrum.h"
 
 #define JSMN_STATIC 
 #include "jsmn/jsmn.h"
@@ -178,7 +179,7 @@ struct Parser {
             parse_array_of_objects([this]() {parse_light_object();});
         }
         else {
-            check(false, "Unknown token: %.*s", (int)get_current_token_string().size(), get_current_token_string().data());
+            check(false, "Unknown token [%.*s]", (int)get_current_token_string().size(), get_current_token_string().data());
         }
     }
 
@@ -197,19 +198,27 @@ struct Parser {
 
     void parse_point_light(int num_fields) {
         Point_Light light{};
+        std::string spectrum_shape = "constant";
+        float luminous_flux = 0.f;
         for (int i = 0; i < num_fields; i++) {
             if (match_string("position")) {
                 get_fixed_numeric_array(3, &light.position.x);
             }
             else if (match_string("spectrum_shape")) {
-                std::string shape = get_string();
+                spectrum_shape = get_string();
             }
-            else if (match_string("intensity")) {
-                float intensity = get_numeric<float>();
+            else if (match_string("luminous_flux")) {
+                luminous_flux = get_numeric<float>();
             }
             else
-                check(false, "unknown point light attribute");
+                check(false, "unknown point light attribute [%.*s]", (int)get_current_token_string().size(), get_current_token_string().data());
         }
+
+        if (spectrum_shape.empty() || spectrum_shape == "constant")
+            light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(luminous_flux);
+        else
+            check(false, "unknown spectrum_shape [%s]", spectrum_shape.c_str());
+
         project.lights.point_lights.emplace_back(std::move(light));
     }
 };

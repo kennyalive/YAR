@@ -37,6 +37,9 @@
     <Filter Include="meow-hash">
       <UniqueIdentifier>{393ebdb5-015e-491f-b183-b7837c4578b8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="jsnm">
+      <UniqueIdentifier>{8d65b524-acce-4d2f-bd85-791fae8d4ad5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third-party\enkiTS\TaskScheduler.cpp">
@@ -248,6 +251,9 @@
     </ClInclude>
     <ClInclude Include="..\third-party\meow-hash\meow_hash_x64_aesni.h">
       <Filter>meow-hash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\jsmn\jsmn.h">
+      <Filter>jsnm</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

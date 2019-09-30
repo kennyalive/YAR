@@ -90,3 +90,19 @@ Vector3 Sampled_Spectrum::reflectance_spectrum_to_XYZ() const {
     xyz *= CIE_Y_integral_inverse;
     return xyz;
 }
+
+ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminous_flux) {
+    float radiant_flux_per_wavelength = luminous_flux / (683.f * CIE_Y_integral); // [W/m]
+
+    // Get constant spectrum that produces given luminous_flux.
+    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(radiant_flux_per_wavelength);
+
+    Vector3 xyz_flux = s.emission_spectrum_to_XYZ();
+
+    constexpr float uniform_radial_flux_to_intensity = 0.25f * Pi_Inv;
+    Vector3 xyz_intensity = xyz_flux * uniform_radial_flux_to_intensity;
+
+    // NOTE: Constant spectrum does not produce white RGB (for sRGB). It's a bit reddish.
+    return ColorRGBFromXYZ(xyz_intensity);
+}
+

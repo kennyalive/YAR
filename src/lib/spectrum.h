@@ -1,5 +1,6 @@
 #pragma once
 
+#include "color.h"
 #include "vector.h"
 
 // Sampled_Spectrum approximates spectrum function as a sequence of samples where each sample
@@ -20,3 +21,5 @@ struct Sampled_Spectrum {
     Vector3 emission_spectrum_to_XYZ() const;
     Vector3 reflectance_spectrum_to_XYZ() const;
 };
+
+ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminous_flux); 

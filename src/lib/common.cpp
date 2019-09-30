@@ -119,22 +119,6 @@ std::string read_text_file(const std::string& file_name) {
     return buffer.str();
 }
 
-Text_File_Lines read_text_file_by_lines(const std::string& file_name) {
-    std::string abs_path = get_resource_path(file_name);
-    std::ifstream file(abs_path);
-    if (!file)
-        error("failed to open file: %s", abs_path.c_str());
-    Text_File_Lines result;
-    result.line_start_positions.push_back(0);
-    std::stringstream ss;
-    for (std::string line; std::getline(file, line); ) {
-        ss << line << "\n";
-        result.line_start_positions.push_back(result.line_start_positions.back() + line.length() + 1 /*new line*/);
-    }
-    result.text = ss.str();
-    return result;
-}
-
 double get_base_cpu_frequency_ghz() {
     auto rdtsc_start = __rdtsc();
     Timestamp t;
