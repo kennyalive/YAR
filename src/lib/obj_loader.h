@@ -1,7 +1,10 @@
 #pragma once
 
-#include "lib/color.h"
-#include "lib/triangle_mesh.h"
+#include "color.h"
+#include "scene.h"
+#include "triangle_mesh.h"
+
+struct YAR_Project;
 
 struct Obj_Material {
     ColorRGB k_diffuse;
@@ -11,8 +14,14 @@ struct Obj_Material {
 struct Obj_Model {
     std::string name;
     Triangle_Mesh mesh;
-    bool has_material;
-    Obj_Material material;
+    int material_index = -1;
 };
 
-std::vector<Obj_Model> load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params params = Triangle_Mesh_Load_Params{});
+struct Obj_Data {
+    std::vector<Obj_Material> materials;
+    std::vector<Obj_Model> models;
+};
+
+Obj_Data load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params params = Triangle_Mesh_Load_Params{}, const std::vector<std::string>& ignore_geometry_names = {});
+Scene load_obj_project(const YAR_Project& project);
+

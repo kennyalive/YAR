@@ -15,9 +15,6 @@
     <ClInclude Include="..\src\lib\obj_loader.h">
       <Filter>project</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\lib\test_scenes.h">
-      <Filter>project</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\lib\colorimetry.h" />
     <ClInclude Include="..\src\lib\spectrum.h" />
     <ClInclude Include="..\src\lib\pbrt_loader.h">
@@ -40,9 +37,6 @@
     <ClCompile Include="..\src\lib\win32.cpp" />
     <ClCompile Include="..\src\std.cpp" />
     <ClCompile Include="..\src\lib\obj_loader.cpp">
-      <Filter>project</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\lib\test_scenes.cpp">
       <Filter>project</Filter>
     </ClCompile>
     <ClCompile Include="..\src\lib\colorimetry.cpp" />

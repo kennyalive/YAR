@@ -5,7 +5,6 @@
 
 #include "obj_loader.h"
 #include "pbrt_loader.h"
-#include "test_scenes.h"
 
 static void finalize_scene(Scene& scene) {
     for (auto [i, light] : enumerate(scene.lights.diffuse_rectangular_lights)) {
@@ -37,9 +36,10 @@ Scene load_scene(const YAR_Project& project) {
     if (project.has_camera_to_world)
         scene.view_points = {project.camera_to_world};
 
-    finalize_scene(scene);
-
+    scene.fovy = project.camera_fov_y;
     ASSERT(scene.fovy != 0.f);
+
+    finalize_scene(scene);
     return scene;
 }
 

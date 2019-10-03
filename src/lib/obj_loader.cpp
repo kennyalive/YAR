@@ -2,6 +2,10 @@
 #include "common.h"
 #include "obj_loader.h"
 
+#include "colorimetry.h"
+#include "project.h"
+#include "spectrum.h"
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
@@ -28,8 +32,9 @@ struct Mesh_Vertex_Hasher {
 };
 } // namespace
 
-std::vector<Obj_Model> load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params params)
+Obj_Data load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params params, const std::vector<std::string>& ignore_geometry_names)
 {
+    // Load obj file.
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -40,15 +45,32 @@ std::vector<Obj_Model> load_obj(const std::string& obj_file, const Triangle_Mesh
 
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, obj_path.c_str(), mtl_dir.c_str()))
         error("failed to load obj model: " + obj_file);
-    /*if (!warn.empty())
-        printf("Obj loading warning: %s (%s)\n", warn.c_str(), obj_file.c_str());*/
 
-    std::vector<Obj_Model> models(shapes.size());
+    Obj_Data obj_data;
+
+    // Get materials.
+    obj_data.materials.resize(materials.size());
+    for (auto [i, tinyobj_mtl] : enumerate(materials)) {
+        Obj_Material& mtl = obj_data.materials[i];
+        mtl.k_diffuse = ColorRGB{tinyobj_mtl.diffuse};
+        mtl.k_specular = ColorRGB{tinyobj_mtl.specular};
+    }
+
+    // Get objects.
+    obj_data.models.reserve(shapes.size());
+    auto& models = obj_data.models;
 
     for (size_t i = 0; i < shapes.size(); i++) {
         tinyobj::shape_t& shape = shapes[i];
-        models[i].name = shape.name;
-        Triangle_Mesh& mesh = models[i].mesh;
+
+        if (std::find(ignore_geometry_names.begin(), ignore_geometry_names.end(), shape.name) != ignore_geometry_names.end()) {
+            continue;
+        }
+
+        obj_data.models.push_back(Obj_Model{});
+        Obj_Model& model = obj_data.models.back();
+        model.name = shape.name;
+        Triangle_Mesh& mesh = model.mesh;
 
         std::unordered_map<Mesh_Vertex, uint32_t, Mesh_Vertex_Hasher> unique_vertices;
         bool has_normals = true;
@@ -121,16 +143,13 @@ std::vector<Obj_Model> load_obj(const std::string& obj_file, const Triangle_Mesh
         }
 
         if (!shape.mesh.material_ids.empty() && shape.mesh.material_ids[0] != -1) {
-            for (int face_material_id : shape.mesh.material_ids)
+            // Check that all faces have the same material. Multi-material meshes are not supported.
+            /*
+            for (int face_material_id : shape.mesh.material_ids) {
                 ASSERT(face_material_id == shape.mesh.material_ids[0]);
-
-            const tinyobj::material_t& src = materials[shape.mesh.material_ids[0]];
-            Obj_Material& mtl = models[i].material;
-            mtl.k_diffuse = ColorRGB{src.diffuse[0], src.diffuse[1], src.diffuse[2]};
-            mtl.k_specular = ColorRGB{src.specular[0], src.specular[1], src.specular[2]};
-            models[i].has_material = true;
-        } else {
-            models[i].has_material = false;
+            }
+            */
+            model.material_index = shape.mesh.material_ids[0];
         }
     }
 
@@ -149,6 +168,76 @@ std::vector<Obj_Model> load_obj(const std::string& obj_file, const Triangle_Mesh
                 std::swap(model.mesh.indices[i], model.mesh.indices[i+1]);
         }
     }
+    return obj_data;
+}
 
-    return models;
+static const Matrix3x4 from_obj_to_world {
+    1, 0,  0, 0,
+    0, 0, -1, 0,
+    0, 1,  0, 0
+};
+
+Scene load_obj_project(const YAR_Project& project) {
+    Triangle_Mesh_Load_Params mesh_load_params;
+    mesh_load_params.transform = uniform_scale(from_obj_to_world, project.world_scale);
+    mesh_load_params.crease_angle = project.mesh_crease_angle;
+    mesh_load_params.invert_winding_order = project.mesh_invert_winding_order;
+    Obj_Data obj_data = load_obj(project.scene_path, mesh_load_params, project.ignore_geometry_names);
+
+    Scene scene;
+
+    scene.materials.lambertian.resize(obj_data.materials.size());
+    for (auto [i, obj_material] : enumerate(obj_data.materials)) {
+        scene.materials.lambertian[i].albedo = obj_material.k_diffuse;
+    }
+
+    scene.geometries.triangle_meshes.resize(obj_data.models.size());
+    // We can have more elements in case of instancing.
+    scene.render_objects.reserve(obj_data.models.size()); 
+
+    std::map<std::string, std::vector<YAR_Instance>> instance_infos;
+    for (const YAR_Instance& instance : project.instances)
+        instance_infos[instance.geometry_name].push_back(instance);
+
+    bool add_default_material = false;
+    for (int i = 0; i < (int)obj_data.models.size(); i++) {
+        scene.geometries.triangle_meshes[i] = obj_data.models[i].mesh;
+
+        Material_Handle material;
+        //if (obj_data.models[i].material_index == -1) {
+        material = { Material_Type::lambertian, (int)scene.materials.lambertian.size() };
+        add_default_material = true;
+        //}
+        //else {
+        //    material = { Material_Type::lambertian, obj_data.models[i].material_index };
+        //}
+
+        auto instances_it = instance_infos.find(obj_data.models[i].name); 
+        if (instances_it != instance_infos.end()) {
+            for (const YAR_Instance& instance : instances_it->second) {
+                scene.render_objects.push_back(Render_Object{});
+                Render_Object& render_object = scene.render_objects.back();
+                render_object.geometry = { Geometry_Type::triangle_mesh, i };
+                render_object.material = material;
+                render_object.object_to_world_transform = instance.transform;
+                render_object.world_to_object_transform = get_inverted_transform(instance.transform);
+            }
+        }
+        else {
+            scene.render_objects.push_back(Render_Object{});
+            Render_Object& render_object = scene.render_objects.back();
+            render_object.geometry = { Geometry_Type::triangle_mesh, i };
+            render_object.material = material;
+            render_object.world_to_object_transform = Matrix3x4::identity;
+            render_object.object_to_world_transform = Matrix3x4::identity;
+
+        }
+    }
+    if (add_default_material) {
+        scene.materials.lambertian.push_back({Color_White});
+    }
+
+    scene.lights = project.lights;
+    scene.fovy = 45.f;
+    return scene;
 }

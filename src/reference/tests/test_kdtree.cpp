@@ -212,8 +212,8 @@ static Scene_KdTree get_scene_kdtree(const std::string& model_file_name,
 static void test_triangle_mesh(const Triangle_Mesh_Info& triangle_mesh_info) {
     Geometries geometries;
     {
-        std::vector<Obj_Model> obj_models = load_obj(triangle_mesh_info.file_name);
-        for (const Obj_Model& obj_model : obj_models) {
+        Obj_Data obj_data = load_obj(triangle_mesh_info.file_name);
+        for (const Obj_Model& obj_model : obj_data.models) {
             geometries.triangle_meshes.push_back(obj_model.mesh);
         }
     }

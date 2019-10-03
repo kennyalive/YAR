@@ -1,6 +1,7 @@
 #include "std.h"
 #include "common.h"
 #include "project.h"
+#include "colorimetry.h"
 #include "spectrum.h"
 
 #define JSMN_STATIC 
@@ -97,6 +98,14 @@ struct Parser {
         return value;
     }
 
+    bool get_bool() {
+        CHECK(token.type == JSMN_PRIMITIVE);
+        CHECK(content[token.start] == 't' || content[token.start] == 'f');
+        bool result = content[token.start] == 't';
+        next_token();
+        return result;
+    }
+
     template <typename T>
     void get_fixed_numeric_array(int array_size, T* values) {
         CHECK(token.type == JSMN_ARRAY);
@@ -104,6 +113,17 @@ struct Parser {
         next_token();
         for (int i = 0; i < array_size; i++)
             values[i] = get_numeric<T>();
+    }
+
+    std::vector<std::string> get_array_of_strings() {
+        CHECK(token.type == JSMN_ARRAY);
+        const int array_size = token.size;
+        next_token();
+        std::vector<std::string> strs;
+        strs.reserve(array_size);
+        for (int i = 0; i < array_size; i++)
+            strs.push_back(get_string());
+        return strs;
     }
 
     void parse_array_of_objects(std::function<void()> parse_object) {
@@ -175,8 +195,25 @@ struct Parser {
             project.world_scale = get_numeric<float>();
             CHECK(project.world_scale > 0.f);
         }
+        else if (match_string("camera_fov_y")) {
+            project.camera_fov_y = get_numeric<float>();
+            CHECK(project.camera_fov_y > 0.f);
+        }
+        else if (match_string("mesh_invert_winding_order")) {
+            project.mesh_invert_winding_order = get_bool(); 
+        }
+        else if (match_string("mesh_crease_angle")) {
+            project.mesh_crease_angle = radians(get_numeric<float>());
+            CHECK(project.mesh_crease_angle >= 0.f);
+        }
         else if (match_string("lights")) {
             parse_array_of_objects([this]() {parse_light_object();});
+        }
+        else if (match_string("instances")) {
+            parse_array_of_objects([this]() { parse_instance_object();});
+        }
+        else if (match_string("ignore_geometry_names")) {
+            project.ignore_geometry_names = get_array_of_strings();
         }
         else {
             check(false, "Unknown token [%.*s]", (int)get_current_token_string().size(), get_current_token_string().data());
@@ -192,6 +229,8 @@ struct Parser {
 
         if (match_string("point"))
             parse_point_light(num_fields - 1);
+        else if (match_string("diffuse_rectangular"))
+            parse_diffuse_rectangular_light(num_fields - 1);
         else
             check(false, "unknown light type");
     }
@@ -220,6 +259,61 @@ struct Parser {
             check(false, "unknown spectrum_shape [%s]", spectrum_shape.c_str());
 
         project.lights.point_lights.emplace_back(std::move(light));
+    }
+
+    void parse_diffuse_rectangular_light(int num_fields) {
+        Diffuse_Rectangular_Light light{};
+        float luminous_flux = 0.f;
+        for (int i = 0; i < num_fields; i++) {
+            if (match_string("size")) {
+                get_fixed_numeric_array(2, &light.size.x);
+            }
+            else if (match_string("light_to_world_transform")) {
+                get_fixed_numeric_array(12, &light.light_to_world_transform.a[0][0]);
+            }
+            else if (match_string("luminous_flux")) {
+                luminous_flux = get_numeric<float>(); 
+            }
+            else if (match_string("shadow_ray_count")) {
+                light.shadow_ray_count = get_numeric<int>();
+            }
+            else
+                check(false, "unknown diffuse rectangular light attribute [%.*s", (int)get_current_token_string().size(), get_current_token_string().data());
+        }
+
+        float radiant_flux_per_wavelength = luminous_flux / (683.f * CIE_Y_integral); // [W/m]
+        float radiant_exitance_per_wavelength = Pi * radiant_flux_per_wavelength; // [M/m]
+        Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(radiant_exitance_per_wavelength);
+        Vector3 xyz = s.emission_spectrum_to_XYZ();
+        light.emitted_radiance = ColorRGBFromXYZ(xyz);
+
+        project.lights.diffuse_rectangular_lights.emplace_back(std::move(light));
+    }
+
+    void parse_instance_object() {
+        CHECK(token.type == JSMN_OBJECT);
+        const int num_fields = token.size;
+        next_token();
+
+        bool has_transform = false;
+        YAR_Instance instance;
+        for (int i = 0; i < num_fields; i++) {
+            if (match_string("geometry_name")) {
+                instance.geometry_name = get_string();
+            }
+            else if (match_string("translation")) {
+                Vector3 translation;
+                get_fixed_numeric_array(3, &translation.x);
+                instance.transform = translate(Matrix3x4::identity, translation);
+                has_transform = true;
+            }
+            else 
+                check(false, "unknown instance attribute [%.e*s]", (int)get_current_token_string().size(), get_current_token_string().data());
+        }
+        CHECK(!instance.geometry_name.empty());
+        CHECK(has_transform);
+        project.instances.push_back(instance);
+
     }
 };
 } // namespace

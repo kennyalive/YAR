@@ -5,7 +5,6 @@
 #include "utils.h"
 
 #include "lib/matrix.h"
-#include "lib/test_scenes.h"
 #include "reference/reference_renderer.h"
 
 #include "shaders/gpu_types.h"
