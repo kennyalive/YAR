@@ -123,26 +123,26 @@
     </CustomBuild>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\realtime\copy_to_swapchain.cpp" />
-    <ClCompile Include="..\src\realtime\main.cpp" />
-    <ClCompile Include="..\src\realtime\realtime_renderer.cpp" />
-    <ClCompile Include="..\src\realtime\raster_resources.cpp" />
-    <ClCompile Include="..\src\realtime\rt_resources.cpp" />
-    <ClCompile Include="..\src\realtime\utils.cpp" />
-    <ClCompile Include="..\src\realtime\vk.cpp" />
+    <ClCompile Include="..\src\renderer\copy_to_swapchain.cpp" />
+    <ClCompile Include="..\src\renderer\main.cpp" />
+    <ClCompile Include="..\src\renderer\realtime_renderer.cpp" />
+    <ClCompile Include="..\src\renderer\raster_resources.cpp" />
+    <ClCompile Include="..\src\renderer\rt_resources.cpp" />
+    <ClCompile Include="..\src\renderer\utils.cpp" />
+    <ClCompile Include="..\src\renderer\vk.cpp" />
     <ClCompile Include="..\src\std.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\realtime\common.h" />
-    <ClInclude Include="..\src\realtime\copy_to_swapchain.h" />
-    <ClInclude Include="..\src\realtime\realtime_renderer.h" />
-    <ClInclude Include="..\src\realtime\raster_resources.h" />
-    <ClInclude Include="..\src\realtime\rt_resources.h" />
-    <ClInclude Include="..\src\realtime\utils.h" />
-    <ClInclude Include="..\src\realtime\vk.h" />
+    <ClInclude Include="..\src\renderer\common.h" />
+    <ClInclude Include="..\src\renderer\copy_to_swapchain.h" />
+    <ClInclude Include="..\src\renderer\realtime_renderer.h" />
+    <ClInclude Include="..\src\renderer\raster_resources.h" />
+    <ClInclude Include="..\src\renderer\rt_resources.h" />
+    <ClInclude Include="..\src\renderer\utils.h" />
+    <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\shaders\gpu_types.h" />
     <ClInclude Include="..\src\std.h" />
   </ItemGroup>
