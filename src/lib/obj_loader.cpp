@@ -32,98 +32,10 @@ struct Mesh_Vertex_Hasher {
 };
 } // namespace
 
-Obj_Data load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params params, const std::vector<std::string>& ignore_geometry_names)
+static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyobj::attrib_t attrib,
+    const Triangle_Mesh_Load_Params params, std::vector<Obj_Mesh>& obj_meshes)
 {
-    // Load obj file.
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string warn, err;
-
-    const std::string obj_path = get_resource_path(obj_file).c_str();
-    const std::string mtl_dir = get_directory(obj_path);
-
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, obj_path.c_str(), mtl_dir.c_str()))
-        error("failed to load obj model: " + obj_file);
-
-    Obj_Data obj_data;
-
-    // Get materials.
-    obj_data.materials.resize(materials.size());
-    for (auto [i, tinyobj_mtl] : enumerate(materials)) {
-        Obj_Material& mtl = obj_data.materials[i];
-        mtl.k_diffuse = ColorRGB{tinyobj_mtl.diffuse};
-        mtl.k_specular = ColorRGB{tinyobj_mtl.specular};
-    }
-
-    // Get objects.
-    obj_data.models.reserve(shapes.size());
-    auto& models = obj_data.models;
-
-    for (size_t i = 0; i < shapes.size(); i++) {
-        tinyobj::shape_t& shape = shapes[i];
-
-        if (std::find(ignore_geometry_names.begin(), ignore_geometry_names.end(), shape.name) != ignore_geometry_names.end()) {
-            continue;
-        }
-
-        obj_data.models.push_back(Obj_Model{});
-        Obj_Model& model = obj_data.models.back();
-        model.name = shape.name;
-        Triangle_Mesh& mesh = model.mesh;
-
-        std::unordered_map<Mesh_Vertex, uint32_t, Mesh_Vertex_Hasher> unique_vertices;
-        bool has_normals = true;
-
-        for (const auto& index : shape.mesh.indices) {
-            Mesh_Vertex vertex;
-
-            vertex.pos = {
-                attrib.vertices[3 * index.vertex_index + 0],
-                attrib.vertices[3 * index.vertex_index + 1],
-                attrib.vertices[3 * index.vertex_index + 2]
-            };
-
-            if (index.normal_index != -1) {
-                vertex.normal = {
-                    attrib.normals[3 * index.normal_index + 0],
-                    attrib.normals[3 * index.normal_index + 1],
-                    attrib.normals[3 * index.normal_index + 2],
-                };
-            } else {
-                vertex.normal = Vector3_Zero;
-                has_normals = false;
-            }
-
-            if (index.texcoord_index != -1) {
-                vertex.uv = {
-                    attrib.texcoords[2 * index.texcoord_index + 0],
-                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-                };
-            } else {
-                vertex.uv = Vector2_Zero;
-            }
-
-            if (params.face_normals) {
-                mesh.indices.push_back((uint32_t)mesh.vertices.size());
-                mesh.vertices.push_back(vertex.pos);
-                mesh.normals.push_back(vertex.normal);
-                mesh.uvs.push_back(vertex.uv);
-            } else {
-                uint32_t index;
-                if (unique_vertices.count(vertex) == 0) {
-                    index = (uint32_t)mesh.vertices.size();
-                    unique_vertices[vertex] = (uint32_t)mesh.vertices.size();
-                    mesh.vertices.push_back(vertex.pos);
-                    mesh.normals.push_back(vertex.normal);
-                    mesh.uvs.push_back(vertex.uv);
-                } else {
-                    index = unique_vertices[vertex];
-                }
-                mesh.indices.push_back(index);
-            }
-        }
-
+    auto compute_mesh_normals = [&params](Triangle_Mesh& mesh, bool face_normals) {
         if (params.face_normals) {
             for (int i = 0; i < mesh.indices.size(); i += 3) {
                 uint32_t ia = mesh.indices[i + 0];
@@ -138,34 +50,133 @@ Obj_Data load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params p
                 mesh.normals[ib] = n;
                 mesh.normals[ic] = n;
             }
-        } else if (!has_normals) {
+        }
+        else
             compute_normals(mesh, params.normal_average_mode, params.crease_angle);
+    };
+
+    int current_material_id = shape.mesh.material_ids.empty() ? -1 : shape.mesh.material_ids[0];
+    std::unordered_map<Mesh_Vertex, uint32_t, Mesh_Vertex_Hasher> unique_vertices;
+    bool has_normals = true;
+
+    obj_meshes.push_back(Obj_Mesh{});
+    obj_meshes.back().name = shape.name;
+    obj_meshes.back().material_index = current_material_id;
+    Triangle_Mesh* mesh = &obj_meshes.back().mesh;
+
+    for (int i = 0; i < (int)shape.mesh.indices.size(); i++) {
+        const tinyobj::index_t& index = shape.mesh.indices[i];
+
+        // Start new mesh if new material is found.
+        if (!shape.mesh.material_ids.empty() && i > 0 && i%3 == 0) {
+            int face_index = i/3;
+            int material_id = shape.mesh.material_ids[face_index];
+            if (material_id != current_material_id) {
+                if (!has_normals || params.face_normals)
+                    compute_mesh_normals(*mesh, params.face_normals);
+
+                obj_meshes.push_back(Obj_Mesh{});
+                obj_meshes.back().name = shape.name;
+                obj_meshes.back().material_index = material_id;
+                mesh = &obj_meshes.back().mesh;
+                current_material_id = material_id;
+                unique_vertices.clear();
+                has_normals = true;
+            }
         }
 
-        if (!shape.mesh.material_ids.empty() && shape.mesh.material_ids[0] != -1) {
-            // Check that all faces have the same material. Multi-material meshes are not supported.
-            /*
-            for (int face_material_id : shape.mesh.material_ids) {
-                ASSERT(face_material_id == shape.mesh.material_ids[0]);
-            }
-            */
-            model.material_index = shape.mesh.material_ids[0];
+        Mesh_Vertex vertex;
+        vertex.pos = {
+            attrib.vertices[3 * index.vertex_index + 0],
+            attrib.vertices[3 * index.vertex_index + 1],
+            attrib.vertices[3 * index.vertex_index + 2]
+        };
+
+        if (index.normal_index != -1) {
+            vertex.normal = {
+                attrib.normals[3 * index.normal_index + 0],
+                attrib.normals[3 * index.normal_index + 1],
+                attrib.normals[3 * index.normal_index + 2],
+            };
+        } else {
+            vertex.normal = Vector3_Zero;
+            has_normals = false;
         }
+
+        if (index.texcoord_index != -1) {
+            vertex.uv = {
+                attrib.texcoords[2 * index.texcoord_index + 0],
+                1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+            };
+        } else {
+            vertex.uv = Vector2_Zero;
+        }
+
+        if (params.face_normals) {
+            mesh->indices.push_back((uint32_t)mesh->vertices.size());
+            mesh->vertices.push_back(vertex.pos);
+            mesh->normals.push_back(vertex.normal);
+            mesh->uvs.push_back(vertex.uv);
+        } else {
+            uint32_t index;
+            if (unique_vertices.count(vertex) == 0) {
+                index = (uint32_t)mesh->vertices.size();
+                unique_vertices[vertex] = (uint32_t)mesh->vertices.size();
+                mesh->vertices.push_back(vertex.pos);
+                mesh->normals.push_back(vertex.normal);
+                mesh->uvs.push_back(vertex.uv);
+            } else {
+                index = unique_vertices[vertex];
+            }
+            mesh->indices.push_back(index);
+        }
+    }
+    if (!has_normals || params.face_normals)
+        compute_mesh_normals(*mesh, params.face_normals);
+}
+
+Obj_Data load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params params,
+    const std::vector<std::string>& ignore_geometry_names)
+{
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+
+    const std::string obj_path = get_resource_path(obj_file).c_str();
+    const std::string mtl_dir = get_directory(obj_path);
+
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, obj_path.c_str(), mtl_dir.c_str()))
+        error("failed to load obj model: " + obj_file);
+
+    Obj_Data obj_data;
+
+    obj_data.materials.resize(materials.size());
+    for (auto [i, tinyobj_mtl] : enumerate(materials)) {
+        Obj_Material& mtl = obj_data.materials[i];
+        mtl.k_diffuse = ColorRGB{tinyobj_mtl.diffuse};
+        mtl.k_specular = ColorRGB{tinyobj_mtl.specular};
+    }
+
+    for (const tinyobj::shape_t& shape : shapes) {
+        if (std::find(ignore_geometry_names.begin(), ignore_geometry_names.end(), shape.name) != ignore_geometry_names.end()) {
+            continue;
+        }
+        convert_tinyobj_shape_to_meshes(shape, attrib, params, obj_data.meshes);
     }
 
     if (!params.transform.is_identity()) {
-        for (Obj_Model& model : models) {
-            for (Vector3& p : model.mesh.vertices)
+        for (Obj_Mesh& obj_mesh : obj_data.meshes) {
+            for (Vector3& p : obj_mesh.mesh.vertices)
                 p = transform_point(params.transform, p);
-            for (Vector3& n : model.mesh.normals)
+            for (Vector3& n : obj_mesh.mesh.normals)
                 n = transform_vector(params.transform, n).normalized();
         }
     }
-
     if (params.invert_winding_order) {
-        for (Obj_Model& model : models) {
-            for (int i = 0; i < (int)model.mesh.indices.size(); i += 3)
-                std::swap(model.mesh.indices[i], model.mesh.indices[i+1]);
+        for (Obj_Mesh& obj_mesh: obj_data.meshes) {
+            for (int i = 0; i < (int)obj_mesh.mesh.indices.size(); i += 3)
+                std::swap(obj_mesh.mesh.indices[i], obj_mesh.mesh.indices[i+1]);
         }
     }
     return obj_data;
@@ -191,28 +202,28 @@ Scene load_obj_project(const YAR_Project& project) {
         scene.materials.lambertian[i].albedo = obj_material.k_diffuse;
     }
 
-    scene.geometries.triangle_meshes.resize(obj_data.models.size());
+    scene.geometries.triangle_meshes.resize(obj_data.meshes.size());
     // We can have more elements in case of instancing.
-    scene.render_objects.reserve(obj_data.models.size()); 
+    scene.render_objects.reserve(obj_data.meshes.size()); 
 
     std::map<std::string, std::vector<YAR_Instance>> instance_infos;
     for (const YAR_Instance& instance : project.instances)
         instance_infos[instance.geometry_name].push_back(instance);
 
     bool add_default_material = false;
-    for (int i = 0; i < (int)obj_data.models.size(); i++) {
-        scene.geometries.triangle_meshes[i] = obj_data.models[i].mesh;
+    for (int i = 0; i < (int)obj_data.meshes.size(); i++) {
+        scene.geometries.triangle_meshes[i] = obj_data.meshes[i].mesh;
 
         Material_Handle material;
-        //if (obj_data.models[i].material_index == -1) {
-        material = { Material_Type::lambertian, (int)scene.materials.lambertian.size() };
-        add_default_material = true;
-        //}
-        //else {
-        //    material = { Material_Type::lambertian, obj_data.models[i].material_index };
-        //}
+        if (obj_data.meshes[i].material_index == -1) {
+            material = { Material_Type::lambertian, (int)scene.materials.lambertian.size() };
+            add_default_material = true;
+        }
+        else {
+            material = { Material_Type::lambertian, obj_data.meshes[i].material_index };
+        }
 
-        auto instances_it = instance_infos.find(obj_data.models[i].name); 
+        auto instances_it = instance_infos.find(obj_data.meshes[i].name); 
         if (instances_it != instance_infos.end()) {
             for (const YAR_Instance& instance : instances_it->second) {
                 scene.render_objects.push_back(Render_Object{});

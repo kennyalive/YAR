@@ -213,8 +213,8 @@ static void test_triangle_mesh(const Triangle_Mesh_Info& triangle_mesh_info) {
     Geometries geometries;
     {
         Obj_Data obj_data = load_obj(triangle_mesh_info.file_name);
-        for (const Obj_Model& obj_model : obj_data.models) {
-            geometries.triangle_meshes.push_back(obj_model.mesh);
+        for (const Obj_Mesh& obj_mesh : obj_data.meshes) {
+            geometries.triangle_meshes.push_back(obj_mesh.mesh);
         }
     }
 
