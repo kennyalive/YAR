@@ -11,7 +11,7 @@
     <ClCompile Include="..\src\renderer\vk.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\std.h" >
+    <ClInclude Include="..\src\std.h" />
     <ClInclude Include="..\src\renderer\copy_to_swapchain.h" />
     <ClInclude Include="..\src\renderer\raster_resources.h" />
     <ClInclude Include="..\src\renderer\realtime_renderer.h" />

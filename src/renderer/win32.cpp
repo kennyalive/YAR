@@ -1,4 +1,5 @@
 #include "std.h"
+#include "lib/common.h"
 #include "common.h"
 #include "platform.h"
 

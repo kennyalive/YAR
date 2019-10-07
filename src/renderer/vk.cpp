@@ -4,7 +4,7 @@
 #define VMA_IMPLEMENTATION
 #include "vk.h"
 
-#include "lib/platform.h"
+#include "platform.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"

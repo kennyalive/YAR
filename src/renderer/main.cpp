@@ -1,8 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
+#include "platform.h"
 #include "realtime_renderer.h"
-
-#include "lib/platform.h"
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"

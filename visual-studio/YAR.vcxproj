@@ -130,6 +130,7 @@
     <ClCompile Include="..\src\renderer\rt_resources.cpp" />
     <ClCompile Include="..\src\renderer\utils.cpp" />
     <ClCompile Include="..\src\renderer\vk.cpp" />
+    <ClCompile Include="..\src\renderer\win32.cpp" />
     <ClCompile Include="..\src\std.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -138,6 +139,7 @@
   <ItemGroup>
     <ClInclude Include="..\src\renderer\common.h" />
     <ClInclude Include="..\src\renderer\copy_to_swapchain.h" />
+    <ClInclude Include="..\src\renderer\platform.h" />
     <ClInclude Include="..\src\renderer\realtime_renderer.h" />
     <ClInclude Include="..\src\renderer\raster_resources.h" />
     <ClInclude Include="..\src\renderer\rt_resources.h" />

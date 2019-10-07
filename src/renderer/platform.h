@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../renderer/vk.h"
+#include "vk.h"
 
 struct GLFWwindow;
 
