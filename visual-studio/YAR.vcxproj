@@ -125,6 +125,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\renderer\copy_to_swapchain.cpp" />
     <ClCompile Include="..\src\renderer\main.cpp" />
+    <ClCompile Include="..\src\renderer\patch_materials.cpp" />
     <ClCompile Include="..\src\renderer\realtime_renderer.cpp" />
     <ClCompile Include="..\src\renderer\raster_resources.cpp" />
     <ClCompile Include="..\src\renderer\rt_resources.cpp" />
@@ -139,6 +140,7 @@
   <ItemGroup>
     <ClInclude Include="..\src\renderer\common.h" />
     <ClInclude Include="..\src\renderer\copy_to_swapchain.h" />
+    <ClInclude Include="..\src\renderer\patch_materials.h" />
     <ClInclude Include="..\src\renderer\platform.h" />
     <ClInclude Include="..\src\renderer\realtime_renderer.h" />
     <ClInclude Include="..\src\renderer\raster_resources.h" />
@@ -146,6 +148,7 @@
     <ClInclude Include="..\src\renderer\utils.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\shaders\gpu_types.h" />
+    <ClInclude Include="..\src\shaders\shared_image.h" />
     <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>
@@ -187,8 +190,15 @@
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
+    <None Include="..\src\shaders\compute_bsdf.glsl" />
     <None Include="..\src\shaders\geometry.glsl" />
+    <None Include="..\src\shaders\image.glsl" />
     <None Include="..\src\shaders\material.glsl" />
+    <CustomBuild Include="..\src\shaders\patch_materials.comp.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+    </CustomBuild>
     <None Include="..\src\shaders\rt_utils.glsl" />
     <None Include="..\src\shaders\tone_mapping.glsl" />
   </ItemGroup>

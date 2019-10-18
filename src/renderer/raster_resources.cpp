@@ -23,7 +23,7 @@ struct Global_Uniform_Buffer {
         Vector2 uv;
     };
 
-void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_set_layout, bool front_face_has_clockwise_winding) {
+void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout, bool front_face_has_clockwise_winding) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Global_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &mapped_uniform_buffer, "raster_uniform_buffer");
 
@@ -40,7 +40,7 @@ void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_s
         push_constant_range.offset      = 0;
         push_constant_range.size        = sizeof(GPU_Types::Instance_Info);
 
-        VkDescriptorSetLayout set_layouts[] = {descriptor_set_layout, material_descriptor_set_layout};
+        VkDescriptorSetLayout set_layouts[] = {descriptor_set_layout, material_descriptor_set_layout, image_descriptor_set_layout};
 
         VkPipelineLayoutCreateInfo create_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         create_info.setLayoutCount          = (uint32_t)std::size(set_layouts);

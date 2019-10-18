@@ -156,6 +156,8 @@ Obj_Data load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params p
         Obj_Material& mtl = obj_data.materials[i];
         mtl.k_diffuse = ColorRGB{tinyobj_mtl.diffuse};
         mtl.k_specular = ColorRGB{tinyobj_mtl.specular};
+        if (!tinyobj_mtl.diffuse_texname.empty())
+            mtl.diffuse_texture = tinyobj_mtl.diffuse_texname;
     }
 
     for (const tinyobj::shape_t& shape : shapes) {
@@ -200,6 +202,10 @@ Scene load_obj_project(const YAR_Project& project) {
     scene.materials.lambertian.resize(obj_data.materials.size());
     for (auto [i, obj_material] : enumerate(obj_data.materials)) {
         scene.materials.lambertian[i].albedo = obj_material.k_diffuse;
+        if (!obj_material.diffuse_texture.empty()) {
+            scene.materials.texture_names.push_back(obj_material.diffuse_texture);
+            scene.materials.lambertian[i].albedo_texture_index = (int)scene.materials.texture_names.size()-1;
+        }
     }
 
     scene.geometries.triangle_meshes.resize(obj_data.meshes.size());

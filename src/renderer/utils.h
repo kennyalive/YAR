@@ -31,6 +31,7 @@ struct Descriptor_Writes {
     }
 
     Descriptor_Writes& sampled_image        (uint32_t binding, VkImageView image_view, VkImageLayout layout);
+    Descriptor_Writes& sampled_image_array  (uint32_t binding, uint32_t array_size, const VkDescriptorImageInfo* image_infos);
     Descriptor_Writes& storage_image        (uint32_t binding, VkImageView image_view);
     Descriptor_Writes& sampler              (uint32_t binding, VkSampler sampler);
     Descriptor_Writes& uniform_buffer       (uint32_t binding, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
@@ -51,6 +52,7 @@ struct Descriptor_Set_Layout {
     }
 
     Descriptor_Set_Layout& sampled_image        (uint32_t binding, VkShaderStageFlags stage_flags);
+    Descriptor_Set_Layout& sample_image_array   (uint32_t binding, uint32_t array_size, VkShaderStageFlags stage_flags);
     Descriptor_Set_Layout& storage_image        (uint32_t binding, VkShaderStageFlags stage_flags);
     Descriptor_Set_Layout& sampler              (uint32_t binding, VkShaderStageFlags stage_flags);
     Descriptor_Set_Layout& uniform_buffer       (uint32_t binding, VkShaderStageFlags stage_flags);

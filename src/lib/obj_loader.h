@@ -9,6 +9,7 @@ struct YAR_Project;
 struct Obj_Material {
     ColorRGB k_diffuse;
     ColorRGB k_specular;
+    std::string diffuse_texture;
 };
 
 struct Obj_Mesh {

@@ -21,6 +21,19 @@ Descriptor_Writes& Descriptor_Writes::sampled_image(uint32_t binding, VkImageVie
     return *this;
 }
 
+Descriptor_Writes& Descriptor_Writes::sampled_image_array(uint32_t binding, uint32_t array_size, const VkDescriptorImageInfo* image_infos) {
+    ASSERT(write_count < max_writes);
+
+    VkWriteDescriptorSet& write = descriptor_writes[write_count++];
+    write = VkWriteDescriptorSet { VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+    write.dstSet             = descriptor_set;
+    write.dstBinding         = binding;
+    write.descriptorCount    = array_size;
+    write.descriptorType     = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    write.pImageInfo         = image_infos;
+    return *this;
+}
+
 Descriptor_Writes& Descriptor_Writes::storage_image(uint32_t binding, VkImageView image_view) {
     ASSERT(write_count < max_writes);
     VkDescriptorImageInfo& image = resource_infos[write_count].image;
@@ -144,6 +157,12 @@ static VkDescriptorSetLayoutBinding get_set_layout_binding(uint32_t binding, uin
 Descriptor_Set_Layout& Descriptor_Set_Layout::sampled_image(uint32_t binding, VkShaderStageFlags stage_flags) {
     ASSERT(binding_count < max_bindings);
     bindings[binding_count++] = get_set_layout_binding(binding, 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, stage_flags);
+    return *this;
+}
+
+Descriptor_Set_Layout& Descriptor_Set_Layout::sample_image_array(uint32_t binding, uint32_t array_size, VkShaderStageFlags stage_flags) {
+    ASSERT(binding_count < max_bindings);
+    bindings[binding_count++] = get_set_layout_binding(binding, array_size, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, stage_flags);
     return *this;
 }
 

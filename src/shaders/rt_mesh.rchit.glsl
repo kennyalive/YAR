@@ -4,8 +4,8 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include "common.glsl"
+#include "compute_bsdf.glsl"
 #include "geometry.glsl"
-#include "material.glsl"
 #include "gpu_types.h"
 
 #define HIT_SHADER
@@ -74,6 +74,8 @@ void main() {
     vec3 n2 = normal_transform * v2.n;
     vec3 n = normalize(barycentric_interpolate(attribs.x, attribs.y, n0, n1, n2));
 
+    vec2 uv = barycentric_interpolate(attribs.x, attribs.y, v0.uv, v1.uv, v2.uv);
+
     vec3 wo = -gl_WorldRayDirectionNV;
 
     vec3 L = vec3(0);
@@ -97,7 +99,7 @@ void main() {
             continue;
 
         Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
-        vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
+        vec3 bsdf = compute_bsdf(mtl_handle, uv, light_dir, wo);
         vec3 irradiance = point_lights[i].intensity * (n_dot_l / (light_dist * light_dist));
         L += shadow_ray_payload.shadow_factor * irradiance * bsdf;
     }
@@ -140,7 +142,7 @@ void main() {
                 continue;
 
             Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
-            vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
+            vec3 bsdf = compute_bsdf(mtl_handle, uv, light_dir, wo);
             L += shadow_ray_payload.shadow_factor * bsdf * light.area * light.emitted_radiance * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
         L /= float(light.shadow_ray_count);

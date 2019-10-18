@@ -254,6 +254,7 @@ static void create_device(GLFWwindow* window) {
 
         VkPhysicalDeviceFeatures features {};
         features.vertexPipelineStoresAndAtomics = VK_TRUE; // to shut up improper validation warning (image store is in the raygen shader not in the vertex stage)
+        features.fragmentStoresAndAtomics = VK_TRUE;
 
         VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptor_indexing_features{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT };
         descriptor_indexing_features.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
@@ -791,17 +792,15 @@ Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate
     return image;
 }
 
-Vk_Image vk_load_texture(const std::string& texture_file) {
+Vk_Image vk_load_texture(const std::string& texture_path) {
     int w, h;
     int component_count;
 
-    std::string abs_path = get_resource_path(texture_file);
-
-    auto rgba_pixels = stbi_load(abs_path.c_str(), &w, &h, &component_count,STBI_rgb_alpha);
+    auto rgba_pixels = stbi_load(texture_path.c_str(), &w, &h, &component_count,STBI_rgb_alpha);
     if (rgba_pixels == nullptr)
-        error("failed to load image file: " + abs_path);
+        error("failed to load image file: %s", texture_path.c_str());
 
-    Vk_Image texture = vk_create_texture(w, h, VK_FORMAT_R8G8B8A8_SRGB, true, rgba_pixels, 4, texture_file.c_str());
+    Vk_Image texture = vk_create_texture(w, h, VK_FORMAT_R8G8B8A8_SRGB, true, rgba_pixels, 4, texture_path.c_str());
     stbi_image_free(rgba_pixels);
     return texture;
 }

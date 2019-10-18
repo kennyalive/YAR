@@ -1,6 +1,7 @@
 #pragma once
 
 #include "copy_to_swapchain.h"
+#include "patch_materials.h"
 #include "raster_resources.h"
 #include "rt_resources.h"
 #include "utils.h"
@@ -27,6 +28,7 @@ public:
     void run_frame();
 
 private:
+    void create_default_textures();
     void draw_frame();
     void draw_rasterized_image();
     void draw_raytraced_image();
@@ -58,14 +60,19 @@ private:
 
 
     struct GPU_Scene_Resources {
+        std::vector<Vk_Image> images_2d;
+
         Vk_Buffer point_lights;
         Vk_Buffer diffuse_rectangular_lights;
 
         Vk_Buffer lambertian_material_buffer;
         VkDescriptorSetLayout material_descriptor_set_layout;
         VkDescriptorSet material_descriptor_set;
+        VkDescriptorSetLayout image_descriptor_set_layout;
+        VkDescriptorSet image_descriptor_set;
     } gpu_scene;
 
+    Patch_Materials patch_materials;
     Rasterization_Resources raster;
     Raytracing_Resources rt;
 

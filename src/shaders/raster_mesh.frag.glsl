@@ -1,8 +1,10 @@
 #version 460
 #extension GL_GOOGLE_include_directive : require
+#extension GL_EXT_nonuniform_qualifier : require
+
 #include "common.glsl"
+#include "compute_bsdf.glsl"
 #include "geometry.glsl"
-#include "material.glsl"
 #include "gpu_types.h"
 
 struct Frag_In {
@@ -50,7 +52,7 @@ void main() {
         float light_dist_sq_inv = 1.f / dot(light_vec, light_vec);
         vec3 light_dir = light_vec * sqrt(light_dist_sq_inv);
 
-        vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
+        vec3 bsdf = compute_bsdf(mtl_handle, frag_in.uv, light_dir, wo);
         L += bsdf * point_lights[i].intensity * (light_dist_sq_inv * max(0, dot(n, light_dir)));
     }
 
@@ -82,7 +84,7 @@ void main() {
             if (n_dot_l <= 0.f)
                 continue;
 
-            vec3 bsdf = compute_bsdf(mtl_handle, light_dir, wo);
+            vec3 bsdf = compute_bsdf(mtl_handle, frag_in.uv, light_dir, wo);
             L += light.area * light.emitted_radiance * bsdf * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
         L /= float(light.shadow_ray_count);

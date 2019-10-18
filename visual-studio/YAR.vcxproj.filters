@@ -9,6 +9,8 @@
     <ClCompile Include="..\src\renderer\rt_resources.cpp" />
     <ClCompile Include="..\src\renderer\utils.cpp" />
     <ClCompile Include="..\src\renderer\vk.cpp" />
+    <ClCompile Include="..\src\renderer\win32.cpp" />
+    <ClCompile Include="..\src\renderer\patch_materials.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\std.h" />
@@ -20,6 +22,11 @@
     <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\renderer\common.h" />
     <ClInclude Include="..\src\shaders\gpu_types.h" />
+    <ClInclude Include="..\src\renderer\platform.h" />
+    <ClInclude Include="..\src\renderer\patch_materials.h" />
+    <ClInclude Include="..\src\shaders\shared_image.h">
+      <Filter>shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
@@ -45,6 +52,12 @@
     <None Include="..\src\shaders\geometry.glsl">
       <Filter>shaders</Filter>
     </None>
+    <None Include="..\src\shaders\image.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\src\shaders\compute_bsdf.glsl">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\src\shaders\raster_mesh.frag.glsl">
@@ -66,6 +79,9 @@
       <Filter>shaders</Filter>
     </CustomBuild>
     <CustomBuild Include="..\src\shaders\rt_shadow_ray.rchit.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\src\shaders\patch_materials.comp.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
   </ItemGroup>

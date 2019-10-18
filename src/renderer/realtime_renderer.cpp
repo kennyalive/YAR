@@ -8,6 +8,7 @@
 #include "reference/reference_renderer.h"
 
 #include "shaders/gpu_types.h"
+#include "shaders/shared_image.h"
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
@@ -86,6 +87,7 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
 
     copy_to_swapchain.create();
     restore_resolution_dependent_resources();
+    create_default_textures();
 
     // ImGui setup.
     {
@@ -127,17 +129,23 @@ void Realtime_Renderer::shutdown() {
     gpu_scene.diffuse_rectangular_lights.destroy();
     gpu_scene.lambertian_material_buffer.destroy();
     vkDestroyDescriptorSetLayout(vk.device, gpu_scene.material_descriptor_set_layout, nullptr);
+    vkDestroyDescriptorSetLayout(vk.device, gpu_scene.image_descriptor_set_layout, nullptr);
+
     for (GPU_Mesh& mesh : gpu_meshes) {
         mesh.vertex_buffer.destroy();
         mesh.index_buffer.destroy();
     }
     gpu_meshes.clear();
 
+    for (Vk_Image& image : gpu_scene.images_2d)
+        image.destroy();
+
     copy_to_swapchain.destroy();
     vkDestroyRenderPass(vk.device, ui_render_pass, nullptr);
     release_resolution_dependent_resources();
 
     if (project_loaded) {
+        patch_materials.destroy();
         raster.destroy();
         if (vk.raytracing_supported)
             rt.destroy();
@@ -205,6 +213,8 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
     project = initialize_project(yar_file_name);
     scene = load_scene(project);
 
+    const std::string project_dir = get_directory(get_resource_path(project.scene_path));
+
     flying_camera.initialize(scene.view_points[0]);
 
     // TODO: temp structure. Use separate buffer per attribute.
@@ -251,22 +261,53 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
 
     // Materials.
     {
+        gpu_scene.images_2d.reserve(gpu_scene.images_2d.size() + scene.materials.texture_names.size());
+        for (const std::string& texture_name : scene.materials.texture_names) {
+            Vk_Image image = vk_load_texture(fs::path(project_dir).concat(texture_name).string());
+            gpu_scene.images_2d.push_back(image);
+        }
+
         VkDeviceSize size = scene.materials.lambertian.size() * sizeof(Lambertian_Material);
         gpu_scene.lambertian_material_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             scene.materials.lambertian.data(), "lambertian_material_buffer");
 
-        gpu_scene.material_descriptor_set_layout = Descriptor_Set_Layout()
-            .storage_buffer(0, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // lambertian materials
-            .create("material_descriptor_set_layout");
+        {
+            gpu_scene.material_descriptor_set_layout = Descriptor_Set_Layout()
+                .storage_buffer(0, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_COMPUTE_BIT) // lambertian materials
+                .create("material_descriptor_set_layout");
 
-        VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-        alloc_info.descriptorPool = vk.descriptor_pool;
-        alloc_info.descriptorSetCount = 1;
-        alloc_info.pSetLayouts = &gpu_scene.material_descriptor_set_layout;
-        VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &gpu_scene.material_descriptor_set));
+            VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+            alloc_info.descriptorPool = vk.descriptor_pool;
+            alloc_info.descriptorSetCount = 1;
+            alloc_info.pSetLayouts = &gpu_scene.material_descriptor_set_layout;
+            VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &gpu_scene.material_descriptor_set));
 
-        Descriptor_Writes(gpu_scene.material_descriptor_set)
-            .storage_buffer(0, gpu_scene.lambertian_material_buffer.handle, 0, VK_WHOLE_SIZE);
+            Descriptor_Writes(gpu_scene.material_descriptor_set)
+                .storage_buffer(0, gpu_scene.lambertian_material_buffer.handle, 0, VK_WHOLE_SIZE);
+        }
+
+        {
+            gpu_scene.image_descriptor_set_layout = Descriptor_Set_Layout()
+                .sample_image_array(0, (uint32_t)gpu_scene.images_2d.size(), VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
+                .sampler(1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
+                .create("image_descriptor_set_layout");
+
+            VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+            alloc_info.descriptorPool = vk.descriptor_pool;
+            alloc_info.descriptorSetCount = 1;
+            alloc_info.pSetLayouts = &gpu_scene.image_descriptor_set_layout;
+            VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &gpu_scene.image_descriptor_set));
+
+            std::vector<VkDescriptorImageInfo> image_infos(gpu_scene.images_2d.size());
+            for (auto[i, image] : enumerate(gpu_scene.images_2d)) {
+                image_infos[i].sampler = VK_NULL_HANDLE;
+                image_infos[i].imageView = image.view;
+                image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
+            Descriptor_Writes(gpu_scene.image_descriptor_set)
+                .sampled_image_array(0, (uint32_t)gpu_scene.images_2d.size(), image_infos.data())
+                .sampler(1, copy_to_swapchain.point_sampler);
+        }
     }
 
     // Create light data.
@@ -289,13 +330,18 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
             lights.data(), "diffuse_rectangular_light_buffer");
     }
 
-    raster.create(gpu_scene.material_descriptor_set_layout, scene.front_face_has_clockwise_winding);
+    patch_materials.create(gpu_scene.material_descriptor_set_layout);
+    vk_execute(vk.command_pool, vk.queue, [this](VkCommandBuffer command_buffer) {
+        patch_materials.dispatch(command_buffer, gpu_scene.material_descriptor_set);
+    });
+
+    raster.create(gpu_scene.material_descriptor_set_layout, gpu_scene.image_descriptor_set_layout, scene.front_face_has_clockwise_winding);
     raster.create_framebuffer(output_image.view);
     raster.update_point_lights(gpu_scene.point_lights.handle, (int)scene.lights.point_lights.size());
     raster.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene.lights.diffuse_rectangular_lights.size());
 
     if (vk.raytracing_supported) {
-        rt.create(scene, gpu_meshes, gpu_scene.material_descriptor_set_layout);
+        rt.create(scene, gpu_meshes, gpu_scene.material_descriptor_set_layout, gpu_scene.image_descriptor_set_layout);
         rt.update_output_image_descriptor(output_image.view);
         rt.update_point_lights(gpu_scene.point_lights.handle, (int)scene.lights.point_lights.size());
         rt.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene.lights.diffuse_rectangular_lights.size());
@@ -336,6 +382,17 @@ void Realtime_Renderer::run_frame() {
         rt.update_camera_transform(flying_camera.get_camera_pose());
 
     draw_frame();
+}
+
+void Realtime_Renderer::create_default_textures() {
+    ASSERT(gpu_scene.images_2d.empty());
+    gpu_scene.images_2d.resize(Predefined_Texture_Count);
+
+    uint8_t black[4] = {0, 0, 0, 255};
+    gpu_scene.images_2d[Black_2D_Texture_Index] = vk_create_texture(1, 1, VK_FORMAT_R8G8B8A8_UNORM, false, black, 4, "black_texture_1x1");
+
+    uint8_t white[4] = {255, 255, 255, 255};
+    gpu_scene.images_2d[White_2D_Texture_Index] = vk_create_texture(1, 1, VK_FORMAT_R8G8B8A8_UNORM, false, white, 4, "white_texture_1x1");
 }
 
 void Realtime_Renderer::draw_frame() {
@@ -390,7 +447,7 @@ void Realtime_Renderer::draw_rasterized_image() {
     render_pass_begin_info.clearValueCount   = (uint32_t)std::size(clear_values);
     render_pass_begin_info.pClearValues      = clear_values;
 
-    VkDescriptorSet sets[] = { raster.descriptor_set, gpu_scene.material_descriptor_set };
+    VkDescriptorSet sets[] = { raster.descriptor_set, gpu_scene.material_descriptor_set, gpu_scene.image_descriptor_set };
 
     vkCmdBeginRenderPass(vk.command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, raster.pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
@@ -428,7 +485,7 @@ void Realtime_Renderer::draw_rasterized_image() {
 void Realtime_Renderer::draw_raytraced_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
 
-    VkDescriptorSet sets[] = { rt.descriptor_set, gpu_scene.material_descriptor_set };
+    VkDescriptorSet sets[] = { rt.descriptor_set, gpu_scene.material_descriptor_set, gpu_scene.image_descriptor_set };
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rt.pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, rt.pipeline);
 

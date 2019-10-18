@@ -55,3 +55,7 @@ uint rand_xorshift(uint rng_state) {
     rng_state ^= (rng_state << 5);
     return rng_state;
 }
+
+#include "image.glsl"
+#include "material.glsl"
+

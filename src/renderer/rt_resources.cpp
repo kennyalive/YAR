@@ -21,7 +21,7 @@ struct Rt_Uniform_Buffer {
         Vector2 uv;
     };
 
-void Raytracing_Resources::create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout) {
+void Raytracing_Resources::create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Rt_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &(void*&)mapped_uniform_buffer, "rt_uniform_buffer");
 
@@ -51,7 +51,7 @@ void Raytracing_Resources::create(const Scene& scene, const std::vector<GPU_Mesh
     }
 
     create_acceleration_structure(scene.render_objects, gpu_meshes);
-    create_pipeline(gpu_meshes, material_descriptor_set_layout);
+    create_pipeline(gpu_meshes, material_descriptor_set_layout, image_descriptor_set_layout);
 
     // Shader binding table.
     {
@@ -280,7 +280,7 @@ void Raytracing_Resources::create_acceleration_structure(const std::vector<Rende
     printf("\nAcceleration structures build time = %lld microseconds\n", elapsed_microseconds(t));
 }
 
-void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout) {
+void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
 
     descriptor_set_layout = Descriptor_Set_Layout()
         .storage_image(0, VK_SHADER_STAGE_RAYGEN_BIT_NV)
@@ -304,7 +304,8 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
 
         VkDescriptorSetLayout set_layouts[] = {
             descriptor_set_layout,
-            material_descriptor_set_layout
+            material_descriptor_set_layout,
+            image_descriptor_set_layout
         };
 
         VkPipelineLayoutCreateInfo create_info { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };

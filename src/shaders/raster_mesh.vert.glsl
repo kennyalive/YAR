@@ -3,7 +3,6 @@
 
 #include "common.glsl"
 #include "geometry.glsl"
-#include "material.glsl"
 #include "gpu_types.h"
 
 struct Frag_In {
