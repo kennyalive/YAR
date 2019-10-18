@@ -318,30 +318,30 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
 
     // pipeline
     {
-        VkShaderModule rgen_shader = vk_load_spirv("spirv/rt_mesh.rgen.spv");
-        VkShaderModule miss_shader = vk_load_spirv("spirv/rt_mesh.rmiss.spv");
-        VkShaderModule chit_shader = vk_load_spirv("spirv/rt_mesh.rchit.spv");
-        VkShaderModule shadow_ray_chit_shader = vk_load_spirv("spirv/rt_shadow_ray.rchit.spv");
+        Shader_Module rgen_shader("spirv/rt_mesh.rgen.spv");
+        Shader_Module miss_shader("spirv/rt_mesh.rmiss.spv");
+        Shader_Module chit_shader("spirv/rt_mesh.rchit.spv");
+        Shader_Module shadow_ray_chit_shader("spirv/rt_shadow_ray.rchit.spv");
 
         VkPipelineShaderStageCreateInfo stage_infos[4] {};
         stage_infos[0].sType    = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stage_infos[0].stage    = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_infos[0].module   = rgen_shader;
+        stage_infos[0].module   = rgen_shader.handle;
         stage_infos[0].pName    = "main";
 
         stage_infos[1].sType    = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stage_infos[1].stage    = VK_SHADER_STAGE_MISS_BIT_NV;
-        stage_infos[1].module   = miss_shader;
+        stage_infos[1].module   = miss_shader.handle;
         stage_infos[1].pName    = "main";
 
         stage_infos[2].sType    = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stage_infos[2].stage    = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-        stage_infos[2].module   = chit_shader;
+        stage_infos[2].module   = chit_shader.handle;
         stage_infos[2].pName    = "main";
 
         stage_infos[3].sType    = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stage_infos[3].stage    = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-        stage_infos[3].module   = shadow_ray_chit_shader;
+        stage_infos[3].module   = shadow_ray_chit_shader.handle;
         stage_infos[3].pName    = "main";
 
         VkRayTracingShaderGroupCreateInfoNV shader_groups[4];
@@ -391,11 +391,6 @@ void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_mesh
         create_info.maxRecursionDepth   = 2;
         create_info.layout              = pipeline_layout;
         VK_CHECK(vkCreateRayTracingPipelinesNV(vk.device, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
-
-        vkDestroyShaderModule(vk.device, rgen_shader, nullptr);
-        vkDestroyShaderModule(vk.device, miss_shader, nullptr);
-        vkDestroyShaderModule(vk.device, chit_shader, nullptr);
-        vkDestroyShaderModule(vk.device, shadow_ray_chit_shader, nullptr);
     }
 
     // descriptor set

@@ -1,6 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "patch_materials.h"
+#include "utils.h"
 
 void Patch_Materials::create(VkDescriptorSetLayout material_descriptor_set_layout) {
     {
@@ -10,19 +11,17 @@ void Patch_Materials::create(VkDescriptorSetLayout material_descriptor_set_layou
         VK_CHECK(vkCreatePipelineLayout(vk.device, &create_info, nullptr, &pipeline_layout));
     }
     {
-        VkShaderModule shader = vk_load_spirv("spirv/patch_materials.comp.spv");
+        Shader_Module shader("spirv/patch_materials.comp.spv");
 
         VkPipelineShaderStageCreateInfo compute_stage{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
         compute_stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-        compute_stage.module = shader;
+        compute_stage.module = shader.handle;
         compute_stage.pName = "main";
 
         VkComputePipelineCreateInfo create_info{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
         create_info.stage = compute_stage;
         create_info.layout = pipeline_layout;
         VK_CHECK(vkCreateComputePipelines(vk.device, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
-
-        vkDestroyShaderModule(vk.device, shader, nullptr);
     }
 }
 

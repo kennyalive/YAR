@@ -3,6 +3,16 @@
 #include "vk.h"
 #include "lib/vector.h"
 
+struct Shader_Module {
+    Shader_Module(const std::string& spirv_file) {
+        handle = vk_load_spirv(spirv_file);
+    }
+    ~Shader_Module() {
+        vkDestroyShaderModule(vk.device, handle, nullptr);
+    }
+    VkShaderModule handle;
+};
+
 struct Descriptor_Writes {
     static constexpr uint32_t max_writes = 32;
 

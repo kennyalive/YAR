@@ -99,8 +99,8 @@ void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_s
 
     // Pipeline.
     {
-        VkShaderModule vertex_shader = vk_load_spirv("spirv/raster_mesh.vert.spv");
-        VkShaderModule fragment_shader = vk_load_spirv("spirv/raster_mesh.frag.spv");
+        Shader_Module vertex_shader("spirv/raster_mesh.vert.spv");
+        Shader_Module fragment_shader("spirv/raster_mesh.frag.spv");
 
         Vk_Graphics_Pipeline_State state = get_default_graphics_pipeline_state();
 
@@ -130,10 +130,7 @@ void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_s
         if (front_face_has_clockwise_winding)
             state.rasterization_state.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
-        pipeline = vk_create_graphics_pipeline(state, pipeline_layout, render_pass, vertex_shader, fragment_shader);
-
-        vkDestroyShaderModule(vk.device, vertex_shader, nullptr);
-        vkDestroyShaderModule(vk.device, fragment_shader, nullptr);
+        pipeline = vk_create_graphics_pipeline(state, pipeline_layout, render_pass, vertex_shader.handle, fragment_shader.handle);
     }
 
     //
