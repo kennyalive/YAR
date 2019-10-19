@@ -1,6 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
-#include "raster_resources.h"
+#include "draw_mesh.h"
 #include "../../shaders/shared_light.h"
 #include "renderer/utils.h"
 #include "lib/matrix.h"
@@ -23,7 +23,7 @@ struct Global_Uniform_Buffer {
         Vector2 uv;
     };
 
-void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout, bool front_face_has_clockwise_winding) {
+void Draw_Mesh::create(VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout, bool front_face_has_clockwise_winding) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Global_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &mapped_uniform_buffer, "raster_uniform_buffer");
 
@@ -148,16 +148,16 @@ void Rasterization_Resources::create(VkDescriptorSetLayout material_descriptor_s
     }
 }
 
-void Rasterization_Resources::destroy() {
+void Draw_Mesh::destroy() {
     uniform_buffer.destroy();
     vkDestroyDescriptorSetLayout(vk.device, descriptor_set_layout, nullptr);
     vkDestroyPipelineLayout(vk.device, pipeline_layout, nullptr);
     vkDestroyPipeline(vk.device, pipeline, nullptr);
     vkDestroyRenderPass(vk.device, render_pass, nullptr);
-    *this = Rasterization_Resources{};
+    *this = Draw_Mesh{};
 }
 
-void Rasterization_Resources::create_framebuffer(VkImageView output_image_view) {
+void Draw_Mesh::create_framebuffer(VkImageView output_image_view) {
     VkImageView attachments[] = {output_image_view, vk.depth_info.image_view};
 
     VkFramebufferCreateInfo create_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
@@ -172,26 +172,26 @@ void Rasterization_Resources::create_framebuffer(VkImageView output_image_view) 
     vk_set_debug_name(framebuffer, "color_depth_framebuffer");
 }
 
-void Rasterization_Resources::destroy_framebuffer() {
+void Draw_Mesh::destroy_framebuffer() {
     vkDestroyFramebuffer(vk.device, framebuffer, nullptr);
     framebuffer = VK_NULL_HANDLE;
 }
 
-void Rasterization_Resources::update_point_lights(VkBuffer light_buffer, int light_count) {
+void Draw_Mesh::update_point_lights(VkBuffer light_buffer, int light_count) {
     Descriptor_Writes(descriptor_set).storage_buffer(1, light_buffer, 0, VK_WHOLE_SIZE);
 
     Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
     buf.point_light_count = light_count;
 }
 
-void Rasterization_Resources::update_diffuse_rectangular_lights(VkBuffer light_buffer, int light_count) {
+void Draw_Mesh::update_diffuse_rectangular_lights(VkBuffer light_buffer, int light_count) {
     Descriptor_Writes(descriptor_set).storage_buffer(2, light_buffer, 0, VK_WHOLE_SIZE);
 
     Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
     buf.diffuse_rectangular_light_count = light_count;
 }
 
-void Rasterization_Resources::update(const Matrix3x4& view_transform, float fov) {
+void Draw_Mesh::update(const Matrix3x4& view_transform, float fov) {
     float aspect_ratio = (float)vk.surface_size.width / (float)vk.surface_size.height;
     Matrix3x4 from_world_to_opengl = {{
         {1,  0, 0, 0},

@@ -127,8 +127,8 @@
     <ClCompile Include="..\src\renderer\main.cpp" />
     <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp" />
     <ClCompile Include="..\src\renderer\realtime_renderer.cpp" />
-    <ClCompile Include="..\src\renderer\kernels\raster_resources.cpp" />
-    <ClCompile Include="..\src\renderer\kernels\rt_resources.cpp" />
+    <ClCompile Include="..\src\renderer\kernels\draw_mesh.cpp" />
+    <ClCompile Include="..\src\renderer\kernels\raytrace_scene.cpp" />
     <ClCompile Include="..\src\renderer\utils.cpp" />
     <ClCompile Include="..\src\renderer\vk.cpp" />
     <ClCompile Include="..\src\renderer\win32.cpp" />
@@ -143,8 +143,8 @@
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h" />
     <ClInclude Include="..\src\renderer\platform.h" />
     <ClInclude Include="..\src\renderer\realtime_renderer.h" />
-    <ClInclude Include="..\src\renderer\kernels\raster_resources.h" />
-    <ClInclude Include="..\src\renderer\kernels\rt_resources.h" />
+    <ClInclude Include="..\src\renderer\kernels\draw_mesh.h" />
+    <ClInclude Include="..\src\renderer\kernels\raytrace_scene.h" />
     <ClInclude Include="..\src\renderer\utils.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\shaders\shared_light.h" />

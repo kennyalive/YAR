@@ -13,10 +13,10 @@
     <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\renderer\kernels\raster_resources.cpp">
+    <ClCompile Include="..\src\renderer\kernels\draw_mesh.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\renderer\kernels\rt_resources.cpp">
+    <ClCompile Include="..\src\renderer\kernels\raytrace_scene.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
   </ItemGroup>
@@ -39,10 +39,10 @@
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h">
       <Filter>kernels</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\renderer\kernels\raster_resources.h">
+    <ClInclude Include="..\src\renderer\kernels\draw_mesh.h">
       <Filter>kernels</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\renderer\kernels\rt_resources.h">
+    <ClInclude Include="..\src\renderer\kernels\raytrace_scene.h">
       <Filter>kernels</Filter>
     </ClInclude>
   </ItemGroup>

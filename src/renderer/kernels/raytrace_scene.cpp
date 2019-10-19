@@ -1,6 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
-#include "rt_resources.h"
+#include "raytrace_scene.h"
 
 #include "renderer/utils.h"
 #include "shaders/shared_light.h"
@@ -21,7 +21,7 @@ struct Rt_Uniform_Buffer {
         Vector2 uv;
     };
 
-void Raytracing_Resources::create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
+void Raytrace_Scene::create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Rt_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &(void*&)mapped_uniform_buffer, "rt_uniform_buffer");
 
@@ -73,7 +73,7 @@ void Raytracing_Resources::create(const Scene& scene, const std::vector<GPU_Mesh
     }
 }
 
-void Raytracing_Resources::destroy() {
+void Raytrace_Scene::destroy() {
     uniform_buffer.destroy();
     instance_info_buffer.destroy();
     shader_binding_table.destroy();
@@ -92,15 +92,15 @@ void Raytracing_Resources::destroy() {
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
 
-void Raytracing_Resources::update_output_image_descriptor(VkImageView output_image_view) {
+void Raytrace_Scene::update_output_image_descriptor(VkImageView output_image_view) {
     Descriptor_Writes(descriptor_set).storage_image(0, output_image_view);
 }
 
-void Raytracing_Resources::update_camera_transform(const Matrix3x4& camera_to_world_transform) {
+void Raytrace_Scene::update_camera_transform(const Matrix3x4& camera_to_world_transform) {
     mapped_uniform_buffer->camera_to_world = camera_to_world_transform;
 }
 
-void Raytracing_Resources::update_instance_transform(uint32_t mesh_index, uint32_t instance_index, const Matrix3x4& instance_transform) {
+void Raytrace_Scene::update_instance_transform(uint32_t mesh_index, uint32_t instance_index, const Matrix3x4& instance_transform) {
     VkGeometryInstanceNV& instance = instance_buffer_ptr[instance_index];
     instance.transform = instance_transform;
     instance.instanceCustomIndex = instance_index;
@@ -110,17 +110,17 @@ void Raytracing_Resources::update_instance_transform(uint32_t mesh_index, uint32
     instance.accelerationStructureHandle = mesh_accels[mesh_index].handle;
 }
 
-void Raytracing_Resources::update_point_lights(VkBuffer light_buffer, int light_count) {
+void Raytrace_Scene::update_point_lights(VkBuffer light_buffer, int light_count) {
     Descriptor_Writes(descriptor_set).storage_buffer(5, light_buffer, 0, VK_WHOLE_SIZE);
     mapped_uniform_buffer->point_light_count = light_count;
 }
 
-void Raytracing_Resources::update_diffuse_rectangular_lights(VkBuffer light_buffer, int light_count) {
+void Raytrace_Scene::update_diffuse_rectangular_lights(VkBuffer light_buffer, int light_count) {
     Descriptor_Writes(descriptor_set).storage_buffer(6, light_buffer, 0, VK_WHOLE_SIZE);
     mapped_uniform_buffer->diffuse_rectangular_light_count = light_count;
 }
 
-void Raytracing_Resources::create_acceleration_structure(const std::vector<Render_Object>& render_objects, const std::vector<GPU_Mesh>& gpu_meshes) {
+void Raytrace_Scene::create_acceleration_structure(const std::vector<Render_Object>& render_objects, const std::vector<GPU_Mesh>& gpu_meshes) {
     // Initialize VKGeometryNV structures.
     std::vector<VkGeometryNV> geometries(gpu_meshes.size());
     for (auto [i, geom] : enumerate(geometries)) {
@@ -280,7 +280,7 @@ void Raytracing_Resources::create_acceleration_structure(const std::vector<Rende
     printf("\nAcceleration structures build time = %lld microseconds\n", elapsed_microseconds(t));
 }
 
-void Raytracing_Resources::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
+void Raytrace_Scene::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
 
     descriptor_set_layout = Descriptor_Set_Layout()
         .storage_image(0, VK_SHADER_STAGE_RAYGEN_BIT_NV)

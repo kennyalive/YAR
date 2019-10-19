@@ -6,7 +6,7 @@ struct Matrix3x4;
 struct RGB_Point_Light_Data;
 struct RGB_Diffuse_Rectangular_Light_Data;
 
-struct Rasterization_Resources {
+struct Draw_Mesh {
     VkDescriptorSetLayout       descriptor_set_layout;
     VkPipelineLayout            pipeline_layout;
     VkPipeline                  pipeline;

@@ -2,8 +2,8 @@
 
 #include "kernels/copy_to_swapchain.h"
 #include "kernels/patch_materials.h"
-#include "kernels/raster_resources.h"
-#include "kernels/rt_resources.h"
+#include "kernels/draw_mesh.h"
+#include "kernels/raytrace_scene.h"
 #include "utils.h"
 #include "vk.h"
 
@@ -73,8 +73,8 @@ private:
     } gpu_scene;
 
     Patch_Materials patch_materials;
-    Rasterization_Resources raster;
-    Raytracing_Resources rt;
+    Draw_Mesh draw_mesh;
+    Raytrace_Scene raytrace_scene;
 
     GPU_Time_Keeper time_keeper;
     struct {

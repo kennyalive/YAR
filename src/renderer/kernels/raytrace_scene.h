@@ -22,7 +22,7 @@ struct Mesh_Accel {
     uint64_t handle;
 };
 
-struct Raytracing_Resources {
+struct Raytrace_Scene {
     VkPhysicalDeviceRayTracingPropertiesNV properties;
 
     std::vector<Mesh_Accel> mesh_accels;
