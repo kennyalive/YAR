@@ -6,7 +6,7 @@
 #include "common.glsl"
 #include "compute_bsdf.glsl"
 #include "geometry.glsl"
-#include "gpu_types.h"
+#include "shared_light.h"
 
 #define HIT_SHADER
 #include "rt_utils.glsl"

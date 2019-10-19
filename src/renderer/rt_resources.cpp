@@ -3,7 +3,7 @@
 #include "rt_resources.h"
 
 #include "utils.h"
-#include "shaders/gpu_types.h"
+#include "shaders/shared_light.h"
 
 #include "lib/scene.h"
 

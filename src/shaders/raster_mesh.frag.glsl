@@ -5,7 +5,7 @@
 #include "common.glsl"
 #include "compute_bsdf.glsl"
 #include "geometry.glsl"
-#include "gpu_types.h"
+#include "shared_light.h"
 
 struct Frag_In {
     vec3 normal;

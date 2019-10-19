@@ -1,11 +1,11 @@
 #ifdef __cplusplus
     #pragma once
-    #include "vk.h"
-    #include "lib/color.h"
-    #include "lib/geometry.h"
-    #include "lib/light.h"
-    #include "lib/material.h"
-    #include "lib/vector.h"
+    #include "./renderer/vk.h"
+    #include "../lib/color.h"
+    #include "../lib/geometry.h"
+    #include "../lib/light.h"
+    #include "../lib/material.h"
+    #include "../lib/vector.h"
 #else
     #define ColorRGB vec3
     #define Vector2 vec2

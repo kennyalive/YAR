@@ -7,7 +7,7 @@
 #include "lib/matrix.h"
 #include "reference/reference_renderer.h"
 
-#include "shaders/gpu_types.h"
+#include "shaders/shared_light.h"
 #include "shaders/shared_image.h"
 
 #include "glfw/glfw3.h"
