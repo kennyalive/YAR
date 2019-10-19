@@ -3,36 +3,55 @@
   <ItemGroup>
     <ClCompile Include="..\src\std.cpp" />
     <ClCompile Include="..\src\renderer\main.cpp" />
-    <ClCompile Include="..\src\renderer\copy_to_swapchain.cpp" />
-    <ClCompile Include="..\src\renderer\raster_resources.cpp" />
     <ClCompile Include="..\src\renderer\realtime_renderer.cpp" />
-    <ClCompile Include="..\src\renderer\rt_resources.cpp" />
     <ClCompile Include="..\src\renderer\utils.cpp" />
     <ClCompile Include="..\src\renderer\vk.cpp" />
     <ClCompile Include="..\src\renderer\win32.cpp" />
-    <ClCompile Include="..\src\renderer\patch_materials.cpp" />
+    <ClCompile Include="..\src\renderer\kernels\copy_to_swapchain.cpp">
+      <Filter>kernels</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp">
+      <Filter>kernels</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\renderer\kernels\raster_resources.cpp">
+      <Filter>kernels</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\renderer\kernels\rt_resources.cpp">
+      <Filter>kernels</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\std.h" />
-    <ClInclude Include="..\src\renderer\copy_to_swapchain.h" />
-    <ClInclude Include="..\src\renderer\raster_resources.h" />
     <ClInclude Include="..\src\renderer\realtime_renderer.h" />
-    <ClInclude Include="..\src\renderer\rt_resources.h" />
     <ClInclude Include="..\src\renderer\utils.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\renderer\common.h" />
     <ClInclude Include="..\src\renderer\platform.h" />
-    <ClInclude Include="..\src\renderer\patch_materials.h" />
     <ClInclude Include="..\src\shaders\shared_image.h">
       <Filter>shaders</Filter>
     </ClInclude>
     <ClInclude Include="..\src\shaders\shared_light.h">
       <Filter>shaders</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\renderer\kernels\copy_to_swapchain.h">
+      <Filter>kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\renderer\kernels\patch_materials.h">
+      <Filter>kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\renderer\kernels\raster_resources.h">
+      <Filter>kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\renderer\kernels\rt_resources.h">
+      <Filter>kernels</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
       <UniqueIdentifier>{1be3d33b-ac0d-4df7-ad63-48c4e7b89b7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="kernels">
+      <UniqueIdentifier>{49653ff4-3e11-4ee5-8e86-d2103ca724b7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

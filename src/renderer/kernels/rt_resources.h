@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.h"
+#include "../common.h"
 #include "lib/matrix.h"
 
 struct Render_Object;

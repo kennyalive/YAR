@@ -2,7 +2,7 @@
 #include "lib/common.h"
 #include "rt_resources.h"
 
-#include "utils.h"
+#include "renderer/utils.h"
 #include "shaders/shared_light.h"
 
 #include "lib/scene.h"

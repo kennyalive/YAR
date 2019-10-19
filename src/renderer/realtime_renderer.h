@@ -1,9 +1,9 @@
 #pragma once
 
-#include "copy_to_swapchain.h"
-#include "patch_materials.h"
-#include "raster_resources.h"
-#include "rt_resources.h"
+#include "kernels/copy_to_swapchain.h"
+#include "kernels/patch_materials.h"
+#include "kernels/raster_resources.h"
+#include "kernels/rt_resources.h"
 #include "utils.h"
 #include "vk.h"
 

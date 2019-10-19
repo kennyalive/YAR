@@ -123,12 +123,12 @@
     </CustomBuild>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\renderer\copy_to_swapchain.cpp" />
+    <ClCompile Include="..\src\renderer\kernels\copy_to_swapchain.cpp" />
     <ClCompile Include="..\src\renderer\main.cpp" />
-    <ClCompile Include="..\src\renderer\patch_materials.cpp" />
+    <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp" />
     <ClCompile Include="..\src\renderer\realtime_renderer.cpp" />
-    <ClCompile Include="..\src\renderer\raster_resources.cpp" />
-    <ClCompile Include="..\src\renderer\rt_resources.cpp" />
+    <ClCompile Include="..\src\renderer\kernels\raster_resources.cpp" />
+    <ClCompile Include="..\src\renderer\kernels\rt_resources.cpp" />
     <ClCompile Include="..\src\renderer\utils.cpp" />
     <ClCompile Include="..\src\renderer\vk.cpp" />
     <ClCompile Include="..\src\renderer\win32.cpp" />
@@ -139,12 +139,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\renderer\common.h" />
-    <ClInclude Include="..\src\renderer\copy_to_swapchain.h" />
-    <ClInclude Include="..\src\renderer\patch_materials.h" />
+    <ClInclude Include="..\src\renderer\kernels\copy_to_swapchain.h" />
+    <ClInclude Include="..\src\renderer\kernels\patch_materials.h" />
     <ClInclude Include="..\src\renderer\platform.h" />
     <ClInclude Include="..\src\renderer\realtime_renderer.h" />
-    <ClInclude Include="..\src\renderer\raster_resources.h" />
-    <ClInclude Include="..\src\renderer\rt_resources.h" />
+    <ClInclude Include="..\src\renderer\kernels\raster_resources.h" />
+    <ClInclude Include="..\src\renderer\kernels\rt_resources.h" />
     <ClInclude Include="..\src\renderer\utils.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\shaders\shared_light.h" />

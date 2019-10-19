@@ -1,8 +1,8 @@
 #include "std.h"
 #include "lib/common.h"
 #include "raster_resources.h"
-#include "../shaders/shared_light.h"
-#include "utils.h"
+#include "../../shaders/shared_light.h"
+#include "renderer/utils.h"
 #include "lib/matrix.h"
 
 namespace {
