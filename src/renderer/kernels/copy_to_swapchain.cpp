@@ -82,3 +82,29 @@ void Copy_To_Swapchain::update_resolution_dependent_descriptors(VkImageView outp
             .storage_image(2, vk.swapchain_info.image_views[i]);
     }
 }
+
+void Copy_To_Swapchain::dispatch() {
+    const uint32_t group_size_x = 32; // according to shader
+    const uint32_t group_size_y = 32;
+
+    uint32_t group_count_x = (vk.surface_size.width + group_size_x - 1) / group_size_x;
+    uint32_t group_count_y = (vk.surface_size.height + group_size_y - 1) / group_size_y;
+
+    vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        0,                                  VK_ACCESS_SHADER_WRITE_BIT,
+        VK_IMAGE_LAYOUT_UNDEFINED,          VK_IMAGE_LAYOUT_GENERAL);
+
+    uint32_t push_constants[] = { vk.surface_size.width, vk.surface_size.height };
+
+    vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), push_constants);
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &sets[vk.swapchain_image_index], 0, nullptr);
+    vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+    vkCmdDispatch(vk.command_buffer, group_count_x, group_count_y, 1);
+
+    vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,   VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        VK_ACCESS_SHADER_WRITE_BIT,             0,
+        VK_IMAGE_LAYOUT_GENERAL,                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+}
+
