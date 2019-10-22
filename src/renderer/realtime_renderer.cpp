@@ -54,37 +54,7 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
         }
     }
 
-    // UI render pass.
-    {
-        VkAttachmentDescription attachments[1] = {};
-        attachments[0].format           = VK_FORMAT_R16G16B16A16_SFLOAT;
-        attachments[0].samples          = VK_SAMPLE_COUNT_1_BIT;
-        attachments[0].loadOp           = VK_ATTACHMENT_LOAD_OP_LOAD;
-        attachments[0].storeOp          = VK_ATTACHMENT_STORE_OP_STORE;
-        attachments[0].stencilLoadOp    = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachments[0].stencilStoreOp   = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[0].initialLayout    = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        attachments[0].finalLayout      = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference color_attachment_ref;
-        color_attachment_ref.attachment = 0;
-        color_attachment_ref.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount    = 1;
-        subpass.pColorAttachments       = &color_attachment_ref;
-
-        VkRenderPassCreateInfo create_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
-        create_info.attachmentCount = (uint32_t)std::size(attachments);
-        create_info.pAttachments = attachments;
-        create_info.subpassCount = 1;
-        create_info.pSubpasses = &subpass;
-
-        VK_CHECK(vkCreateRenderPass(vk.device, &create_info, nullptr, &ui_render_pass));
-        vk_set_debug_name(ui_render_pass, "ui_render_pass");
-    }
-
+    create_render_passes();
     copy_to_swapchain.create();
     restore_resolution_dependent_resources();
     create_default_textures();
@@ -141,6 +111,7 @@ void Realtime_Renderer::shutdown() {
         image.destroy();
 
     copy_to_swapchain.destroy();
+    vkDestroyRenderPass(vk.device, raster_render_pass, nullptr);
     vkDestroyRenderPass(vk.device, ui_render_pass, nullptr);
     release_resolution_dependent_resources();
 
@@ -155,10 +126,12 @@ void Realtime_Renderer::shutdown() {
 }
 
 void Realtime_Renderer::release_resolution_dependent_resources() {
+    vkDestroyFramebuffer(vk.device, raster_framebuffer, nullptr);
+    raster_framebuffer = VK_NULL_HANDLE;
+
     vkDestroyFramebuffer(vk.device, ui_framebuffer, nullptr);
     ui_framebuffer = VK_NULL_HANDLE;
 
-    draw_mesh.destroy_framebuffer();
     output_image.destroy();
 }
 
@@ -186,6 +159,23 @@ void Realtime_Renderer::restore_resolution_dependent_resources() {
         }
     }
 
+    // rasterizer framebuffer
+    {
+        VkImageView attachments[] = {output_image.view, vk.depth_info.image_view};
+
+        VkFramebufferCreateInfo create_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
+        create_info.renderPass      = raster_render_pass;
+        create_info.attachmentCount = (uint32_t)std::size(attachments);
+        create_info.pAttachments    = attachments;
+        create_info.width           = vk.surface_size.width;
+        create_info.height          = vk.surface_size.height;
+        create_info.layers          = 1;
+
+        VK_CHECK(vkCreateFramebuffer(vk.device, &create_info, nullptr, &raster_framebuffer));
+        vk_set_debug_name(raster_framebuffer, "color_depth_framebuffer");
+
+    }
+
     // imgui framebuffer
     {
         VkFramebufferCreateInfo create_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
@@ -200,8 +190,6 @@ void Realtime_Renderer::restore_resolution_dependent_resources() {
     }
 
     if (project_loaded) {
-        draw_mesh.create_framebuffer(output_image.view);
-
         if (vk.raytracing_supported)
             raytrace_scene.update_output_image_descriptor(output_image.view);
     }
@@ -335,8 +323,7 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
         patch_materials.dispatch(command_buffer, gpu_scene.material_descriptor_set);
     });
 
-    draw_mesh.create(gpu_scene.material_descriptor_set_layout, gpu_scene.image_descriptor_set_layout, scene.front_face_has_clockwise_winding);
-    draw_mesh.create_framebuffer(output_image.view);
+    draw_mesh.create(raster_render_pass, gpu_scene.material_descriptor_set_layout, gpu_scene.image_descriptor_set_layout, scene.front_face_has_clockwise_winding);
     draw_mesh.update_point_lights(gpu_scene.point_lights.handle, (int)scene.lights.point_lights.size());
     draw_mesh.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene.lights.diffuse_rectangular_lights.size());
 
@@ -382,6 +369,84 @@ void Realtime_Renderer::run_frame() {
         raytrace_scene.update_camera_transform(flying_camera.get_camera_pose());
 
     draw_frame();
+}
+
+void Realtime_Renderer::create_render_passes() {
+    // Render pass for rasterization renderer.
+    {
+        VkAttachmentDescription attachments[2] = {};
+        attachments[0].format           = VK_FORMAT_R16G16B16A16_SFLOAT;
+        attachments[0].samples          = VK_SAMPLE_COUNT_1_BIT;
+        attachments[0].loadOp           = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[0].storeOp          = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[0].stencilLoadOp    = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[0].stencilStoreOp   = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[0].initialLayout    = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachments[0].finalLayout      = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        attachments[1].format           = vk.depth_info.format;
+        attachments[1].samples          = VK_SAMPLE_COUNT_1_BIT;
+        attachments[1].loadOp           = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        attachments[1].storeOp          = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[1].stencilLoadOp    = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[1].stencilStoreOp   = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[1].initialLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        attachments[1].finalLayout      = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference color_attachment_ref;
+        color_attachment_ref.attachment = 0;
+        color_attachment_ref.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference depth_attachment_ref;
+        depth_attachment_ref.attachment = 1;
+        depth_attachment_ref.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass{};
+        subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount    = 1;
+        subpass.pColorAttachments       = &color_attachment_ref;
+        subpass.pDepthStencilAttachment = &depth_attachment_ref;
+
+        VkRenderPassCreateInfo create_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+        create_info.attachmentCount = (uint32_t)std::size(attachments);
+        create_info.pAttachments = attachments;
+        create_info.subpassCount = 1;
+        create_info.pSubpasses = &subpass;
+
+        VK_CHECK(vkCreateRenderPass(vk.device, &create_info, nullptr, &raster_render_pass));
+        vk_set_debug_name(raster_render_pass, "color_depth_render_pass");
+    }
+
+    // UI render pass.
+    {
+        VkAttachmentDescription attachments[1] = {};
+        attachments[0].format           = VK_FORMAT_R16G16B16A16_SFLOAT;
+        attachments[0].samples          = VK_SAMPLE_COUNT_1_BIT;
+        attachments[0].loadOp           = VK_ATTACHMENT_LOAD_OP_LOAD;
+        attachments[0].storeOp          = VK_ATTACHMENT_STORE_OP_STORE;
+        attachments[0].stencilLoadOp    = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        attachments[0].stencilStoreOp   = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        attachments[0].initialLayout    = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        attachments[0].finalLayout      = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkAttachmentReference color_attachment_ref;
+        color_attachment_ref.attachment = 0;
+        color_attachment_ref.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass{};
+        subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount    = 1;
+        subpass.pColorAttachments       = &color_attachment_ref;
+
+        VkRenderPassCreateInfo create_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
+        create_info.attachmentCount = (uint32_t)std::size(attachments);
+        create_info.pAttachments = attachments;
+        create_info.subpassCount = 1;
+        create_info.pSubpasses = &subpass;
+
+        VK_CHECK(vkCreateRenderPass(vk.device, &create_info, nullptr, &ui_render_pass));
+        vk_set_debug_name(ui_render_pass, "ui_render_pass");
+    }
 }
 
 void Realtime_Renderer::create_default_textures() {
@@ -441,8 +506,8 @@ void Realtime_Renderer::draw_rasterized_image() {
     clear_values[1].depthStencil.stencil = 0;
 
     VkRenderPassBeginInfo render_pass_begin_info { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-    render_pass_begin_info.renderPass        = draw_mesh.render_pass;
-    render_pass_begin_info.framebuffer       = draw_mesh.framebuffer;
+    render_pass_begin_info.renderPass        = raster_render_pass;
+    render_pass_begin_info.framebuffer       = raster_framebuffer;
     render_pass_begin_info.renderArea.extent = vk.surface_size;
     render_pass_begin_info.clearValueCount   = (uint32_t)std::size(clear_values);
     render_pass_begin_info.pClearValues      = clear_values;

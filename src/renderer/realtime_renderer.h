@@ -28,6 +28,7 @@ public:
     void run_frame();
 
 private:
+    void create_render_passes();
     void create_default_textures();
     void draw_frame();
     void draw_rasterized_image();
@@ -51,10 +52,12 @@ private:
 
     UI_Result                   ui_result;
 
-    VkRenderPass                ui_render_pass;
-    VkFramebuffer               ui_framebuffer;
-    Vk_Image                    output_image;
-    Copy_To_Swapchain           copy_to_swapchain;
+    VkRenderPass ui_render_pass;
+    VkFramebuffer ui_framebuffer;
+    VkRenderPass raster_render_pass;
+    VkFramebuffer raster_framebuffer;
+
+    Vk_Image output_image;
 
     std::vector<GPU_Mesh> gpu_meshes;
 
@@ -72,8 +75,9 @@ private:
         VkDescriptorSet image_descriptor_set;
     } gpu_scene;
 
-    Patch_Materials patch_materials;
+    Copy_To_Swapchain copy_to_swapchain;
     Draw_Mesh draw_mesh;
+    Patch_Materials patch_materials;
     Raytrace_Scene raytrace_scene;
 
     GPU_Time_Keeper time_keeper;
