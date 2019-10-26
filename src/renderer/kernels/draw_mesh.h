@@ -1,10 +1,10 @@
 #pragma once
 
 #include "renderer/vk.h"
+#include "../../shaders/shared_light.h" // TEMP: to get Instance_Info
 
+struct GPU_Mesh;
 struct Matrix3x4;
-struct RGB_Point_Light_Data;
-struct RGB_Diffuse_Rectangular_Light_Data;
 
 struct Draw_Mesh {
     VkDescriptorSetLayout       descriptor_set_layout;
@@ -20,4 +20,8 @@ struct Draw_Mesh {
     void update_point_lights(int light_count);
     void update_diffuse_rectangular_lights(int light_count);
     void update(const Matrix3x4& view_transform, float fov);
+
+    void bind_sets_and_pipeline(VkDescriptorSet material_descriptor_set, VkDescriptorSet image_descriptor_set, VkDescriptorSet light_descriptor_set);
+    void dispatch(const GPU_Mesh& gpu_mesh, const GPU_Types::Instance_Info& instance_info);
 };
+

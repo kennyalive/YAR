@@ -1,7 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "draw_mesh.h"
-#include "../../shaders/shared_light.h"
+#include "renderer/common.h"
 #include "renderer/utils.h"
 #include "lib/matrix.h"
 
@@ -136,3 +136,18 @@ void Draw_Mesh::update(const Matrix3x4& view_transform, float fov) {
     buf.model_view = model_view;
     buf.view = Matrix4x4::identity * view_transform;
 }
+
+void Draw_Mesh::bind_sets_and_pipeline(/*TODO: set global descriptors outside of kernels*/ VkDescriptorSet material_descriptor_set, VkDescriptorSet image_descriptor_set, VkDescriptorSet light_descriptor_set) {
+    VkDescriptorSet sets[] = { descriptor_set, material_descriptor_set, image_descriptor_set, light_descriptor_set };
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
+    vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+}
+
+void Draw_Mesh::dispatch(const GPU_Mesh& gpu_mesh, const GPU_Types::Instance_Info& instance_info) {
+    const VkDeviceSize zero_offset = 0;
+    vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &gpu_mesh.vertex_buffer.handle, &zero_offset);
+    vkCmdBindIndexBuffer(vk.command_buffer, gpu_mesh.index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+    vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(GPU_Types::Instance_Info), &instance_info);
+    vkCmdDrawIndexed(vk.command_buffer, gpu_mesh.model_index_count, 1, 0, 0, 0);
+}
+
