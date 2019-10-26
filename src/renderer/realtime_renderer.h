@@ -67,10 +67,13 @@ private:
 
         Vk_Buffer point_lights;
         Vk_Buffer diffuse_rectangular_lights;
+        VkDescriptorSetLayout light_descriptor_set_layout;
+        VkDescriptorSet light_descriptor_set;
 
         Vk_Buffer lambertian_material_buffer;
         VkDescriptorSetLayout material_descriptor_set_layout;
         VkDescriptorSet material_descriptor_set;
+
         VkDescriptorSetLayout image_descriptor_set_layout;
         VkDescriptorSet image_descriptor_set;
     } gpu_scene;

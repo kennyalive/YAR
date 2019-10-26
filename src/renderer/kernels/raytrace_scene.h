@@ -47,15 +47,15 @@ struct Raytrace_Scene {
 
     Vk_Buffer instance_info_buffer;
 
-    void create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout);
+    void create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout light_descriptor_set_layout, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout);
     void destroy();
     void update_output_image_descriptor(VkImageView output_image_view);
     void update_camera_transform(const Matrix3x4& camera_to_world_transform);
     void update_instance_transform(uint32_t mesh_index, uint32_t instance_index, const Matrix3x4& instance_transform);
-    void update_point_lights(VkBuffer light_buffer, int light_count);
-    void update_diffuse_rectangular_lights(VkBuffer light_buffer, int light_count);
+    void update_point_lights(int light_count);
+    void update_diffuse_rectangular_lights(int light_count);
 
 private:
     void create_acceleration_structure(const std::vector<Render_Object>& render_objects, const std::vector<GPU_Mesh>& gpu_meshes);
-    void create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout);
+    void create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout light_descriptor_set_layout, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout);
 };

@@ -5,7 +5,7 @@
 #include "common.glsl"
 #include "compute_bsdf.glsl"
 #include "geometry.glsl"
-#include "shared_light.h"
+#include "light.glsl"
 
 struct Frag_In {
     vec3 normal;
@@ -28,14 +28,6 @@ layout(std140, binding=0) uniform Global_Uniform_Block {
     int point_light_count;
     int diffuse_rectangular_light_count;
     vec2 pad0;
-};
-
-layout(std430, binding=1) readonly buffer Point_Light_Buffer {
-    Point_Light point_lights[];
-};
-
-layout(std430, binding=2) readonly buffer Diffuse_Rectangular_Light_Buffer {
-    Diffuse_Rectangular_Light diffuse_rectangular_lights[];
 };
 
 void main() {

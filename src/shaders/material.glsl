@@ -1,9 +1,7 @@
-const int Material_None = 0;
-const int Material_Lambertian = 1;
+#include "shared_material.h"
 
-#ifndef MATERIAL_SET_INDEX
-#define MATERIAL_SET_INDEX 1
-#endif
+const int Material_None = 0; 
+const int Material_Lambertian = 1;
 
 struct Material_Handle {
     int type;
@@ -15,7 +13,7 @@ struct Lambertian_Material {
     int albedo_texture_index;
 };
 
-layout(std430, set=MATERIAL_SET_INDEX, binding=0) buffer Lambertian_Material_Buffer {
+layout(std430, set=MATERIAL_SET_INDEX, binding=LAMBERTIAN_MATERIAL_BINDING) buffer Lambertian_Material_Buffer {
     Lambertian_Material lambertian_materials[];
 };
 

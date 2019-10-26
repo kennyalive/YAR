@@ -21,7 +21,7 @@ struct Rt_Uniform_Buffer {
         Vector2 uv;
     };
 
-void Raytrace_Scene::create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
+void Raytrace_Scene::create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout light_descriptor_set_layout,  VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Rt_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &(void*&)mapped_uniform_buffer, "rt_uniform_buffer");
 
@@ -51,7 +51,7 @@ void Raytrace_Scene::create(const Scene& scene, const std::vector<GPU_Mesh>& gpu
     }
 
     create_acceleration_structure(scene.render_objects, gpu_meshes);
-    create_pipeline(gpu_meshes, material_descriptor_set_layout, image_descriptor_set_layout);
+    create_pipeline(gpu_meshes, light_descriptor_set_layout, material_descriptor_set_layout, image_descriptor_set_layout);
 
     // Shader binding table.
     {
@@ -110,13 +110,11 @@ void Raytrace_Scene::update_instance_transform(uint32_t mesh_index, uint32_t ins
     instance.accelerationStructureHandle = mesh_accels[mesh_index].handle;
 }
 
-void Raytrace_Scene::update_point_lights(VkBuffer light_buffer, int light_count) {
-    Descriptor_Writes(descriptor_set).storage_buffer(5, light_buffer, 0, VK_WHOLE_SIZE);
+void Raytrace_Scene::update_point_lights(int light_count) {
     mapped_uniform_buffer->point_light_count = light_count;
 }
 
-void Raytrace_Scene::update_diffuse_rectangular_lights(VkBuffer light_buffer, int light_count) {
-    Descriptor_Writes(descriptor_set).storage_buffer(6, light_buffer, 0, VK_WHOLE_SIZE);
+void Raytrace_Scene::update_diffuse_rectangular_lights(int light_count) {
     mapped_uniform_buffer->diffuse_rectangular_light_count = light_count;
 }
 
@@ -280,7 +278,7 @@ void Raytrace_Scene::create_acceleration_structure(const std::vector<Render_Obje
     printf("\nAcceleration structures build time = %lld microseconds\n", elapsed_microseconds(t));
 }
 
-void Raytrace_Scene::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
+void Raytrace_Scene::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout light_descriptor_set_layout, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
 
     descriptor_set_layout = Descriptor_Set_Layout()
         .storage_image(0, VK_SHADER_STAGE_RAYGEN_BIT_NV)
@@ -288,9 +286,7 @@ void Raytrace_Scene::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, Vk
         .uniform_buffer(2, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
         .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // index buffers
         .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // vertex buffers
-        .storage_buffer(5, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // point light buffer
-        .storage_buffer(6, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // diffuse rectangular light buffer
-        .storage_buffer(7, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // material handle buffer
+        .storage_buffer(5, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // instance buffer
         .create("rt_set_layout");
 
     // pipeline layout
@@ -305,7 +301,8 @@ void Raytrace_Scene::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, Vk
         VkDescriptorSetLayout set_layouts[] = {
             descriptor_set_layout,
             material_descriptor_set_layout,
-            image_descriptor_set_layout
+            image_descriptor_set_layout,
+            light_descriptor_set_layout
         };
 
         VkPipelineLayoutCreateInfo create_info { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
@@ -419,6 +416,6 @@ void Raytrace_Scene::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, Vk
             .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer))
             .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), index_buffer_infos.data())
             .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), vertex_buffer_infos.data())
-            .storage_buffer(7, instance_info_buffer.handle, 0, VK_WHOLE_SIZE);
+            .storage_buffer(5, instance_info_buffer.handle, 0, VK_WHOLE_SIZE);
     }
 }

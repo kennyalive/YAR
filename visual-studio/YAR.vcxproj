@@ -149,6 +149,7 @@
     <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\shaders\shared_light.h" />
     <ClInclude Include="..\src\shaders\shared_image.h" />
+    <ClInclude Include="..\src\shaders\shared_material.h" />
     <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>
@@ -193,6 +194,7 @@
     <None Include="..\src\shaders\compute_bsdf.glsl" />
     <None Include="..\src\shaders\geometry.glsl" />
     <None Include="..\src\shaders\image.glsl" />
+    <None Include="..\src\shaders\light.glsl" />
     <None Include="..\src\shaders\material.glsl" />
     <CustomBuild Include="..\src\shaders\patch_materials.comp.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>

@@ -23,14 +23,12 @@ struct Global_Uniform_Buffer {
         Vector2 uv;
     };
 
-void Draw_Mesh::create(VkRenderPass render_pass, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout, bool front_face_has_clockwise_winding) {
+void Draw_Mesh::create(VkRenderPass render_pass, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout, VkDescriptorSetLayout light_descriptor_set_layout, bool front_face_has_clockwise_winding) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Global_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &mapped_uniform_buffer, "raster_uniform_buffer");
 
     descriptor_set_layout = Descriptor_Set_Layout()
         .uniform_buffer (0, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)
-        .storage_buffer (1, VK_SHADER_STAGE_FRAGMENT_BIT)
-        .storage_buffer (2, VK_SHADER_STAGE_FRAGMENT_BIT)
         .create         ("raster_set_layout");
 
     // Pipeline layout.
@@ -40,7 +38,7 @@ void Draw_Mesh::create(VkRenderPass render_pass, VkDescriptorSetLayout material_
         push_constant_range.offset      = 0;
         push_constant_range.size        = sizeof(GPU_Types::Instance_Info);
 
-        VkDescriptorSetLayout set_layouts[] = {descriptor_set_layout, material_descriptor_set_layout, image_descriptor_set_layout};
+        VkDescriptorSetLayout set_layouts[] = {descriptor_set_layout, material_descriptor_set_layout, image_descriptor_set_layout, light_descriptor_set_layout};
 
         VkPipelineLayoutCreateInfo create_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         create_info.setLayoutCount          = (uint32_t)std::size(set_layouts);
@@ -111,15 +109,12 @@ void Draw_Mesh::destroy() {
     *this = Draw_Mesh{};
 }
 
-void Draw_Mesh::update_point_lights(VkBuffer light_buffer, int light_count) {
-    Descriptor_Writes(descriptor_set).storage_buffer(1, light_buffer, 0, VK_WHOLE_SIZE);
-
+void Draw_Mesh::update_point_lights(int light_count) {
     Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
     buf.point_light_count = light_count;
 }
 
-void Draw_Mesh::update_diffuse_rectangular_lights(VkBuffer light_buffer, int light_count) {
-    Descriptor_Writes(descriptor_set).storage_buffer(2, light_buffer, 0, VK_WHOLE_SIZE);
+void Draw_Mesh::update_diffuse_rectangular_lights(int light_count) {
 
     Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
     buf.diffuse_rectangular_light_count = light_count;

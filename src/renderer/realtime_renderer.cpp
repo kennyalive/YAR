@@ -97,8 +97,11 @@ void Realtime_Renderer::shutdown() {
 
     gpu_scene.point_lights.destroy();
     gpu_scene.diffuse_rectangular_lights.destroy();
+    vkDestroyDescriptorSetLayout(vk.device, gpu_scene.light_descriptor_set_layout, nullptr);
+
     gpu_scene.lambertian_material_buffer.destroy();
     vkDestroyDescriptorSetLayout(vk.device, gpu_scene.material_descriptor_set_layout, nullptr);
+
     vkDestroyDescriptorSetLayout(vk.device, gpu_scene.image_descriptor_set_layout, nullptr);
 
     for (GPU_Mesh& mesh : gpu_meshes) {
@@ -298,24 +301,42 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
         }
     }
 
-    // Create light data.
-    if (!scene.lights.point_lights.empty()) {
-        std::vector<GPU_Types::Point_Light> lights(scene.lights.point_lights.size());
-        for (auto [i, data] : enumerate(scene.lights.point_lights))
-            lights[i].init(data);
+    // Lights.
+    {
+        if (!scene.lights.point_lights.empty()) {
+            std::vector<GPU_Types::Point_Light> lights(scene.lights.point_lights.size());
+            for (auto[i, data] : enumerate(scene.lights.point_lights))
+                lights[i].init(data);
 
-        gpu_scene.point_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-            lights.data(), "point_light_buffer");
-    }
-    if (!scene.lights.diffuse_rectangular_lights.empty()) {
-        std::vector<GPU_Types::Diffuse_Rectangular_Light> lights(scene.lights.diffuse_rectangular_lights.size());
-        for (auto [i, data] : enumerate(scene.lights.diffuse_rectangular_lights))
-            lights[i].init(data);
+            gpu_scene.point_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                lights.data(), "point_light_buffer");
+        }
+        if (!scene.lights.diffuse_rectangular_lights.empty()) {
+            std::vector<GPU_Types::Diffuse_Rectangular_Light> lights(scene.lights.diffuse_rectangular_lights.size());
+            for (auto[i, data] : enumerate(scene.lights.diffuse_rectangular_lights))
+                lights[i].init(data);
 
-        gpu_scene.diffuse_rectangular_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-            lights.data(), "diffuse_rectangular_light_buffer");
+            gpu_scene.diffuse_rectangular_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                lights.data(), "diffuse_rectangular_light_buffer");
+        }
+        {
+        gpu_scene.light_descriptor_set_layout = Descriptor_Set_Layout()
+            .storage_buffer(POINT_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
+            .storage_buffer(DIFFUSE_RECTANGULAR_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
+            .create("light_descriptor_set_layout");
+
+        VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+        alloc_info.descriptorPool = vk.descriptor_pool;
+        alloc_info.descriptorSetCount = 1;
+        alloc_info.pSetLayouts = &gpu_scene.light_descriptor_set_layout;
+        VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &gpu_scene.light_descriptor_set));
+
+        Descriptor_Writes(gpu_scene.light_descriptor_set)
+            .storage_buffer(POINT_LIGHT_BINDING, gpu_scene.point_lights.handle, 0, VK_WHOLE_SIZE)
+            .storage_buffer(DIFFUSE_RECTANGULAR_LIGHT_BINDING, gpu_scene.diffuse_rectangular_lights.handle, 0, VK_WHOLE_SIZE);
+        }
     }
 
     patch_materials.create(gpu_scene.material_descriptor_set_layout);
@@ -323,16 +344,19 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
         patch_materials.dispatch(command_buffer, gpu_scene.material_descriptor_set);
     });
 
-    draw_mesh.create(raster_render_pass, gpu_scene.material_descriptor_set_layout, gpu_scene.image_descriptor_set_layout, scene.front_face_has_clockwise_winding);
-    draw_mesh.update_point_lights(gpu_scene.point_lights.handle, (int)scene.lights.point_lights.size());
-    draw_mesh.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene.lights.diffuse_rectangular_lights.size());
+    draw_mesh.create(raster_render_pass, gpu_scene.material_descriptor_set_layout, gpu_scene.image_descriptor_set_layout, gpu_scene.light_descriptor_set_layout, scene.front_face_has_clockwise_winding);
+    draw_mesh.update_point_lights((int)scene.lights.point_lights.size());
+    draw_mesh.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
 
     if (vk.raytracing_supported) {
-        raytrace_scene.create(scene, gpu_meshes, gpu_scene.material_descriptor_set_layout, gpu_scene.image_descriptor_set_layout);
+        raytrace_scene.create(scene, gpu_meshes, gpu_scene.light_descriptor_set_layout, gpu_scene.material_descriptor_set_layout, gpu_scene.image_descriptor_set_layout);
         raytrace_scene.update_output_image_descriptor(output_image.view);
-        raytrace_scene.update_point_lights(gpu_scene.point_lights.handle, (int)scene.lights.point_lights.size());
-        raytrace_scene.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_lights.handle, (int)scene.lights.diffuse_rectangular_lights.size());
+        raytrace_scene.update_point_lights((int)scene.lights.point_lights.size());
+        raytrace_scene.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
     }
+
+    Descriptor_Writes(gpu_scene.light_descriptor_set).storage_buffer(POINT_LIGHT_BINDING, gpu_scene.point_lights.handle, 0, VK_WHOLE_SIZE);
+    Descriptor_Writes(gpu_scene.light_descriptor_set).storage_buffer(DIFFUSE_RECTANGULAR_LIGHT_BINDING, gpu_scene.diffuse_rectangular_lights.handle, 0, VK_WHOLE_SIZE);
 
     project_loaded = true;
 }
@@ -512,7 +536,7 @@ void Realtime_Renderer::draw_rasterized_image() {
     render_pass_begin_info.clearValueCount   = (uint32_t)std::size(clear_values);
     render_pass_begin_info.pClearValues      = clear_values;
 
-    VkDescriptorSet sets[] = { draw_mesh.descriptor_set, gpu_scene.material_descriptor_set, gpu_scene.image_descriptor_set };
+    VkDescriptorSet sets[] = { draw_mesh.descriptor_set, gpu_scene.material_descriptor_set, gpu_scene.image_descriptor_set, gpu_scene.light_descriptor_set };
 
     vkCmdBeginRenderPass(vk.command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, draw_mesh.pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
@@ -550,7 +574,7 @@ void Realtime_Renderer::draw_rasterized_image() {
 void Realtime_Renderer::draw_raytraced_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
 
-    VkDescriptorSet sets[] = { raytrace_scene.descriptor_set, gpu_scene.material_descriptor_set, gpu_scene.image_descriptor_set };
+    VkDescriptorSet sets[] = { raytrace_scene.descriptor_set, gpu_scene.material_descriptor_set, gpu_scene.image_descriptor_set, gpu_scene.light_descriptor_set };
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, raytrace_scene.pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, raytrace_scene.pipeline);
 

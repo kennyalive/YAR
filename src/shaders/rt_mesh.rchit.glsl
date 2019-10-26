@@ -6,7 +6,7 @@
 #include "common.glsl"
 #include "compute_bsdf.glsl"
 #include "geometry.glsl"
-#include "shared_light.h"
+#include "light.glsl"
 
 #define HIT_SHADER
 #include "rt_utils.glsl"
@@ -39,15 +39,8 @@ layout(std430, binding=4) readonly buffer Vertex_Buffer {
     Mesh_Vertex vertices[];
 } vertex_buffers[];
 
-layout(std430, binding=5) readonly buffer Point_Light_Buffer {
-    Point_Light point_lights[];
-};
 
-layout(std430, binding=6) readonly buffer Diffuse_Rectangular_Light_Buffer {
-    Diffuse_Rectangular_Light diffuse_rectangular_lights[];
-};
-
-layout(std430, binding=7) readonly buffer Instance_Info_Buffer {
+layout(std430, binding=5) readonly buffer Instance_Info_Buffer {
     Instance_Info instance_infos[];
 };
 
