@@ -19,6 +19,7 @@
     <ClCompile Include="..\src\renderer\kernels\raytrace_scene.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\renderer\acceleration_structure.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\std.h" />
@@ -48,6 +49,7 @@
     <ClInclude Include="..\src\shaders\shared_material.h">
       <Filter>shaders</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\renderer\acceleration_structure.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">

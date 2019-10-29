@@ -123,6 +123,7 @@
     </CustomBuild>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\renderer\acceleration_structure.cpp" />
     <ClCompile Include="..\src\renderer\kernels\copy_to_swapchain.cpp" />
     <ClCompile Include="..\src\renderer\main.cpp" />
     <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp" />
@@ -138,6 +139,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\renderer\acceleration_structure.h" />
     <ClInclude Include="..\src\renderer\common.h" />
     <ClInclude Include="..\src\renderer\kernels\copy_to_swapchain.h" />
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h" />

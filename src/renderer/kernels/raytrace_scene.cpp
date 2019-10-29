@@ -42,15 +42,7 @@ void Raytrace_Scene::create(const Scene& scene, const std::vector<GPU_Mesh>& gpu
             instance_infos.data(), "instance_info_buffer");
     }
 
-    // Instance buffer.
-    {
-        VkDeviceSize instance_buffer_size = scene.render_objects.size() * sizeof(VkGeometryInstanceNV);
-        void* buffer_ptr;
-        instance_buffer = vk_create_mapped_buffer(instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, &buffer_ptr, "instance_buffer");
-        instance_buffer_ptr = static_cast<VkGeometryInstanceNV*>(buffer_ptr);
-    }
-
-    create_acceleration_structure(scene.render_objects, gpu_meshes);
+    accelerator = create_intersection_accelerator(scene.render_objects, gpu_meshes);
     create_pipeline(gpu_meshes, light_descriptor_set_layout, material_descriptor_set_layout, image_descriptor_set_layout);
 
     // Shader binding table.
@@ -77,17 +69,8 @@ void Raytrace_Scene::destroy() {
     uniform_buffer.destroy();
     instance_info_buffer.destroy();
     shader_binding_table.destroy();
-
-    for (const Mesh_Accel& mesh_accel : mesh_accels) {
-        vkDestroyAccelerationStructureNV(vk.device, mesh_accel.accel, nullptr);
-        vmaFreeMemory(vk.allocator, mesh_accel.allocation);
-    }
-
-    vkDestroyAccelerationStructureNV(vk.device, top_level_accel, nullptr);
-    vmaFreeMemory(vk.allocator, top_level_accel_allocation);
-    instance_buffer.destroy();
+    accelerator.destroy();
     vkDestroyDescriptorSetLayout(vk.device, descriptor_set_layout, nullptr);
-
     vkDestroyPipelineLayout(vk.device, pipeline_layout, nullptr);
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
@@ -100,182 +83,12 @@ void Raytrace_Scene::update_camera_transform(const Matrix3x4& camera_to_world_tr
     mapped_uniform_buffer->camera_to_world = camera_to_world_transform;
 }
 
-void Raytrace_Scene::update_instance_transform(uint32_t mesh_index, uint32_t instance_index, const Matrix3x4& instance_transform) {
-    VkGeometryInstanceNV& instance = instance_buffer_ptr[instance_index];
-    instance.transform = instance_transform;
-    instance.instanceCustomIndex = instance_index;
-    instance.mask = 0xff;
-    instance.instanceOffset = 0;
-    instance.flags = 0;
-    instance.accelerationStructureHandle = mesh_accels[mesh_index].handle;
-}
-
 void Raytrace_Scene::update_point_lights(int light_count) {
     mapped_uniform_buffer->point_light_count = light_count;
 }
 
 void Raytrace_Scene::update_diffuse_rectangular_lights(int light_count) {
     mapped_uniform_buffer->diffuse_rectangular_light_count = light_count;
-}
-
-void Raytrace_Scene::create_acceleration_structure(const std::vector<Render_Object>& render_objects, const std::vector<GPU_Mesh>& gpu_meshes) {
-    // Initialize VKGeometryNV structures.
-    std::vector<VkGeometryNV> geometries(gpu_meshes.size());
-    for (auto [i, geom] : enumerate(geometries)) {
-        geom = VkGeometryNV { VK_STRUCTURE_TYPE_GEOMETRY_NV };
-        geom.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
-        geom.geometry.aabbs = VkGeometryAABBNV { VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV };
-        geom.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
-
-        VkGeometryTrianglesNV& triangle_geom = geom.geometry.triangles;
-        triangle_geom = VkGeometryTrianglesNV { VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV };
-        triangle_geom.vertexData = gpu_meshes[i].vertex_buffer.handle;
-        triangle_geom.vertexOffset = 0;
-        triangle_geom.vertexCount = gpu_meshes[i].model_vertex_count;
-        triangle_geom.vertexStride = sizeof(GPU_Vertex);
-        triangle_geom.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-        triangle_geom.indexData = gpu_meshes[i].index_buffer.handle;
-        triangle_geom.indexOffset = 0;
-        triangle_geom.indexCount = gpu_meshes[i].model_index_count;
-        triangle_geom.indexType = VK_INDEX_TYPE_UINT32;
-    }
-
-    // Create acceleration structures and allocate/bind memory.
-    {
-        auto allocate_acceleration_structure_memory = [](VkAccelerationStructureNV acceleration_structure, VmaAllocation* allocation) {
-            VkAccelerationStructureMemoryRequirementsInfoNV reqs_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV };
-            reqs_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-            reqs_info.accelerationStructure = acceleration_structure;
-
-            VkMemoryRequirements2 reqs_holder { VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
-            vkGetAccelerationStructureMemoryRequirementsNV(vk.device, &reqs_info, &reqs_holder);
-
-            VmaAllocationCreateInfo alloc_create_info{};
-            alloc_create_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-            VmaAllocationInfo alloc_info;
-            VK_CHECK(vmaAllocateMemory(vk.allocator, &reqs_holder.memoryRequirements, &alloc_create_info, allocation, &alloc_info));
-
-            VkBindAccelerationStructureMemoryInfoNV bind_info { VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV };
-            bind_info.accelerationStructure = acceleration_structure;
-            bind_info.memory = alloc_info.deviceMemory;
-            bind_info.memoryOffset = alloc_info.offset;
-            VK_CHECK(vkBindAccelerationStructureMemoryNV(vk.device, 1, &bind_info));
-        };
-
-        // Bottom level.
-        mesh_accels.resize(gpu_meshes.size());
-        for (auto [i, geometry] : enumerate(geometries)) {
-            VkAccelerationStructureInfoNV accel_info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
-            accel_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
-            accel_info.geometryCount = 1;
-            accel_info.pGeometries = &geometry;
-
-            VkAccelerationStructureCreateInfoNV create_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV };
-            create_info.info = accel_info;
-
-            VK_CHECK(vkCreateAccelerationStructureNV(vk.device, &create_info, nullptr, &mesh_accels[i].accel));
-            allocate_acceleration_structure_memory(mesh_accels[i].accel, &mesh_accels[i].allocation);
-            vk_set_debug_name(mesh_accels[i].accel, ("mesh_accel " + std::to_string(i)).c_str());
-
-            VK_CHECK(vkGetAccelerationStructureHandleNV(vk.device, mesh_accels[i].accel, sizeof(uint64_t), &mesh_accels[i].handle));
-        }
-
-        // Top level.
-        {
-            VkAccelerationStructureInfoNV accel_info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
-            accel_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-            accel_info.instanceCount = (uint32_t)render_objects.size();
-
-            VkAccelerationStructureCreateInfoNV create_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV };
-            create_info.info = accel_info;
-
-            VK_CHECK(vkCreateAccelerationStructureNV(vk.device, &create_info, nullptr, &top_level_accel));
-            allocate_acceleration_structure_memory(top_level_accel, &top_level_accel_allocation);
-            vk_set_debug_name(top_level_accel, "top_level_accel");
-        }
-    }
-
-    for (auto [i, render_object] : enumerate(render_objects)) {
-        ASSERT(render_object.geometry.type == Geometry_Type::triangle_mesh);
-        update_instance_transform(render_object.geometry.index, (uint32_t)i, render_object.object_to_world_transform);
-    }
-
-    // Create scratch buffert required to build acceleration structures.
-    Vk_Buffer scratch_buffer;
-    {
-        auto get_scratch_buffer_size = [](VkAccelerationStructureNV accel) {
-            VkAccelerationStructureMemoryRequirementsInfoNV reqs_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV };
-            reqs_info.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
-            reqs_info.accelerationStructure = accel;
-
-            VkMemoryRequirements2 reqs_holder;
-            vkGetAccelerationStructureMemoryRequirementsNV(vk.device, &reqs_info, &reqs_holder);
-            return reqs_holder.memoryRequirements.size;            
-        };
-
-        VkDeviceSize scratch_buffer_size = get_scratch_buffer_size(top_level_accel);
-        for (const Mesh_Accel& mesh_accel : mesh_accels) {
-            scratch_buffer_size = std::max(scratch_buffer_size, get_scratch_buffer_size(mesh_accel.accel));
-        }
-        scratch_buffer = vk_create_buffer(scratch_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV);
-    }
-
-    // Build acceleration structures.
-    Timestamp t;
-
-    vk_execute(vk.command_pool, vk.queue,
-        [this, &geometries, &render_objects, &scratch_buffer](VkCommandBuffer command_buffer)
-    {
-        VkMemoryBarrier barrier { VK_STRUCTURE_TYPE_MEMORY_BARRIER };
-        barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
-        barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
-
-        VkAccelerationStructureInfoNV bottom_accel_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
-        bottom_accel_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
-        bottom_accel_info.geometryCount = 1;
-
-        for (auto [i, mesh_accel] : enumerate(mesh_accels)) {
-            bottom_accel_info.pGeometries = &geometries[i];
-            vkCmdBuildAccelerationStructureNV(command_buffer,
-                &bottom_accel_info,
-                VK_NULL_HANDLE, // instanceData
-                0, // instanceOffset
-                VK_FALSE, // update
-                mesh_accel.accel, // dst
-                VK_NULL_HANDLE, // src
-                scratch_buffer.handle,
-                0 // scratch_offset
-            );
-
-            vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
-                0, 1, &barrier, 0, nullptr, 0, nullptr);
-        }
-
-        VkAccelerationStructureInfoNV top_accel_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
-        top_accel_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-        top_accel_info.instanceCount = (uint32_t)render_objects.size();
-
-        vkCmdBuildAccelerationStructureNV(command_buffer,
-            &top_accel_info,
-            instance_buffer.handle, // instanceData
-            0, // instanceOffset
-            VK_FALSE, // update
-            top_level_accel, // dst
-            VK_NULL_HANDLE, // src
-            scratch_buffer.handle, 
-            0 // scratch_offset
-        );
-
-        barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
-        barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
-
-        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_NV,
-            0, 1, &barrier, 0, nullptr, 0, nullptr);
-    });
-
-    scratch_buffer.destroy();
-    printf("\nAcceleration structures build time = %lld microseconds\n", elapsed_microseconds(t));
 }
 
 void Raytrace_Scene::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout light_descriptor_set_layout, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
@@ -412,7 +225,7 @@ void Raytrace_Scene::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, Vk
         }
 
         Descriptor_Writes(descriptor_set)
-            .accelerator(1, top_level_accel)
+            .accelerator(1, accelerator.top_level_accel)
             .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer))
             .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), index_buffer_infos.data())
             .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), vertex_buffer_infos.data())
