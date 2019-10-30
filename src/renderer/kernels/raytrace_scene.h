@@ -35,6 +35,8 @@ struct Raytrace_Scene {
     void update_point_lights(int light_count);
     void update_diffuse_rectangular_lights(int light_count);
 
+    void dispatch(VkDescriptorSet material_descriptor_set, VkDescriptorSet image_descriptor_set, VkDescriptorSet light_descriptor_set, float fovy, bool spp4);
+
 private:
     void create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout light_descriptor_set_layout, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout);
 };

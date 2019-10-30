@@ -566,26 +566,7 @@ void Realtime_Renderer::draw_rasterized_image() {
 
 void Realtime_Renderer::draw_raytraced_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
-
-    VkDescriptorSet sets[] = { raytrace_scene.descriptor_set, gpu_scene.material_descriptor_set, gpu_scene.image_descriptor_set, gpu_scene.light_descriptor_set };
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, raytrace_scene.pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
-    vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, raytrace_scene.pipeline);
-
-    float tan_fovy_over2 = std::tan(radians(scene.fovy/2.f));
-    uint32_t push_constants[2] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2) };
-    vkCmdPushConstants(vk.command_buffer, raytrace_scene.pipeline_layout, VK_SHADER_STAGE_RAYGEN_BIT_NV, 0, 8, &push_constants[0]);
-
-    const VkBuffer sbt = raytrace_scene.shader_binding_table.handle;
-    const uint32_t sbt_slot_size = raytrace_scene.properties.shaderGroupHandleSize;
-    const uint32_t miss_offset = round_up(sbt_slot_size /* raygen slot*/, raytrace_scene.properties.shaderGroupBaseAlignment);
-    const uint32_t hit_offset = round_up(miss_offset + sbt_slot_size /* miss slot */, raytrace_scene.properties.shaderGroupBaseAlignment);
-
-    vkCmdTraceRaysNV(vk.command_buffer,
-        sbt, 0, // raygen shader
-        sbt, miss_offset, sbt_slot_size, // miss shader
-        sbt, hit_offset, sbt_slot_size, // chit shader
-        VK_NULL_HANDLE, 0, 0,
-        vk.surface_size.width, vk.surface_size.height, 1);
+    raytrace_scene.dispatch(gpu_scene.material_descriptor_set, gpu_scene.image_descriptor_set, gpu_scene.light_descriptor_set, scene.fovy, spp4);
 }
 
 void Realtime_Renderer::draw_imgui() {

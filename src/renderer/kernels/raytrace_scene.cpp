@@ -91,6 +91,29 @@ void Raytrace_Scene::update_diffuse_rectangular_lights(int light_count) {
     mapped_uniform_buffer->diffuse_rectangular_light_count = light_count;
 }
 
+void Raytrace_Scene::dispatch(VkDescriptorSet material_descriptor_set, VkDescriptorSet image_descriptor_set, VkDescriptorSet light_descriptor_set, float fovy, bool spp4) {
+    VkDescriptorSet sets[] = { descriptor_set, material_descriptor_set, image_descriptor_set, light_descriptor_set };
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
+
+    float tan_fovy_over2 = std::tan(radians(fovy/2.f));
+    uint32_t push_constants[2] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2) };
+    vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_RAYGEN_BIT_NV, 0, 8, &push_constants[0]);
+
+    vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline);
+
+    const VkBuffer sbt = shader_binding_table.handle;
+    const uint32_t sbt_slot_size = properties.shaderGroupHandleSize;
+    const uint32_t miss_offset = round_up(sbt_slot_size /* raygen slot*/, properties.shaderGroupBaseAlignment);
+    const uint32_t hit_offset = round_up(miss_offset + sbt_slot_size /* miss slot */, properties.shaderGroupBaseAlignment);
+
+    vkCmdTraceRaysNV(vk.command_buffer,
+        sbt, 0, // raygen shader
+        sbt, miss_offset, sbt_slot_size, // miss shader
+        sbt, hit_offset, sbt_slot_size, // chit shader
+        VK_NULL_HANDLE, 0, 0,
+        vk.surface_size.width, vk.surface_size.height, 1);
+}
+
 void Raytrace_Scene::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout light_descriptor_set_layout, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
 
     descriptor_set_layout = Descriptor_Set_Layout()
