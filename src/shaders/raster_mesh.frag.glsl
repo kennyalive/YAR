@@ -3,9 +3,11 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include "common.glsl"
-#include "compute_bsdf.glsl"
 #include "geometry.glsl"
+#include "material.glsl"
 #include "light.glsl"
+#include "compute_bsdf.glsl"
+#include "shared_main.h"
 
 struct Frag_In {
     vec3 normal;
@@ -21,7 +23,7 @@ layout(location=0) in Frag_In frag_in;
 
 layout(location = 0) out vec4 color_attachment0;
 
-layout(std140, binding=0) uniform Global_Uniform_Block {
+layout(std140, set=KERNEL_SET_0, binding=0) uniform Global_Uniform_Block {
     mat4x4 model_view_proj;
     mat4x4 model_view;
     mat4x4 view;

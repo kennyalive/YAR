@@ -50,6 +50,9 @@
       <Filter>shaders</Filter>
     </ClInclude>
     <ClInclude Include="..\src\renderer\acceleration_structure.h" />
+    <ClInclude Include="..\src\shaders\shared_main.h">
+      <Filter>shaders</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">

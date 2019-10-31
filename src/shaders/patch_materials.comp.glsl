@@ -3,6 +3,7 @@
 
 #define MATERIAL_SET_INDEX 0
 #include "common.glsl"
+#include "material.glsl"
 #include "shared_image.h"
 
 layout(local_size_x = 1) in;

@@ -4,6 +4,7 @@
 #include "renderer/common.h"
 #include "renderer/utils.h"
 #include "lib/matrix.h"
+#include "shaders/shared_main.h"
 
 namespace {
 struct Global_Uniform_Buffer {
@@ -138,8 +139,13 @@ void Draw_Mesh::update(const Matrix3x4& view_transform, float fov) {
 }
 
 void Draw_Mesh::bind_sets_and_pipeline(/*TODO: set global descriptors outside of kernels*/ VkDescriptorSet material_descriptor_set, VkDescriptorSet image_descriptor_set, VkDescriptorSet light_descriptor_set) {
-    VkDescriptorSet sets[] = { descriptor_set, material_descriptor_set, image_descriptor_set, light_descriptor_set };
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
+    // TEMP: set global sets
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, MATERIAL_SET_INDEX, 1, &material_descriptor_set, 0, nullptr);
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, IMAGE_SET_INDEX, 1, &image_descriptor_set, 0, nullptr);
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, LIGHT_SET_INDEX, 1, &light_descriptor_set, 0, nullptr);
+    // TEMP END
+
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, KERNEL_SET_0, 1, &descriptor_set, 0, nullptr);
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 }
 

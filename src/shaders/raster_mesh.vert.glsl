@@ -3,6 +3,8 @@
 
 #include "common.glsl"
 #include "geometry.glsl"
+#include "material.glsl"
+#include "shared_main.h"
 #include "shared_light.h"
 
 struct Frag_In {
@@ -21,7 +23,7 @@ layout(location=2) in vec2 in_uv;
 
 layout(location = 0) out Frag_In frag_in;
 
-layout(std140, binding=0) uniform Global_Uniform_Block {
+layout(std140, set=KERNEL_SET_0, binding=0) uniform Global_Uniform_Block {
     mat4x4 model_view_proj;
     mat4x4 model_view;
     mat4x4 view;

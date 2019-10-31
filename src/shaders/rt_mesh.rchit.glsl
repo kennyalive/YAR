@@ -4,9 +4,11 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include "common.glsl"
-#include "compute_bsdf.glsl"
 #include "geometry.glsl"
+#include "material.glsl"
+#include "compute_bsdf.glsl"
 #include "light.glsl"
+#include "shared_main.h"
 
 #define HIT_SHADER
 #include "rt_utils.glsl"
@@ -22,25 +24,29 @@ struct Mesh_Vertex {
 layout (location=0) rayPayloadInNV Ray_Payload payload;
 layout (location=1) rayPayloadNV Shadow_Ray_Payload shadow_ray_payload;
 
-layout(set=0, binding = 1) uniform accelerationStructureNV accel;
+layout(set=KERNEL_SET_0, binding = 1)
+uniform accelerationStructureNV accel;
 
-layout(std140, binding=2) uniform Uniform_Block {
+layout(std140, set=KERNEL_SET_0, binding=2)
+uniform Uniform_Block {
     mat4x3  camera_to_world;
     int     point_light_count;
     int     diffuse_rectangular_light_count;
     vec2    pad0;
 };
 
-layout(std430, binding=3) readonly buffer Index_Buffer {
+layout(std430, set=KERNEL_SET_0, binding=3)
+readonly buffer Index_Buffer {
     uint indices[];
 } index_buffers[];
 
-layout(std430, binding=4) readonly buffer Vertex_Buffer {
+layout(std430, set=KERNEL_SET_0, binding=4)
+readonly buffer Vertex_Buffer {
     Mesh_Vertex vertices[];
 } vertex_buffers[];
 
-
-layout(std430, binding=5) readonly buffer Instance_Info_Buffer {
+layout(std430, set=KERNEL_SET_0, binding=5)
+readonly buffer Instance_Info_Buffer {
     Instance_Info instance_infos[];
 };
 

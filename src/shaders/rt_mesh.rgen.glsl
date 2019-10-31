@@ -3,6 +3,7 @@
 #extension GL_NV_ray_tracing : require
 
 #include "common.glsl"
+#include "shared_main.h"
 
 layout(push_constant) uniform Push_Constants {
       layout(offset = 0) uint spp4;
@@ -12,10 +13,14 @@ layout(push_constant) uniform Push_Constants {
 #define RGEN_SHADER
 #include "rt_utils.glsl"
 
-layout(binding = 0, rgba8) uniform image2D image;
-layout(set=0, binding = 1) uniform accelerationStructureNV accel;
+layout(set=KERNEL_SET_0, binding = 0, rgba8)
+uniform image2D image;
 
-layout(std140, binding=2) uniform Uniform_Block {
+layout(set=KERNEL_SET_0, binding = 1)
+uniform accelerationStructureNV accel;
+
+layout(std140, set=KERNEL_SET_0, binding=2)
+uniform Uniform_Block {
     mat4x3 camera_to_world;
 };
 

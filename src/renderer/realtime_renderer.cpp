@@ -7,6 +7,7 @@
 #include "lib/matrix.h"
 #include "reference/reference_renderer.h"
 
+#include "shaders/shared_main.h"
 #include "shaders/shared_light.h"
 #include "shaders/shared_image.h"
 

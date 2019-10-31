@@ -31,8 +31,10 @@ void Patch_Materials::destroy() {
 }
 
 void Patch_Materials::dispatch(VkCommandBuffer command_buffer, VkDescriptorSet material_descriptor_set) {
-    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0,
-        1, &material_descriptor_set, 0, nullptr);
+    // TEMP: set global sets
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &material_descriptor_set, 0, nullptr);
+    // TEMP END
+
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vkCmdDispatch(command_buffer, 1, 1, 1);
 }

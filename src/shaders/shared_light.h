@@ -1,9 +1,3 @@
-#ifndef LIGHT_SET_INDEX
-#define LIGHT_SET_INDEX 3
-#endif
-
-const int POINT_LIGHT_BINDING = 0;
-const int DIFFUSE_RECTANGULAR_LIGHT_BINDING = 1; 
 
 #ifdef __cplusplus
     #pragma once

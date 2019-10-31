@@ -1,6 +1,7 @@
 #include "std.h"
 #include "copy_to_swapchain.h"
 #include "../utils.h"
+#include "shaders/shared_main.h"
 
 void Copy_To_Swapchain::create() {
 
@@ -98,7 +99,7 @@ void Copy_To_Swapchain::dispatch() {
     uint32_t push_constants[] = { vk.surface_size.width, vk.surface_size.height };
 
     vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), push_constants);
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &sets[vk.swapchain_image_index], 0, nullptr);
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, KERNEL_SET_0, 1, &sets[vk.swapchain_image_index], 0, nullptr);
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vkCmdDispatch(vk.command_buffer, group_count_x, group_count_y, 1);
 

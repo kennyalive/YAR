@@ -1,0 +1,23 @@
+#ifndef SHARED_MAIN_H
+#define SHARED_MAIN_H
+
+#ifndef MATERIAL_SET_INDEX
+#define MATERIAL_SET_INDEX 1
+#endif
+const int LAMBERTIAN_MATERIAL_BINDING = 0;
+
+#ifndef IMAGE_SET_INDEX
+#define IMAGE_SET_INDEX 2
+#endif
+
+#ifndef LIGHT_SET_INDEX
+#define LIGHT_SET_INDEX 3
+#endif
+const int POINT_LIGHT_BINDING = 0;
+const int DIFFUSE_RECTANGULAR_LIGHT_BINDING = 1; 
+
+#define KERNEL_SET_0 0
+#define KERNEL_SET_1 1 
+
+#endif // SHARED_MAIN_H
+
