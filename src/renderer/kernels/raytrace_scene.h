@@ -10,7 +10,6 @@ struct Rt_Uniform_Buffer;
 struct Scene;
 struct Kernel_Context;
 
-
 struct Raytrace_Scene {
     VkPhysicalDeviceRayTracingPropertiesNV properties;
     Vk_Intersection_Accelerator accelerator;
@@ -36,7 +35,7 @@ struct Raytrace_Scene {
     void update_point_lights(int light_count);
     void update_diffuse_rectangular_lights(int light_count);
 
-    void dispatch(VkDescriptorSet material_descriptor_set, VkDescriptorSet image_descriptor_set, VkDescriptorSet light_descriptor_set, float fovy, bool spp4);
+    void dispatch(float fovy, bool spp4);
 
 private:
     void create_pipeline(const Kernel_Context& ctx, const std::vector<GPU_Mesh>& gpu_meshes);

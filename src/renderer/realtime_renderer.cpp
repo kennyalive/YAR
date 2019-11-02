@@ -105,6 +105,8 @@ void Realtime_Renderer::shutdown() {
 
     vkDestroyDescriptorSetLayout(vk.device, gpu_scene.image_descriptor_set_layout, nullptr);
 
+    vkDestroyPipelineLayout(vk.device, gpu_scene.per_frame_pipeline_layout, nullptr);
+
     for (GPU_Mesh& mesh : gpu_meshes) {
         mesh.vertex_buffer.destroy();
         mesh.index_buffer.destroy();
@@ -344,6 +346,29 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
     kernel_context.material_descriptor_set_layout = gpu_scene.material_descriptor_set_layout;
     kernel_context.image_descriptor_set_layout = gpu_scene.image_descriptor_set_layout;
 
+    // Per-frame pipeline layout.
+    {
+        VkDescriptorSetLayout set_layouts[] = {
+            gpu_scene.image_descriptor_set_layout,
+            gpu_scene.material_descriptor_set_layout,
+            gpu_scene.light_descriptor_set_layout,
+        };
+
+        VkPushConstantRange push_constant_ranges[1];
+        push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_ALL;
+        push_constant_ranges[0].offset = 0;
+        push_constant_ranges[0].size = Compatible_Layout_Push_Constant_Count * sizeof(uint32_t);
+
+        VkPipelineLayoutCreateInfo create_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+        create_info.setLayoutCount = (uint32_t)std::size(set_layouts);
+        create_info.pSetLayouts = set_layouts;
+        create_info.pushConstantRangeCount = (uint32_t)std::size(push_constant_ranges);
+        create_info.pPushConstantRanges = push_constant_ranges;
+
+        VK_CHECK(vkCreatePipelineLayout(vk.device, &create_info, nullptr, &gpu_scene.per_frame_pipeline_layout));
+        vk_set_debug_name(gpu_scene.per_frame_pipeline_layout, "per_frame_pipeline_layout");
+    }
+
     patch_materials.create(gpu_scene.material_descriptor_set_layout);
     vk_execute(vk.command_pool, vk.queue, [this](VkCommandBuffer command_buffer) {
         patch_materials.dispatch(command_buffer, gpu_scene.material_descriptor_set);
@@ -502,10 +527,24 @@ void Realtime_Renderer::draw_frame() {
     }
 
     if (project_loaded) {
-        if (raytracing)
+        if (raytracing) {
+            VkDescriptorSet per_frame_sets[] = {
+                gpu_scene.image_descriptor_set,
+                gpu_scene.material_descriptor_set,
+                gpu_scene.light_descriptor_set
+            };
+            vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, gpu_scene.per_frame_pipeline_layout, 0, (uint32_t)std::size(per_frame_sets), per_frame_sets, 0, nullptr);
             draw_raytraced_image();
-        else
+        }
+        else {
+            VkDescriptorSet per_frame_sets[] = {
+                gpu_scene.image_descriptor_set,
+                gpu_scene.material_descriptor_set,
+                gpu_scene.light_descriptor_set
+            };
+            vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gpu_scene.per_frame_pipeline_layout, 0, (uint32_t)std::size(per_frame_sets), per_frame_sets, 0, nullptr);
             draw_rasterized_image();
+        }
     }
 
     draw_imgui();
@@ -542,7 +581,7 @@ void Realtime_Renderer::draw_rasterized_image() {
     render_pass_begin_info.pClearValues      = clear_values;
 
     vkCmdBeginRenderPass(vk.command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-    draw_mesh.bind_sets_and_pipeline(gpu_scene.material_descriptor_set, gpu_scene.image_descriptor_set, gpu_scene.light_descriptor_set);
+    draw_mesh.bind_sets_and_pipeline();
 
     for (int i = 0; i < (int)scene.render_objects.size(); i++) {
         const Render_Object& render_object = scene.render_objects[i];
@@ -571,7 +610,7 @@ void Realtime_Renderer::draw_rasterized_image() {
 
 void Realtime_Renderer::draw_raytraced_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
-    raytrace_scene.dispatch(gpu_scene.material_descriptor_set, gpu_scene.image_descriptor_set, gpu_scene.light_descriptor_set, scene.fovy, spp4);
+    raytrace_scene.dispatch(scene.fovy, spp4);
 }
 
 void Realtime_Renderer::draw_imgui() {

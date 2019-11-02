@@ -22,7 +22,7 @@ struct Draw_Mesh {
     void update_diffuse_rectangular_lights(int light_count);
     void update(const Matrix3x4& view_transform, float fov);
 
-    void bind_sets_and_pipeline(VkDescriptorSet material_descriptor_set, VkDescriptorSet image_descriptor_set, VkDescriptorSet light_descriptor_set);
+    void bind_sets_and_pipeline();
     void dispatch(const GPU_Mesh& gpu_mesh, const GPU_Types::Instance_Info& instance_info);
 };
 

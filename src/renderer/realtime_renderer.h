@@ -64,9 +64,11 @@ private:
 
     std::vector<GPU_Mesh> gpu_meshes;
 
-
     struct GPU_Scene_Resources {
         std::vector<Vk_Image> images_2d;
+
+        // Layout for resources that are bound for the most part of the frame.
+        VkPipelineLayout per_frame_pipeline_layout;
 
         Vk_Buffer point_lights;
         Vk_Buffer diffuse_rectangular_lights;

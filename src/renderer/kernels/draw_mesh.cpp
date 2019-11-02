@@ -43,9 +43,9 @@ void Draw_Mesh::create(const Kernel_Context& ctx, VkRenderPass render_pass, bool
         };
 
         VkPushConstantRange push_constant_range;
-        push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        push_constant_range.stageFlags = VK_SHADER_STAGE_ALL;
         push_constant_range.offset = 0;
-        push_constant_range.size = sizeof(GPU_Types::Instance_Info);
+        push_constant_range.size = Compatible_Layout_Push_Constant_Count * sizeof(uint32_t);
 
         VkPipelineLayoutCreateInfo create_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         create_info.setLayoutCount = (uint32_t)std::size(set_layouts);
@@ -144,13 +144,7 @@ void Draw_Mesh::update(const Matrix3x4& view_transform, float fov) {
     buf.view = Matrix4x4::identity * view_transform;
 }
 
-void Draw_Mesh::bind_sets_and_pipeline(/*TODO: set global descriptors outside of kernels*/ VkDescriptorSet material_descriptor_set, VkDescriptorSet image_descriptor_set, VkDescriptorSet light_descriptor_set) {
-    // TEMP: set global sets
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, IMAGE_SET_INDEX, 1, &image_descriptor_set, 0, nullptr);
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, MATERIAL_SET_INDEX, 1, &material_descriptor_set, 0, nullptr);
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, LIGHT_SET_INDEX, 1, &light_descriptor_set, 0, nullptr);
-    // TEMP END
-
+void Draw_Mesh::bind_sets_and_pipeline() {
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, KERNEL_SET_0, 1, &descriptor_set, 0, nullptr);
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 }
@@ -159,7 +153,7 @@ void Draw_Mesh::dispatch(const GPU_Mesh& gpu_mesh, const GPU_Types::Instance_Inf
     const VkDeviceSize zero_offset = 0;
     vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &gpu_mesh.vertex_buffer.handle, &zero_offset);
     vkCmdBindIndexBuffer(vk.command_buffer, gpu_mesh.index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(GPU_Types::Instance_Info), &instance_info);
+    vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_ALL, 0, sizeof(GPU_Types::Instance_Info), &instance_info);
     vkCmdDrawIndexed(vk.command_buffer, gpu_mesh.model_index_count, 1, 0, 0, 0);
 }
 
