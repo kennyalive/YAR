@@ -340,17 +340,21 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
         }
     }
 
+    kernel_context.light_descriptor_set_layout = gpu_scene.light_descriptor_set_layout;
+    kernel_context.material_descriptor_set_layout = gpu_scene.material_descriptor_set_layout;
+    kernel_context.image_descriptor_set_layout = gpu_scene.image_descriptor_set_layout;
+
     patch_materials.create(gpu_scene.material_descriptor_set_layout);
     vk_execute(vk.command_pool, vk.queue, [this](VkCommandBuffer command_buffer) {
         patch_materials.dispatch(command_buffer, gpu_scene.material_descriptor_set);
     });
 
-    draw_mesh.create(raster_render_pass, gpu_scene.material_descriptor_set_layout, gpu_scene.image_descriptor_set_layout, gpu_scene.light_descriptor_set_layout, scene.front_face_has_clockwise_winding);
+    draw_mesh.create(kernel_context, raster_render_pass, scene.front_face_has_clockwise_winding);
     draw_mesh.update_point_lights((int)scene.lights.point_lights.size());
     draw_mesh.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
 
     if (vk.raytracing_supported) {
-        raytrace_scene.create(scene, gpu_meshes, gpu_scene.light_descriptor_set_layout, gpu_scene.material_descriptor_set_layout, gpu_scene.image_descriptor_set_layout);
+        raytrace_scene.create(kernel_context, scene, gpu_meshes);
         raytrace_scene.update_output_image_descriptor(output_image.view);
         raytrace_scene.update_point_lights((int)scene.lights.point_lights.size());
         raytrace_scene.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());

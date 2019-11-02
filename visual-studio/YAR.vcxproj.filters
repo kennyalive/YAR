@@ -46,13 +46,11 @@
     <ClInclude Include="..\src\renderer\kernels\raytrace_scene.h">
       <Filter>kernels</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\shaders\shared_material.h">
-      <Filter>shaders</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\renderer\acceleration_structure.h" />
     <ClInclude Include="..\src\shaders\shared_main.h">
       <Filter>shaders</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\renderer\kernel_context.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">

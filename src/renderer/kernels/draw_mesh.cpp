@@ -3,6 +3,7 @@
 #include "draw_mesh.h"
 #include "renderer/common.h"
 #include "renderer/utils.h"
+#include "renderer/kernel_context.h"
 #include "lib/matrix.h"
 #include "shaders/shared_main.h"
 
@@ -24,7 +25,7 @@ struct Global_Uniform_Buffer {
         Vector2 uv;
     };
 
-void Draw_Mesh::create(VkRenderPass render_pass, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout, VkDescriptorSetLayout light_descriptor_set_layout, bool front_face_has_clockwise_winding) {
+void Draw_Mesh::create(const Kernel_Context& ctx, VkRenderPass render_pass, bool front_face_has_clockwise_winding) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Global_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &mapped_uniform_buffer, "raster_uniform_buffer");
 
@@ -34,21 +35,26 @@ void Draw_Mesh::create(VkRenderPass render_pass, VkDescriptorSetLayout material_
 
     // Pipeline layout.
     {
-        VkPushConstantRange push_constant_range;
-        push_constant_range.stageFlags  = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-        push_constant_range.offset      = 0;
-        push_constant_range.size        = sizeof(GPU_Types::Instance_Info);
+        VkDescriptorSetLayout set_layouts[] = {
+            ctx.image_descriptor_set_layout,
+            ctx.material_descriptor_set_layout,
+            ctx.light_descriptor_set_layout,
+            descriptor_set_layout
+        };
 
-        VkDescriptorSetLayout set_layouts[] = {descriptor_set_layout, material_descriptor_set_layout, image_descriptor_set_layout, light_descriptor_set_layout};
+        VkPushConstantRange push_constant_range;
+        push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        push_constant_range.offset = 0;
+        push_constant_range.size = sizeof(GPU_Types::Instance_Info);
 
         VkPipelineLayoutCreateInfo create_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        create_info.setLayoutCount          = (uint32_t)std::size(set_layouts);
-        create_info.pSetLayouts             = set_layouts;
-        create_info.pushConstantRangeCount  = 1;
-        create_info.pPushConstantRanges     = &push_constant_range;
+        create_info.setLayoutCount = (uint32_t)std::size(set_layouts);
+        create_info.pSetLayouts = set_layouts;
+        create_info.pushConstantRangeCount = 1;
+        create_info.pPushConstantRanges = &push_constant_range;
 
         VK_CHECK(vkCreatePipelineLayout(vk.device, &create_info, nullptr, &pipeline_layout));
-        vk_set_debug_name(pipeline_layout, "raster_pipeline_layout");
+        vk_set_debug_name(pipeline_layout, "draw_mesh_pipeline_layout");
     }
 
     // Pipeline.
@@ -140,8 +146,8 @@ void Draw_Mesh::update(const Matrix3x4& view_transform, float fov) {
 
 void Draw_Mesh::bind_sets_and_pipeline(/*TODO: set global descriptors outside of kernels*/ VkDescriptorSet material_descriptor_set, VkDescriptorSet image_descriptor_set, VkDescriptorSet light_descriptor_set) {
     // TEMP: set global sets
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, MATERIAL_SET_INDEX, 1, &material_descriptor_set, 0, nullptr);
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, IMAGE_SET_INDEX, 1, &image_descriptor_set, 0, nullptr);
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, MATERIAL_SET_INDEX, 1, &material_descriptor_set, 0, nullptr);
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, LIGHT_SET_INDEX, 1, &light_descriptor_set, 0, nullptr);
     // TEMP END
 

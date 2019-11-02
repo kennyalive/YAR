@@ -11,9 +11,9 @@ layout(push_constant) uniform Push_Constants {
     uvec2 viewport_size;
 };
 
-layout(set=KERNEL_SET_0, binding=0) uniform sampler point_sampler;
-layout(set=KERNEL_SET_0, binding=1) uniform texture2D  output_image;
-layout(set=KERNEL_SET_0, binding=2, rgba8) uniform writeonly image2D swapchain_image;
+layout(set=0, binding=0) uniform sampler point_sampler;
+layout(set=0, binding=1) uniform texture2D  output_image;
+layout(set=0, binding=2, rgba8) uniform writeonly image2D swapchain_image;
 
 void main() {
     ivec2 loc = ivec2(gl_GlobalInvocationID.xy);

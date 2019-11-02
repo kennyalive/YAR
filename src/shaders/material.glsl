@@ -1,4 +1,4 @@
-#include "shared_material.h"
+#include "shared_main.h"
 
 const int Material_None = 0; 
 const int Material_Lambertian = 1;

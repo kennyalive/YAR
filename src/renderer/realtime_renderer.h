@@ -4,6 +4,7 @@
 #include "kernels/patch_materials.h"
 #include "kernels/draw_mesh.h"
 #include "kernels/raytrace_scene.h"
+#include "kernel_context.h"
 #include "utils.h"
 #include "vk.h"
 
@@ -58,6 +59,8 @@ private:
     VkFramebuffer raster_framebuffer;
 
     Vk_Image output_image;
+
+    Kernel_Context kernel_context;
 
     std::vector<GPU_Mesh> gpu_meshes;
 

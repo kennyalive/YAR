@@ -5,6 +5,7 @@
 
 struct GPU_Mesh;
 struct Matrix3x4;
+struct Kernel_Context;
 
 struct Draw_Mesh {
     VkDescriptorSetLayout       descriptor_set_layout;
@@ -15,7 +16,7 @@ struct Draw_Mesh {
     Vk_Buffer                   uniform_buffer;
     void*                       mapped_uniform_buffer;
 
-    void create(VkRenderPass render_pass, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout, VkDescriptorSetLayout light_descriptor_set_layout, bool front_face_has_clockwsise_winding);
+    void create(const Kernel_Context& ctx, VkRenderPass render_pass, bool front_face_has_clockwsise_winding);
     void destroy();
     void update_point_lights(int light_count);
     void update_diffuse_rectangular_lights(int light_count);

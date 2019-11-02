@@ -143,6 +143,7 @@
     <ClInclude Include="..\src\renderer\common.h" />
     <ClInclude Include="..\src\renderer\kernels\copy_to_swapchain.h" />
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h" />
+    <ClInclude Include="..\src\renderer\kernel_context.h" />
     <ClInclude Include="..\src\renderer\platform.h" />
     <ClInclude Include="..\src\renderer\realtime_renderer.h" />
     <ClInclude Include="..\src\renderer\kernels\draw_mesh.h" />
@@ -152,7 +153,6 @@
     <ClInclude Include="..\src\shaders\shared_light.h" />
     <ClInclude Include="..\src\shaders\shared_image.h" />
     <ClInclude Include="..\src\shaders\shared_main.h" />
-    <ClInclude Include="..\src\shaders\shared_material.h" />
     <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>

@@ -8,6 +8,7 @@
 struct Render_Object;
 struct Rt_Uniform_Buffer;
 struct Scene;
+struct Kernel_Context;
 
 
 struct Raytrace_Scene {
@@ -28,7 +29,7 @@ struct Raytrace_Scene {
 
     Vk_Buffer instance_info_buffer;
 
-    void create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout light_descriptor_set_layout, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout);
+    void create(const Kernel_Context& ctx, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes);
     void destroy();
     void update_output_image_descriptor(VkImageView output_image_view);
     void update_camera_transform(const Matrix3x4& camera_to_world_transform);
@@ -38,6 +39,6 @@ struct Raytrace_Scene {
     void dispatch(VkDescriptorSet material_descriptor_set, VkDescriptorSet image_descriptor_set, VkDescriptorSet light_descriptor_set, float fovy, bool spp4);
 
 private:
-    void create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout light_descriptor_set_layout, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout);
+    void create_pipeline(const Kernel_Context& ctx, const std::vector<GPU_Mesh>& gpu_meshes);
 };
 

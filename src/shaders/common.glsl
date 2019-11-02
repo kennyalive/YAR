@@ -56,5 +56,3 @@ uint rand_xorshift(uint rng_state) {
     return rng_state;
 }
 
-#include "image.glsl"
-

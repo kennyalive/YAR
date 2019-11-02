@@ -2,8 +2,10 @@
 #include "lib/common.h"
 #include "raytrace_scene.h"
 
+#include "renderer/kernel_context.h"
 #include "renderer/utils.h"
 #include "shaders/shared_light.h"
+#include "shaders/shared_main.h"
 
 #include "lib/scene.h"
 
@@ -21,7 +23,7 @@ struct Rt_Uniform_Buffer {
         Vector2 uv;
     };
 
-void Raytrace_Scene::create(const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout light_descriptor_set_layout,  VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
+void Raytrace_Scene::create(const Kernel_Context& ctx, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Rt_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &(void*&)mapped_uniform_buffer, "rt_uniform_buffer");
 
@@ -43,7 +45,7 @@ void Raytrace_Scene::create(const Scene& scene, const std::vector<GPU_Mesh>& gpu
     }
 
     accelerator = create_intersection_accelerator(scene.render_objects, gpu_meshes);
-    create_pipeline(gpu_meshes, light_descriptor_set_layout, material_descriptor_set_layout, image_descriptor_set_layout);
+    create_pipeline(ctx, gpu_meshes);
 
     // Shader binding table.
     {
@@ -92,8 +94,13 @@ void Raytrace_Scene::update_diffuse_rectangular_lights(int light_count) {
 }
 
 void Raytrace_Scene::dispatch(VkDescriptorSet material_descriptor_set, VkDescriptorSet image_descriptor_set, VkDescriptorSet light_descriptor_set, float fovy, bool spp4) {
-    VkDescriptorSet sets[] = { descriptor_set, material_descriptor_set, image_descriptor_set, light_descriptor_set };
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline_layout, 0, (uint32_t)std::size(sets), sets, 0, nullptr);
+    // TEMP: set global sets
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline_layout, IMAGE_SET_INDEX, 1, &image_descriptor_set, 0, nullptr);
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline_layout, MATERIAL_SET_INDEX, 1, &material_descriptor_set, 0, nullptr);
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline_layout, LIGHT_SET_INDEX, 1, &light_descriptor_set, 0, nullptr);
+    // TEMP END
+
+    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline_layout, KERNEL_SET_0, 1, &descriptor_set, 0, nullptr);
 
     float tan_fovy_over2 = std::tan(radians(fovy/2.f));
     uint32_t push_constants[2] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2) };
@@ -114,7 +121,7 @@ void Raytrace_Scene::dispatch(VkDescriptorSet material_descriptor_set, VkDescrip
         vk.surface_size.width, vk.surface_size.height, 1);
 }
 
-void Raytrace_Scene::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, VkDescriptorSetLayout light_descriptor_set_layout, VkDescriptorSetLayout material_descriptor_set_layout, VkDescriptorSetLayout image_descriptor_set_layout) {
+void Raytrace_Scene::create_pipeline(const Kernel_Context& ctx, const std::vector<GPU_Mesh>& gpu_meshes) {
 
     descriptor_set_layout = Descriptor_Set_Layout()
         .storage_image(0, VK_SHADER_STAGE_RAYGEN_BIT_NV)
@@ -127,19 +134,19 @@ void Raytrace_Scene::create_pipeline(const std::vector<GPU_Mesh>& gpu_meshes, Vk
 
     // pipeline layout
     {
+        VkDescriptorSetLayout set_layouts[] = {
+            ctx.image_descriptor_set_layout,
+            ctx.material_descriptor_set_layout,
+            ctx.light_descriptor_set_layout,
+            descriptor_set_layout
+        };
+
         VkPushConstantRange push_constant_ranges[1];
         // offset 0: spp (samples per pixel)
         // offset 4: fovy
         push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_NV;
         push_constant_ranges[0].offset = 0;
         push_constant_ranges[0].size = 8;
-
-        VkDescriptorSetLayout set_layouts[] = {
-            descriptor_set_layout,
-            material_descriptor_set_layout,
-            image_descriptor_set_layout,
-            light_descriptor_set_layout
-        };
 
         VkPipelineLayoutCreateInfo create_info { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
         create_info.setLayoutCount = (uint32_t)std::size(set_layouts);
