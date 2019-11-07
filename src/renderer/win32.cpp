@@ -1,6 +1,5 @@
 #include "std.h"
 #include "lib/common.h"
-#include "common.h"
 #include "platform.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32

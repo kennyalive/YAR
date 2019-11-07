@@ -1,10 +1,8 @@
 #pragma once
 
-#include "renderer/common.h"
 #include "renderer/acceleration_structure.h"
 
-#include "lib/matrix.h"
-
+struct Matrix3x4;
 struct Render_Object;
 struct Rt_Uniform_Buffer;
 struct Scene;

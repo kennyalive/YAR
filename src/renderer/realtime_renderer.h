@@ -5,6 +5,8 @@
 #include "kernels/draw_mesh.h"
 #include "kernels/raytrace_scene.h"
 #include "kernel_context.h"
+
+#include "geometry.h"
 #include "utils.h"
 #include "vk.h"
 

@@ -1,8 +1,8 @@
 #include "std.h"
 #include "lib/common.h"
 
-#include "common.h"
 #include "acceleration_structure.h"
+#include "geometry.h"
 #include "vk.h"
 
 #include "lib/render_object.h"

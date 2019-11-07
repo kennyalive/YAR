@@ -1,22 +1,21 @@
 #include "std.h"
 #include "lib/common.h"
 #include "realtime_renderer.h"
+
+#include "geometry.h"
 #include "vk.h"
 #include "utils.h"
-
-#include "lib/matrix.h"
-#include "reference/reference_renderer.h"
-
 #include "shaders/shared_main.h"
 #include "shaders/shared_light.h"
+
+#include "reference/reference_renderer.h"
+#include "lib/matrix.h"
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_glfw.h"
-
-#include <cinttypes>
 
 void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* window) {
     vk_initialize(window, vk_create_info);

@@ -2,11 +2,11 @@
 #include "lib/common.h"
 #include "raytrace_scene.h"
 
+#include "renderer/geometry.h"
 #include "renderer/kernel_context.h"
 #include "renderer/utils.h"
 #include "shaders/shared_main.h"
 #include "shaders/shared_light.h"
-
 #include "lib/scene.h"
 
 struct Rt_Uniform_Buffer {

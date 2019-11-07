@@ -26,7 +26,6 @@
     <ClInclude Include="..\src\renderer\realtime_renderer.h" />
     <ClInclude Include="..\src\renderer\utils.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
-    <ClInclude Include="..\src\renderer\common.h" />
     <ClInclude Include="..\src\renderer\platform.h" />
     <ClInclude Include="..\src\shaders\shared_light.h">
       <Filter>shaders</Filter>
@@ -51,6 +50,7 @@
     <ClInclude Include="..\src\shaders\shared_material.h">
       <Filter>shaders</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\renderer\geometry.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">

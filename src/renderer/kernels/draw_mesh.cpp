@@ -1,11 +1,13 @@
 #include "std.h"
 #include "lib/common.h"
 #include "draw_mesh.h"
-#include "renderer/common.h"
-#include "renderer/utils.h"
+
+#include "renderer/geometry.h"
 #include "renderer/kernel_context.h"
-#include "lib/matrix.h"
+#include "renderer/utils.h"
 #include "shaders/shared_main.h"
+
+#include "lib/matrix.h"
 
 namespace {
 struct Global_Uniform_Buffer {
