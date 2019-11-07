@@ -90,28 +90,28 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\src\shaders\raster_mesh.frag.glsl">
-      <Filter>shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\src\shaders\raster_mesh.vert.glsl">
-      <Filter>shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\src\shaders\rt_mesh.rchit.glsl">
-      <Filter>shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\src\shaders\rt_mesh.rgen.glsl">
-      <Filter>shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\src\shaders\rt_mesh.rmiss.glsl">
-      <Filter>shaders</Filter>
-    </CustomBuild>
     <CustomBuild Include="..\src\shaders\copy_to_swapchain.comp.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="..\src\shaders\rt_shadow_ray.rchit.glsl">
+    <CustomBuild Include="..\src\shaders\patch_materials.comp.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="..\src\shaders\patch_materials.comp.glsl">
+    <CustomBuild Include="..\src\shaders\draw_mesh.frag.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\src\shaders\draw_mesh.vert.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\src\shaders\raytrace_scene.rchit.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\src\shaders\raytrace_scene.rgen.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\src\shaders\raytrace_scene.rmiss.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\src\shaders\raytrace_scene_shadow_ray.rchit.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
   </ItemGroup>

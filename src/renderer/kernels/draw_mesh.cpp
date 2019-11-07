@@ -59,8 +59,8 @@ void Draw_Mesh::create(const Kernel_Context& ctx, VkRenderPass render_pass, bool
 
     // Pipeline.
     {
-        Shader_Module vertex_shader("spirv/raster_mesh.vert.spv");
-        Shader_Module fragment_shader("spirv/raster_mesh.frag.spv");
+        Shader_Module vertex_shader("spirv/draw_mesh.vert.spv");
+        Shader_Module fragment_shader("spirv/draw_mesh.frag.spv");
 
         Vk_Graphics_Pipeline_State state = get_default_graphics_pipeline_state();
 
