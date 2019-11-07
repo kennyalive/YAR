@@ -1,11 +1,12 @@
 #pragma once
 
 #include "renderer/vk.h"
-#include "../../shaders/shared_light.h" // TEMP: to get Instance_Info
 
 struct GPU_Mesh;
 struct Matrix3x4;
 struct Kernel_Context;
+
+namespace GPU_Types { struct Instance_Info; }
 
 struct Draw_Mesh {
     VkDescriptorSetLayout       descriptor_set_layout;

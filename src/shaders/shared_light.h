@@ -1,18 +1,5 @@
-
-#ifdef __cplusplus
-    #pragma once
-    #include "./renderer/vk.h"
-    #include "../lib/color.h"
-    #include "../lib/geometry.h"
-    #include "../lib/light.h"
-    #include "../lib/material.h"
-    #include "../lib/vector.h"
-#else
-    #define ColorRGB vec3
-    #define Vector2 vec2
-    #define Vector3 vec3
-    #define Matrix3x4 mat4x3
-#endif
+#ifndef SHARED_LIGHT_H
+#define SHARED_LIGHT_H
 
 #ifdef __cplusplus
 namespace GPU_Types {
@@ -59,18 +46,9 @@ struct Diffuse_Rectangular_Light {
 #endif
 };
 
-struct Instance_Info {
-    Material_Handle material;
-    Geometry_Handle geometry;
-    
-    int area_light_index; // -1 if not an area light
-    float pad0;
-    float pad1;
-    float pad2;
-   
-    Matrix3x4 object_to_world_transform;
-};
-
 #ifdef __cplusplus
 } // namespace GPU_Types
 #endif
+
+#endif // SHARED_LIGHT_H
+

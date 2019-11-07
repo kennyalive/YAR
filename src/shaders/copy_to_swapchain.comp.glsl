@@ -3,7 +3,6 @@
 
 #include "common.glsl"
 #include "tone_mapping.glsl"
-#include "shared_main.h"
 
 layout(local_size_x = 32, local_size_y = 32) in;
 

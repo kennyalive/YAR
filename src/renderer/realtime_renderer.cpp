@@ -9,7 +9,6 @@
 
 #include "shaders/shared_main.h"
 #include "shaders/shared_light.h"
-#include "shaders/shared_image.h"
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
@@ -594,8 +593,8 @@ void Realtime_Renderer::draw_rasterized_image() {
         const GPU_Mesh& gpu_mesh = gpu_meshes[render_object.geometry.index];
 
         GPU_Types::Instance_Info instance_info;
-        instance_info.material = render_object.material;
-        instance_info.geometry = render_object.geometry;
+        instance_info.material.init(render_object.material);
+        instance_info.geometry.init(render_object.geometry);
         instance_info.area_light_index = render_object.area_light.index;
         instance_info.pad0 = 0.f;
         instance_info.pad1 = 0.f;

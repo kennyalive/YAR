@@ -4,8 +4,8 @@
 
 #include "renderer/kernel_context.h"
 #include "renderer/utils.h"
-#include "shaders/shared_light.h"
 #include "shaders/shared_main.h"
+#include "shaders/shared_light.h"
 
 #include "lib/scene.h"
 
@@ -31,8 +31,8 @@ void Raytrace_Scene::create(const Kernel_Context& ctx, const Scene& scene, const
     {
         std::vector<GPU_Types::Instance_Info> instance_infos(scene.render_objects.size());
         for (auto [i, render_object] : enumerate(scene.render_objects)) {
-            instance_infos[i].material = render_object.material;
-            instance_infos[i].geometry = render_object.geometry;
+            instance_infos[i].material.init(render_object.material);
+            instance_infos[i].geometry.init(render_object.geometry);
             // TODO: this should be Light_Handle not just light_index, since we could have multiple types of area lights. 
             instance_infos[i].area_light_index = render_object.area_light.index;
             instance_infos[i].pad0 = 0.f;

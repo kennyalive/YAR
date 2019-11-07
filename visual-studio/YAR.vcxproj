@@ -151,8 +151,8 @@
     <ClInclude Include="..\src\renderer\utils.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\shaders\shared_light.h" />
-    <ClInclude Include="..\src\shaders\shared_image.h" />
     <ClInclude Include="..\src\shaders\shared_main.h" />
+    <ClInclude Include="..\src\shaders\shared_material.h" />
     <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>
