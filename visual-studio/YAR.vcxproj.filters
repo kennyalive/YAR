@@ -20,6 +20,9 @@
       <Filter>kernels</Filter>
     </ClCompile>
     <ClCompile Include="..\src\renderer\acceleration_structure.cpp" />
+    <ClCompile Include="..\src\renderer\ui\ui.cpp">
+      <Filter>ui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\std.h" />
@@ -51,6 +54,9 @@
       <Filter>shaders</Filter>
     </ClInclude>
     <ClInclude Include="..\src\renderer\geometry.h" />
+    <ClInclude Include="..\src\renderer\ui\ui.h">
+      <Filter>ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
@@ -58,6 +64,9 @@
     </Filter>
     <Filter Include="kernels">
       <UniqueIdentifier>{49653ff4-3e11-4ee5-8e86-d2103ca724b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ui">
+      <UniqueIdentifier>{94da4b91-ec4c-4ee2-b6ab-3ac0c2550120}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

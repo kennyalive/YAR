@@ -6,6 +6,8 @@
 #include "kernels/raytrace_scene.h"
 #include "kernel_context.h"
 
+#include "ui/ui.h"
+
 #include "geometry.h"
 #include "utils.h"
 #include "vk.h"
@@ -24,8 +26,8 @@ public:
 
     void release_resolution_dependent_resources();
     void restore_resolution_dependent_resources();
-    bool vsync_enabled() const { return vsync; }
-    void toggle_ui() { show_ui = !show_ui; }
+    bool vsync_enabled() const { return ui.vsync; }
+    void toggle_ui() { ui.show_ui = !ui.show_ui; }
 
     void load_project(const std::string& yar_file_name);
     void run_frame();
@@ -38,22 +40,13 @@ private:
     void draw_raytraced_image();
     void draw_imgui();
     void copy_output_image_to_swapchain();
-    void do_imgui();
     void start_reference_renderer();
 
 private:
-    struct UI_Result {
-        bool raytracing_toggled;
-    };
-
-    bool show_ui = true;
-    bool vsync = true;
     bool raytracing = true;
     bool spp4 = false;
 
     Flying_Camera flying_camera;
-
-    UI_Result                   ui_result;
 
     VkRenderPass ui_render_pass;
     VkFramebuffer ui_framebuffer;
@@ -91,15 +84,11 @@ private:
     Raytrace_Scene raytrace_scene;
 
     GPU_Time_Keeper time_keeper;
-    struct {
-        GPU_Time_Scope* frame;
-        GPU_Time_Scope* draw;
-        GPU_Time_Scope* ui;
-        GPU_Time_Scope* compute_copy;
-    } gpu_times;
+    GPU_Times gpu_times;
 
     bool project_loaded = false;
     YAR_Project project;
     Scene scene;
+    UI ui;
 };
 

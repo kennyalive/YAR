@@ -130,6 +130,7 @@
     <ClCompile Include="..\src\renderer\realtime_renderer.cpp" />
     <ClCompile Include="..\src\renderer\kernels\draw_mesh.cpp" />
     <ClCompile Include="..\src\renderer\kernels\raytrace_scene.cpp" />
+    <ClCompile Include="..\src\renderer\ui\ui.cpp" />
     <ClCompile Include="..\src\renderer\utils.cpp" />
     <ClCompile Include="..\src\renderer\vk.cpp" />
     <ClCompile Include="..\src\renderer\win32.cpp" />
@@ -148,6 +149,7 @@
     <ClInclude Include="..\src\renderer\realtime_renderer.h" />
     <ClInclude Include="..\src\renderer\kernels\draw_mesh.h" />
     <ClInclude Include="..\src\renderer\kernels\raytrace_scene.h" />
+    <ClInclude Include="..\src\renderer\ui\ui.h" />
     <ClInclude Include="..\src\renderer\utils.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\shaders\shared_light.h" />
