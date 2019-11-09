@@ -225,10 +225,11 @@ void GPU_Time_Scope::end() {
     vkCmdWriteTimestamp(vk.command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk.timestamp_query_pool, start_query + 1);
 }
 
-GPU_Time_Scope* GPU_Time_Keeper::allocate_time_scope() {
+GPU_Time_Scope* GPU_Time_Keeper::allocate_time_scope(const std::string& name) {
     ASSERT(scope_count < max_scopes);
     GPU_Time_Scope* time_scope = &scopes[scope_count++];
 
+    time_scope->name = name;
     time_scope->parent = this;
     time_scope->start_query = vk_allocate_timestamp_queries(2);
     time_scope->length_ms = 0.f;

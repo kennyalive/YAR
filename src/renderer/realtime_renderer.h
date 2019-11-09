@@ -84,7 +84,12 @@ private:
     Raytrace_Scene raytrace_scene;
 
     GPU_Time_Keeper time_keeper;
-    GPU_Times gpu_times;
+    struct {
+        GPU_Time_Scope* frame;
+        GPU_Time_Scope* draw;
+        GPU_Time_Scope* ui;
+        GPU_Time_Scope* compute_copy;
+    } gpu_times;
 
     bool project_loaded = false;
     YAR_Project project;

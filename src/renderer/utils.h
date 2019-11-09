@@ -78,9 +78,11 @@ struct Descriptor_Set_Layout {
 struct GPU_Time_Keeper;
 
 struct GPU_Time_Scope {
+    std::string name;
     GPU_Time_Keeper* parent;
     uint32_t start_query; // end query == (start_query + 1)
     float length_ms;
+    std::vector<GPU_Time_Scope*> child_scopes;
 
     void begin();
     void end();
@@ -109,7 +111,7 @@ struct GPU_Time_Keeper {
     GPU_Time_Scope* frame_active_scopes[max_scopes];
     int frame_active_scope_count = 0;
 
-    GPU_Time_Scope* allocate_time_scope();
+    GPU_Time_Scope* allocate_time_scope(const std::string& name);
     void initialize_time_scopes();
     void retrieve_query_results();
 };

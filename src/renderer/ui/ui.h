@@ -1,13 +1,6 @@
 #pragma once
 
-// TODO: temporary here
 struct GPU_Time_Scope;
-struct GPU_Times {
-    GPU_Time_Scope* frame;
-    GPU_Time_Scope* draw;
-    GPU_Time_Scope* ui;
-    GPU_Time_Scope* compute_copy;
-};
 
 struct UI {
     void run_imgui();
@@ -22,5 +15,6 @@ struct UI {
 
     bool* raytracing = nullptr;
     bool* spp4 = nullptr;
-    const GPU_Times* gpu_times;
+    const GPU_Time_Scope* frame_time_scope = nullptr;
 };
+

@@ -80,13 +80,14 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
         ImGui_ImplVulkan_InvalidateFontUploadObjects();
     }
 
-    gpu_times.frame = time_keeper.allocate_time_scope();
-    gpu_times.draw = time_keeper.allocate_time_scope();
-    gpu_times.ui = time_keeper.allocate_time_scope();
-    gpu_times.compute_copy = time_keeper.allocate_time_scope();
+    gpu_times.frame = time_keeper.allocate_time_scope("frame");
+    gpu_times.draw = time_keeper.allocate_time_scope("draw");
+    gpu_times.ui = time_keeper.allocate_time_scope("ui");
+    gpu_times.compute_copy = time_keeper.allocate_time_scope("compute copy");
+    gpu_times.frame->child_scopes = {gpu_times.draw, gpu_times.ui, gpu_times.compute_copy};
     time_keeper.initialize_time_scopes();
     
-    ui.gpu_times = &gpu_times;
+    ui.frame_time_scope = gpu_times.frame;
     ui.raytracing = &raytracing;
     ui.spp4 = &spp4;
 }

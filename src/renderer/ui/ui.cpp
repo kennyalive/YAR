@@ -8,6 +8,12 @@
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_glfw.h"
 
+static void show_time_scope(const GPU_Time_Scope* time_scope) {
+    ImGui::Text("%s time : %.2f ms", time_scope->name.c_str(), time_scope->length_ms);
+    for (const GPU_Time_Scope* child_time_scope : time_scope->child_scopes)
+        show_time_scope(child_time_scope);
+}
+
 void UI::run_imgui() {
     ui_result = UI_Result{};
     ImGuiIO& io = ImGui::GetIO();
@@ -35,10 +41,7 @@ void UI::run_imgui() {
             ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
         {
             ImGui::Text("%.1f FPS (%.3f ms/frame)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
-            ImGui::Text("Frame time         : %.2f ms", gpu_times->frame->length_ms);
-            ImGui::Text("Draw time          : %.2f ms", gpu_times->draw->length_ms);
-            ImGui::Text("UI time            : %.2f ms", gpu_times->ui->length_ms);
-            ImGui::Text("Compute copy time  : %.2f ms", gpu_times->compute_copy->length_ms);
+            show_time_scope(frame_time_scope);
             ImGui::Separator();
             ImGui::Spacing();
             ImGui::Checkbox("Vertical sync", &vsync);
