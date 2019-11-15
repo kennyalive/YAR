@@ -3,7 +3,8 @@
 
 #include "common.glsl"
 #include "geometry.glsl"
-#include "material.glsl"
+#include "base_resources.glsl"
+#include "material_resources.glsl"
 #include "shared_main.h"
 #include "shared_light.h"
 
@@ -14,7 +15,7 @@ struct Frag_In {
 };
 
 layout(push_constant) uniform Push_Constants {
-    Instance_Info instance_info;
+    int instance_index;
 };
 
 layout(location=0) in vec4 in_position;
@@ -30,6 +31,7 @@ layout(std140, set=KERNEL_SET_0, binding=0) uniform Global_Uniform_Block {
 };
 
 void main() {
+    Instance_Info instance_info = instance_infos[instance_index];
     frag_in.normal = vec3((model_view * mat4x4(instance_info.object_to_world_transform)) * vec4(in_normal, 0.0));
     frag_in.pos = vec3((model_view * mat4x4(instance_info.object_to_world_transform)) * in_position);
     frag_in.uv = in_uv;

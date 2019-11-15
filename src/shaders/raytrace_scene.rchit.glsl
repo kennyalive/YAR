@@ -5,9 +5,9 @@
 
 #include "common.glsl"
 #include "geometry.glsl"
-#include "material.glsl"
+#include "material_resources.glsl"
 #include "compute_bsdf.glsl"
-#include "light.glsl"
+#include "light_resources.glsl"
 #include "shared_main.h"
 
 #define HIT_SHADER
@@ -45,11 +45,6 @@ readonly buffer Vertex_Buffer {
     Mesh_Vertex vertices[];
 } vertex_buffers[];
 
-layout(std430, set=KERNEL_SET_0, binding=5)
-readonly buffer Instance_Info_Buffer {
-    Instance_Info instance_infos[];
-};
-
 Vertex fetch_vertex(int index) {
     int geometry_buffer_index = instance_infos[gl_InstanceCustomIndexNV].geometry.index; // TODO: do this only if geometry.type is Triangle_Mesh.
     uint vertex_index = index_buffers[geometry_buffer_index].indices[index];
@@ -58,7 +53,7 @@ Vertex fetch_vertex(int index) {
     Vertex v;
     v.p = vec3(bv.x, bv.y, bv.z);
     v.n = vec3(bv.nx, bv.ny, bv.nz);
-    v.uv = fract(vec2(bv.u, bv.v));
+    v.uv = vec2(bv.u, bv.v);
     return v;
 }
 

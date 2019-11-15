@@ -82,19 +82,19 @@
     <None Include="..\src\shaders\material.glsl">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\material.glsl">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="..\src\shaders\geometry.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\image.glsl">
       <Filter>shaders</Filter>
     </None>
     <None Include="..\src\shaders\compute_bsdf.glsl">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\light.glsl">
+    <None Include="..\src\shaders\base_resources.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\src\shaders\light_resources.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\src\shaders\material_resources.glsl">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>

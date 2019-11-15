@@ -16,33 +16,16 @@ struct Rt_Uniform_Buffer {
     Vector2     pad0;
 };
 
-    // TODO: temp structure. Use separate buffer per attribute.
-    struct GPU_Vertex {
-        Vector3 position;
-        Vector3 normal;
-        Vector2 uv;
-    };
+// TODO: temp structure. Use separate buffer per attribute.
+struct GPU_Vertex {
+    Vector3 position;
+    Vector3 normal;
+    Vector2 uv;
+};
 
 void Raytrace_Scene::create(const Kernel_Context& ctx, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Rt_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &(void*&)mapped_uniform_buffer, "rt_uniform_buffer");
-
-    // Material handles.
-    {
-        std::vector<GPU_Types::Instance_Info> instance_infos(scene.render_objects.size());
-        for (auto [i, render_object] : enumerate(scene.render_objects)) {
-            instance_infos[i].material.init(render_object.material);
-            instance_infos[i].geometry.init(render_object.geometry);
-            // TODO: this should be Light_Handle not just light_index, since we could have multiple types of area lights. 
-            instance_infos[i].area_light_index = render_object.area_light.index;
-            instance_infos[i].pad0 = 0.f;
-            instance_infos[i].pad1 = 0.f;
-            instance_infos[i].pad2 = 0.f;
-        }
-        VkDeviceSize size = scene.render_objects.size() * sizeof(GPU_Types::Instance_Info); 
-        instance_info_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            instance_infos.data(), "instance_info_buffer");
-    }
 
     accelerator = create_intersection_accelerator(scene.render_objects, gpu_meshes);
     create_pipeline(ctx, gpu_meshes);
@@ -69,7 +52,6 @@ void Raytrace_Scene::create(const Kernel_Context& ctx, const Scene& scene, const
 
 void Raytrace_Scene::destroy() {
     uniform_buffer.destroy();
-    instance_info_buffer.destroy();
     shader_binding_table.destroy();
     accelerator.destroy();
     vkDestroyDescriptorSetLayout(vk.device, descriptor_set_layout, nullptr);
@@ -123,13 +105,12 @@ void Raytrace_Scene::create_pipeline(const Kernel_Context& ctx, const std::vecto
         .uniform_buffer(2, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
         .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // index buffers
         .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // vertex buffers
-        .storage_buffer(5, VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // instance buffer
         .create("rt_set_layout");
 
     // pipeline layout
     {
         VkDescriptorSetLayout set_layouts[] = {
-            ctx.image_descriptor_set_layout,
+            ctx.base_descriptor_set_layout,
             ctx.material_descriptor_set_layout,
             ctx.light_descriptor_set_layout,
             descriptor_set_layout
@@ -252,7 +233,6 @@ void Raytrace_Scene::create_pipeline(const Kernel_Context& ctx, const std::vecto
             .accelerator(1, accelerator.top_level_accel)
             .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer))
             .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), index_buffer_infos.data())
-            .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), vertex_buffer_infos.data())
-            .storage_buffer(5, instance_info_buffer.handle, 0, VK_WHOLE_SIZE);
+            .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), vertex_buffer_infos.data());
     }
 }

@@ -24,8 +24,6 @@ struct Raytrace_Scene {
     Vk_Buffer uniform_buffer;
     Rt_Uniform_Buffer* mapped_uniform_buffer;
 
-    Vk_Buffer instance_info_buffer;
-
     void create(const Kernel_Context& ctx, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes);
     void destroy();
     void update_output_image_descriptor(VkImageView output_image_view);

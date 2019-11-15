@@ -1,4 +1,4 @@
-#include "image.glsl"
+#include "base_resources.glsl"
 
 vec3 compute_bsdf(Material_Handle mtl_handle, vec2 uv, vec3 wi, vec3 wo) {
     if (mtl_handle.type == Material_Lambertian) {

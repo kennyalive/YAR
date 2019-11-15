@@ -4,8 +4,8 @@
 
 #include "common.glsl"
 #include "geometry.glsl"
-#include "material.glsl"
-#include "light.glsl"
+#include "material_resources.glsl"
+#include "light_resources.glsl"
 #include "compute_bsdf.glsl"
 #include "shared_main.h"
 
@@ -16,7 +16,7 @@ struct Frag_In {
 };
 
 layout(push_constant) uniform Push_Constants {
-    Instance_Info instance_info;
+    int instance_index;
 };
 
 layout(location=0) in Frag_In frag_in;
@@ -35,6 +35,8 @@ layout(std140, set=KERNEL_SET_0, binding=0) uniform Global_Uniform_Block {
 void main() {
     vec3 n = normalize(frag_in.normal);
     vec3 L = vec3(0);
+
+    Instance_Info instance_info = instance_infos[instance_index];
 
     Material_Handle mtl_handle = instance_info.material;
 

@@ -24,6 +24,6 @@ struct Draw_Mesh {
     void update(const Matrix3x4& view_transform, float fov);
 
     void bind_sets_and_pipeline();
-    void dispatch(const GPU_Mesh& gpu_mesh, const GPU_Types::Instance_Info& instance_info);
+    void dispatch(const GPU_Mesh& gpu_mesh, int instance_index);
 };
 

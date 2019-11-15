@@ -106,7 +106,7 @@ void Realtime_Renderer::shutdown() {
     gpu_scene.lambertian_material_buffer.destroy();
     vkDestroyDescriptorSetLayout(vk.device, gpu_scene.material_descriptor_set_layout, nullptr);
 
-    vkDestroyDescriptorSetLayout(vk.device, gpu_scene.image_descriptor_set_layout, nullptr);
+    vkDestroyDescriptorSetLayout(vk.device, gpu_scene.base_descriptor_set_layout, nullptr);
 
     vkDestroyPipelineLayout(vk.device, gpu_scene.per_frame_pipeline_layout, nullptr);
 
@@ -118,6 +118,8 @@ void Realtime_Renderer::shutdown() {
 
     for (Vk_Image& image : gpu_scene.images_2d)
         image.destroy();
+
+    gpu_scene.instance_info_buffer.destroy();
 
     copy_to_swapchain.destroy();
     vkDestroyRenderPass(vk.device, raster_render_pass, nullptr);
@@ -256,6 +258,24 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
             gpu_mesh.material = scene.render_objects[i].material;
     }
 
+    // Instance buffer.
+    {
+        std::vector<GPU_Types::Instance_Info> instance_infos(scene.render_objects.size());
+        for (auto [i, render_object] : enumerate(scene.render_objects)) {
+            instance_infos[i].material.init(render_object.material);
+            instance_infos[i].geometry.init(render_object.geometry);
+            // TODO: this should be Light_Handle not just light_index, since we could have multiple types of area lights. 
+            instance_infos[i].area_light_index = render_object.area_light.index;
+            instance_infos[i].pad0 = 0.f;
+            instance_infos[i].pad1 = 0.f;
+            instance_infos[i].pad2 = 0.f;
+            instance_infos[i].object_to_world_transform = render_object.object_to_world_transform;
+        }
+        VkDeviceSize size = scene.render_objects.size() * sizeof(GPU_Types::Instance_Info); 
+        gpu_scene.instance_info_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            instance_infos.data(), "instance_info_buffer");
+    }
+
     // Materials.
     {
         gpu_scene.images_2d.reserve(gpu_scene.images_2d.size() + scene.materials.texture_names.size());
@@ -284,16 +304,17 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
         }
 
         {
-            gpu_scene.image_descriptor_set_layout = Descriptor_Set_Layout()
+            gpu_scene.base_descriptor_set_layout = Descriptor_Set_Layout()
                 .sample_image_array(0, (uint32_t)gpu_scene.images_2d.size(), VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
                 .sampler(1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
-                .create("image_descriptor_set_layout");
+                .storage_buffer(2, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // instance buffer
+                .create("base_descriptor_set_layout");
 
             VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
             alloc_info.descriptorPool = vk.descriptor_pool;
             alloc_info.descriptorSetCount = 1;
-            alloc_info.pSetLayouts = &gpu_scene.image_descriptor_set_layout;
-            VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &gpu_scene.image_descriptor_set));
+            alloc_info.pSetLayouts = &gpu_scene.base_descriptor_set_layout;
+            VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &gpu_scene.base_descriptor_set));
 
             std::vector<VkDescriptorImageInfo> image_infos(gpu_scene.images_2d.size());
             for (auto[i, image] : enumerate(gpu_scene.images_2d)) {
@@ -301,9 +322,10 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
                 image_infos[i].imageView = image.view;
                 image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
-            Descriptor_Writes(gpu_scene.image_descriptor_set)
+            Descriptor_Writes(gpu_scene.base_descriptor_set)
                 .sampled_image_array(0, (uint32_t)gpu_scene.images_2d.size(), image_infos.data())
-                .sampler(1, copy_to_swapchain.point_sampler);
+                .sampler(1, copy_to_swapchain.point_sampler)
+                .storage_buffer(2, gpu_scene.instance_info_buffer.handle, 0, VK_WHOLE_SIZE);
         }
     }
 
@@ -345,14 +367,14 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
         }
     }
 
+    kernel_context.base_descriptor_set_layout = gpu_scene.base_descriptor_set_layout;
     kernel_context.light_descriptor_set_layout = gpu_scene.light_descriptor_set_layout;
     kernel_context.material_descriptor_set_layout = gpu_scene.material_descriptor_set_layout;
-    kernel_context.image_descriptor_set_layout = gpu_scene.image_descriptor_set_layout;
 
     // Per-frame pipeline layout.
     {
         VkDescriptorSetLayout set_layouts[] = {
-            gpu_scene.image_descriptor_set_layout,
+            gpu_scene.base_descriptor_set_layout,
             gpu_scene.material_descriptor_set_layout,
             gpu_scene.light_descriptor_set_layout,
         };
@@ -532,7 +554,7 @@ void Realtime_Renderer::draw_frame() {
     if (project_loaded) {
         if (raytracing) {
             VkDescriptorSet per_frame_sets[] = {
-                gpu_scene.image_descriptor_set,
+                gpu_scene.base_descriptor_set,
                 gpu_scene.material_descriptor_set,
                 gpu_scene.light_descriptor_set
             };
@@ -541,7 +563,7 @@ void Realtime_Renderer::draw_frame() {
         }
         else {
             VkDescriptorSet per_frame_sets[] = {
-                gpu_scene.image_descriptor_set,
+                gpu_scene.base_descriptor_set,
                 gpu_scene.material_descriptor_set,
                 gpu_scene.light_descriptor_set
             };
@@ -595,17 +617,7 @@ void Realtime_Renderer::draw_rasterized_image() {
             continue;
 
         const GPU_Mesh& gpu_mesh = gpu_meshes[render_object.geometry.index];
-
-        GPU_Types::Instance_Info instance_info;
-        instance_info.material.init(render_object.material);
-        instance_info.geometry.init(render_object.geometry);
-        instance_info.area_light_index = render_object.area_light.index;
-        instance_info.pad0 = 0.f;
-        instance_info.pad1 = 0.f;
-        instance_info.pad2 = 0.f;
-        instance_info.object_to_world_transform = render_object.object_to_world_transform;
-
-        draw_mesh.dispatch(gpu_mesh, instance_info);
+        draw_mesh.dispatch(gpu_mesh, i);
     }
 
     vkCmdEndRenderPass(vk.command_buffer);

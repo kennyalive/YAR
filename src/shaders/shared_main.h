@@ -21,9 +21,12 @@
 #endif
 
 // Bindings configuration.
-#ifndef IMAGE_SET_INDEX
-#define IMAGE_SET_INDEX 0
+#ifndef BASE_SET_INDEX 
+#define BASE_SET_INDEX 0
 #endif
+const int BASE_SET_BINDING_TEXTURES = 0;
+const int BASE_SET_BINDING_SAMPLER = 1;
+const int BASE_SET_BINDING_INSTANCE_INFO = 2; 
 
 #ifndef MATERIAL_SET_INDEX
 #define MATERIAL_SET_INDEX 1

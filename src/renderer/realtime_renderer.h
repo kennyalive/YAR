@@ -61,9 +61,13 @@ private:
 
     struct GPU_Scene_Resources {
         std::vector<Vk_Image> images_2d;
+        Vk_Buffer instance_info_buffer;
 
         // Layout for resources that are bound for the most part of the frame.
         VkPipelineLayout per_frame_pipeline_layout;
+
+        VkDescriptorSetLayout base_descriptor_set_layout;
+        VkDescriptorSet base_descriptor_set;
 
         Vk_Buffer point_lights;
         Vk_Buffer diffuse_rectangular_lights;
@@ -73,9 +77,6 @@ private:
         Vk_Buffer lambertian_material_buffer;
         VkDescriptorSetLayout material_descriptor_set_layout;
         VkDescriptorSet material_descriptor_set;
-
-        VkDescriptorSetLayout image_descriptor_set_layout;
-        VkDescriptorSet image_descriptor_set;
     } gpu_scene;
 
     Copy_To_Swapchain copy_to_swapchain;

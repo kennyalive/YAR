@@ -4,7 +4,7 @@
 #include "common.glsl"
 
 #define MATERIAL_SET_INDEX 0
-#include "material.glsl"
+#include "material_resources.glsl"
 
 layout(local_size_x = 1) in;
 

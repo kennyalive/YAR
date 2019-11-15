@@ -10,25 +10,25 @@
 #include "lib/matrix.h"
 
 namespace {
-struct Global_Uniform_Buffer {
-    Matrix4x4       model_view_proj;
-    Matrix4x4       model_view;
-    Matrix4x4       view;
-    uint32_t        point_light_count;
-    uint32_t        diffuse_rectangular_light_count;
-    Vector2         pad0;
+struct Draw_Mesh_Uniform_Buffer {
+    Matrix4x4 model_view_proj;
+    Matrix4x4 model_view;
+    Matrix4x4 view;
+    uint32_t point_light_count;
+    uint32_t diffuse_rectangular_light_count;
+    Vector2 pad0;
 };
 }
 
-    // TODO: temp structure. Use separate buffer per attribute.
-    struct GPU_Vertex {
-        Vector3 position;
-        Vector3 normal;
-        Vector2 uv;
-    };
+// TODO: temp structure. Use separate buffer per attribute.
+struct GPU_Vertex {
+    Vector3 position;
+    Vector3 normal;
+    Vector2 uv;
+};
 
 void Draw_Mesh::create(const Kernel_Context& ctx, VkRenderPass render_pass, bool front_face_has_clockwise_winding) {
-    uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Global_Uniform_Buffer)),
+    uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Draw_Mesh_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &mapped_uniform_buffer, "raster_uniform_buffer");
 
     descriptor_set_layout = Descriptor_Set_Layout()
@@ -38,7 +38,7 @@ void Draw_Mesh::create(const Kernel_Context& ctx, VkRenderPass render_pass, bool
     // Pipeline layout.
     {
         VkDescriptorSetLayout set_layouts[] = {
-            ctx.image_descriptor_set_layout,
+            ctx.base_descriptor_set_layout,
             ctx.material_descriptor_set_layout,
             ctx.light_descriptor_set_layout,
             descriptor_set_layout
@@ -106,7 +106,7 @@ void Draw_Mesh::create(const Kernel_Context& ctx, VkRenderPass render_pass, bool
         VK_CHECK(vkAllocateDescriptorSets(vk.device, &desc, &descriptor_set));
 
         Descriptor_Writes(descriptor_set)
-            .uniform_buffer (0, uniform_buffer.handle, 0, sizeof(Global_Uniform_Buffer));
+            .uniform_buffer (0, uniform_buffer.handle, 0, sizeof(Draw_Mesh_Uniform_Buffer));
     }
 }
 
@@ -119,13 +119,12 @@ void Draw_Mesh::destroy() {
 }
 
 void Draw_Mesh::update_point_lights(int light_count) {
-    Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
+    Draw_Mesh_Uniform_Buffer& buf = *static_cast<Draw_Mesh_Uniform_Buffer*>(mapped_uniform_buffer);
     buf.point_light_count = light_count;
 }
 
 void Draw_Mesh::update_diffuse_rectangular_lights(int light_count) {
-
-    Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
+    Draw_Mesh_Uniform_Buffer& buf = *static_cast<Draw_Mesh_Uniform_Buffer*>(mapped_uniform_buffer);
     buf.diffuse_rectangular_light_count = light_count;
 }
 
@@ -140,7 +139,7 @@ void Draw_Mesh::update(const Matrix3x4& view_transform, float fov) {
     Matrix4x4 model_view = Matrix4x4::identity * view_transform;
     Matrix4x4 model_view_proj = proj * view_transform;
 
-    Global_Uniform_Buffer& buf = *static_cast<Global_Uniform_Buffer*>(mapped_uniform_buffer);
+    Draw_Mesh_Uniform_Buffer& buf = *static_cast<Draw_Mesh_Uniform_Buffer*>(mapped_uniform_buffer);
     buf.model_view_proj = model_view_proj;
     buf.model_view = model_view;
     buf.view = Matrix4x4::identity * view_transform;
@@ -151,11 +150,11 @@ void Draw_Mesh::bind_sets_and_pipeline() {
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 }
 
-void Draw_Mesh::dispatch(const GPU_Mesh& gpu_mesh, const GPU_Types::Instance_Info& instance_info) {
+void Draw_Mesh::dispatch(const GPU_Mesh& gpu_mesh, int instance_index) {
     const VkDeviceSize zero_offset = 0;
     vkCmdBindVertexBuffers(vk.command_buffer, 0, 1, &gpu_mesh.vertex_buffer.handle, &zero_offset);
     vkCmdBindIndexBuffer(vk.command_buffer, gpu_mesh.index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
-    vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_ALL, 0, sizeof(GPU_Types::Instance_Info), &instance_info);
+    vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_ALL, 0, sizeof(int32_t),  &instance_index);
     vkCmdDrawIndexed(vk.command_buffer, gpu_mesh.model_index_count, 1, 0, 0, 0);
 }
 
