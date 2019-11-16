@@ -1,7 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "platform.h"
-#include "realtime_renderer.h"
+#include "renderer.h"
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
@@ -69,7 +69,7 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
                 glfwSetWindowMonitor(window, nullptr, last_window_xpos, last_window_ypos, last_window_width, last_window_height, 0);
             }
         } else if (key == GLFW_KEY_F10) {
-            Realtime_Renderer* renderer = (Realtime_Renderer*)glfwGetWindowUserPointer(window);
+            Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
             renderer->toggle_ui();
         }
     }
@@ -88,7 +88,7 @@ int run_realtime_renderer(bool enable_validation_layers) {
     ASSERT(window != nullptr);
     glfwSetKeyCallback(window, glfw_key_callback);
 
-    Realtime_Renderer renderer{};
+    Renderer renderer{};
     renderer.initialize(vk_create_info, window);
     glfwSetWindowUserPointer(window, &renderer);
 

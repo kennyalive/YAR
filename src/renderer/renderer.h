@@ -19,7 +19,7 @@
 
 struct GLFWwindow;
 
-class Realtime_Renderer {
+class Renderer {
 public:
     void initialize(Vk_Create_Info vk_create_info, GLFWwindow* window);
     void shutdown();

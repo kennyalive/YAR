@@ -127,7 +127,7 @@
     <ClCompile Include="..\src\renderer\kernels\copy_to_swapchain.cpp" />
     <ClCompile Include="..\src\renderer\main.cpp" />
     <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp" />
-    <ClCompile Include="..\src\renderer\realtime_renderer.cpp" />
+    <ClCompile Include="..\src\renderer\renderer.cpp" />
     <ClCompile Include="..\src\renderer\kernels\draw_mesh.cpp" />
     <ClCompile Include="..\src\renderer\kernels\raytrace_scene.cpp" />
     <ClCompile Include="..\src\renderer\ui\ui.cpp" />
@@ -146,7 +146,7 @@
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h" />
     <ClInclude Include="..\src\renderer\kernel_context.h" />
     <ClInclude Include="..\src\renderer\platform.h" />
-    <ClInclude Include="..\src\renderer\realtime_renderer.h" />
+    <ClInclude Include="..\src\renderer\renderer.h" />
     <ClInclude Include="..\src\renderer\kernels\draw_mesh.h" />
     <ClInclude Include="..\src\renderer\kernels\raytrace_scene.h" />
     <ClInclude Include="..\src\renderer\ui\ui.h" />

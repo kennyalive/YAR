@@ -1,6 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
-#include "realtime_renderer.h"
+#include "renderer.h"
 
 #include "geometry.h"
 #include "vk.h"
@@ -17,7 +17,7 @@
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_glfw.h"
 
-void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* window) {
+void Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* window) {
     vk_initialize(window, vk_create_info);
 
     // Device properties.
@@ -92,7 +92,7 @@ void Realtime_Renderer::initialize(Vk_Create_Info vk_create_info, GLFWwindow* wi
     ui.spp4 = &spp4;
 }
 
-void Realtime_Renderer::shutdown() {
+void Renderer::shutdown() {
     VK_CHECK(vkDeviceWaitIdle(vk.device));
 
     ImGui_ImplVulkan_Shutdown();
@@ -136,7 +136,7 @@ void Realtime_Renderer::shutdown() {
     vk_shutdown();
 }
 
-void Realtime_Renderer::release_resolution_dependent_resources() {
+void Renderer::release_resolution_dependent_resources() {
     vkDestroyFramebuffer(vk.device, raster_framebuffer, nullptr);
     raster_framebuffer = VK_NULL_HANDLE;
 
@@ -146,7 +146,7 @@ void Realtime_Renderer::release_resolution_dependent_resources() {
     output_image.destroy();
 }
 
-void Realtime_Renderer::restore_resolution_dependent_resources() {
+void Renderer::restore_resolution_dependent_resources() {
     // output image
     {
         output_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -208,7 +208,7 @@ void Realtime_Renderer::restore_resolution_dependent_resources() {
     copy_to_swapchain.update_resolution_dependent_descriptors(output_image.view);
 }
 
-void Realtime_Renderer::load_project(const std::string& yar_file_name) {
+void Renderer::load_project(const std::string& yar_file_name) {
     project = initialize_project(yar_file_name);
     scene = load_scene(project);
 
@@ -418,7 +418,7 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
 
 static double last_frame_time;
 
-void Realtime_Renderer::run_frame() {
+void Renderer::run_frame() {
     bool old_raytracing = raytracing;
     ui.run_imgui();
 
@@ -450,7 +450,7 @@ void Realtime_Renderer::run_frame() {
     draw_frame();
 }
 
-void Realtime_Renderer::create_render_passes() {
+void Renderer::create_render_passes() {
     // Render pass for rasterization renderer.
     {
         VkAttachmentDescription attachments[2] = {};
@@ -528,7 +528,7 @@ void Realtime_Renderer::create_render_passes() {
     }
 }
 
-void Realtime_Renderer::create_default_textures() {
+void Renderer::create_default_textures() {
     ASSERT(gpu_scene.images_2d.empty());
     gpu_scene.images_2d.resize(Predefined_Texture_Count);
 
@@ -539,7 +539,7 @@ void Realtime_Renderer::create_default_textures() {
     gpu_scene.images_2d[White_2D_Texture_Index] = vk_create_texture(1, 1, VK_FORMAT_R8G8B8A8_UNORM, false, white, 4, "white_texture_1x1");
 }
 
-void Realtime_Renderer::draw_frame() {
+void Renderer::draw_frame() {
     vk_begin_frame();
     time_keeper.retrieve_query_results(); // get timestamp values from previous frame (in current implementation it's alredy finished)
     gpu_times.frame->begin();
@@ -578,7 +578,7 @@ void Realtime_Renderer::draw_frame() {
     vk_end_frame();
 }
 
-void Realtime_Renderer::draw_rasterized_image() {
+void Renderer::draw_rasterized_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
 
     VkViewport viewport{};
@@ -623,12 +623,12 @@ void Realtime_Renderer::draw_rasterized_image() {
     vkCmdEndRenderPass(vk.command_buffer);
 }
 
-void Realtime_Renderer::draw_raytraced_image() {
+void Renderer::draw_raytraced_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
     raytrace_scene.dispatch(scene.fovy, spp4);
 }
 
-void Realtime_Renderer::draw_imgui() {
+void Renderer::draw_imgui() {
     GPU_TIME_SCOPE(gpu_times.ui);
 
     ImGui::Render();
@@ -667,7 +667,7 @@ void Realtime_Renderer::draw_imgui() {
     }
 }
 
-void Realtime_Renderer::copy_output_image_to_swapchain() {
+void Renderer::copy_output_image_to_swapchain() {
     GPU_TIME_SCOPE(gpu_times.compute_copy);
 
     if (raytracing) {
@@ -687,7 +687,7 @@ void Realtime_Renderer::copy_output_image_to_swapchain() {
     }
 }
 
-void Realtime_Renderer::start_reference_renderer() {
+void Renderer::start_reference_renderer() {
     const std::string temp_project_name = "temp.yar";
 
     YAR_Project temp_project = project;
