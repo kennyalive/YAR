@@ -27,7 +27,7 @@ struct GPU_Vertex {
     Vector2 uv;
 };
 
-void Draw_Mesh::create(const Kernel_Context& ctx, VkRenderPass render_pass, bool front_face_has_clockwise_winding) {
+void Draw_Mesh::create(const Kernel_Context& ctx, VkRenderPass render_pass, bool disable_backface_culling, bool front_face_has_clockwise_winding) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Draw_Mesh_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &mapped_uniform_buffer, "raster_uniform_buffer");
 
@@ -89,7 +89,9 @@ void Draw_Mesh::create(const Kernel_Context& ctx, VkRenderPass render_pass, bool
         state.vertex_attributes[2].offset = 24;
         state.vertex_attribute_count = 3;
 
-        if (front_face_has_clockwise_winding)
+        if (disable_backface_culling)
+            state.rasterization_state.cullMode = VK_CULL_MODE_NONE;
+        else if (front_face_has_clockwise_winding)
             state.rasterization_state.frontFace = VK_FRONT_FACE_CLOCKWISE;
 
         pipeline = vk_create_graphics_pipeline(state, pipeline_layout, render_pass, vertex_shader.handle, fragment_shader.handle);

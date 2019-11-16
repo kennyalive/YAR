@@ -31,6 +31,7 @@ struct YAR_Project {
     float world_scale = 1.f;
     float camera_fov_y = 45.f;
 
+    bool mesh_disable_backfacing_culling = false;
     bool mesh_invert_winding_order = false;
     float mesh_crease_angle = 0.f;
 

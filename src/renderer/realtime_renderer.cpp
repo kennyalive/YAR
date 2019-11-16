@@ -399,7 +399,7 @@ void Realtime_Renderer::load_project(const std::string& yar_file_name) {
         patch_materials.dispatch(command_buffer, gpu_scene.material_descriptor_set);
     });
 
-    draw_mesh.create(kernel_context, raster_render_pass, scene.front_face_has_clockwise_winding);
+    draw_mesh.create(kernel_context, raster_render_pass, project.mesh_disable_backfacing_culling,  scene.front_face_has_clockwise_winding);
     draw_mesh.update_point_lights((int)scene.lights.point_lights.size());
     draw_mesh.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
 

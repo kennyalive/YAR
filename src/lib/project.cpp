@@ -199,6 +199,9 @@ struct Parser {
             project.camera_fov_y = get_numeric<float>();
             CHECK(project.camera_fov_y > 0.f);
         }
+        else if (match_string("mesh_disable_backface_culling")) {
+            project.mesh_disable_backfacing_culling = get_bool();
+        }
         else if (match_string("mesh_invert_winding_order")) {
             project.mesh_invert_winding_order = get_bool(); 
         }
