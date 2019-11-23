@@ -57,6 +57,8 @@ void UI::run_imgui() {
                 ImGui::PopStyleVar();
             }
 
+            ImGui::Text("Camera position: %.2f %.2f %.2f", camera_position.x, camera_position.y, camera_position.z);
+
             ImGui::Separator();
             if (ImGui::Button("Render reference image"))
                 ui_result.reference_render_requested;

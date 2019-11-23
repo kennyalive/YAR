@@ -440,6 +440,7 @@ void Renderer::run_frame() {
     }
 
     flying_camera.update(dt);
+    ui.camera_position = flying_camera.get_camera_pose().get_column(3);
 
     if (project_loaded)
         draw_mesh.update(flying_camera.get_view_transform(), scene.fovy);

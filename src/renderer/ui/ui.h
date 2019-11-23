@@ -1,5 +1,7 @@
 #pragma once
 
+#include "lib/vector.h"
+
 struct GPU_Time_Scope;
 
 struct UI {
@@ -16,5 +18,7 @@ struct UI {
     bool* raytracing = nullptr;
     bool* spp4 = nullptr;
     const GPU_Time_Scope* frame_time_scope = nullptr;
+
+    Vector3 camera_position;
 };
 
