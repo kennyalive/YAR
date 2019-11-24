@@ -57,6 +57,9 @@ void main() {
 
     for (int i = 0; i < diffuse_rectangular_light_count; i++) {
         Diffuse_Rectangular_Light light = diffuse_rectangular_lights[i];
+        if (light.shadow_ray_count == 0)
+            continue;
+        vec3 L2 = vec3(0);
         for (int k = 0; k < light.shadow_ray_count; k++) {
             vec2 u;
             u.x = float(rng_state) * (1.0/float(0xffffffffu));
@@ -81,9 +84,10 @@ void main() {
                 continue;
 
             vec3 bsdf = compute_bsdf(mtl_handle, frag_in.uv, light_dir, wo);
-            L += light.area * light.emitted_radiance * bsdf * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
+            L2 += light.area * light.emitted_radiance * bsdf * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
-        L /= float(light.shadow_ray_count);
+        L2 /= float(light.shadow_ray_count);
+        L += L2;
     }
 
     if (instance_info.area_light_index != -1) {

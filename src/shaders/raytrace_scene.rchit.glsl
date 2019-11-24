@@ -62,7 +62,13 @@ void main() {
     Vertex v1 = fetch_vertex(gl_PrimitiveID*3 + 1);
     Vertex v2 = fetch_vertex(gl_PrimitiveID*3 + 2);
 
-    mat3 normal_transform = mat3(gl_ObjectToWorldNV);
+    const vec3 wo = -gl_WorldRayDirectionNV;
+    const mat3 normal_transform = mat3(gl_ObjectToWorldNV);
+
+    vec3 geometric_normal = cross(v1.p - v0.p, v2.p - v0.p);
+    geometric_normal = dot(geometric_normal, wo) >= 0 ? geometric_normal : -geometric_normal;
+    geometric_normal = normalize(normal_transform * geometric_normal);
+
     vec3 n0 = normal_transform * v0.n;
     vec3 n1 = normal_transform * v1.n;
     vec3 n2 = normal_transform * v2.n;
@@ -70,12 +76,12 @@ void main() {
 
     vec2 uv = barycentric_interpolate(attribs.x, attribs.y, v0.uv, v1.uv, v2.uv);
 
-    vec3 wo = -gl_WorldRayDirectionNV;
-
     vec3 L = vec3(0);
    
     for (int i = 0; i < point_light_count; i++) {
-        vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV + 1e-3*n;
+        vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
+        p = offset_ray(p, geometric_normal);
+
         vec3 light_vec = point_lights[i].position - p;
         float light_dist = length(light_vec);
         vec3 light_dir = light_vec / light_dist;
@@ -85,10 +91,8 @@ void main() {
             continue;
 
         // trace shadow ray
-        const float tmin = 1e-3;
-
         shadow_ray_payload.shadow_factor = 1.0f;
-        traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, p, tmin, light_dir, light_dist - tmin, 1);
+        traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, p, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
         if (shadow_ray_payload.shadow_factor == 0.0)
             continue;
 
@@ -103,6 +107,9 @@ void main() {
 
     for (int i = 0; i < diffuse_rectangular_light_count; i++) {
         Diffuse_Rectangular_Light light = diffuse_rectangular_lights[i];
+        if (light.shadow_ray_count == 0)
+            continue;
+        vec3 L2 = vec3(0);
         for (int k = 0; k < light.shadow_ray_count; k++) {
             vec2 u;
             u.x = float(rng_state) * (1.0/float(0xffffffffu));
@@ -113,7 +120,8 @@ void main() {
             vec3 local_light_point = vec3(light.size.x/2.0 * u.x, light.size.y/2.0 * u.y, 0.f);
             vec3 light_point = light.light_to_world_transform * vec4(local_light_point, 1.0);
 
-            vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV + 1e-3*n;
+            vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
+            p = offset_ray(p, geometric_normal);
 
             vec3 light_vec = light_point - p;
             float light_dist = length(light_vec);
@@ -129,17 +137,17 @@ void main() {
                 continue;
 
             // trace shadow ray
-            const float tmin = 1e-3;
             shadow_ray_payload.shadow_factor = 1.0f;
-            traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, p, tmin, light_dir, light_dist - tmin, 1);
+            traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, p, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
             if (shadow_ray_payload.shadow_factor == 0.0)
                 continue;
 
             Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
             vec3 bsdf = compute_bsdf(mtl_handle, uv, light_dir, wo);
-            L += shadow_ray_payload.shadow_factor * bsdf * light.area * light.emitted_radiance * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
+            L2 += shadow_ray_payload.shadow_factor * bsdf * light.area * light.emitted_radiance * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
-        L /= float(light.shadow_ray_count);
+        L2 /= float(light.shadow_ray_count);
+        L += L2;
     }
 
     int area_light_index = instance_infos[gl_InstanceCustomIndexNV].area_light_index; 
