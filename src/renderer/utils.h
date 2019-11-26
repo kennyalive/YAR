@@ -3,6 +3,14 @@
 #include "vk.h"
 #include "lib/vector.h"
 
+VkPipelineLayout create_pipeline_layout(
+    std::initializer_list<VkDescriptorSetLayout> set_layouts,
+    std::initializer_list<VkPushConstantRange> push_constant_ranges,
+    const char* name);
+
+VkPipeline create_compute_pipeline(const std::string& spirv_file, VkPipelineLayout pipeline_layout, const char* name);
+VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout set_layout);
+
 struct Shader_Module {
     Shader_Module(const std::string& spirv_file) {
         handle = vk_load_spirv(spirv_file);

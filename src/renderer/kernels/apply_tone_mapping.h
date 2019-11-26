@@ -2,12 +2,12 @@
 
 #include "../vk.h"
 
-struct Copy_To_Swapchain {
+struct Apply_Tone_Mapping {
     VkDescriptorSetLayout set_layout;
     VkPipelineLayout pipeline_layout;
     VkPipeline pipeline;
     VkSampler point_sampler;
-    std::vector<VkDescriptorSet> sets; // per swapchain image
+    VkDescriptorSet descriptor_set;
 
     void create();
     void destroy();

@@ -125,6 +125,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\renderer\acceleration_structure.cpp" />
     <ClCompile Include="..\src\renderer\kernels\copy_to_swapchain.cpp" />
+    <ClCompile Include="..\src\renderer\kernels\apply_tone_mapping.cpp" />
     <ClCompile Include="..\src\renderer\main.cpp" />
     <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp" />
     <ClCompile Include="..\src\renderer\renderer.cpp" />
@@ -144,6 +145,7 @@
     <ClInclude Include="..\src\renderer\geometry.h" />
     <ClInclude Include="..\src\renderer\kernels\copy_to_swapchain.h" />
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h" />
+    <ClInclude Include="..\src\renderer\kernels\apply_tone_mapping.h" />
     <ClInclude Include="..\src\renderer\kernel_context.h" />
     <ClInclude Include="..\src\renderer\platform.h" />
     <ClInclude Include="..\src\renderer\renderer.h" />
@@ -158,6 +160,11 @@
     <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="..\src\shaders\apply_tone_mapping.comp.glsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CustomBuild>
     <None Include="..\src\shaders\common.glsl" />
     <CustomBuild Include="..\src\shaders\copy_to_swapchain.comp.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -207,7 +214,6 @@
       <FileType>Document</FileType>
     </CustomBuild>
     <None Include="..\src\shaders\rt_utils.glsl" />
-    <None Include="..\src\shaders\tone_mapping.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

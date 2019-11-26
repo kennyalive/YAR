@@ -1,5 +1,6 @@
 #pragma once
 
+#include "kernels/apply_tone_mapping.h"
 #include "kernels/copy_to_swapchain.h"
 #include "kernels/patch_materials.h"
 #include "kernels/draw_mesh.h"
@@ -38,6 +39,7 @@ private:
     void draw_frame();
     void draw_rasterized_image();
     void draw_raytraced_image();
+    void tone_mapping();
     void draw_imgui();
     void copy_output_image_to_swapchain();
     void start_reference_renderer();
@@ -49,7 +51,7 @@ private:
     Flying_Camera flying_camera;
 
     VkRenderPass ui_render_pass;
-    VkFramebuffer ui_framebuffer;
+    std::vector<VkFramebuffer> ui_framebuffers; // per swapchain image
     VkRenderPass raster_render_pass;
     VkFramebuffer raster_framebuffer;
 
@@ -79,6 +81,7 @@ private:
         VkDescriptorSet material_descriptor_set;
     } gpu_scene;
 
+    Apply_Tone_Mapping apply_tone_mapping;
     Copy_To_Swapchain copy_to_swapchain;
     Draw_Mesh draw_mesh;
     Patch_Materials patch_materials;
@@ -88,6 +91,7 @@ private:
     struct {
         GPU_Time_Scope* frame;
         GPU_Time_Scope* draw;
+        GPU_Time_Scope* tone_map;
         GPU_Time_Scope* ui;
         GPU_Time_Scope* compute_copy;
     } gpu_times;
@@ -97,4 +101,3 @@ private:
     Scene scene;
     UI ui;
 };
-

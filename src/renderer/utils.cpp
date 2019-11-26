@@ -1,6 +1,51 @@
 #include "std.h"
 #include "utils.h"
 
+VkPipelineLayout create_pipeline_layout(std::initializer_list<VkDescriptorSetLayout> set_layouts,
+    std::initializer_list<VkPushConstantRange> push_constant_ranges, const char* name)
+{
+    VkPipelineLayoutCreateInfo create_info { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+    create_info.setLayoutCount = (uint32_t)set_layouts.size();
+    create_info.pSetLayouts = set_layouts.begin();
+    create_info.pushConstantRangeCount = (uint32_t)push_constant_ranges.size();
+    create_info.pPushConstantRanges = push_constant_ranges.begin();
+
+    VkPipelineLayout pipeline_layout;
+    VK_CHECK(vkCreatePipelineLayout(vk.device, &create_info, nullptr, &pipeline_layout));
+    vk_set_debug_name(pipeline_layout, name);
+    return pipeline_layout;
+}
+
+VkPipeline create_compute_pipeline(const std::string& spirv_file, VkPipelineLayout pipeline_layout, const char* name)
+{
+    Shader_Module shader(spirv_file);
+
+    VkPipelineShaderStageCreateInfo compute_stage { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+    compute_stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    compute_stage.module = shader.handle;
+    compute_stage.pName = "main";
+
+    VkComputePipelineCreateInfo create_info{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+    create_info.stage = compute_stage;
+    create_info.layout = pipeline_layout;
+
+    VkPipeline pipeline;
+    VK_CHECK(vkCreateComputePipelines(vk.device, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
+    vk_set_debug_name(pipeline, name);
+    return pipeline;
+}
+
+VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout set_layout)
+{
+    VkDescriptorSetAllocateInfo alloc_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+    alloc_info.descriptorPool = vk.descriptor_pool;
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.pSetLayouts = &set_layout;
+    VkDescriptorSet descriptor_set;
+    VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &descriptor_set));
+    return descriptor_set;
+}
+
 //
 // Descriptor_Writes
 //
