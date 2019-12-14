@@ -1,3 +1,6 @@
+#ifndef COMPUTE_BSDF_GLSL
+#define COMPUTE_BSDF_GLSL
+
 #include "base_resources.glsl"
 
 vec3 compute_bsdf(Material_Handle mtl_handle, vec2 uv, vec3 wi, vec3 wo) {
@@ -15,3 +18,4 @@ vec3 compute_bsdf(Material_Handle mtl_handle, vec2 uv, vec3 wi, vec3 wo) {
     return vec3(1, 0, 0);    
 }
 
+#endif // COMPUTE_BSDF_GLSL

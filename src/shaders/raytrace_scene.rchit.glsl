@@ -4,14 +4,25 @@
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include "common.glsl"
+
+#include "shared_main.h"
+layout(std140, set=KERNEL_SET_0, binding=2)
+uniform Uniform_Block {
+    mat4x3  camera_to_world;
+    int     point_light_count;
+    int     diffuse_rectangular_light_count;
+    vec2    pad0;
+};
+
+#define HIT_SHADER
+#include "rt_utils.glsl"
+layout (location=0) rayPayloadInNV Ray_Payload payload;
+layout (location=1) rayPayloadNV Shadow_Ray_Payload shadow_ray_payload;
+
 #include "geometry.glsl"
 #include "material_resources.glsl"
 #include "compute_bsdf.glsl"
 #include "light_resources.glsl"
-#include "shared_main.h"
-
-#define HIT_SHADER
-#include "rt_utils.glsl"
 
 hitAttributeNV vec2 attribs;
 
@@ -21,19 +32,11 @@ struct Mesh_Vertex {
     float u, v;
 };
 
-layout (location=0) rayPayloadInNV Ray_Payload payload;
-layout (location=1) rayPayloadNV Shadow_Ray_Payload shadow_ray_payload;
-
 layout(set=KERNEL_SET_0, binding = 1)
 uniform accelerationStructureNV accel;
 
-layout(std140, set=KERNEL_SET_0, binding=2)
-uniform Uniform_Block {
-    mat4x3  camera_to_world;
-    int     point_light_count;
-    int     diffuse_rectangular_light_count;
-    vec2    pad0;
-};
+#include "direct_lighting.glsl"
+
 
 layout(std430, set=KERNEL_SET_0, binding=3)
 readonly buffer Index_Buffer {
@@ -45,7 +48,8 @@ readonly buffer Vertex_Buffer {
     Mesh_Vertex vertices[];
 } vertex_buffers[];
 
-Vertex fetch_vertex(int index) {
+Vertex fetch_vertex(int index)
+{
     int geometry_buffer_index = instance_infos[gl_InstanceCustomIndexNV].geometry.index; // TODO: do this only if geometry.type is Triangle_Mesh.
     uint vertex_index = index_buffers[geometry_buffer_index].indices[index];
     Mesh_Vertex bv = vertex_buffers[geometry_buffer_index].vertices[vertex_index];
@@ -57,98 +61,38 @@ Vertex fetch_vertex(int index) {
     return v;
 }
 
-void main() {
+Shading_Context init_shading_context()
+{
     Vertex v0 = fetch_vertex(gl_PrimitiveID*3 + 0);
     Vertex v1 = fetch_vertex(gl_PrimitiveID*3 + 1);
     Vertex v2 = fetch_vertex(gl_PrimitiveID*3 + 2);
 
-    const vec3 wo = -gl_WorldRayDirectionNV;
     const mat3 normal_transform = mat3(gl_ObjectToWorldNV);
+    const vec3 Wo = -gl_WorldRayDirectionNV;
 
     vec3 geometric_normal = cross(v1.p - v0.p, v2.p - v0.p);
-    geometric_normal = dot(geometric_normal, wo) >= 0 ? geometric_normal : -geometric_normal;
     geometric_normal = normalize(normal_transform * geometric_normal);
+    geometric_normal = dot(geometric_normal, Wo) >= 0 ? geometric_normal : -geometric_normal;
 
     vec3 n0 = normal_transform * v0.n;
     vec3 n1 = normal_transform * v1.n;
     vec3 n2 = normal_transform * v2.n;
     vec3 n = normalize(barycentric_interpolate(attribs.x, attribs.y, n0, n1, n2));
+    n = dot(n, geometric_normal) >= 0 ? n : -n;
 
-    vec2 uv = barycentric_interpolate(attribs.x, attribs.y, v0.uv, v1.uv, v2.uv);
+    Shading_Context sc;
+    sc.Wo = Wo;
+    sc.P = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
+    sc.Ng = geometric_normal;
+    sc.N = n;
+    sc.UV = barycentric_interpolate(attribs.x, attribs.y, v0.uv, v1.uv, v2.uv);
+    return sc;
+}
 
-    vec3 L = vec3(0);
-   
-    for (int i = 0; i < point_light_count; i++) {
-        vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
-        p = offset_ray(p, geometric_normal);
-
-        vec3 light_vec = point_lights[i].position - p;
-        float light_dist = length(light_vec);
-        vec3 light_dir = light_vec / light_dist;
-
-        float n_dot_l = dot(n, light_dir);
-        if (n_dot_l <= 0.0)
-            continue;
-
-        // trace shadow ray
-        shadow_ray_payload.shadow_factor = 1.0f;
-        traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, p, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
-        if (shadow_ray_payload.shadow_factor == 0.0)
-            continue;
-
-        Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
-        vec3 bsdf = compute_bsdf(mtl_handle, uv, light_dir, wo);
-        vec3 irradiance = point_lights[i].intensity * (n_dot_l / (light_dist * light_dist));
-        L += shadow_ray_payload.shadow_factor * irradiance * bsdf;
-    }
-
-    uint seed = uint(gl_LaunchIDNV.y)*uint(800) + uint(gl_LaunchIDNV.x);
-    uint rng_state = wang_hash(seed);
-
-    for (int i = 0; i < diffuse_rectangular_light_count; i++) {
-        Diffuse_Rectangular_Light light = diffuse_rectangular_lights[i];
-        if (light.shadow_ray_count == 0)
-            continue;
-        vec3 L2 = vec3(0);
-        for (int k = 0; k < light.shadow_ray_count; k++) {
-            vec2 u;
-            u.x = float(rng_state) * (1.0/float(0xffffffffu));
-            rng_state = rand_xorshift(rng_state);
-            u.y = float(rng_state) * (1.0/float(0xffffffffu));
-            u = 2.0*u - 1.0;
-
-            vec3 local_light_point = vec3(light.size.x/2.0 * u.x, light.size.y/2.0 * u.y, 0.f);
-            vec3 light_point = light.light_to_world_transform * vec4(local_light_point, 1.0);
-
-            vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
-            p = offset_ray(p, geometric_normal);
-
-            vec3 light_vec = light_point - p;
-            float light_dist = length(light_vec);
-            vec3 light_dir = light_vec / light_dist;
-
-            vec3 light_normal = light.light_to_world_transform[2];
-            float light_n_dot_l = dot(light_normal, -light_dir);
-            if (light_n_dot_l <= 0.f)
-                continue;
-
-            float n_dot_l = dot(n, light_dir);
-            if (n_dot_l <= 0.f)
-                continue;
-
-            // trace shadow ray
-            shadow_ray_payload.shadow_factor = 1.0f;
-            traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, p, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
-            if (shadow_ray_payload.shadow_factor == 0.0)
-                continue;
-
-            Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
-            vec3 bsdf = compute_bsdf(mtl_handle, uv, light_dir, wo);
-            L2 += shadow_ray_payload.shadow_factor * bsdf * light.area * light.emitted_radiance * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
-        }
-        L2 /= float(light.shadow_ray_count);
-        L += L2;
-    }
+void main()
+{
+    Shading_Context sc = init_shading_context();
+    vec3 L = estimate_direct_lighting(sc);
 
     int area_light_index = instance_infos[gl_InstanceCustomIndexNV].area_light_index; 
     if (area_light_index != -1) {

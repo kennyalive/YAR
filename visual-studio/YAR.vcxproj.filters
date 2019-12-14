@@ -97,7 +97,10 @@
     <None Include="..\src\shaders\material_resources.glsl">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\apply_tone_mapping.glsl">
+    <None Include="..\src\shaders\direct_lighting.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\src\shaders\shading_context.glsl">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
@@ -124,6 +127,9 @@
       <Filter>shaders</Filter>
     </CustomBuild>
     <CustomBuild Include="..\src\shaders\raytrace_scene_shadow_ray.rchit.glsl">
+      <Filter>shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\src\shaders\apply_tone_mapping.comp.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
   </ItemGroup>

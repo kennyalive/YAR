@@ -1,3 +1,6 @@
+#ifndef LIGHT_RESOURCES_GLSL
+#define LIGHT_RESOURCES_GLSL
+
 #include "shared_main.h"
 #include "shared_light.h"
 
@@ -15,3 +18,4 @@ readonly buffer Diffuse_Rectangular_Light_Buffer {
     Diffuse_Rectangular_Light diffuse_rectangular_lights[];
 };
 
+#endif // LIGHT_RESOURCES_GLSL

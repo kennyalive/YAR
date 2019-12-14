@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -204,6 +204,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
     <None Include="..\src\shaders\compute_bsdf.glsl" />
+    <None Include="..\src\shaders\direct_lighting.glsl" />
     <None Include="..\src\shaders\geometry.glsl" />
     <None Include="..\src\shaders\base_resources.glsl" />
     <None Include="..\src\shaders\light_resources.glsl" />
@@ -214,6 +215,7 @@
       <FileType>Document</FileType>
     </CustomBuild>
     <None Include="..\src\shaders\rt_utils.glsl" />
+    <None Include="..\src\shaders\shading_context.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
