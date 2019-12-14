@@ -307,6 +307,8 @@ void Renderer::load_project(const std::string& yar_file_name) {
                 .sample_image_array(0, (uint32_t)gpu_scene.images_2d.size(), VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
                 .sampler(1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
                 .storage_buffer(2, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // instance buffer
+                .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // index buffers
+                .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // vertex buffers
                 .create("base_descriptor_set_layout");
 
             VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
@@ -321,10 +323,26 @@ void Renderer::load_project(const std::string& yar_file_name) {
                 image_infos[i].imageView = image.view;
                 image_infos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
+
+            std::vector<VkDescriptorBufferInfo> vertex_buffer_infos(gpu_meshes.size());
+            std::vector<VkDescriptorBufferInfo> index_buffer_infos(gpu_meshes.size());
+
+            for (auto [i, gpu_mesh] : enumerate(gpu_meshes)) {
+                vertex_buffer_infos[i].buffer = gpu_mesh.vertex_buffer.handle;
+                vertex_buffer_infos[i].offset = 0;
+                vertex_buffer_infos[i].range = gpu_mesh.model_vertex_count * sizeof(GPU_Vertex);
+
+                index_buffer_infos[i].buffer = gpu_mesh.index_buffer.handle;
+                index_buffer_infos[i].offset = 0;
+                index_buffer_infos[i].range = gpu_mesh.model_index_count * sizeof(uint32_t);
+            }
+
             Descriptor_Writes(gpu_scene.base_descriptor_set)
                 .sampled_image_array(0, (uint32_t)gpu_scene.images_2d.size(), image_infos.data())
                 .sampler(1, copy_to_swapchain.point_sampler)
-                .storage_buffer(2, gpu_scene.instance_info_buffer.handle, 0, VK_WHOLE_SIZE);
+                .storage_buffer(2, gpu_scene.instance_info_buffer.handle, 0, VK_WHOLE_SIZE)
+                .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), index_buffer_infos.data())
+                .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), vertex_buffer_infos.data());
         }
     }
 

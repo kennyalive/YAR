@@ -26,27 +26,10 @@ layout (location=1) rayPayloadNV Shadow_Ray_Payload shadow_ray_payload;
 
 hitAttributeNV vec2 attribs;
 
-struct Mesh_Vertex {
-    float x, y, z;
-    float nx, ny, nz;
-    float u, v;
-};
-
 layout(set=KERNEL_SET_0, binding = 1)
 uniform accelerationStructureNV accel;
 
 #include "direct_lighting.glsl"
-
-
-layout(std430, set=KERNEL_SET_0, binding=3)
-readonly buffer Index_Buffer {
-    uint indices[];
-} index_buffers[];
-
-layout(std430, set=KERNEL_SET_0, binding=4)
-readonly buffer Vertex_Buffer {
-    Mesh_Vertex vertices[];
-} vertex_buffers[];
 
 Vertex fetch_vertex(int index)
 {

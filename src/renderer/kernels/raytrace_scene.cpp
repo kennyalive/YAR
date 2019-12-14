@@ -103,8 +103,6 @@ void Raytrace_Scene::create_pipeline(const Kernel_Context& ctx, const std::vecto
         .storage_image(0, VK_SHADER_STAGE_RAYGEN_BIT_NV)
         .accelerator(1, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
         .uniform_buffer(2, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
-        .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // index buffers
-        .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // vertex buffers
         .create("rt_set_layout");
 
     // pipeline layout
@@ -216,23 +214,8 @@ void Raytrace_Scene::create_pipeline(const Kernel_Context& ctx, const std::vecto
         desc.pSetLayouts = &descriptor_set_layout;
         VK_CHECK(vkAllocateDescriptorSets(vk.device, &desc, &descriptor_set));
 
-        std::vector<VkDescriptorBufferInfo> vertex_buffer_infos(gpu_meshes.size());
-        std::vector<VkDescriptorBufferInfo> index_buffer_infos(gpu_meshes.size());
-
-        for (auto [i, gpu_mesh] : enumerate(gpu_meshes)) {
-            vertex_buffer_infos[i].buffer = gpu_mesh.vertex_buffer.handle;
-            vertex_buffer_infos[i].offset = 0;
-            vertex_buffer_infos[i].range = gpu_mesh.model_vertex_count * sizeof(GPU_Vertex);
-
-            index_buffer_infos[i].buffer = gpu_mesh.index_buffer.handle;
-            index_buffer_infos[i].offset = 0;
-            index_buffer_infos[i].range = gpu_mesh.model_index_count * sizeof(uint32_t);
-        }
-
         Descriptor_Writes(descriptor_set)
             .accelerator(1, accelerator.top_level_accel)
-            .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer))
-            .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), index_buffer_infos.data())
-            .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), vertex_buffer_infos.data());
+            .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer));
     }
 }
