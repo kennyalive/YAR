@@ -124,12 +124,8 @@ Scene load_pbrt_project(const YAR_Project& project) {
 
     scene.view_points.push_back(view_point);
     scene.fovy = pbrt_scene->cameras[0]->fov;
-
-    Point_Light light;
-    light.position = Vector3(pos.x, pos.y, pos.z);
-    light.intensity = convert_flux_to_constant_spectrum_to_rgb_intensity(8000000 /*Lm*/);
-    scene.lights.point_lights.push_back(light);
-
+    scene.lights = project.lights;
+    
     return scene;
 }
 
