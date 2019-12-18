@@ -1,3 +1,6 @@
+#ifndef BASE_RESOURCES_GLSL
+#define BASE_RESOURCES_GLSL
+
 #include "shared_main.h"
 
 layout(set=BASE_SET_INDEX, binding=0) uniform texture2D images_2d[];
@@ -23,3 +26,5 @@ layout(std430, set=BASE_SET_INDEX, binding=4)
 readonly buffer Vertex_Buffer {
     Mesh_Vertex vertices[];
 } vertex_buffers[];
+
+#endif // BASE_RESOURCES_GLSL

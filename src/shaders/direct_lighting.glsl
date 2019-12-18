@@ -5,7 +5,7 @@
 #include "light_resources.glsl"
 #include "shading_context.glsl"
 
-vec3 estimate_direct_lighting(Shading_Context sc)
+vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel, int point_light_count, int diffuse_rectangular_light_count)
 {
     vec3 L = vec3(0);
 

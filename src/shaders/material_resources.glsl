@@ -1,3 +1,6 @@
+#ifndef MATERIAL_RESOURCES_GLSL
+#define MATERIAL_RESOURCES_GLSL
+
 #include "shared_main.h"
 #include "shared_material.h"
 
@@ -9,3 +12,4 @@ buffer Lambertian_Material_Buffer {
     Lambertian_Material lambertian_materials[];
 };
 
+#endif // MATERIAL_RESOURCES_GLSL
