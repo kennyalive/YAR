@@ -35,70 +35,69 @@ bool KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersect
     Traversal_Info traversal_stack[max_traversal_depth];
     int traversal_stack_size = 0;
 
-    auto node = &nodes[0];
+    const KdNode* node = &nodes[0];
 
     while (intersection.t > t_min) {
         if (!node->is_leaf()) {
             int axis = node->get_split_axis();
-
             float distance_to_split_plane = node->get_split_position() - ray.origin[axis];
 
-            auto belowChild = node + 1;
-            auto aboveChild = &nodes[node->get_above_child()];
+            const KdNode* below_child = node + 1;
+            const KdNode* above_child = &nodes[node->get_above_child()];
 
             if (distance_to_split_plane != 0.0) { // general case
-                const KdNode *firstChild, *secondChild;
+                const KdNode *first_child, *second_child;
 
                 if (distance_to_split_plane > 0.0) {
-                    firstChild = belowChild;
-                    secondChild = aboveChild;
+                    first_child = below_child;
+                    second_child = above_child;
                 } else {
-                    firstChild = aboveChild;
-                    secondChild = belowChild;
+                    first_child = above_child;
+                    second_child = below_child;
                 }
 
                 // t_split != 0 (since distance_to_split_plane != 0)
                 float t_split = distance_to_split_plane / ray.direction[axis];
 
                 if (t_split >= t_max || t_split < 0.0)
-                    node = firstChild;
+                    node = first_child;
                 else if (t_split <= t_min)
-                    node = secondChild;
+                    node = second_child;
                 else { // t_min < t_split < t_max
                     ASSERT(traversal_stack_size < max_traversal_depth);
-                    traversal_stack[traversal_stack_size++] = {secondChild, t_split, t_max};
-                    node = firstChild;
+                    traversal_stack[traversal_stack_size++] = {second_child, t_split, t_max};
+                    node = first_child;
                     t_max = t_split;
                 }
             }
             else { // special case, distanceToSplitPlane == 0.0
                 if (ray.direction[axis] > 0.0) {
                     if (t_min > 0.0)
-                        node = aboveChild;
+                        node = above_child;
                     else { // t_min == 0.0
                         ASSERT(traversal_stack_size < max_traversal_depth);
-                        traversal_stack[traversal_stack_size++] = {aboveChild, 0.0, t_max};
+                        traversal_stack[traversal_stack_size++] = {above_child, 0.0, t_max};
                         // check single point [0.0, 0.0]
-                        node = belowChild;
+                        node = below_child;
                         t_max = 0.0;
                     }
                 }
                 else if (ray.direction[axis] < 0.0) {
                     if (t_min > 0.0)
-                        node = belowChild;
+                        node = below_child;
                     else { // t_min == 0.0
                         ASSERT(traversal_stack_size < max_traversal_depth);
-                        traversal_stack[traversal_stack_size++] = {belowChild, 0.0, t_max};
+                        traversal_stack[traversal_stack_size++] = {below_child, 0.0, t_max};
                         // check single point [0.0, 0.0]
-                        node = aboveChild;
+                        node = above_child;
                         t_max = 0.0;
                     }
                 }
                 else { // ray.direction[axis] == 0.0
                     // for both nodes check [t_min, t_max] range
                     ASSERT(traversal_stack_size < max_traversal_depth);
-                    traversal_stack[traversal_stack_size++] = {aboveChild, t_min, t_max};
-                    node = belowChild;
+                    traversal_stack[traversal_stack_size++] = {above_child, t_min, t_max};
+                    node = below_child;
                 }
             }
         }
