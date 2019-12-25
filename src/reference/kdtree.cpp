@@ -1,7 +1,8 @@
 #include "std.h"
 #include "lib/common.h"
-#include "intersection.h"
 #include "kdtree.h"
+
+#include "intersection.h"
 
 template <typename Primitive_Source>
 KdTree<Primitive_Source>::KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& primitive_indices, Primitive_Source&& primitive_source)
@@ -13,17 +14,6 @@ KdTree<Primitive_Source>::KdTree(std::vector<KdNode>&& nodes, std::vector<int32_
 }
 
 template <typename Primitive_Source>
-float KdTree<Primitive_Source>::intersect(const Ray& ray, Local_Geometry& local_geom) const {
-    Intersection intersection;
-    intersect(ray, intersection);
-
-    if (intersection.t != Infinity)
-        local_geom = Local_Geometry(ray, intersection);
-
-    return intersection.t;
-}
- 
-template <typename Primitive_Source>
 float KdTree<Primitive_Source>::intersect_any(const Ray& ray) const {
     Intersection intersection;
     intersect(ray, intersection);
@@ -31,11 +21,11 @@ float KdTree<Primitive_Source>::intersect_any(const Ray& ray) const {
 }
 
 template <typename Primitive_Source>
-void KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersection) const {
+bool KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersection) const {
     float t_min, t_max;
 
     if (!bounds.intersect_by_ray(ray, t_min, t_max))
-        return;
+        return false;
 
     struct Traversal_Info {
         const KdNode* node;
@@ -47,7 +37,7 @@ void KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersect
 
     auto node = &nodes[0];
 
-    while (t_min < intersection.t) {
+    while (intersection.t > t_min) {
         if (!node->is_leaf()) {
             int axis = node->get_split_axis();
 
@@ -128,18 +118,19 @@ void KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersect
             t_min = traversal_stack[traversal_stack_size].t_min;
             t_max = traversal_stack[traversal_stack_size].t_max;
         }
-    } // while (t_min < intersection.t)
+    } // while (intersection.t > t_min)
+    return intersection.t < Infinity;
 }
 
 template <typename Primitive_Source>
 void KdTree<Primitive_Source>::intersect_leaf(const Ray& ray, KdNode leaf, Intersection& intersection) const
 {
     if (leaf.get_primitive_count() == 1) {
-        primitive_source.intersect(ray, leaf.get_index(), intersection);
+        primitive_source.intersect_primitive(ray, leaf.get_index(), intersection);
     } else {
         for (int32_t i = 0; i < leaf.get_primitive_count(); i++) {
             int32_t primitive_index = primitive_indices[leaf.get_index() + i];
-            primitive_source.intersect(ray, primitive_index, intersection);
+            primitive_source.intersect_primitive(ray, primitive_index, intersection);
         }
     }
 }
@@ -346,4 +337,3 @@ Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometr
 
 template class KdTree<Geometry_Primitive_Source>;
 template class KdTree<Scene_Primitive_Source>;
-

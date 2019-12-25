@@ -1,14 +1,12 @@
 #pragma once
 
 #include "lib/geometry.h"
-#include "lib/light.h"
-#include "lib/material.h"
-#include "lib/vector.h"
 
 struct Intersection;
 struct Ray;
 struct Render_Object;
 struct Triangle_Mesh;
+struct Vector3;
 
 float intersect_triangle_moller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2);
 void intersect_geometry(const Ray& ray, const Geometries* geometries, Geometry_Handle geometry, int primitive_index, Intersection& intersection);
@@ -20,8 +18,6 @@ struct Triangle_Intersection {
     int triangle_index;
 };
 
-// During traversal we work with Intersection objects. When the closest intersection is
-// found it is converted to Local_Geometry presentation.
 struct Intersection {
     // Distance to the intersection point or Infinity if no intersection is found.
     float t = Infinity;
@@ -37,15 +33,3 @@ struct Intersection {
         Triangle_Intersection triangle_intersection;
     };
 };
-
-struct Local_Geometry {
-    Vector3 position;
-    Vector3 normal;
-    Vector2 uv;
-    Material_Handle material; 
-    Light_Handle area_light;
-
-    Local_Geometry() {}
-    explicit Local_Geometry(const Ray& ray, const Intersection& intersection);
-};
-

@@ -8,8 +8,8 @@ enum class Material_Type : uint32_t {
 };
 
 struct Material_Handle {
-    Material_Type type;
-    int index;
+    Material_Type type = Material_Type::none;
+    int index = -1;
 };
 
 static_assert(sizeof(Material_Handle) == 8);

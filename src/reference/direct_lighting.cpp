@@ -3,26 +3,23 @@
 #include "direct_lighting.h"
 
 #include "render_context.h"
+#include "shading_context.h"
+
 #include "lib/light.h"
 
 ColorRGB compute_bsdf(const Materials& materials, Material_Handle mtl, Vector3 wi, Vector3 wo);
 
-ColorRGB compute_direct_lighting(
-    const Render_Context& ctx,
-    const Local_Geometry& local_geom,
-    const Vector3& wo,
-    Material_Handle material,
-    pcg32_random_t* rng)
+ColorRGB compute_direct_lighting(const Render_Context& ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng)
 {
     ColorRGB L;
     for (const Point_Light& light : ctx.lights.point_lights) {
-        Vector3 surface_point = local_geom.position + local_geom.normal * 1e-3f;
+        Vector3 surface_point = shading_ctx.P + shading_ctx.N * 1e-3f;
 
         const Vector3 light_vec = (light.position - surface_point);
         const float light_dist = light_vec.length();
         const Vector3 light_dir = light_vec / light_dist;
 
-        float n_dot_l = dot(local_geom.normal, light_dir);
+        float n_dot_l = dot(shading_ctx.N, light_dir);
         if (n_dot_l <= 0.f)
             continue;
 
@@ -32,7 +29,7 @@ ColorRGB compute_direct_lighting(
         if (in_shadow)
             continue;
 
-        ColorRGB bsdf = compute_bsdf(ctx.materials, material, light_dir, wo);
+        ColorRGB bsdf = compute_bsdf(ctx.materials, shading_ctx.material, light_dir, shading_ctx.Wo);
         L += bsdf * light.intensity * (n_dot_l / (light_dist * light_dist));
     }
 
@@ -42,7 +39,7 @@ ColorRGB compute_direct_lighting(
             Vector3 local_light_point = Vector3{light.size.x/2.0f * u.x, light.size.y/2.0f * u.y, 0.0f};
             Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
 
-            Vector3 surface_point = local_geom.position + local_geom.normal * 1e-3f;
+            Vector3 surface_point = shading_ctx.P + shading_ctx.N * 1e-3f;
 
             const Vector3 light_vec = (light_point - surface_point);
             const float light_dist = light_vec.length();
@@ -53,7 +50,7 @@ ColorRGB compute_direct_lighting(
             if (light_n_dot_l <= 0.f)
                 continue;
 
-            float n_dot_l = dot(local_geom.normal, light_dir);
+            float n_dot_l = dot(shading_ctx.N, light_dir);
             if (n_dot_l <= 0.f)
                 continue;
 
@@ -63,15 +60,15 @@ ColorRGB compute_direct_lighting(
             if (in_shadow)
                 continue;
 
-            ColorRGB bsdf = compute_bsdf(ctx.materials, material, light_dir, wo);
+            ColorRGB bsdf = compute_bsdf(ctx.materials, shading_ctx.material, light_dir, shading_ctx.Wo);
             L += (light.size.x * light.size.y) * light.emitted_radiance * bsdf * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
         L /= float(light.shadow_ray_count);
     }
 
-    if (local_geom.area_light != Null_Light) {
-        ASSERT(local_geom.area_light.type == Light_Type::diffuse_rectangular);
-        L += ctx.lights.diffuse_rectangular_lights[local_geom.area_light.index].emitted_radiance;
+    if (shading_ctx.area_light != Null_Light) {
+        ASSERT(shading_ctx.area_light.type == Light_Type::diffuse_rectangular);
+        L += ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
     }
 
     return L;

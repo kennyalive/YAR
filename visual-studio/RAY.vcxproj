@@ -104,6 +104,7 @@
     <ClCompile Include="..\src\reference\material.cpp" />
     <ClCompile Include="..\src\reference\reference_renderer.cpp" />
     <ClCompile Include="..\src\reference\sampling.cpp" />
+    <ClCompile Include="..\src\reference\shading_context.cpp" />
     <ClCompile Include="..\src\reference\tests\test.cpp" />
     <ClCompile Include="..\src\reference\tests\test_kdtree.cpp" />
     <ClCompile Include="..\src\reference\tests\test_triangle_intersection.cpp" />
@@ -113,6 +114,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\reference\scattering.h" />
     <ClInclude Include="..\src\reference\camera.h" />
     <ClInclude Include="..\src\reference\render_context.h" />
     <ClInclude Include="..\src\reference\film.h" />
@@ -122,6 +124,7 @@
     <ClInclude Include="..\src\reference\direct_lighting.h" />
     <ClInclude Include="..\src\reference\reference_renderer.h" />
     <ClInclude Include="..\src\reference\sampling.h" />
+    <ClInclude Include="..\src\reference\shading_context.h" />
     <ClInclude Include="..\src\reference\tests\test.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

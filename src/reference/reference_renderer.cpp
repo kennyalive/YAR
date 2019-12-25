@@ -9,6 +9,7 @@
 #include "kdtree.h"
 #include "kdtree_builder.h"
 #include "render_context.h"
+#include "shading_context.h"
 
 #include "lib/geometry.h"
 #include "lib/project.h"
@@ -126,12 +127,12 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
 
             Ray ray = ctx.camera->generate_ray(film_pos);
 
-            Local_Geometry local_geom;
-            if (ctx.acceleration_structure->intersect(ray, local_geom) == Infinity)
+            Intersection isect;
+            if (!ctx.acceleration_structure->intersect(ray, isect))
                 continue;
 
-            Vector3 wo = (ray.origin - local_geom.position).normalized();
-            ColorRGB radiance = compute_direct_lighting(ctx, local_geom, wo, local_geom.material, &rng);
+            Shading_Context shading_ctx(-ray.direction, isect);
+            ColorRGB radiance = compute_direct_lighting(ctx, shading_ctx, &rng);
             tile.add_sample(film_pos, radiance);
         }
     }

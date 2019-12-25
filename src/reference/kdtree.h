@@ -10,8 +10,6 @@
 #include "lib/triangle_mesh.h"
 #include "lib/vector.h"
 
-struct Local_Geometry;
-
 template <typename Primitive_Source> class KdTree;
 
 struct Geometry_Primitive_Source;
@@ -116,7 +114,7 @@ public:
     KdTree(KdTree&& other) = default;
     KdTree& operator=(KdTree&& other) = default;
 
-    float intersect(const Ray& ray, Local_Geometry& local_geom) const;
+    bool intersect(const Ray& ray, Intersection& intersection) const;
     float intersect_any(const Ray& ray) const;
 
     const Primitive_Source& get_primitive_source() const { return primitive_source; }
@@ -126,7 +124,6 @@ public:
     void save_to_file(const std::string& file_name) const;
 
 private:
-    void intersect(const Ray& ray, Intersection& intersection) const;
     void intersect_leaf(const Ray& ray, KdNode leaf, Intersection& intersection) const;
 
 private:
@@ -187,7 +184,7 @@ struct Geometry_Primitive_Source {
         }
     }
 
-    void intersect(const Ray& ray, int primitive_index, Intersection& intersection) const {
+    void intersect_primitive(const Ray& ray, int primitive_index, Intersection& intersection) const {
         intersect_geometry(ray, geometries, geometry, primitive_index, intersection);
     }
 };
@@ -215,7 +212,7 @@ struct Scene_Primitive_Source {
         return bounds;
     }
 
-    void intersect(const Ray& ray, int primitive_index, Intersection& intersection) const {
+    void intersect_primitive(const Ray& ray, int primitive_index, Intersection& intersection) const {
         ASSERT(primitive_index >= 0 && primitive_index < scene->render_objects.size());
         const Render_Object* render_object = &scene->render_objects[primitive_index];
         Ray local_ray = transform_ray(render_object->world_to_object_transform, ray);
@@ -228,4 +225,3 @@ struct Scene_Primitive_Source {
             intersection.render_object = render_object;
     }
 };
-

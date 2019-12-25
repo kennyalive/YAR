@@ -14,8 +14,9 @@ struct Vector4;
 struct Vector3 {
     float x, y, z;
 
-    Vector3() {}
-    
+    Vector3()
+        : x(0.f), y(0.f), z(0.f) {}
+
     constexpr explicit Vector3(float v)
         : x(v), y(v), z(v) {}
 
@@ -158,7 +159,8 @@ template<> struct hash<Vector3> {
 struct Vector2 {
     float x, y;
 
-    Vector2() {}
+    Vector2()
+        : x(0.f), y(0.f) {}
 
     constexpr explicit Vector2(float v)
         : x(v), y(v) {}
@@ -228,7 +230,8 @@ template<> struct hash<Vector2> {
 struct Vector4 {
     float x, y, z, w;
 
-    Vector4() {}
+    Vector4()
+        : x(0.f), y(0.f), z(0.f), w(0.f) {}
 
     constexpr explicit Vector4(float v)
         : x(v), y(v), z(v), w(v) {}

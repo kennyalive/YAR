@@ -21,6 +21,7 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="..\src\reference\direct_lighting.cpp" />
+    <ClCompile Include="..\src\reference\shading_context.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -35,6 +36,8 @@
       <Filter>tests</Filter>
     </ClInclude>
     <ClInclude Include="..\src\reference\direct_lighting.h" />
+    <ClInclude Include="..\src\reference\scattering.h" />
+    <ClInclude Include="..\src\reference\shading_context.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

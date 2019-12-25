@@ -4,10 +4,12 @@
 #include "lib/random.h"
 #include "lib/triangle_mesh.h"
 #include "lib/vector.h"
+
 #include "../intersection.h"
 #include "../kdtree.h"
 #include "../kdtree_builder.h"
 #include "../sampling.h"
+#include "../shading_context.h"
 
 #ifdef _WIN32
 #include <pmmintrin.h>
@@ -76,9 +78,9 @@ struct Triangle_Mesh_Info {
 };
 
 static std::vector<Triangle_Mesh_Info> triangle_mesh_infos {
-    { "test-files/teapot.obj", 100'000 },
-    { "test-files/bunny.obj", 10'000 },
-    { "test-files/dragon.obj", 5'000 },
+    { "projects/test-files/teapot.obj", 100'000 },
+    { "projects/test-files/bunny.obj", 10'000 },
+    { "projects/test-files/dragon.obj", 5'000 },
 };
 
 static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
@@ -99,24 +101,22 @@ static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
         const Ray ray = ray_generator.generate_ray(last_hit, last_hit_epsilon);
 
         Timestamp t2;
-
-        Local_Geometry local_geom;
-        float hit_distance = kdtree.intersect(ray, local_geom);
-        bool hitFound = hit_distance != Infinity;
-
+        Intersection isect;
+        bool hit_found = kdtree.intersect(ray, isect);
         time_ns += elapsed_nanoseconds(t2);
 
-        if (hitFound) {
-            last_hit = local_geom.position;
-            last_hit_epsilon = hit_distance * 1e-3f;
+        if (hit_found) {
+            Shading_Context shading_ctx(Vector3(), isect);
+            last_hit = shading_ctx.P;
+            last_hit_epsilon = isect.t * 1e-3f;
         }
 
         if (debug_rays && i < debug_ray_count) {
-            if (hitFound)
-                printf("%d: found: %s, lastHit: %.14f %.14f %.14f\n", i,
-                    hitFound ? "true" : "false", last_hit.x, last_hit.y, last_hit.z);
+            if (hit_found)
+                printf("%d: found: %s, last_hit: %.14f %.14f %.14f\n", i,
+                    hit_found ? "true" : "false", last_hit.x, last_hit.y, last_hit.z);
             else
-                printf("%d: found: %s\n", i, hitFound ? "true" : "false");
+                printf("%d: found: %s\n", i, hit_found ? "true" : "false");
         }
     }
 
@@ -143,22 +143,19 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
     for (int i = 0; i < ray_count; i++) {
         const Ray ray = ray_generator.generate_ray(last_hit, last_hit_epsilon);
 
-        Local_Geometry kdtree_intersection;
-        float kdtree_hit_distance = kdtree.intersect(ray, kdtree_intersection);
+        Intersection kdtree_intersection;
+        kdtree.intersect(ray, kdtree_intersection);
 
         Intersection brute_force_intersection;
-
         int hit_k = -1;
         for (int k = 0; k < primitive_source.get_primitive_count(); k++) {
             float old_t = brute_force_intersection.t;
-
             intersect_geometry(ray, primitive_source.geometries, primitive_source.geometry, k, brute_force_intersection);
-
             if (brute_force_intersection.t != old_t)
                 hit_k = k;
         }
 
-        if (kdtree_hit_distance != brute_force_intersection.t) {
+        if (kdtree_intersection.t != brute_force_intersection.t) {
             const auto& o = ray.origin;
             const auto& d = ray.direction;
             printf("KdTree accelerator test failure:\n"
@@ -168,16 +165,17 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
                 "ray origin: (%a, %a, %a)\n"
                 "ray direction: (%a, %a, %a)\n",
                 i, float(i) / float(ray_count),
-                kdtree_hit_distance, kdtree_hit_distance,
+                kdtree_intersection.t, kdtree_intersection.t,
                 brute_force_intersection.t, brute_force_intersection.t,
                 o.x, o.y, o.z, d.x, d.y, d.z
             );
             error("KdTree traversal error detected");
         }
 
-        if (kdtree_hit_distance != Infinity) {
-            last_hit = kdtree_intersection.position;
-            last_hit_epsilon = kdtree_hit_distance * 1e-3f;
+        if (kdtree_intersection.t != Infinity) {
+            Shading_Context shading_ctx(Vector3(), kdtree_intersection);
+            last_hit = shading_ctx.P;
+            last_hit_epsilon = kdtree_intersection.t * 1e-3f;
         }
     }
 

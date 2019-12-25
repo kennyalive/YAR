@@ -1,6 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "intersection.h"
+
 #include "lib/ray.h"
 #include "lib/render_object.h"
 #include "lib/triangle_mesh.h"
@@ -65,27 +66,3 @@ void intersect_geometry(const Ray& ray, const Geometries* geometries, Geometry_H
         ASSERT(false);
     }
 }
-
-Local_Geometry::Local_Geometry(const Ray& ray, const Intersection& intersection) {
-    if (intersection.geometry_type == Geometry_Type::triangle_mesh) {
-        const Triangle_Intersection& ti = intersection.triangle_intersection;
-        position = ray.get_point(intersection.t);
-        normal = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
-        uv = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
-
-        if (intersection.render_object != nullptr) {
-            position = transform_point(intersection.render_object->object_to_world_transform, position);
-            normal = transform_vector(intersection.render_object->object_to_world_transform, normal);
-            material = intersection.render_object->material;
-            area_light = intersection.render_object->area_light;
-        }
-        else {
-            material = Null_Material;
-            area_light = Null_Light;
-        }
-    }
-    else {
-        ASSERT(false);
-    }
-}
-

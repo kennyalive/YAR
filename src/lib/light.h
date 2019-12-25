@@ -11,8 +11,8 @@ enum class Light_Type : uint32_t {
 };
 
 struct Light_Handle {
-    Light_Type type;
-    int index;
+    Light_Type type = Light_Type::none;
+    int index = -1;
 
     bool operator==(Light_Handle h) const {
         return type == h.type && index == h.index;
