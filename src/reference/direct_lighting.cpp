@@ -2,6 +2,7 @@
 #include "lib/common.h"
 #include "direct_lighting.h"
 
+#include "ray_lib.h"
 #include "render_context.h"
 #include "shading_context.h"
 
@@ -13,7 +14,7 @@ ColorRGB compute_direct_lighting(const Render_Context& ctx, const Shading_Contex
 {
     ColorRGB L;
     for (const Point_Light& light : ctx.lights.point_lights) {
-        Vector3 surface_point = shading_ctx.P + shading_ctx.N * 1e-3f;
+        Vector3 surface_point = offset_ray_origin(shading_ctx.P, shading_ctx.Ng);
 
         const Vector3 light_vec = (light.position - surface_point);
         const float light_dist = light_vec.length();
@@ -38,7 +39,7 @@ ColorRGB compute_direct_lighting(const Render_Context& ctx, const Shading_Contex
             Vector3 local_light_point = Vector3{light.size.x/2.0f * u.x, light.size.y/2.0f * u.y, 0.0f};
             Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
 
-            Vector3 surface_point = shading_ctx.P + shading_ctx.N * 1e-3f;
+            Vector3 surface_point = offset_ray_origin(shading_ctx.P, shading_ctx.Ng);
 
             const Vector3 light_vec = (light_point - surface_point);
             const float light_dist = light_vec.length();

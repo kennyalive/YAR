@@ -10,6 +10,7 @@ struct Intersection;
 struct Shading_Context {
     Vector3 Wo; // outgoing direction
     Vector3 P; // shading point position in world coordinates
+    Vector3 Ng; // geometric normal
     Vector3 N; // shading normal
     Vector2 UV; // surface UV parameterization
     Material_Handle material;

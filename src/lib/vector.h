@@ -312,3 +312,17 @@ inline Vector2::Vector2(const Vector2i& v) {
     x = float(v.x);
     y = float(v.y);
 }
+
+
+//
+// Vector3i
+//
+struct Vector3i {
+    int x, y, z;
+
+    Vector3i()
+        : x(0), y(0), z(0) {}
+
+    Vector3i(const Vector3& v)
+        : x(int(v.x)), y(int(v.y)), z(int(v.z)) {}
+};

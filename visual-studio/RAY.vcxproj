@@ -102,6 +102,7 @@
     <ClCompile Include="..\src\reference\direct_lighting.cpp" />
     <ClCompile Include="..\src\reference\main.cpp" />
     <ClCompile Include="..\src\reference\material.cpp" />
+    <ClCompile Include="..\src\reference\ray_lib.cpp" />
     <ClCompile Include="..\src\reference\reference_renderer.cpp" />
     <ClCompile Include="..\src\reference\sampling.cpp" />
     <ClCompile Include="..\src\reference\shading_context.cpp" />
@@ -114,6 +115,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\reference\ray_lib.h" />
     <ClInclude Include="..\src\reference\scattering.h" />
     <ClInclude Include="..\src\reference\camera.h" />
     <ClInclude Include="..\src\reference\render_context.h" />

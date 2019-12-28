@@ -22,6 +22,7 @@
     </ClCompile>
     <ClCompile Include="..\src\reference\direct_lighting.cpp" />
     <ClCompile Include="..\src\reference\shading_context.cpp" />
+    <ClCompile Include="..\src\reference\ray_lib.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -38,6 +39,7 @@
     <ClInclude Include="..\src\reference\direct_lighting.h" />
     <ClInclude Include="..\src\reference\scattering.h" />
     <ClInclude Include="..\src\reference\shading_context.h" />
+    <ClInclude Include="..\src\reference\ray_lib.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">
