@@ -3,7 +3,6 @@
 #include "intersection.h"
 
 #include "lib/ray.h"
-#include "lib/render_object.h"
 #include "lib/triangle_mesh.h"
 
 //
@@ -43,7 +42,10 @@ float intersect_triangle_moller_trumbore(const Ray& ray, const Vector3& p0, cons
     return distance;
 }
 
-void intersect_geometry(const Ray& ray, const Geometries* geometries, Geometry_Handle geometry, int primitive_index, Intersection& intersection) {
+void intersect_geometric_primitive(const Ray& ray,
+    const Geometries* geometries, Geometry_Handle geometry, int primitive_index,
+    Intersection& intersection)
+{
     if (geometry.type == Geometry_Type::triangle_mesh) {
         const Triangle_Mesh* mesh = &geometries->triangle_meshes[geometry.index];
         Vector3 p0, p1, p2;
@@ -55,7 +57,6 @@ void intersect_geometry(const Ray& ray, const Geometries* geometries, Geometry_H
         if (t < intersection.t) {
             intersection.t = t;
             intersection.geometry_type = geometry.type;
-
             intersection.triangle_intersection.b1 = b1;
             intersection.triangle_intersection.b2 = b2;
             intersection.triangle_intersection.mesh = mesh;

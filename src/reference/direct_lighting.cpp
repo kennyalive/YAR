@@ -24,8 +24,7 @@ ColorRGB compute_direct_lighting(const Render_Context& ctx, const Shading_Contex
             continue;
 
         Ray shadow_ray(surface_point, light_dir);
-        float any_intersection_dist = ctx.acceleration_structure->intersect_any(shadow_ray);
-        bool in_shadow = any_intersection_dist < light_dist - 1e-4f;
+        bool in_shadow = ctx.acceleration_structure->intersect_any(shadow_ray, light_dist - 1e-4f);
         if (in_shadow)
             continue;
 
@@ -55,8 +54,7 @@ ColorRGB compute_direct_lighting(const Render_Context& ctx, const Shading_Contex
                 continue;
 
             Ray shadow_ray(surface_point, light_dir);
-            float any_intersection_dist = ctx.acceleration_structure->intersect_any(shadow_ray);
-            bool in_shadow = any_intersection_dist < light_dist - 1e-3f;
+            bool in_shadow = ctx.acceleration_structure->intersect_any(shadow_ray, light_dist - 1e-3f);
             if (in_shadow)
                 continue;
 

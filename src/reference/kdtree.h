@@ -115,7 +115,7 @@ public:
     KdTree& operator=(KdTree&& other) = default;
 
     bool intersect(const Ray& ray, Intersection& intersection) const;
-    float intersect_any(const Ray& ray) const;
+    bool intersect_any(const Ray& ray, float ray_tmax) const;
 
     const Primitive_Source& get_primitive_source() const { return primitive_source; }
     const Bounding_Box& get_bounds() const { return bounds; }
@@ -185,7 +185,7 @@ struct Geometry_Primitive_Source {
     }
 
     void intersect_primitive(const Ray& ray, int primitive_index, Intersection& intersection) const {
-        intersect_geometry(ray, geometries, geometry, primitive_index, intersection);
+        intersect_geometric_primitive(ray, geometries, geometry, primitive_index, intersection);
     }
 };
 
@@ -215,13 +215,10 @@ struct Scene_Primitive_Source {
     void intersect_primitive(const Ray& ray, int primitive_index, Intersection& intersection) const {
         ASSERT(primitive_index >= 0 && primitive_index < scene->render_objects.size());
         const Render_Object* render_object = &scene->render_objects[primitive_index];
-        Ray local_ray = transform_ray(render_object->world_to_object_transform, ray);
+        Ray ray_in_object_space = transform_ray(render_object->world_to_object_transform, ray);
 
-        float last_t = intersection.t;
-
-        geometry_kdtrees[render_object->geometry.index].intersect(local_ray, intersection);
-
-        if (last_t != intersection.t)
+        if (geometry_kdtrees[render_object->geometry.index].intersect(ray_in_object_space, intersection)) {
             intersection.render_object = render_object;
+        }
     }
 };

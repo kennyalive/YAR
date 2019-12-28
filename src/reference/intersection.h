@@ -5,11 +5,18 @@
 struct Intersection;
 struct Ray;
 struct Render_Object;
-struct Triangle_Mesh;
-struct Vector3;
 
 float intersect_triangle_moller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2);
-void intersect_geometry(const Ray& ray, const Geometries* geometries, Geometry_Handle geometry, int primitive_index, Intersection& intersection);
+
+// Intersection test between a ray and a geometric primitive (i.e. a triangle).
+// The ray's parametric range is restricted to the half-open interval [0, t_max),
+// where t_max is defined by the initial value of Intersection::t.
+// If intersection is found then Intersection::t gets overwritten with a distance
+// to the intersection point, otherwise Intersection::t is unchanged.
+void intersect_geometric_primitive(
+    const Ray& ray,
+    const Geometries* geometries, Geometry_Handle geometry, int primitive_index,
+    Intersection& intersection);
 
 struct Triangle_Intersection {
     float b1;
@@ -19,7 +26,7 @@ struct Triangle_Intersection {
 };
 
 struct Intersection {
-    // Distance to the intersection point or Infinity if no intersection is found.
+    // Distance to the intersection point. Initial value defines ray's [0, t_max) range to check for intersections.
     float t = Infinity;
 
     // Type of the intersected geometry.

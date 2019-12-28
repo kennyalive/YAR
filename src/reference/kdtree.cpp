@@ -14,16 +14,14 @@ KdTree<Primitive_Source>::KdTree(std::vector<KdNode>&& nodes, std::vector<int32_
 }
 
 template <typename Primitive_Source>
-float KdTree<Primitive_Source>::intersect_any(const Ray& ray) const {
-    Intersection intersection;
-    intersect(ray, intersection);
-    return intersection.t;
+bool KdTree<Primitive_Source>::intersect_any(const Ray& ray, float ray_tmax) const {
+    Intersection intersection{ ray_tmax };
+    return intersect(ray, intersection);
 }
 
 template <typename Primitive_Source>
 bool KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersection) const {
-    float t_min, t_max;
-
+    float t_min, t_max; // parametric range for the ray's overlap with the current node
     if (!bounds.intersect_by_ray(ray, t_min, t_max))
         return false;
 
@@ -36,6 +34,7 @@ bool KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersect
     int traversal_stack_size = 0;
 
     const KdNode* node = &nodes[0];
+    const float ray_tmax = intersection.t;
 
     while (intersection.t > t_min) {
         if (!node->is_leaf()) {
@@ -47,22 +46,23 @@ bool KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersect
 
             if (distance_to_split_plane != 0.0) { // general case
                 const KdNode *first_child, *second_child;
-
                 if (distance_to_split_plane > 0.0) {
                     first_child = below_child;
                     second_child = above_child;
-                } else {
+                }
+                else {
                     first_child = above_child;
                     second_child = below_child;
                 }
 
-                // t_split != 0 (since distance_to_split_plane != 0)
-                float t_split = distance_to_split_plane / ray.direction[axis];
-
-                if (t_split >= t_max || t_split < 0.0)
+                // Select node to traverse next.
+                float t_split = distance_to_split_plane / ray.direction[axis]; // != 0 because distance_to_split_plane != 0
+                if (t_split >= t_max || t_split < 0.0) {
                     node = first_child;
-                else if (t_split <= t_min)
+                }
+                else if (t_split <= t_min) { // 0 < t_split <= t_min
                     node = second_child;
+                }
                 else { // t_min < t_split < t_max
                     ASSERT(traversal_stack_size < max_traversal_depth);
                     traversal_stack[traversal_stack_size++] = {second_child, t_split, t_max};
@@ -70,7 +70,7 @@ bool KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersect
                     t_max = t_split;
                 }
             }
-            else { // special case, distanceToSplitPlane == 0.0
+            else { // special case, distance_to_split_plane == 0.0
                 if (ray.direction[axis] > 0.0) {
                     if (t_min > 0.0)
                         node = above_child;
@@ -118,7 +118,7 @@ bool KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersect
             t_max = traversal_stack[traversal_stack_size].t_max;
         }
     } // while (intersection.t > t_min)
-    return intersection.t < Infinity;
+    return intersection.t < ray_tmax;
 }
 
 template <typename Primitive_Source>
@@ -126,11 +126,12 @@ void KdTree<Primitive_Source>::intersect_leaf(const Ray& ray, KdNode leaf, Inter
 {
     if (leaf.get_primitive_count() == 1) {
         primitive_source.intersect_primitive(ray, leaf.get_index(), intersection);
-    } else {
-        for (int32_t i = 0; i < leaf.get_primitive_count(); i++) {
-            int32_t primitive_index = primitive_indices[leaf.get_index() + i];
-            primitive_source.intersect_primitive(ray, primitive_index, intersection);
-        }
+        return;
+    }
+
+    for (int32_t i = 0; i < leaf.get_primitive_count(); i++) {
+        int32_t primitive_index = primitive_indices[leaf.get_index() + i];
+        primitive_source.intersect_primitive(ray, primitive_index, intersection);
     }
 }
 

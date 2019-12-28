@@ -147,12 +147,13 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
         kdtree.intersect(ray, kdtree_intersection);
 
         Intersection brute_force_intersection;
-        int hit_k = -1;
+        int hit_k = -1; // for debugging
         for (int k = 0; k < primitive_source.get_primitive_count(); k++) {
-            float old_t = brute_force_intersection.t;
-            intersect_geometry(ray, primitive_source.geometries, primitive_source.geometry, k, brute_force_intersection);
-            if (brute_force_intersection.t != old_t)
+            float ray_tmax = brute_force_intersection.t;
+            intersect_geometric_primitive(ray, primitive_source.geometries, primitive_source.geometry, k, brute_force_intersection);
+            if (brute_force_intersection.t < ray_tmax) {
                 hit_k = k;
+            }
         }
 
         if (kdtree_intersection.t != brute_force_intersection.t) {
