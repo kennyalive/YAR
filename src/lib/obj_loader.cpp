@@ -201,10 +201,14 @@ Scene load_obj_project(const YAR_Project& project) {
 
     scene.materials.lambertian.resize(obj_data.materials.size());
     for (auto [i, obj_material] : enumerate(obj_data.materials)) {
-        scene.materials.lambertian[i].albedo = obj_material.k_diffuse;
-        if (!obj_material.diffuse_texture.empty()) {
+        if (obj_material.diffuse_texture.empty()) {
+            scene.materials.lambertian[i].reflectance.is_constant = true;
+            scene.materials.lambertian[i].reflectance.constant_value = obj_material.k_diffuse;
+        }
+        else {
+            scene.materials.lambertian[i].reflectance.is_constant = false;
             scene.materials.texture_names.push_back(obj_material.diffuse_texture);
-            scene.materials.lambertian[i].albedo_texture_index = (int)scene.materials.texture_names.size()-1;
+            scene.materials.lambertian[i].reflectance.texture_index = (int)scene.materials.texture_names.size()-1;
         }
     }
 
@@ -251,7 +255,7 @@ Scene load_obj_project(const YAR_Project& project) {
         }
     }
     if (add_default_material) {
-        scene.materials.lambertian.push_back({Color_White});
+        scene.materials.lambertian.push_back({true, Color_White, -1});
     }
 
     scene.lights = project.lights;

@@ -4,11 +4,10 @@
 
 #include "ray_lib.h"
 #include "render_context.h"
+#include "scattering.h"
 #include "shading_context.h"
 
 #include "lib/light.h"
-
-ColorRGB compute_bsdf(const Materials& materials, Material_Handle mtl, Vector3 wi, Vector3 wo);
 
 ColorRGB compute_direct_lighting(const Render_Context& ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng)
 {
@@ -29,7 +28,7 @@ ColorRGB compute_direct_lighting(const Render_Context& ctx, const Shading_Contex
         if (in_shadow)
             continue;
 
-        ColorRGB bsdf = compute_bsdf(ctx.materials, shading_ctx.material, light_dir, shading_ctx.Wo);
+        ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light_dir);
         L += bsdf * light.intensity * (n_dot_l / (light_dist * light_dist));
     }
 
@@ -59,7 +58,7 @@ ColorRGB compute_direct_lighting(const Render_Context& ctx, const Shading_Contex
             if (in_shadow)
                 continue;
 
-            ColorRGB bsdf = compute_bsdf(ctx.materials, shading_ctx.material, light_dir, shading_ctx.Wo);
+            ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light_dir);
             L += (light.size.x * light.size.y) * light.emitted_radiance * bsdf * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
         L /= float(light.shadow_ray_count);

@@ -37,6 +37,7 @@
     <ClInclude Include="..\src\lib\scene.h">
       <Filter>scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\lib\parameter.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />

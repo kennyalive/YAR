@@ -68,7 +68,8 @@ Scene load_pbrt_project(const YAR_Project& project) {
             scene.geometries.triangle_meshes.emplace_back(mesh);
 
             Lambertian_Material mtl;
-            mtl.albedo = ColorRGB{ 0.5f, 0.5f, 0.5f };
+            mtl.reflectance.is_constant = true;
+            mtl.reflectance.constant_value = ColorRGB{ 0.5f, 0.5f, 0.5f };
             scene.materials.lambertian.push_back(mtl);
 
             Geometry_Handle geometry = Geometry_Handle{ Geometry_Type::triangle_mesh, (int)scene.geometries.triangle_meshes.size() - 1 };

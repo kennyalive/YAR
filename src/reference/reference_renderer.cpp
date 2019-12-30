@@ -120,6 +120,8 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
     pcg32_srandom_r(&rng, 0, rng_seed);
 
     Film_Tile tile(pixel_bounds, film.filter);
+    int bsdf_allocation_size = 1024 * 8;
+    void* bsdf_allocation =_aligned_malloc(bsdf_allocation_size, 64);
 
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
         for (int x = sample_bounds.p0.x; x < sample_bounds.p1.x; x++) {
@@ -131,12 +133,14 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
             if (!ctx.acceleration_structure->intersect(ray, isect))
                 continue;
 
-            Shading_Context shading_ctx(-ray.direction, isect);
+            Shading_Context shading_ctx(-ray.direction, isect, ctx.materials, bsdf_allocation, bsdf_allocation_size);
             ColorRGB radiance = compute_direct_lighting(ctx, shading_ctx, &rng);
             tile.add_sample(film_pos, radiance);
         }
     }
+
     film.merge_tile(tile);
+    _aligned_free(bsdf_allocation);
 }
 
 void render_reference_image(const YAR_Project& project, const Renderer_Options& options) {

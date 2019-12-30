@@ -3,10 +3,11 @@
 #include "shading_context.h"
 
 #include "intersection.h"
+#include "scattering.h"
 
 #include "lib/render_object.h"
 
-Shading_Context::Shading_Context(const Vector3& wo, const Intersection& intersection)
+Shading_Context::Shading_Context(const Vector3& wo, const Intersection& intersection, const Materials& materials, void* bsdf_allocation, int bsdf_allocation_size)
     : Wo(wo)
 {
     if (intersection.geometry_type == Geometry_Type::triangle_mesh) {
@@ -21,19 +22,20 @@ Shading_Context::Shading_Context(const Vector3& wo, const Intersection& intersec
 
         if (intersection.render_object != nullptr) {
             P = transform_point(intersection.render_object->object_to_world_transform, P);
-            N = transform_vector(intersection.render_object->object_to_world_transform, N);
-            material = intersection.render_object->material;
-            area_light = intersection.render_object->area_light;
             Ng = transform_vector(intersection.render_object->object_to_world_transform, Ng).normalized();
+            N = transform_vector(intersection.render_object->object_to_world_transform, N);
+            area_light = intersection.render_object->area_light;
         }
         else {
-            material = Null_Material;
-            area_light = Null_Light;
             Ng.normalize();
         }
         Ng = dot(Ng, N) < 0 ? -Ng : Ng;
     }
     else {
         ASSERT(false);
+    }
+
+    if (intersection.render_object != nullptr && intersection.render_object->material != Null_Material) {
+        bsdf = create_bsdf(*this, materials, intersection.render_object->material, bsdf_allocation, bsdf_allocation_size);
     }
 }

@@ -6,7 +6,6 @@
     <ClCompile Include="..\src\reference\intersection.cpp" />
     <ClCompile Include="..\src\reference\kdtree.cpp" />
     <ClCompile Include="..\src\reference\kdtree_builder.cpp" />
-    <ClCompile Include="..\src\reference\material.cpp" />
     <ClCompile Include="..\src\reference\reference_renderer.cpp" />
     <ClCompile Include="..\src\reference\sampling.cpp" />
     <ClCompile Include="..\src\reference\main.cpp" />
@@ -23,6 +22,13 @@
     <ClCompile Include="..\src\reference\direct_lighting.cpp" />
     <ClCompile Include="..\src\reference\shading_context.cpp" />
     <ClCompile Include="..\src\reference\ray_lib.cpp" />
+    <ClCompile Include="..\src\reference\bsdf\lambertian_brdf.cpp">
+      <Filter>bsdf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\reference\parameter_evaluation.cpp" />
+    <ClCompile Include="..\src\reference\bsdf\factory.cpp">
+      <Filter>bsdf</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -40,10 +46,17 @@
     <ClInclude Include="..\src\reference\scattering.h" />
     <ClInclude Include="..\src\reference\shading_context.h" />
     <ClInclude Include="..\src\reference\ray_lib.h" />
+    <ClInclude Include="..\src\reference\bsdf\lambertian_brdf.h">
+      <Filter>bsdf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\reference\parameter_evaluation.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">
       <UniqueIdentifier>{fe22d0d0-cbe9-4250-aa72-e1e115ac9e90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bsdf">
+      <UniqueIdentifier>{b2db4e84-97d3-474d-8412-dc58dbd444b1}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -103,6 +103,7 @@
     <ClInclude Include="..\src\lib\material.h" />
     <ClInclude Include="..\src\lib\matrix.h" />
     <ClInclude Include="..\src\lib\obj_loader.h" />
+    <ClInclude Include="..\src\lib\parameter.h" />
     <ClInclude Include="..\src\lib\pbrt_loader.h" />
     <ClInclude Include="..\src\lib\project.h" />
     <ClInclude Include="..\src\lib\random.h" />

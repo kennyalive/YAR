@@ -5,6 +5,7 @@
 #include "lib/vector.h"
 
 struct Intersection;
+class BSDF;
 
 // Contains all information necessary to perform shading at intersection point.
 struct Shading_Context {
@@ -13,8 +14,9 @@ struct Shading_Context {
     Vector3 Ng; // geometric normal
     Vector3 N; // shading normal
     Vector2 UV; // surface UV parameterization
-    Material_Handle material;
-    Light_Handle area_light;
 
-    Shading_Context(const Vector3& wo, const Intersection& intersection);
+    Light_Handle area_light;
+    const BSDF* bsdf = nullptr;
+
+    Shading_Context(const Vector3& wo, const Intersection& intersection, const Materials& materials, void* bsdf_allocation, int bsdf_allocation_size);
 };
