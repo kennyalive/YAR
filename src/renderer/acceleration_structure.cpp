@@ -5,7 +5,7 @@
 #include "geometry.h"
 #include "vk.h"
 
-#include "lib/render_object.h"
+#include "lib/scene_object.h"
 
 // TODO: temp structure. Use separate buffer per attribute.
 struct GPU_Vertex {
@@ -110,7 +110,7 @@ static VmaAllocation allocate_acceleration_structures_memory(const Vk_Intersecti
     return allocation;
 }
 
-Vk_Intersection_Accelerator create_intersection_accelerator(const std::vector<Render_Object>& render_objects, const std::vector<GPU_Mesh>& gpu_meshes) {
+Vk_Intersection_Accelerator create_intersection_accelerator(const std::vector<Scene_Object>& scene_objects, const std::vector<GPU_Mesh>& gpu_meshes) {
     Vk_Intersection_Accelerator accelerator;
 
     // Create bottom level acceleration structures.
@@ -133,7 +133,7 @@ Vk_Intersection_Accelerator create_intersection_accelerator(const std::vector<Re
     {
         VkAccelerationStructureInfoNV accel_info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
         accel_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-        accel_info.instanceCount = (uint32_t)render_objects.size();
+        accel_info.instanceCount = (uint32_t)scene_objects.size();
 
         VkAccelerationStructureCreateInfoNV create_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV };
         create_info.info = accel_info;
@@ -152,15 +152,15 @@ Vk_Intersection_Accelerator create_intersection_accelerator(const std::vector<Re
             VK_CHECK(vkGetAccelerationStructureHandleNV(vk.device, accelerator.bottom_level_accels[i], sizeof(uint64_t), &bottom_level_accel_handles[i]));
         }
 
-        std::vector<VkGeometryInstanceNV> instances(render_objects.size());
+        std::vector<VkGeometryInstanceNV> instances(scene_objects.size());
         for (int i = 0; i < (int)instances.size(); i++) {
-            instances[i].transform = render_objects[i].object_to_world_transform;
+            instances[i].transform = scene_objects[i].object_to_world_transform;
             instances[i].instanceCustomIndex = i;
             instances[i].mask = 0xff;
             instances[i].instanceOffset = 0;
             instances[i].flags = 0;
-            ASSERT(render_objects[i].geometry.type == Geometry_Type::triangle_mesh);
-            instances[i].accelerationStructureHandle = bottom_level_accel_handles[render_objects[i].geometry.index];
+            ASSERT(scene_objects[i].geometry.type == Geometry_Type::triangle_mesh);
+            instances[i].accelerationStructureHandle = bottom_level_accel_handles[scene_objects[i].geometry.index];
         }
         VkDeviceSize instance_buffer_size = instances.size() * sizeof(VkGeometryInstanceNV);
         accelerator.instance_buffer = vk_create_buffer(instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV | VK_BUFFER_USAGE_TRANSFER_DST_BIT, instances.data(), "instance_buffer");
@@ -189,7 +189,7 @@ Vk_Intersection_Accelerator create_intersection_accelerator(const std::vector<Re
     Timestamp t;
 
     vk_execute(vk.command_pool, vk.queue,
-        [&render_objects, &gpu_meshes, &accelerator, &scratch_buffer](VkCommandBuffer command_buffer)
+        [&scene_objects, &gpu_meshes, &accelerator, &scratch_buffer](VkCommandBuffer command_buffer)
     {
         VkMemoryBarrier barrier { VK_STRUCTURE_TYPE_MEMORY_BARRIER };
         barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV;
@@ -219,7 +219,7 @@ Vk_Intersection_Accelerator create_intersection_accelerator(const std::vector<Re
 
         VkAccelerationStructureInfoNV top_accel_info { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV };
         top_accel_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-        top_accel_info.instanceCount = (uint32_t)render_objects.size();
+        top_accel_info.instanceCount = (uint32_t)scene_objects.size();
 
         vkCmdBuildAccelerationStructureNV(command_buffer,
             &top_accel_info,

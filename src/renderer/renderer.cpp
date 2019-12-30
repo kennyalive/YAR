@@ -254,23 +254,23 @@ void Renderer::load_project(const std::string& yar_file_name) {
         if (area_light_index >= 0)
             gpu_mesh.area_light_index = area_light_index;
         else
-            gpu_mesh.material = scene.render_objects[i].material;
+            gpu_mesh.material = scene.objects[i].material;
     }
 
     // Instance buffer.
     {
-        std::vector<GPU_Types::Instance_Info> instance_infos(scene.render_objects.size());
-        for (auto [i, render_object] : enumerate(scene.render_objects)) {
-            instance_infos[i].material.init(render_object.material);
-            instance_infos[i].geometry.init(render_object.geometry);
+        std::vector<GPU_Types::Instance_Info> instance_infos(scene.objects.size());
+        for (auto [i, scene_object] : enumerate(scene.objects)) {
+            instance_infos[i].material.init(scene_object.material);
+            instance_infos[i].geometry.init(scene_object.geometry);
             // TODO: this should be Light_Handle not just light_index, since we could have multiple types of area lights. 
-            instance_infos[i].area_light_index = render_object.area_light.index;
+            instance_infos[i].area_light_index = scene_object.area_light.index;
             instance_infos[i].pad0 = 0.f;
             instance_infos[i].pad1 = 0.f;
             instance_infos[i].pad2 = 0.f;
-            instance_infos[i].object_to_world_transform = render_object.object_to_world_transform;
+            instance_infos[i].object_to_world_transform = scene_object.object_to_world_transform;
         }
-        VkDeviceSize size = scene.render_objects.size() * sizeof(GPU_Types::Instance_Info); 
+        VkDeviceSize size = scene.objects.size() * sizeof(GPU_Types::Instance_Info); 
         gpu_scene.instance_info_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             instance_infos.data(), "instance_info_buffer");
     }
@@ -645,15 +645,15 @@ void Renderer::draw_rasterized_image() {
     vkCmdBeginRenderPass(vk.command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     draw_mesh.bind_sets_and_pipeline();
 
-    for (int i = 0; i < (int)scene.render_objects.size(); i++) {
-        const Render_Object& render_object = scene.render_objects[i];
+    for (int i = 0; i < (int)scene.objects.size(); i++) {
+        const Scene_Object& scene_object = scene.objects[i];
         // Skip objects that we don't support yet...
-        if (render_object.geometry.type != Geometry_Type::triangle_mesh)
+        if (scene_object.geometry.type != Geometry_Type::triangle_mesh)
             continue;
-        if (render_object.area_light != Null_Light && render_object.area_light.type != Light_Type::diffuse_rectangular)
+        if (scene_object.area_light != Null_Light && scene_object.area_light.type != Light_Type::diffuse_rectangular)
             continue;
 
-        const GPU_Mesh& gpu_mesh = gpu_meshes[render_object.geometry.index];
+        const GPU_Mesh& gpu_mesh = gpu_meshes[scene_object.geometry.index];
         draw_mesh.dispatch(gpu_mesh, i);
     }
 

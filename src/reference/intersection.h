@@ -4,7 +4,7 @@
 
 struct Intersection;
 struct Ray;
-struct Render_Object;
+struct Scene_Object;
 
 float intersect_triangle_moller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2);
 
@@ -32,9 +32,9 @@ struct Intersection {
     // Type of the intersected geometry.
     Geometry_Type geometry_type = Geometry_Type::none;
 
-    // Render_Object associated with the intersected geometry. It is always null for Geometry_KdTree
+    // Scene_Object associated with the intersected geometry. It is always null for Geometry_KdTree
     // and it is always non-null for Scene_KdTree.
-    const Render_Object* render_object = nullptr;
+    const Scene_Object* scene_object = nullptr;
 
     union {
         Triangle_Intersection triangle_intersection;

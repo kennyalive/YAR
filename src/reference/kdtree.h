@@ -5,7 +5,7 @@
 #include "lib/common.h"
 #include "lib/matrix.h"
 #include "lib/ray.h"
-#include "lib/render_object.h"
+#include "lib/scene_object.h"
 #include "lib/scene.h"
 #include "lib/triangle_mesh.h"
 #include "lib/vector.h"
@@ -194,31 +194,31 @@ struct Scene_Primitive_Source {
     std::vector<Geometry_KdTree> geometry_kdtrees;
 
     int get_primitive_count()  const {
-        return (int)scene->render_objects.size();
+        return (int)scene->objects.size();
     }
 
     Bounding_Box get_primitive_bounds(int primitive_index) const {
-        ASSERT(primitive_index >= 0 && primitive_index < scene->render_objects.size());
-        int geometry_index = scene->render_objects[primitive_index].geometry.index;
+        ASSERT(primitive_index >= 0 && primitive_index < scene->objects.size());
+        int geometry_index = scene->objects[primitive_index].geometry.index;
         Bounding_Box local_bounds = geometry_kdtrees[geometry_index].get_bounds();
-        Bounding_Box world_bounds = transform_bounding_box(scene->render_objects[primitive_index].object_to_world_transform, local_bounds);
+        Bounding_Box world_bounds = transform_bounding_box(scene->objects[primitive_index].object_to_world_transform, local_bounds);
         return world_bounds;
     }
 
     Bounding_Box calculate_bounds() const {
         Bounding_Box bounds;
-        for (int i = 0; i < (int)scene->render_objects.size(); i++)
+        for (int i = 0; i < (int)scene->objects.size(); i++)
             bounds = Bounding_Box::compute_union(bounds, get_primitive_bounds(i));
         return bounds;
     }
 
     void intersect_primitive(const Ray& ray, int primitive_index, Intersection& intersection) const {
-        ASSERT(primitive_index >= 0 && primitive_index < scene->render_objects.size());
-        const Render_Object* render_object = &scene->render_objects[primitive_index];
-        Ray ray_in_object_space = transform_ray(render_object->world_to_object_transform, ray);
+        ASSERT(primitive_index >= 0 && primitive_index < scene->objects.size());
+        const Scene_Object* scene_object = &scene->objects[primitive_index];
+        Ray ray_in_object_space = transform_ray(scene_object->world_to_object_transform, ray);
 
-        if (geometry_kdtrees[render_object->geometry.index].intersect(ray_in_object_space, intersection)) {
-            intersection.render_object = render_object;
+        if (geometry_kdtrees[scene_object->geometry.index].intersect(ray_in_object_space, intersection)) {
+            intersection.scene_object = scene_object;
         }
     }
 };

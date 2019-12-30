@@ -214,7 +214,7 @@ Scene load_obj_project(const YAR_Project& project) {
 
     scene.geometries.triangle_meshes.resize(obj_data.meshes.size());
     // We can have more elements in case of instancing.
-    scene.render_objects.reserve(obj_data.meshes.size()); 
+    scene.objects.reserve(obj_data.meshes.size()); 
 
     std::map<std::string, std::vector<YAR_Instance>> instance_infos;
     for (const YAR_Instance& instance : project.instances)
@@ -236,21 +236,21 @@ Scene load_obj_project(const YAR_Project& project) {
         auto instances_it = instance_infos.find(obj_data.meshes[i].name); 
         if (instances_it != instance_infos.end()) {
             for (const YAR_Instance& instance : instances_it->second) {
-                scene.render_objects.push_back(Render_Object{});
-                Render_Object& render_object = scene.render_objects.back();
-                render_object.geometry = { Geometry_Type::triangle_mesh, i };
-                render_object.material = material;
-                render_object.object_to_world_transform = instance.transform;
-                render_object.world_to_object_transform = get_inverted_transform(instance.transform);
+                scene.objects.push_back(Scene_Object{});
+                Scene_Object& scene_object = scene.objects.back();
+                scene_object.geometry = { Geometry_Type::triangle_mesh, i };
+                scene_object.material = material;
+                scene_object.object_to_world_transform = instance.transform;
+                scene_object.world_to_object_transform = get_inverted_transform(instance.transform);
             }
         }
         else {
-            scene.render_objects.push_back(Render_Object{});
-            Render_Object& render_object = scene.render_objects.back();
-            render_object.geometry = { Geometry_Type::triangle_mesh, i };
-            render_object.material = material;
-            render_object.world_to_object_transform = Matrix3x4::identity;
-            render_object.object_to_world_transform = Matrix3x4::identity;
+            scene.objects.push_back(Scene_Object{});
+            Scene_Object& scene_object = scene.objects.back();
+            scene_object.geometry = { Geometry_Type::triangle_mesh, i };
+            scene_object.material = material;
+            scene_object.world_to_object_transform = Matrix3x4::identity;
+            scene_object.object_to_world_transform = Matrix3x4::identity;
 
         }
     }

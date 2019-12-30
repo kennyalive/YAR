@@ -108,7 +108,7 @@
     <ClInclude Include="..\src\lib\project.h" />
     <ClInclude Include="..\src\lib\random.h" />
     <ClInclude Include="..\src\lib\ray.h" />
-    <ClInclude Include="..\src\lib\render_object.h" />
+    <ClInclude Include="..\src\lib\scene_object.h" />
     <ClInclude Include="..\src\lib\scene.h" />
     <ClInclude Include="..\src\lib\spectrum.h" />
     <ClInclude Include="..\src\lib\triangle_mesh.h" />

@@ -4,7 +4,7 @@
 
 #include "lib/matrix.h"
 
-struct Render_Object;
+struct Scene_Object;
 struct GPU_Mesh;
 
 // Instance structure definition as recommended by Vulkan spec (33.3.1).
@@ -25,5 +25,5 @@ struct Vk_Intersection_Accelerator {
     void destroy();
 };
 
-Vk_Intersection_Accelerator create_intersection_accelerator(const std::vector<Render_Object>& render_objects, const std::vector<GPU_Mesh>& gpu_meshes); 
+Vk_Intersection_Accelerator create_intersection_accelerator(const std::vector<Scene_Object>& scene_objects, const std::vector<GPU_Mesh>& gpu_meshes); 
 

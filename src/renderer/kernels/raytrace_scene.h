@@ -3,7 +3,7 @@
 #include "renderer/acceleration_structure.h"
 
 struct Matrix3x4;
-struct Render_Object;
+struct Scene_Object;
 struct Rt_Uniform_Buffer;
 struct Scene;
 struct Kernel_Context;

@@ -27,7 +27,7 @@ void Raytrace_Scene::create(const Kernel_Context& ctx, const Scene& scene, const
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Rt_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &(void*&)mapped_uniform_buffer, "rt_uniform_buffer");
 
-    accelerator = create_intersection_accelerator(scene.render_objects, gpu_meshes);
+    accelerator = create_intersection_accelerator(scene.objects, gpu_meshes);
     create_pipeline(ctx, gpu_meshes);
 
     // Shader binding table.

@@ -5,7 +5,7 @@
 #include "intersection.h"
 #include "scattering.h"
 
-#include "lib/render_object.h"
+#include "lib/scene_object.h"
 
 Shading_Context::Shading_Context(const Vector3& wo, const Intersection& intersection, const Materials& materials, void* bsdf_allocation, int bsdf_allocation_size)
     : Wo(wo)
@@ -20,11 +20,11 @@ Shading_Context::Shading_Context(const Vector3& wo, const Intersection& intersec
         ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);
         Ng = cross(p1 - p0, p2 - p0);
 
-        if (intersection.render_object != nullptr) {
-            P = transform_point(intersection.render_object->object_to_world_transform, P);
-            Ng = transform_vector(intersection.render_object->object_to_world_transform, Ng).normalized();
-            N = transform_vector(intersection.render_object->object_to_world_transform, N);
-            area_light = intersection.render_object->area_light;
+        if (intersection.scene_object != nullptr) {
+            P = transform_point(intersection.scene_object->object_to_world_transform, P);
+            Ng = transform_vector(intersection.scene_object->object_to_world_transform, Ng).normalized();
+            N = transform_vector(intersection.scene_object->object_to_world_transform, N);
+            area_light = intersection.scene_object->area_light;
         }
         else {
             Ng.normalize();
@@ -35,7 +35,7 @@ Shading_Context::Shading_Context(const Vector3& wo, const Intersection& intersec
         ASSERT(false);
     }
 
-    if (intersection.render_object != nullptr && intersection.render_object->material != Null_Material) {
-        bsdf = create_bsdf(*this, materials, intersection.render_object->material, bsdf_allocation, bsdf_allocation_size);
+    if (intersection.scene_object != nullptr && intersection.scene_object->material != Null_Material) {
+        bsdf = create_bsdf(*this, materials, intersection.scene_object->material, bsdf_allocation, bsdf_allocation_size);
     }
 }

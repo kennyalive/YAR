@@ -4,7 +4,7 @@
 
 #include "colorimetry.h"
 #include "project.h"
-#include "render_object.h"
+#include "scene_object.h"
 
 #include "pbrtParser/Scene.h"
 
@@ -93,12 +93,12 @@ Scene load_pbrt_project(const YAR_Project& project) {
             else
                 geometry = process_shape(shape);
 
-            Render_Object render_object;
-            render_object.geometry = geometry; 
-            render_object.material = {Material_Type::lambertian, (int)scene.materials.lambertian.size() - 1};
-            render_object.object_to_world_transform = get_transform_from_pbrt_transform(instance->xfm);
-            render_object.world_to_object_transform = get_inverted_transform(render_object.object_to_world_transform);
-            scene.render_objects.push_back(render_object);
+            Scene_Object scene_object;
+            scene_object.geometry = geometry; 
+            scene_object.material = {Material_Type::lambertian, (int)scene.materials.lambertian.size() - 1};
+            scene_object.object_to_world_transform = get_transform_from_pbrt_transform(instance->xfm);
+            scene_object.world_to_object_transform = get_inverted_transform(scene_object.object_to_world_transform);
+            scene.objects.push_back(scene_object);
         }
     }
 
