@@ -113,11 +113,6 @@ Scene load_pbrt_project(const YAR_Project& project) {
         view_point.set_column(1, Vector3(&rot.vz.x));
         view_point.set_column(2, Vector3(&rot.vy.x));
         view_point.set_column(3, Vector3(&pos.x));
-
-        // Mirror scene to have the same output as pbrt since it uses left-handed coordinate system.
-        view_point.a[0][0] = -view_point.a[0][0];
-        view_point.a[1][0] = -view_point.a[1][0];
-        view_point.a[2][0] = -view_point.a[2][0];
     }
 
     if (is_transform_changes_handedness(view_point))
