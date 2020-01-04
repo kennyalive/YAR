@@ -145,10 +145,7 @@
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Textures.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\Lexer.cpp">
-      <Filter>pbrt-parser\impl\syntactic</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\Parser.cpp">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\FileMapping.cpp">
       <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClCompile>
     <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\Scene.cpp">
@@ -237,8 +234,20 @@
     <ClInclude Include="..\third-party\pbrt-parser\include\pbrtParser\Scene.h">
       <Filter>pbrt-parser</Filter>
     </ClInclude>
+    <ClInclude Include="..\third-party\meow-hash\meow_hash_x64_aesni.h">
+      <Filter>meow-hash</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\jsmn\jsmn.h">
+      <Filter>jsnm</Filter>
+    </ClInclude>
     <ClInclude Include="..\third-party\pbrt-parser\impl\semantic\SemanticParser.h">
       <Filter>pbrt-parser\impl\semantic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Buffer.h">
+      <Filter>pbrt-parser\impl\syntactic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\FileMapping.h">
+      <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClInclude>
     <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Lexer.h">
       <Filter>pbrt-parser\impl\syntactic</Filter>
@@ -249,11 +258,16 @@
     <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Scene.h">
       <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClInclude>
-    <ClInclude Include="..\third-party\meow-hash\meow_hash_x64_aesni.h">
-      <Filter>meow-hash</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third-party\jsmn\jsmn.h">
-      <Filter>jsnm</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\third-party\pbrt-parser\impl\syntactic\Buffer.inl">
+      <Filter>pbrt-parser\impl\syntactic</Filter>
+    </None>
+    <None Include="..\third-party\pbrt-parser\impl\syntactic\Lexer.inl">
+      <Filter>pbrt-parser\impl\syntactic</Filter>
+    </None>
+    <None Include="..\third-party\pbrt-parser\impl\syntactic\Parser.inl">
+      <Filter>pbrt-parser\impl\syntactic</Filter>
+    </None>
   </ItemGroup>
 </Project>

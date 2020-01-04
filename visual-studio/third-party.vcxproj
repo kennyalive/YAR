@@ -117,53 +117,21 @@
     <ClCompile Include="..\third-party\imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\third-party\miniexr.cpp" />
-    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\BinaryFileFormat.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244;4267</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244;4267</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Camera.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244;4267</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244;4267</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Geometry.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244;4267</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244;4267</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\importPBRT.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244;4267</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244;4267</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Lights.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244;4305</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244;4305</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Materials.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244;4305</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244;4305</DisableSpecificWarnings>
-    </ClCompile>
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\BinaryFileFormat.cpp" />
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Camera.cpp" />
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Geometry.cpp" />
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\importPBRT.cpp" />
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Lights.cpp" />
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Materials.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Scene.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244;4267</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244;4267</DisableSpecificWarnings>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)Scene-semantic.obj</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)Scene-semantic.obj</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Textures.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244;4305</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244;4305</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\Lexer.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244;4305</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244;4305</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\Parser.cpp">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244;4305</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244;4305</DisableSpecificWarnings>
-    </ClCompile>
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Textures.cpp" />
+    <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\FileMapping.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\Scene.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)Scene-syntactic.obj</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)Scene-syntactic.obj</ObjectFileName>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244;4267</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244;4267</DisableSpecificWarnings>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)Scene-syntactic.obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\third-party\pcg\pcg_basic.c" />
     <ClCompile Include="..\third-party\volk\volk.c">
@@ -198,6 +166,8 @@
     <ClInclude Include="..\third-party\jsmn\jsmn.h" />
     <ClInclude Include="..\third-party\meow-hash\meow_hash_x64_aesni.h" />
     <ClInclude Include="..\third-party\pbrt-parser\impl\semantic\SemanticParser.h" />
+    <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Buffer.h" />
+    <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\FileMapping.h" />
     <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Lexer.h" />
     <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Parser.h" />
     <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Scene.h" />
@@ -205,6 +175,11 @@
     <ClInclude Include="..\third-party\pbrt-parser\include\pbrtParser\Scene.h" />
     <ClInclude Include="..\third-party\pcg\pcg_basic.h" />
     <ClInclude Include="..\third-party\volk\volk.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\third-party\pbrt-parser\impl\syntactic\Buffer.inl" />
+    <None Include="..\third-party\pbrt-parser\impl\syntactic\Lexer.inl" />
+    <None Include="..\third-party\pbrt-parser\impl\syntactic\Parser.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
