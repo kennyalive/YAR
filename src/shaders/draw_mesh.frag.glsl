@@ -28,8 +28,9 @@ layout(std140, set=KERNEL_SET_0, binding=0) uniform Global_Uniform_Block {
     mat4x4 model_view;
     mat4x4 view;
     int point_light_count;
+    int directional_light_count;
     int diffuse_rectangular_light_count;
-    vec2 pad0;
+    float pad0;
 };
 
 void main() {
@@ -50,6 +51,13 @@ void main() {
 
         vec3 bsdf = compute_bsdf(mtl_handle, frag_in.uv, light_dir, wo);
         L += bsdf * point_lights[i].intensity * (light_dist_sq_inv * max(0, dot(n, light_dir)));
+    }
+
+    for (int i = 0; i < directional_light_count; i++) {
+        vec3 light_dir = vec3(view * vec4(directional_lights[i].direction, 0.0));
+
+        vec3 bsdf = compute_bsdf(mtl_handle, frag_in.uv, light_dir, wo);
+        L += bsdf * directional_lights[i].irradiance * max(0, dot(n, light_dir));
     }
 
     uint seed = uint(gl_FragCoord.y)*uint(800) + uint(gl_FragCoord.x);

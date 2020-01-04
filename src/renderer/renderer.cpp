@@ -102,6 +102,7 @@ void Renderer::shutdown() {
     ImGui::DestroyContext();
 
     gpu_scene.point_lights.destroy();
+    gpu_scene.directional_lights.destroy();
     gpu_scene.diffuse_rectangular_lights.destroy();
     vkDestroyDescriptorSetLayout(vk.device, gpu_scene.light_descriptor_set_layout, nullptr);
 
@@ -357,6 +358,15 @@ void Renderer::load_project(const std::string& yar_file_name) {
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 lights.data(), "point_light_buffer");
         }
+        if (!scene.lights.directional_lights.empty()) {
+            std::vector<GPU_Types::Directional_Light> lights(scene.lights.directional_lights.size());
+            for (auto [i, data] : enumerate(scene.lights.directional_lights))
+                lights[i].init(data);
+
+            gpu_scene.directional_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                lights.data(), "directional_light_buffer");
+        }
         if (!scene.lights.diffuse_rectangular_lights.empty()) {
             std::vector<GPU_Types::Diffuse_Rectangular_Light> lights(scene.lights.diffuse_rectangular_lights.size());
             for (auto[i, data] : enumerate(scene.lights.diffuse_rectangular_lights))
@@ -369,6 +379,7 @@ void Renderer::load_project(const std::string& yar_file_name) {
         {
         gpu_scene.light_descriptor_set_layout = Descriptor_Set_Layout()
             .storage_buffer(POINT_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
+            .storage_buffer(DIRECTIONAL_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
             .storage_buffer(DIFFUSE_RECTANGULAR_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
             .create("light_descriptor_set_layout");
 
@@ -380,6 +391,7 @@ void Renderer::load_project(const std::string& yar_file_name) {
 
         Descriptor_Writes(gpu_scene.light_descriptor_set)
             .storage_buffer(POINT_LIGHT_BINDING, gpu_scene.point_lights.handle, 0, VK_WHOLE_SIZE)
+            .storage_buffer(DIRECTIONAL_LIGHT_BINDING, gpu_scene.directional_lights.handle, 0, VK_WHOLE_SIZE)
             .storage_buffer(DIFFUSE_RECTANGULAR_LIGHT_BINDING, gpu_scene.diffuse_rectangular_lights.handle, 0, VK_WHOLE_SIZE);
         }
     }
@@ -418,6 +430,7 @@ void Renderer::load_project(const std::string& yar_file_name) {
 
     draw_mesh.create(kernel_context, raster_render_pass, project.mesh_disable_backfacing_culling,  scene.front_face_has_clockwise_winding);
     draw_mesh.update_point_lights((int)scene.lights.point_lights.size());
+    draw_mesh.update_directional_lights((int)scene.lights.directional_lights.size());
     draw_mesh.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
 
     if (vk.raytracing_supported) {
@@ -428,6 +441,7 @@ void Renderer::load_project(const std::string& yar_file_name) {
     }
 
     Descriptor_Writes(gpu_scene.light_descriptor_set).storage_buffer(POINT_LIGHT_BINDING, gpu_scene.point_lights.handle, 0, VK_WHOLE_SIZE);
+    Descriptor_Writes(gpu_scene.light_descriptor_set).storage_buffer(DIRECTIONAL_LIGHT_BINDING, gpu_scene.directional_lights.handle, 0, VK_WHOLE_SIZE);
     Descriptor_Writes(gpu_scene.light_descriptor_set).storage_buffer(DIFFUSE_RECTANGULAR_LIGHT_BINDING, gpu_scene.diffuse_rectangular_lights.handle, 0, VK_WHOLE_SIZE);
 
     project_loaded = true;

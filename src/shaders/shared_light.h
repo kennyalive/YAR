@@ -22,6 +22,22 @@ struct Point_Light {
 #endif
 };
 
+struct Directional_Light {
+    Vector3 direction;
+    float pad0;
+    ColorRGB irradiance;
+    float pad1;
+
+#ifdef __cplusplus
+    void init(const ::Directional_Light& data) {
+        direction = data.direction;
+        pad0 = 0.f;
+        irradiance = data.irradiance;
+        pad1 = 0.f;
+    }
+#endif
+};
+
 struct Diffuse_Rectangular_Light {
     Matrix3x4   light_to_world_transform;
 

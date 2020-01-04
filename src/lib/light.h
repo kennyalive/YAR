@@ -6,7 +6,8 @@
 
 enum class Light_Type : uint32_t {
     none,
-    point,
+    point, // delta light
+    directional, // delta light
     diffuse_rectangular,
 };
 
@@ -30,6 +31,27 @@ struct Point_Light {
     ColorRGB intensity;
 };
 
+struct Directional_Light {
+    Vector3 direction;
+
+    // Emission from a directional light is defined by the irradiance it
+    // creates on the surface that is perpendicular to direction vector.
+    //
+    // The decision was made not to use radiance for directional lights.
+    // Irradicance captures non-physical behavior of dirrectional light better
+    // than radiance, because radiance should be represented as delta function
+    // (usually implicitly in the code) which makes it's harder to reason about
+    // and in case of irradiance we don't need any additional extensions and 
+    // implicit conventions.
+    //
+    // The reflected radiance due to directional light is computed as:
+    // L(wo) = F(wo, light_dir) * E * abs(cos(N, ligt_dir))
+    // where
+    // E - directional light's irradiance
+    // F - BSDF
+    ColorRGB irradiance;
+};
+
 struct Diffuse_Rectangular_Light {
     Matrix3x4 light_to_world_transform;
     ColorRGB emitted_radiance;
@@ -41,6 +63,8 @@ struct Diffuse_Rectangular_Light {
 
 struct Lights {
     std::vector<Point_Light> point_lights;
+    std::vector<Directional_Light> directional_lights;
     std::vector<Diffuse_Rectangular_Light> diffuse_rectangular_lights;
-};
 
+    void append(const Lights& lights);
+};

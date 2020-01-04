@@ -85,6 +85,7 @@ Scene load_pbrt_project(const YAR_Project& project) {
     for (pbrt::Instance::SP instance : pbrt_scene->world->instances) {
         ASSERT(instance->object->instances.empty());
 
+        // Process instance's shapes
         for (pbrt::Shape::SP shape : instance->object->shapes) {
             Geometry_Handle geometry;
             auto shape_it = processed_shapes.find(shape);
@@ -99,6 +100,20 @@ Scene load_pbrt_project(const YAR_Project& project) {
             scene_object.object_to_world_transform = get_transform_from_pbrt_transform(instance->xfm);
             scene_object.world_to_object_transform = get_inverted_transform(scene_object.object_to_world_transform);
             scene.objects.push_back(scene_object);
+        }
+
+        // Process instance's non-area lights
+        for (pbrt::LightSource::SP light : instance->object->lightSources) {
+            if (pbrt::DistantLightSource::SP distant_light = std::dynamic_pointer_cast<pbrt::DistantLightSource>(light);
+                distant_light != nullptr)
+            {
+                Directional_Light light;
+                Vector3 light_vec = Vector3(&distant_light->from.x) - Vector3(&distant_light->to.x);
+                light_vec = transform_vector(get_transform_from_pbrt_transform(instance->xfm), light_vec);
+                light.direction = light_vec.normalized();
+                light.irradiance = ColorRGB(&distant_light->L.x) * ColorRGB(&distant_light->scale.x);
+                scene.lights.directional_lights.push_back(light);
+            }
         }
     }
 
@@ -120,7 +135,7 @@ Scene load_pbrt_project(const YAR_Project& project) {
 
     scene.view_points.push_back(view_point);
     scene.fovy = pbrt_scene->cameras[0]->fov;
-    scene.lights = project.lights;
+    scene.lights.append(project.lights);
     
     return scene;
 }

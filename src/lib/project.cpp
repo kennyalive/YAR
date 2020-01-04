@@ -230,10 +230,15 @@ struct Parser {
         if (!match_string("type"))
             check(false, "light definition should start with \'type\' attribute");
 
-        if (match_string("point"))
+        if (match_string("point")) {
             parse_point_light(num_fields - 1);
-        else if (match_string("diffuse_rectangular"))
+        }
+        else if (match_string("directional")) {
+            parse_directional_light(num_fields - 1);
+        }
+        else if (match_string("diffuse_rectangular")) {
             parse_diffuse_rectangular_light(num_fields - 1);
+        }
         else
             check(false, "unknown light type");
     }
@@ -262,6 +267,23 @@ struct Parser {
             check(false, "unknown spectrum_shape [%s]", spectrum_shape.c_str());
 
         project.lights.point_lights.emplace_back(std::move(light));
+    }
+
+    void parse_directional_light(int num_fields) {
+        Directional_Light light;
+
+        for (int i = 0; i < num_fields; i++) {
+            if (match_string("direction")) {
+                get_fixed_numeric_array(3, &light.direction.x);
+            }
+            else if (match_string("rgb_irradiance")) {
+                get_fixed_numeric_array(3, &light.irradiance.r);
+
+            }
+            else
+                check(false, "unknown directional light attribute [%.*s]", (int)get_current_token_string().size(), get_current_token_string().data());
+        }
+        project.lights.directional_lights.emplace_back(std::move(light));
     }
 
     void parse_diffuse_rectangular_light(int num_fields) {

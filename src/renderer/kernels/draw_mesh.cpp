@@ -15,8 +15,9 @@ struct Draw_Mesh_Uniform_Buffer {
     Matrix4x4 model_view;
     Matrix4x4 view;
     uint32_t point_light_count;
+    uint32_t directional_light_count;
     uint32_t diffuse_rectangular_light_count;
-    Vector2 pad0;
+    float pad0;
 };
 }
 
@@ -123,6 +124,11 @@ void Draw_Mesh::destroy() {
 void Draw_Mesh::update_point_lights(int light_count) {
     Draw_Mesh_Uniform_Buffer& buf = *static_cast<Draw_Mesh_Uniform_Buffer*>(mapped_uniform_buffer);
     buf.point_light_count = light_count;
+}
+
+void Draw_Mesh::update_directional_lights(int light_count) {
+    Draw_Mesh_Uniform_Buffer& buf = *static_cast<Draw_Mesh_Uniform_Buffer*>(mapped_uniform_buffer);
+    buf.directional_light_count = light_count;
 }
 
 void Draw_Mesh::update_diffuse_rectangular_lights(int light_count) {

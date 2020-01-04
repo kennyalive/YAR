@@ -24,4 +24,10 @@ Triangle_Mesh Diffuse_Rectangular_Light::get_geometry() const {
     return mesh;
 }
 
-
+void Lights::append(const Lights& lights) {
+    #define append_lights(x) x.insert(x.end(), lights.x.begin(), lights.x.end())
+    append_lights(point_lights);
+    append_lights(directional_lights);
+    append_lights(diffuse_rectangular_lights);
+    #undef append_lights
+}

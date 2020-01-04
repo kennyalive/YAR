@@ -11,6 +11,7 @@
 
 static const VkDescriptorPoolSize descriptor_pool_sizes[] = {
     {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             16},
+    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             16},
     {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              16},
     {VK_DESCRIPTOR_TYPE_SAMPLER,                    16},
     {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              16},
