@@ -7,6 +7,7 @@
 #include "scene_object.h"
 
 #include "pbrtParser/Scene.h"
+#include "pbrt-parser/impl/syntactic/Scene.h"
 
 static ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminous_flux) {
     float radiant_flux_per_wavelength = luminous_flux / (683.f * CIE_Y_integral); // [W/m]
@@ -59,7 +60,10 @@ Scene load_pbrt_project(const YAR_Project& project) {
                 if (has_normals) 
                     mesh.normals[i] = Vector3(&triangle_mesh->normal[i].x);
 
-                mesh.uvs[i] = Vector2_Zero;
+                if (triangle_mesh->texcoord.size())
+                    mesh.uvs[i] = Vector2(&triangle_mesh->texcoord[i].x);
+                else
+                    mesh.uvs[i] = Vector2_Zero;
             }
 
             if (!has_normals)
@@ -67,10 +71,38 @@ Scene load_pbrt_project(const YAR_Project& project) {
 
             scene.geometries.triangle_meshes.emplace_back(mesh);
 
-            Lambertian_Material mtl;
-            mtl.reflectance.is_constant = true;
-            mtl.reflectance.constant_value = ColorRGB{ 0.5f, 0.5f, 0.5f };
-            scene.materials.lambertian.push_back(mtl);
+            if (pbrt::MatteMaterial::SP matte_material = std::dynamic_pointer_cast<pbrt::MatteMaterial>(triangle_mesh->material);
+                matte_material != nullptr)
+            {
+                 Lambertian_Material mtl;
+                 bool has_texture = false;
+                 if (matte_material->map_kd != nullptr) {
+                     if (pbrt::ImageTexture::SP image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(matte_material->map_kd);
+                         image_texture != nullptr)
+                     {
+                         has_texture = true;
+                         mtl.reflectance.is_constant = false;
+                         mtl.reflectance.constant_value = Color_White;
+                         scene.materials.texture_names.push_back(image_texture->fileName);
+                         mtl.reflectance.texture_index = (int)scene.materials.texture_names.size()-1;
+
+                         pbrt::syntactic::Texture::SP syntactic_texture = image_texture->syntacticObject;
+                         mtl.reflectance.u_scale = syntactic_texture->getParam1f("uscale", 1.f);
+                         mtl.reflectance.v_scale = syntactic_texture->getParam1f("vscale", 1.f);
+                     }
+                 }
+                 if (!has_texture) {
+                     mtl.reflectance.is_constant = true;
+                     mtl.reflectance.constant_value = ColorRGB(&matte_material->kd.x);
+                 }
+                 scene.materials.lambertian.push_back(mtl);
+            }
+            else {
+                Lambertian_Material mtl;
+                mtl.reflectance.is_constant = true;
+                mtl.reflectance.constant_value = ColorRGB{ 0.5f, 0.5f, 0.5f };
+                scene.materials.lambertian.push_back(mtl);
+            }
 
             Geometry_Handle geometry = Geometry_Handle{ Geometry_Type::triangle_mesh, (int)scene.geometries.triangle_meshes.size() - 1 };
             processed_shapes.insert(std::make_pair(shape, geometry));

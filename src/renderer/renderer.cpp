@@ -7,6 +7,7 @@
 #include "utils.h"
 #include "shaders/shared_main.h"
 #include "shaders/shared_light.h"
+#include "shaders/shared_material.h"
 
 #include "reference/reference_renderer.h"
 #include "lib/matrix.h"
@@ -212,7 +213,11 @@ void Renderer::load_project(const std::string& yar_file_name) {
     project = initialize_project(yar_file_name);
     scene = load_scene(project);
 
-    const std::string project_dir = get_directory(get_resource_path(project.scene_path));
+    std::string project_dir;
+    if (project.scene_path[0] == '/' || project.scene_path[1] == ':')
+        project_dir = get_directory(project.scene_path);
+    else
+        project_dir = get_directory(get_resource_path(project.scene_path));
 
     flying_camera.initialize(scene.view_points[0]);
 
@@ -284,9 +289,20 @@ void Renderer::load_project(const std::string& yar_file_name) {
             gpu_scene.images_2d.push_back(image);
         }
 
-        VkDeviceSize size = scene.materials.lambertian.size() * sizeof(Lambertian_Material);
+        std::vector<GPU_Types::Lambertian_Material> gpu_lambertian_materials(scene.materials.lambertian.size());
+        for (auto[i, lambertian] : enumerate(scene.materials.lambertian)) {
+            const RGB_Parameter& param = lambertian.reflectance;
+            gpu_lambertian_materials[i].r = param.constant_value.r;
+            gpu_lambertian_materials[i].g = param.constant_value.g;
+            gpu_lambertian_materials[i].b = param.constant_value.b;
+            gpu_lambertian_materials[i].albedo_texture_index = param.texture_index;
+            gpu_lambertian_materials[i].u_scale = param.u_scale;
+            gpu_lambertian_materials[i].v_scale = param.v_scale;
+        }
+
+        VkDeviceSize size = gpu_lambertian_materials.size() * sizeof(GPU_Types::Lambertian_Material);
         gpu_scene.lambertian_material_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            scene.materials.lambertian.data(), "lambertian_material_buffer");
+            gpu_lambertian_materials.data(), "lambertian_material_buffer");
 
         {
             gpu_scene.material_descriptor_set_layout = Descriptor_Set_Layout()

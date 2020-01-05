@@ -1,6 +1,8 @@
 #pragma once
 
 #include "kdtree.h"
+#include "texture.h"
+
 #include "lib/geometry.h"
 #include "lib/light.h"
 
@@ -12,4 +14,5 @@ struct Render_Context {
     const Scene_KdTree* acceleration_structure;
     Lights lights;
     Materials materials;
+    std::vector<Texture> textures;
 };

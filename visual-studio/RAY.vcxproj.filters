@@ -29,6 +29,7 @@
     <ClCompile Include="..\src\reference\bsdf\factory.cpp">
       <Filter>bsdf</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\reference\texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -50,6 +51,7 @@
       <Filter>bsdf</Filter>
     </ClInclude>
     <ClInclude Include="..\src\reference\parameter_evaluation.h" />
+    <ClInclude Include="..\src\reference\texture.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

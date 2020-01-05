@@ -165,6 +165,9 @@ struct Vector2 {
     constexpr explicit Vector2(float v)
         : x(v), y(v) {}
 
+    explicit Vector2(const float* v)
+        : x(v[0]), y(v[1]) {}
+
     Vector2(float x, float y)
         : x(x), y(y) {}
 

@@ -183,6 +183,18 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
     ctx.lights = scene.lights;
     ctx.materials = scene.materials;
 
+    // Load textures.
+    {
+        const std::string project_dir = get_directory(get_resource_path(project.scene_path));
+        ctx.textures.reserve(scene.materials.texture_names.size());
+        for (const std::string& texture_name : scene.materials.texture_names) {
+            std::string path = fs::path(project_dir).concat(texture_name).string();
+            Texture texture;
+            texture.init_from_file(path);
+            ctx.textures.push_back(std::move(texture));
+        }
+    }
+
     Timestamp t;
 
     if (options.cpu_core_count == 1) {

@@ -111,6 +111,7 @@
     <ClCompile Include="..\src\reference\tests\test.cpp" />
     <ClCompile Include="..\src\reference\tests\test_kdtree.cpp" />
     <ClCompile Include="..\src\reference\tests\test_triangle_intersection.cpp" />
+    <ClCompile Include="..\src\reference\texture.cpp" />
     <ClCompile Include="..\src\std.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -132,6 +133,7 @@
     <ClInclude Include="..\src\reference\sampling.h" />
     <ClInclude Include="..\src\reference\shading_context.h" />
     <ClInclude Include="..\src\reference\tests\test.h" />
+    <ClInclude Include="..\src\reference\texture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
