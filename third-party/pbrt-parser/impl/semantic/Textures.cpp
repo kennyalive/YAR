@@ -153,7 +153,7 @@ namespace pbrt {
       const std::string fileName = in->getParamString("filename");
       if (fileName == "")
         std::cerr << "warning: pbrt image texture, but no filename!?" << std::endl;
-      return std::make_shared<ImageTexture>(fileName);
+      return std::make_shared<ImageTexture>(fileName, in);
     }
     if (in->mapType == "fbm") {
       FbmTexture::SP tex = std::make_shared<FbmTexture>();

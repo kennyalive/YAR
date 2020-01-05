@@ -31,6 +31,9 @@
 #include <assert.h>
 #include <mutex>
 
+// Syntactic objects
+#include "pbrt-parser/impl/syntactic/Scene.h"
+
 /*! namespace for all things pbrt parser, both syntactical *and* semantical parser */
 namespace pbrt {
 
@@ -240,7 +243,7 @@ namespace pbrt {
   struct ImageTexture : public Texture {
     typedef std::shared_ptr<ImageTexture> SP;
 
-    ImageTexture(const std::string &fileName="") : fileName(fileName) {}
+    ImageTexture(const std::string &fileName="", syntactic::Texture::SP syntacticObject = nullptr) : fileName(fileName), syntacticObject(syntacticObject) {}
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "ImageTexture"; }
@@ -250,6 +253,7 @@ namespace pbrt {
     virtual void readFrom(BinaryReader &) override;
 
     std::string fileName;
+    syntactic::Texture::SP syntacticObject;
   };
   
   /*! a texture defined by a disney ptex file. these are kind-of like
