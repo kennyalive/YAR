@@ -36,8 +36,9 @@ Scene load_scene(const YAR_Project& project) {
     if (project.has_camera_to_world)
         scene.view_points = {project.camera_to_world};
 
-    scene.fovy = project.camera_fov_y;
-    ASSERT(scene.fovy != 0.f);
+    if (project.camera_fov_y != 0.f && scene.fovy == 0.f) {
+        scene.fovy = project.camera_fov_y;
+    }
 
     finalize_scene(scene);
     return scene;
