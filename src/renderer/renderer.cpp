@@ -283,9 +283,10 @@ void Renderer::load_project(const std::string& yar_file_name) {
 
     // Materials.
     {
+        bool flip_texture_images = project.scene_type == Scene_Type::pbrt;
         gpu_scene.images_2d.reserve(gpu_scene.images_2d.size() + scene.materials.texture_names.size());
         for (const std::string& texture_name : scene.materials.texture_names) {
-            Vk_Image image = vk_load_texture(fs::path(project_dir).concat(texture_name).string());
+            Vk_Image image = vk_load_texture(fs::path(project_dir).concat(texture_name).string(), flip_texture_images);
             gpu_scene.images_2d.push_back(image);
         }
 
