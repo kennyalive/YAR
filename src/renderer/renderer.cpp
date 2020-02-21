@@ -209,15 +209,9 @@ void Renderer::restore_resolution_dependent_resources() {
     copy_to_swapchain.update_resolution_dependent_descriptors(output_image.view);
 }
 
-void Renderer::load_project(const std::string& yar_file_name) {
-    project = initialize_project(yar_file_name);
+void Renderer::load_project(const std::string& yar_file_path) {
+    project = initialize_project(yar_file_path);
     scene = load_scene(project);
-
-    std::string project_dir;
-    if (project.scene_path[0] == '/' || project.scene_path[1] == ':')
-        project_dir = get_directory(project.scene_path);
-    else
-        project_dir = get_directory(get_resource_path(project.scene_path));
 
     flying_camera.initialize(scene.view_points[0]);
 
@@ -286,7 +280,7 @@ void Renderer::load_project(const std::string& yar_file_name) {
         bool flip_texture_images = project.scene_type == Scene_Type::pbrt;
         gpu_scene.images_2d.reserve(gpu_scene.images_2d.size() + scene.materials.texture_names.size());
         for (const std::string& texture_name : scene.materials.texture_names) {
-            Vk_Image image = vk_load_texture(fs::path(project_dir).concat(texture_name).string(), flip_texture_images);
+            Vk_Image image = vk_load_texture((project.scene_path.parent_path() / texture_name).string(), flip_texture_images);
             gpu_scene.images_2d.push_back(image);
         }
 
@@ -723,15 +717,14 @@ void Renderer::copy_output_image_to_swapchain() {
 }
 
 void Renderer::start_reference_renderer() {
-    const std::string temp_project_name = "temp.yar";
+    const std::string temp_project_path = (get_data_directory() / "temp.yar").string();
 
     YAR_Project temp_project = project;
     temp_project.image_resolution = Vector2i{(int)vk.surface_size.width, (int)vk.surface_size.height};
     temp_project.camera_to_world = flying_camera.get_camera_pose();
-    save_yar_file(temp_project_name, temp_project);
+    save_yar_file(temp_project_path, temp_project);
 
 #ifdef _WIN32
-    std::string temp_project_path = get_resource_path(temp_project_name);
     char cmd_line[256];
     sprintf_s(cmd_line, "RAY.exe \"%s\"", temp_project_path.c_str());
 

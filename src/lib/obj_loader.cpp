@@ -135,7 +135,7 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
         compute_mesh_normals(*mesh, params.face_normals);
 }
 
-Obj_Data load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params params,
+Obj_Data load_obj(const std::string& obj_file_path, const Triangle_Mesh_Load_Params params,
     const std::vector<std::string>& ignore_geometry_names)
 {
     tinyobj::attrib_t attrib;
@@ -143,11 +143,10 @@ Obj_Data load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params p
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    const std::string obj_path = get_resource_path(obj_file).c_str();
-    const std::string mtl_dir = get_directory(obj_path);
+    const std::string mtl_dir = fs::path(obj_file_path).parent_path().string();
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, obj_path.c_str(), mtl_dir.c_str()))
-        error("failed to load obj model: " + obj_file);
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, obj_file_path.c_str(), mtl_dir.c_str()))
+        error("failed to load obj model: " + obj_file_path);
 
     Obj_Data obj_data;
 
@@ -195,7 +194,7 @@ Scene load_obj_project(const YAR_Project& project) {
     mesh_load_params.transform = uniform_scale(from_obj_to_world, project.world_scale);
     mesh_load_params.crease_angle = project.mesh_crease_angle;
     mesh_load_params.invert_winding_order = project.mesh_invert_winding_order;
-    Obj_Data obj_data = load_obj(project.scene_path, mesh_load_params, project.ignore_geometry_names);
+    Obj_Data obj_data = load_obj(project.scene_path.string(), mesh_load_params, project.ignore_geometry_names);
 
     Scene scene;
 

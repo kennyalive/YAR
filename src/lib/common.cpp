@@ -1,12 +1,11 @@
 #include "std.h"
 #include "common.h"
-#include <cstdarg>
 
 #ifdef _WIN32
 #include <intrin.h>
 #endif
 
-// Default data folder path. Can be changed with --data-dir command line option.
+// Default data folder path. Can be changed with -data-dir command line option.
 std::string g_data_dir = "./../data";
 
 void error(const std::string& message) {
@@ -34,63 +33,19 @@ bool fs_exists(const fs::path& path) {
     return fs::exists(path, ec);
 }
 
-bool fs_remove_all(const fs::path& path) {
-    std::error_code ec;
-    return fs::remove_all(path, ec) != static_cast<std::uintmax_t>(-1);
-}
-
-bool fs_create_directory(const fs::path& path) {
-    std::error_code ec;
-    return fs::create_directory(path, ec);
-}
-
 bool fs_create_directories(const fs::path& path) {
     std::error_code ec;
     return fs::create_directories(path, ec);
-}
-
-static std::string join_paths(std::string path1, std::string path2) {
-  if (!path1.empty() && (path1.back() == '/' || path1.back() == '\\'))
-    path1 = path1.substr(0, path1.length() - 1);
-
-  if (!path2.empty() && (path2[0] == '/' || path2[0] == '\\'))
-    path2 = path2.substr(1, path2.length() - 1);
-
-  return path1 + '/' + path2;
-}
-
-size_t get_last_slash_pos(const std::string& path) {
-    size_t pos1 = path.rfind('/');
-    size_t pos2 = path.rfind('\\');
-
-    if (pos1 == std::string::npos && pos2 == std::string::npos)
-        return std::string::npos;
-    else if (pos1 == std::string::npos)
-        return pos2;
-    else if (pos2 == std::string::npos)
-        return pos1;
-    else
-        return std::max(pos1, pos2);
 }
 
 fs::path get_data_directory() {
     return g_data_dir;
 }
 
-std::string get_directory(const std::string& path) {
-    size_t slash_pos = get_last_slash_pos(path);
-    return (slash_pos == std::string::npos) ? path : path.substr(0, slash_pos + 1);
-}
-
-std::string get_resource_path(const std::string& resource_relative_path) {
-    return join_paths(g_data_dir, resource_relative_path);
-}
-
-std::vector<uint8_t> read_binary_file(const std::string& file_name) {
-    std::string abs_path = get_resource_path(file_name);
-    std::ifstream file(abs_path, std::ios_base::in | std::ios_base::binary);
+std::vector<uint8_t> read_binary_file(const std::string& file_path) {
+    std::ifstream file(file_path, std::ios_base::in | std::ios_base::binary);
     if (!file)
-        error("failed to open file: " + abs_path);
+        error("failed to open file: " + file_path);
 
     // get file size
     file.seekg(0, std::ios_base::end);
@@ -98,22 +53,21 @@ std::vector<uint8_t> read_binary_file(const std::string& file_name) {
     file.seekg(0, std::ios_base::beg);
 
     if (file_size == std::streampos(-1) || !file)
-        error("failed to read file stats: " + abs_path);
+        error("failed to read file stats: " + file_path);
 
     // read file content
     std::vector<uint8_t> file_content(static_cast<size_t>(file_size));
     file.read(reinterpret_cast<char*>(file_content.data()), file_size);
     if (!file)
-        error("failed to read file content: " + abs_path);
+        error("failed to read file content: " + file_path);
 
     return file_content;
 }
 
-std::string read_text_file(const std::string& file_name) {
-    std::string abs_path = get_resource_path(file_name);
-    std::ifstream file(abs_path);
+std::string read_text_file(const std::string& file_path) {
+    std::ifstream file(file_path);
     if (!file)
-        error("failed to open file: %s", abs_path.c_str());
+        error("failed to open file: %s", file_path.c_str());
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();

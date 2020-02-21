@@ -62,11 +62,11 @@ static void write_exr_image(const char* file_name, const ColorRGB* pixels, int w
 // specific subdirectories inside temp scene directory - in this case we can share 
 // scene's additional data between multiple projects.
 static std::string get_project_unique_name(const YAR_Project& project) {
-    std::string file_name = to_lower(fs::path(project.scene_path).filename().string());
+    std::string file_name = to_lower(project.scene_path.filename().string());
     if (file_name.empty())
         error("Failed to extract filename from project path: %s", project.scene_path.c_str());
 
-    std::string path_lowercase = to_lower(project.scene_path);
+    std::string path_lowercase = to_lower(project.scene_path.string());
     meow_u128 hash_128 = MeowHash(MeowDefaultSeed, path_lowercase.size(), (void*)path_lowercase.c_str());
     uint32_t hash_32 = MeowU32From(hash_128, 0);
 
@@ -185,10 +185,9 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
 
     // Load textures.
     {
-        const std::string project_dir = get_directory(get_resource_path(project.scene_path));
         ctx.textures.reserve(scene.materials.texture_names.size());
         for (const std::string& texture_name : scene.materials.texture_names) {
-            std::string path = fs::path(project_dir).concat(texture_name).string();
+            std::string path = (project.scene_path.parent_path() / texture_name).string();
             Texture texture;
             texture.init_from_file(path);
             ctx.textures.push_back(std::move(texture));

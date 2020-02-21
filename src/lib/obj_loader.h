@@ -23,6 +23,5 @@ struct Obj_Data {
     std::vector<Obj_Mesh> meshes;
 };
 
-Obj_Data load_obj(const std::string& obj_file, const Triangle_Mesh_Load_Params params = Triangle_Mesh_Load_Params{}, const std::vector<std::string>& ignore_geometry_names = {});
+Obj_Data load_obj(const std::string& obj_file_path, const Triangle_Mesh_Load_Params params = Triangle_Mesh_Load_Params{}, const std::vector<std::string>& ignore_geometry_names = {});
 Scene load_obj_project(const YAR_Project& project);
-

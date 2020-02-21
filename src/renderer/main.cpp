@@ -16,12 +16,12 @@ static GLFWwindow* window;
 
 static bool parse_command_line(int argc, char** argv) {
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--validation-layers") == 0) {
+        if (strcmp(argv[i], "-validation-layers") == 0) {
             enable_validation_layers = true;
         }
-        else if (strcmp(argv[i], "--data-dir") == 0) {
+        else if (strcmp(argv[i], "-data-dir") == 0) {
             if (i == argc-1) {
-                printf("--data-dir value is missing\n");
+                printf("-data-dir value is missing\n");
             }
             else {
                 extern std::string g_data_dir;
@@ -29,11 +29,12 @@ static bool parse_command_line(int argc, char** argv) {
                 i++;
             }
         }
-        else if (strcmp(argv[i], "--help") == 0) {
-            printf("%-25s Path to the data directory. Default is ./data.\n", "--data-dir");
-            printf("%-25s Enables Vulkan validation layers.\n", "--validation-layers");
-            printf("%-25s Allows to assign debug names to Vulkan objects.\n", "--debug-names");
-            printf("%-25s Shows this information.\n", "--help");
+        else if (strcmp(argv[i], "-help") == 0) {
+            extern std::string g_data_dir;
+            printf("%-25s Path to the data directory. Default: %s\n", "-data-dir", g_data_dir.c_str());
+            printf("%-25s Enables Vulkan validation layers.\n", "-validation-layers");
+            printf("%-25s Allows to assign debug names to Vulkan objects.\n", "-debug-names");
+            printf("%-25s Shows this information.\n", "-help");
             return false;
         }
         else {

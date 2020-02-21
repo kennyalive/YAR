@@ -31,7 +31,7 @@ static Matrix3x4 get_transform_from_pbrt_transform(const pbrt::affine3f& pbrt_tr
 }
 
 Scene load_pbrt_project(const YAR_Project& project) {
-    std::shared_ptr<pbrt::Scene> pbrt_scene = pbrt::importPBRT(project.scene_path);
+    std::shared_ptr<pbrt::Scene> pbrt_scene = pbrt::importPBRT(project.scene_path.string());
     pbrt_scene->makeSingleLevel();
     Scene scene;
 

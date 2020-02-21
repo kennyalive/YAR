@@ -177,7 +177,7 @@ struct Parser {
                 check(false, "unknown scene_type: %.*s", (int)get_current_token_string().size(), get_current_token_string().data());
         }
         else if (match_string("scene_path")) {
-            project.scene_path =  get_string();
+            project.scene_path = get_string();
         }
         else if (match_string("image_resolution")) {
             get_fixed_numeric_array(2, &project.image_resolution.x);
@@ -345,44 +345,46 @@ struct Parser {
 
 #undef CHECK
 
-static YAR_Project parse_yar_project(const std::string& yar_file_name) {
-    std::string abs_path = get_resource_path(yar_file_name);
-    std::string content = read_text_file(abs_path);
-
+static YAR_Project parse_yar_project(const std::string& yar_file_path) {
+    std::string content = read_text_file(yar_file_path);
     YAR_Project project;
     Parser parser(content, project);
     try {
         parser.parse();
     } catch (const Parser::Error& parser_error) {
-        error("Failed to parse yar project file [%s]: %s", yar_file_name.c_str(), parser_error.description.c_str());
+        error("Failed to parse yar project file [%s]: %s", yar_file_path.c_str(), parser_error.description.c_str());
     }
     return project;
 }
 
-YAR_Project initialize_project(const std::string& file_name) {
-    fs::path path(file_name);
+YAR_Project initialize_project(const std::string& file_path) {
+    fs::path path(file_path);
     if (!path.has_extension())
-        error("Unknown file type: %s", file_name.c_str());
+        error("Unknown file type: %s", file_path.c_str());
 
+    YAR_Project project;
     std::string ext = to_lower(path.extension().string());
     if (ext == ".yar") {
-        return parse_yar_project(file_name);
+        project = parse_yar_project(file_path);
+        // check if scene path is relative to the yar file's parent directory
+        if (project.scene_path.is_relative()) {
+            // make sure that scene path is either absolute or is relative to the current directory
+            project.scene_path = path.parent_path() / project.scene_path;
+        }
     }
     else if (ext == ".pbrt") {
-        YAR_Project project;
         project.scene_type = Scene_Type::pbrt;
-        project.scene_path = file_name;
-        return project;
+        project.scene_path = file_path;
     }
     else {
         error("Unsupported file extension: %s", ext.c_str());
         return YAR_Project{};
     }
+    return project;
 }
 
-bool save_yar_file(const std::string& yar_file_name, const YAR_Project& project) {
-    std::string abs_path = get_resource_path(yar_file_name);
-    std::ofstream file(abs_path);
+bool save_yar_file(const std::string& yar_file_path, const YAR_Project& project) {
+    std::ofstream file(yar_file_path);
     if (!file)
         return false;
 
@@ -407,4 +409,3 @@ bool save_yar_file(const std::string& yar_file_name, const YAR_Project& project)
     }
     return true;
 }
-

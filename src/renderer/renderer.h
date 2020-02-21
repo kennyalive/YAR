@@ -30,7 +30,7 @@ public:
     bool vsync_enabled() const { return ui.vsync; }
     void toggle_ui() { ui.show_ui = !ui.show_ui; }
 
-    void load_project(const std::string& yar_file_name);
+    void load_project(const std::string& yar_file_path);
     void run_frame();
 
 private:

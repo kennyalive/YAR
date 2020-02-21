@@ -17,7 +17,7 @@ struct YAR_Instance {
 
 struct YAR_Project {
     Scene_Type scene_type;
-    std::string scene_path;
+    fs::path scene_path;
 
     bool has_image_resolution = false;
     Vector2i image_resolution = Vector2i{};
@@ -52,7 +52,6 @@ struct YAR_Project {
 //      the parsed content of yar file is used to initialize YAR_Project structure.
 // PBRT input:
 //      YAR_Project::scene_type = Scene_Type::pbrt, YAR_Project::scene_path = file_name, other fields take default values.
-YAR_Project initialize_project(const std::string& file_name);
+YAR_Project initialize_project(const std::string& file_path);
 
-bool save_yar_file(const std::string& yar_file_name, const YAR_Project& project);
-
+bool save_yar_file(const std::string& yar_file_path, const YAR_Project& project);
