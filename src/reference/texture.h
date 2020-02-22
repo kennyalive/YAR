@@ -3,6 +3,9 @@
 #include "lib/color.h"
 
 struct Texture {
-    void init_from_file(const std::string& image_path);
     std::vector<ColorRGB> texels;
+    int width = 0;
+    int height = 0;
+
+    void init_from_file(const std::string& image_path);
 };

@@ -133,7 +133,7 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
             if (!ctx.acceleration_structure->intersect(ray, isect))
                 continue;
 
-            Shading_Context shading_ctx(-ray.direction, isect, ctx.materials, bsdf_allocation, bsdf_allocation_size);
+            Shading_Context shading_ctx(ctx, -ray.direction, isect, bsdf_allocation, bsdf_allocation_size);
             ColorRGB radiance = compute_direct_lighting(ctx, shading_ctx, &rng);
             tile.add_sample(film_pos, radiance);
         }

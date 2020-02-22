@@ -9,6 +9,7 @@
 #include "../kdtree.h"
 #include "../kdtree_builder.h"
 #include "../sampling.h"
+#include "../render_context.h"
 #include "../shading_context.h"
 
 #ifdef _WIN32
@@ -106,7 +107,7 @@ static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
         time_ns += elapsed_nanoseconds(t2);
 
         if (hit_found) {
-            Shading_Context shading_ctx(Vector3(), isect, Materials{}, nullptr, 0);
+            Shading_Context shading_ctx(Render_Context{}, Vector3(), isect, nullptr, 0);
             last_hit = shading_ctx.P;
             last_hit_epsilon = isect.t * 1e-3f;
         }
@@ -174,7 +175,7 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
         }
 
         if (kdtree_intersection.t != Infinity) {
-            Shading_Context shading_ctx(Vector3(), kdtree_intersection, Materials{}, nullptr, 0);
+            Shading_Context shading_ctx(Render_Context{}, Vector3(), kdtree_intersection, nullptr, 0);
             last_hit = shading_ctx.P;
             last_hit_epsilon = kdtree_intersection.t * 1e-3f;
         }

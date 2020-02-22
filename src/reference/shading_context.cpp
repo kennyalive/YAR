@@ -7,7 +7,7 @@
 
 #include "lib/scene_object.h"
 
-Shading_Context::Shading_Context(const Vector3& wo, const Intersection& intersection, const Materials& materials, void* bsdf_allocation, int bsdf_allocation_size)
+Shading_Context::Shading_Context(const Render_Context& global_ctx, const Vector3& wo, const Intersection& intersection, void* bsdf_allocation, int bsdf_allocation_size)
     : Wo(wo)
 {
     if (intersection.geometry_type == Geometry_Type::triangle_mesh) {
@@ -36,6 +36,6 @@ Shading_Context::Shading_Context(const Vector3& wo, const Intersection& intersec
     }
 
     if (intersection.scene_object != nullptr && intersection.scene_object->material != Null_Material) {
-        bsdf = create_bsdf(*this, materials, intersection.scene_object->material, bsdf_allocation, bsdf_allocation_size);
+        bsdf = create_bsdf(global_ctx, *this, intersection.scene_object->material, bsdf_allocation, bsdf_allocation_size);
     }
 }

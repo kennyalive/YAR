@@ -7,7 +7,7 @@ struct Shading_Context;
 
 class Lambertian_BRDF : public BSDF {
 public:
-    Lambertian_BRDF(const Shading_Context& shading_ctx, const Lambertian_Material& material);
+    Lambertian_BRDF(const Render_Context& global_ctx, const Shading_Context& shading_ctx, const Lambertian_Material& material);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
 
 private:

@@ -5,9 +5,10 @@
 #include "lib/vector.h"
 
 struct Intersection;
+struct Render_Context;
 class BSDF;
 
-// Contains all information necessary to perform shading at intersection point.
+// Contains all the necessary information to perform shading at the intersection point.
 struct Shading_Context {
     Vector3 Wo; // outgoing direction
     Vector3 P; // shading point position in world coordinates
@@ -18,5 +19,5 @@ struct Shading_Context {
     Light_Handle area_light;
     const BSDF* bsdf = nullptr;
 
-    Shading_Context(const Vector3& wo, const Intersection& intersection, const Materials& materials, void* bsdf_allocation, int bsdf_allocation_size);
+    Shading_Context(const Render_Context& global_ctx, const Vector3& wo, const Intersection& intersection, void* bsdf_allocation, int bsdf_allocation_size);
 };
