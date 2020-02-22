@@ -32,6 +32,22 @@ ColorRGB compute_direct_lighting(const Render_Context& ctx, const Shading_Contex
         L += bsdf * light.intensity * (n_dot_l / (light_dist * light_dist));
     }
 
+    for (const Directional_Light& light : ctx.lights.directional_lights) {
+        Vector3 surface_point = offset_ray_origin(shading_ctx.P, shading_ctx.Ng);
+
+        float n_dot_l = dot(shading_ctx.N, light.direction);
+        if (n_dot_l <= 0.f)
+            continue;
+
+        Ray shadow_ray(surface_point, light.direction);
+        bool in_shadow = ctx.acceleration_structure->intersect_any(shadow_ray, Infinity);
+        if (in_shadow)
+            continue;
+
+        ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light.direction);
+        L += bsdf * light.irradiance * n_dot_l;
+    }
+
     for (const Diffuse_Rectangular_Light& light : ctx.lights.diffuse_rectangular_lights) {
         for (int i = 0; i < light.shadow_ray_count; i++) {
             Vector2 u{2.0f * random_float(rng) - 1.0f, 2.0f * random_float(rng) - 1.0f};

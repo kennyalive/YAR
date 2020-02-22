@@ -103,6 +103,13 @@ inline float srgb_encode(float f) {
         return 1.055f * std::pow(f, 1.f/2.4f) - 0.055f;
 }
 
+inline float srgb_decode(float f) {
+    if (f <= 0.04045f)
+        return f / 12.92f;
+    else
+        return std::pow((f + 0.055f) / 1.055f, 2.4f);
+}
+
 template <typename T>
 inline T round_up(T k, T alignment) {
     return (k + alignment - 1) & ~(alignment - 1);

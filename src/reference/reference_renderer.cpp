@@ -185,11 +185,12 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
 
     // Load textures.
     {
+        bool flip_texture_images = project.scene_type == Scene_Type::pbrt;
         ctx.textures.reserve(scene.materials.texture_names.size());
         for (const std::string& texture_name : scene.materials.texture_names) {
             std::string path = (project.scene_path.parent_path() / texture_name).string();
             Texture texture;
-            texture.init_from_file(path);
+            texture.init_from_file(path, true, flip_texture_images);
             ctx.textures.push_back(std::move(texture));
         }
     }

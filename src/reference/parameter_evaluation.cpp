@@ -13,8 +13,12 @@ ColorRGB evaluate_rgb_parameter(const Render_Context& global_ctx, const Shading_
     ASSERT(param.texture_index >= 0);
     const Texture& texture = global_ctx.textures[param.texture_index];
 
-    int x = std::clamp(int(shading_ctx.UV.x * texture.width), 0, texture.width - 1);
-    int y = std::clamp(int(shading_ctx.UV.y * texture.height), 0, texture.height - 1);
+    Vector2 uv = shading_ctx.UV;
+    uv.x *= param.u_scale;
+    uv.y *= param.v_scale;
+
+    int x = int(uv.x * texture.width) % texture.width;
+    int y = int(uv.y * texture.height) % texture.height;
 
     int texel_index = y * texture.width + x;
     ColorRGB texel_value = texture.texels[texel_index];
