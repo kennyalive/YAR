@@ -16,11 +16,6 @@ ColorRGB evaluate_rgb_parameter(const Render_Context& global_ctx, const Shading_
     Vector2 uv = shading_ctx.UV;
     uv.x *= param.u_scale;
     uv.y *= param.v_scale;
-
-    int x = int(uv.x * texture.width) % texture.width;
-    int y = int(uv.y * texture.height) % texture.height;
-
-    int texel_index = y * texture.width + x;
-    ColorRGB texel_value = texture.texels[texel_index];
-    return texel_value;
+    //return texture.sample_nearest(uv, Wrap_Mode::repeat);
+    return texture.sample_bilinear(uv, Wrap_Mode::repeat);
 }
