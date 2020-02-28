@@ -9,12 +9,21 @@ enum class Wrap_Mode {
     clamp
 };
 
-struct Image_Texture {
-    std::vector<ColorRGB> texels;
-    int width = 0;
-    int height = 0;
+class Image_Texture {
+public:
+    struct Init_Params {
+        bool generate_mips = true;
+        bool decode_srgb = true;
+        bool flip_vertically = false;
+    };
 
-    void init_from_file(const std::string& image_path, bool decode_srgb, bool flip_vertically);
+    void initialize_from_file(const std::string& image_path, const Init_Params& params);
+
     ColorRGB sample_nearest(const Vector2& uv, Wrap_Mode wrap_mode) const;
     ColorRGB sample_bilinear(const Vector2& uv, Wrap_Mode wrap_mode) const;
+
+private:
+    int width = 0;
+    int height = 0;
+    std::vector<ColorRGB> texels;
 };

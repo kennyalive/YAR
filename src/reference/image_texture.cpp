@@ -7,11 +7,18 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-void Image_Texture::init_from_file(const std::string& image_path, bool decode_srgb, bool flip_vertically) {
-    int component_count;
+void Image_Texture::initialize_from_file(const std::string& image_path, const Image_Texture::Init_Params& params) {
+    stbi_uc* rgba_texels = nullptr;
+    {
+        // we need lock because stbi_set_flip_vertically_on_load is not thread safe
+        static std::mutex stb_load_mutex;
+        std::scoped_lock<std::mutex> lock(stb_load_mutex);
 
-    stbi_set_flip_vertically_on_load(flip_vertically); // TODO: this call is not thread safe
-    stbi_uc* rgba_texels = stbi_load(image_path.c_str(), &width, &height, &component_count, STBI_rgb_alpha);
+        stbi_set_flip_vertically_on_load(params.flip_vertically);
+        int component_count;
+        rgba_texels = stbi_load(image_path.c_str(), &width, &height, &component_count, STBI_rgb_alpha);
+    }
+
     if (rgba_texels == nullptr)
         error("failed to load image file: %s", image_path.c_str());
 
@@ -19,7 +26,7 @@ void Image_Texture::init_from_file(const std::string& image_path, bool decode_sr
     const stbi_uc* texel = rgba_texels;
     for (int i = 0; i < width*height; i++, texel += 4) {
         texels[i] = ColorRGB(texel[0], texel[1], texel[2]) * (1.f/255.f);
-        if (decode_srgb) {
+        if (params.decode_srgb) {
             texels[i].r = srgb_decode(texels[i].r);
             texels[i].g = srgb_decode(texels[i].g);
             texels[i].b = srgb_decode(texels[i].b);

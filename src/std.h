@@ -11,6 +11,7 @@
 #include <functional>
 #include <limits>
 #include <map>
+#include <mutex>
 #include <numeric>
 #include <sstream>
 #include <string>
