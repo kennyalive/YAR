@@ -11,7 +11,7 @@ ColorRGB evaluate_rgb_parameter(const Render_Context& global_ctx, const Shading_
         return param.constant_value;
 
     ASSERT(param.texture_index >= 0);
-    const Texture& texture = global_ctx.textures[param.texture_index];
+    const Image_Texture& texture = global_ctx.textures[param.texture_index];
 
     Vector2 uv = shading_ctx.UV;
     uv.x *= param.u_scale;

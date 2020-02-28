@@ -1,11 +1,13 @@
 #include "std.h"
 #include "lib/common.h"
-#include "texture.h"
+#include "image_texture.h"
+
 #include "lib/vector.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-void Texture::init_from_file(const std::string& image_path, bool decode_srgb, bool flip_vertically) {
+void Image_Texture::init_from_file(const std::string& image_path, bool decode_srgb, bool flip_vertically) {
     int component_count;
 
     stbi_set_flip_vertically_on_load(flip_vertically); // TODO: this call is not thread safe
@@ -26,7 +28,7 @@ void Texture::init_from_file(const std::string& image_path, bool decode_srgb, bo
     stbi_image_free(rgba_texels);
 }
 
-ColorRGB Texture::sample_nearest(const Vector2& uv, Wrap_Mode wrap_mode) const {
+ColorRGB Image_Texture::sample_nearest(const Vector2& uv, Wrap_Mode wrap_mode) const {
     int i = int(uv.x * width);
     int j = int(uv.y * height);
 
@@ -44,7 +46,7 @@ ColorRGB Texture::sample_nearest(const Vector2& uv, Wrap_Mode wrap_mode) const {
     return nearest_texel;
 }
 
-ColorRGB Texture::sample_bilinear(const Vector2& uv, Wrap_Mode wrap_mode) const {
+ColorRGB Image_Texture::sample_bilinear(const Vector2& uv, Wrap_Mode wrap_mode) const {
     float a = uv.x * float(width) - 0.5f;
     float b = uv.y * float(height) - 0.5f;
 

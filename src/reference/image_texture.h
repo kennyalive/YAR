@@ -9,7 +9,7 @@ enum class Wrap_Mode {
     clamp
 };
 
-struct Texture {
+struct Image_Texture {
     std::vector<ColorRGB> texels;
     int width = 0;
     int height = 0;
