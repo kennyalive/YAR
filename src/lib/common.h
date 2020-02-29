@@ -114,3 +114,37 @@ template <typename T>
 inline T round_up(T k, T alignment) {
     return (k + alignment - 1) & ~(alignment - 1);
 }
+
+inline uint32_t count_leading_zeros(uint32_t k) {
+#ifdef _MSC_VER
+    return __lzcnt(k);
+#else
+    uint32_t n = 0;
+    while (k > 0) {
+        k >>= 1;
+        n++;
+    }
+    return 32 - n;
+#endif
+}
+
+inline uint32_t log2_int(uint32_t k) {
+    ASSERT(k > 0);
+    return 31 - count_leading_zeros(k);
+}
+
+inline uint32_t round_up_to_power_of_2(uint32_t k) {
+    ASSERT(k > 0);
+    k--;
+    k |= k >> 1;
+    k |= k >> 2;
+    k |= k >> 4;
+    k |= k >> 8;
+    k |= k >> 16;
+    k++;
+    return k;
+}
+
+inline bool is_power_of_2(uint32_t k) {
+    return k != 0 && (k & (k - 1)) == 0;
+}

@@ -17,3 +17,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+#ifdef _WIN32
+#include <intrin.h>
+#endif

@@ -144,6 +144,7 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
 }
 
 void render_reference_image(const YAR_Project& project, const Renderer_Options& options) {
+    Timestamp t_load;
     Scene scene = load_scene(project);
     Scene_KdTree scene_kdtree = load_scene_kdtree(project, scene);
 
@@ -196,6 +197,7 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
             ctx.textures.push_back(std::move(texture));
         }
     }
+    printf("Project loaded in %d ms\n", int(elapsed_milliseconds(t_load)));
 
     Timestamp t;
 

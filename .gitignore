@@ -6,3 +6,4 @@ data/*
 *.exr
 *.user
 imgui.ini
+*.png

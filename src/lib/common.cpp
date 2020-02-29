@@ -1,10 +1,6 @@
 #include "std.h"
 #include "common.h"
 
-#ifdef _WIN32
-#include <intrin.h>
-#endif
-
 // Default data folder path. Can be changed with -data-dir command line option.
 std::string g_data_dir = "./../data";
 
