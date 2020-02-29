@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef _MSC_VER
+#define _ITERATOR_DEBUG_LEVEL 0
+#endif
+
 #include <algorithm>
 #include <array>
 #include <cinttypes>
