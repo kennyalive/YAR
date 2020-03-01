@@ -40,6 +40,9 @@
     <Filter Include="jsnm">
       <UniqueIdentifier>{8d65b524-acce-4d2f-bd85-791fae8d4ad5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="stb">
+      <UniqueIdentifier>{0e6232c6-7d53-4e14-be15-6008ebc1318f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third-party\enkiTS\TaskScheduler.cpp">
@@ -257,6 +260,12 @@
     </ClInclude>
     <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Scene.h">
       <Filter>pbrt-parser\impl\syntactic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\stb\stb_image.h">
+      <Filter>stb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\stb\stb_image_write.h">
+      <Filter>stb</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
