@@ -38,6 +38,7 @@
     <ClInclude Include="..\src\lib\scene_object.h">
       <Filter>scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\lib\image.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />
@@ -63,6 +64,7 @@
     <ClCompile Include="..\src\lib\scene.cpp">
       <Filter>scene</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\lib\image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="project">

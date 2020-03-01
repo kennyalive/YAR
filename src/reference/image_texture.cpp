@@ -2,10 +2,43 @@
 #include "lib/common.h"
 #include "image_texture.h"
 
+#include "lib/image.h"
 #include "lib/vector.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "stb/stb_image.h"
+
+static float lanczos_filter(float x, float radius) {
+    x = std::abs(x);
+    if (x < 1e-5f)
+        return 1.f;
+    if (x > radius)
+        return 0.f;
+    x *= Pi;
+    return radius * std::sin(x) * std::sin(x/radius) / (x*x);
+}
+
+static void generate_mip_level_with_box_filter(const std::vector<ColorRGB>& src, int width, int height, std::vector<ColorRGB>& dst) {
+    // Process one-dimensional image by a separate code path.
+    if (width == 1 || height == 1) {
+        for (int i = 0; i < int(src.size()); i += 2) {
+            dst[i/2] = 0.5f * (src[i] + src[i+1]);
+        }
+        return;
+    }
+    // Downsample with box filter.
+    ColorRGB* p = dst.data();
+    for (int y = 0; y < height; y += 2) {
+        const ColorRGB* row0 = &src[y*width];
+        const ColorRGB* row0_end = row0 + width;
+        const ColorRGB* row1 = row0_end;
+        while (row0 != row0_end) {
+            *p++ = 0.25f * (row0[0] + row0[1] + row1[0] + row1[1]);
+            row0 += 2;
+            row1 += 2;
+        }
+    }
+}
 
 void Image_Texture::initialize_from_file(const std::string& image_path, const Image_Texture::Init_Params& params) {
     // Load image data from file.
@@ -51,17 +84,6 @@ void Image_Texture::initialize_from_file(const std::string& image_path, const Im
     // Generate mips if necessary.
     if (params.generate_mips)
         generate_mips();
-}
-
-static float lanczos_filter(float x, float radius) {
-    x = std::abs(x);
-    if (x < 1e-5f)
-        return 1.f;
-    if (x > radius)
-        return 0.f;
-
-    x *= Pi;
-    return radius * std::sin(x) * std::sin(x/radius) / (x*x);
 }
 
 void Image_Texture::upsample_base_level_to_power_of_two_resolution() {
@@ -139,6 +161,18 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution() {
 }
 
 void Image_Texture::generate_mips() {
+    int w = width;
+    int h = height;
+    for (int i = 1; i < int(mips.size()); i++) {
+        const std::vector<ColorRGB>& src = mips[i-1];
+        int new_w = std::max(1, w >> 1);
+        int new_h = std::max(1, h >> 1);
+        mips[i].resize(new_w * new_h);
+        generate_mip_level_with_box_filter(mips[i-1], w, h, mips[i]);
+        w = new_w;
+        h = new_h;
+    }
+    ASSERT(w == 1 && h == 1);
 }
 
 ColorRGB Image_Texture::sample_nearest(const Vector2& uv, Wrap_Mode wrap_mode) const {

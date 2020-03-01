@@ -7,3 +7,4 @@ data/*
 *.user
 imgui.ini
 *.png
+*.tga

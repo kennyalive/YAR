@@ -99,6 +99,7 @@
     <ClInclude Include="..\src\lib\common.h" />
     <ClInclude Include="..\src\lib\flying_camera.h" />
     <ClInclude Include="..\src\lib\geometry.h" />
+    <ClInclude Include="..\src\lib\image.h" />
     <ClInclude Include="..\src\lib\light.h" />
     <ClInclude Include="..\src\lib\material.h" />
     <ClInclude Include="..\src\lib\matrix.h" />
@@ -120,6 +121,7 @@
     <ClCompile Include="..\src\lib\colorimetry.cpp" />
     <ClCompile Include="..\src\lib\common.cpp" />
     <ClCompile Include="..\src\lib\flying_camera.cpp" />
+    <ClCompile Include="..\src\lib\image.cpp" />
     <ClCompile Include="..\src\lib\project.cpp" />
     <ClCompile Include="..\src\lib\light.cpp" />
     <ClCompile Include="..\src\lib\matrix.cpp" />
