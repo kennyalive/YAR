@@ -8,84 +8,167 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
-static float lanczos_filter(float x, float radius) {
-    x = std::abs(x);
-    if (x < 1e-5f)
+static float lanczos_reconstruction_filter(float x, float radius) {
+    x = std::abs(x); // abs here is only to simplify comparisons, the function
+                     // itself is symmetrical
+    if (x < 1e-5f) 
         return 1.f;
-    if (x > radius)
+    if (x >= radius)
         return 0.f;
     x *= Pi;
     return radius * std::sin(x) * std::sin(x/radius) / (x*x);
 }
 
-// Low-pass filter that tries to remove frequencies higher than sampling_frequency/2. According to
-// sampling theory, if we sample the filtered result with rate >= sampling_frequency then we'll get
-// good results.
-static float lanczos_filter_for_sampling_frequency(float x, float radius, float sampling_frequency) {
-    x = std::abs(x);
-    if (x < 1e-5f)
-        return 1.f;
+// In this implementation we are using 'pre_aliasing_filter' suffix with a
+// filter name to denote that the filter is used to remove frequencies higher
+// than half of the intended sampling rate, so it can be adequately sampled with
+// a given sampling frequency. Here the filter removes frequencies higher than
+// sampling_frequency/2.
+static float lanczos_pre_aliasing_filter(float x, float radius, float sampling_frequency) {
 
-    // Take into account sampling frequency. Unparameterized sync(x) filter (or sinc(1*x)) removes
-    // frequencies higher than 0.5 and allows to sample a signal with a frequency 0.5*2 = 1. It's
-    // easy to show that arbitrary sampling frequency can be taken into account if we replace
-    // sinc(x) with sinc(sampling_frequency * x). For example, the 1st mip level is sampled with
-    // frequency 0.5, so we use sinc(0.5 * x) - regular sinc stretched 2x along x axis.
+    // Take into account sampling frequency. Unparameterized sync(x) filter (or
+    // sinc(1*x)) removes frequencies higher than 0.5 and allows to sample a
+    // signal with a frequency 0.5*2 = 1. It's easy to show (just check
+    // frequency space representation) that arbitrary sampling frequency can be
+    // taken into account if we replace sinc(x) with sinc(sampling_frequency *
+    // x). For example, the 1st mip level is sampled with frequency 0.5, so we
+    // use sinc(0.5 * x) - regular sinc stretched 2x along x axis.
     x *= sampling_frequency;
 
-    if (x > radius)
+    return lanczos_reconstruction_filter(x, radius);
+}
+
+static float mitchell_pre_aliasing_filter(float x, float B, float C, float sampling_frequency) {
+    x = std::abs(x);
+    x *= sampling_frequency;
+    if (x < 1) {
+        return (1.f/6.f) * ((12 - 9*B - 6*C) * x*x*x + (-18 + 12*B + 6*C) * x*x + (6 - 2*B));
+    }
+    else if (x < 2) {
+        return (1.f/6.f) * ((-B - 6*C)* x*x*x + (6*B + 30*C)*x*x + (-12*B - 48*C)*x + (8*B + 24*C));
+    }
+    else { // x >= 2.0
         return 0.f;
-    x *= Pi;
-    return radius * std::sin(x) * std::sin(x/radius) / (x*x);
-}
-
-static void generate_next_mip_level_with_box_filter(const std::vector<ColorRGB>& src, int src_width, int src_height, std::vector<ColorRGB>& dst) {
-    // Process one-dimensional image by a separate code path.
-    if (src_width == 1 || src_height == 1) {
-        for (int i = 0; i < int(src.size()); i += 2) {
-            dst[i/2] = 0.5f * (src[i] + src[i+1]);
-        }
-        return;
-    }
-    // Downsample with box filter.
-    ColorRGB* p = dst.data();
-    for (int y = 0; y < src_height; y += 2) {
-        const ColorRGB* row0 = &src[y*src_width];
-        const ColorRGB* row0_end = row0 + src_width;
-        const ColorRGB* row1 = row0_end;
-        while (row0 != row0_end) {
-            *p++ = 0.25f * (row0[0] + row0[1] + row1[0] + row1[1]);
-            row0 += 2;
-            row1 += 2;
-        }
     }
 }
 
-// NOTE: For filters with radius >= 2px mipmap generation algorithm should take into account texture
-// wrap mode. The drawback of such correct implementation is a dependency between the texture's
-// content and the texture addressing mode. Current implementation assumes clamp to edge texture
-// addressing mode and will produce slightly incorrect pixels on the edges for samplers that use
-// non-clamp addressing.
+// x: [-1.0, 1.0] - relative sample position, should be 0 at the center of the
+// filter's footprint and -1/+1 on the edges.
+static float kaiser_window(float x, float alpha) {
+    auto bessel_I0 = [](float k) {
+        const double relative_epsilon = 1e-10;
+        const double half_x = double(k) / 2.0;
+        double sum = 1.0;
+        double n = 1.0;
+        double t = 1.0;
+
+        while (true) {
+            t *= half_x / n++;
+            double term_k = t*t;
+            sum += term_k;
+            if (term_k < sum * relative_epsilon)
+                break;
+        }
+        return float(sum);
+    };
+    ASSERT(x >= -1.f && x <= 1.f);
+    return bessel_I0(alpha * std::sqrt(1.f - x * x)) / bessel_I0(alpha);
+}
+
+static float kaiser_pre_aliasing_filter(float x, float radius, float alpha, float sampling_frequency) {
+    x = std::abs(x);
+    x *= sampling_frequency;
+
+    if (x < 1e-5f)
+        return 1.f;
+    if (x >= radius) 
+        return 0.f;
+
+    float sinc_value = std::sin(Pi*x) / (Pi*x);
+    float window_value = kaiser_window(x/radius, alpha);
+    return sinc_value * window_value;
+}
+
+static const char* get_filter_name(Filter_Type filter) {
+    switch (filter) {
+    case Filter_Type::lanczos2:
+        return "lanczos2";
+    case Filter_Type::lanczos3:
+        return "lanczos3";
+    case Filter_Type::kaiser2_alpha_4:
+        return "kaiser2_alpha_4";
+    case Filter_Type::kaiser3_alpha_4:
+        return "kaiser3_alpha_4";
+    case Filter_Type::mitchell_B_1_3_C_1_3:
+        return "mitchell";
+    default:
+        ASSERT(false);
+        return nullptr;
+    }
+}
+
+static float get_filter_radius(Filter_Type filter) {
+    switch (filter) {
+    case Filter_Type::lanczos2:
+        return 2;
+    case Filter_Type::lanczos3:
+        return 3;
+    case Filter_Type::kaiser2_alpha_4:
+        return 2;
+    case Filter_Type::kaiser3_alpha_4:
+        return 3;
+    case Filter_Type::mitchell_B_1_3_C_1_3:
+        return 2;
+    default:
+        ASSERT(false);
+        return 0.f;
+    }
+}
+
+static inline float evaluate_pre_aliasing_filter(Filter_Type filter, float x, float sampling_frequency) {
+    switch (filter) {
+    case Filter_Type::lanczos2:
+        return lanczos_pre_aliasing_filter(x, 2.f, sampling_frequency);
+    case Filter_Type::lanczos3:
+        return lanczos_pre_aliasing_filter(x, 3.f, sampling_frequency);
+    case Filter_Type::kaiser2_alpha_4:
+        return kaiser_pre_aliasing_filter(x, 2.f, 4.f, sampling_frequency);
+    case Filter_Type::kaiser3_alpha_4:
+        return kaiser_pre_aliasing_filter(x, 3.f, 4.f, sampling_frequency);
+    case Filter_Type::mitchell_B_1_3_C_1_3:
+        return mitchell_pre_aliasing_filter(x, 1.f/3.f, 1.f/3.f, sampling_frequency);
+    default:
+        ASSERT(false);
+        return 0.f;
+    }
+}
+
+// Wrap mode note: For filters with radius >= 2px mipmap generation algorithm
+// should take into account texture wrap mode. The drawback of such correct
+// implementation is a dependency between the texture's content and the texture
+// addressing mode. Current implementation assumes clamp to edge texture
+// addressing mode and will produce slightly incorrect pixels on the edges for
+// samplers that use non-clamp addressing.
 static std::vector<ColorRGB> generate_mip_level_with_separable_filter(
     const std::vector<ColorRGB>& image, int width, int height,
-    int mip_level_to_generate, float filter_radius)
+    int mip_level_to_generate, Filter_Type filter)
 {
     ASSERT(mip_level_to_generate >= 1);
     const int mip_width = std::max(1, width >> mip_level_to_generate);
     const int mip_height = std::max(1, height >> mip_level_to_generate);
 
-    // Texels from the mip levels >= 1 are placed on the integer grid (for the base level it's a
-    // half-integer grid). That's why it's fine to *round down* the filter's pixel footprint. For
-    // example, a filter with radius 2.3 centered at integer coordinate M can't reach the third
-    // pixel to the right which is located at (M + 2.5).
-    const int filter_pixel_count = int(filter_radius) * (1 << (mip_level_to_generate - 1));
+    // Filter's pixel footprint is computed based on the fact that the texels
+    // from mip level >= 1 are mapped to integer coordinates of the base mip
+    // (and base level texels are on the half-integer grid)
+    const int filter_pixel_count = int(get_filter_radius(filter) + 0.5f) * (1 << (mip_level_to_generate - 1));
 
     std::vector<float> weights(filter_pixel_count);
     {
-        const float sampling_frequency = std::pow(0.5f, float(mip_level_to_generate));
+        float sampling_frequency = std::pow(0.5f, float(mip_level_to_generate));
         float sum = 0.f;
         for (int i = 0; i < filter_pixel_count; i++) {
-            weights[i] = lanczos_filter_for_sampling_frequency(float(i) + 0.5f, filter_radius, sampling_frequency);
+            float x = float(i) + 0.5f;
+            weights[i] = evaluate_pre_aliasing_filter(filter, x, sampling_frequency);
             sum += weights[i];
         }
         sum *= 2.f; // take into account that computed weights are only half of the symmetrical filter
@@ -157,6 +240,28 @@ static std::vector<ColorRGB> generate_mip_level_with_separable_filter(
     return result;
 }
 
+static void generate_next_mip_level_with_box_filter(const std::vector<ColorRGB>& src, int src_width, int src_height, std::vector<ColorRGB>& dst) {
+    // Process one-dimensional image by a separate code path.
+    if (src_width == 1 || src_height == 1) {
+        for (int i = 0; i < int(src.size()); i += 2) {
+            dst[i/2] = 0.5f * (src[i] + src[i+1]);
+        }
+        return;
+    }
+    // Downsample with box filter.
+    ColorRGB* p = dst.data();
+    for (int y = 0; y < src_height; y += 2) {
+        const ColorRGB* row0 = &src[y*src_width];
+        const ColorRGB* row0_end = row0 + src_width;
+        const ColorRGB* row1 = row0_end;
+        while (row0 != row0_end) {
+            *p++ = 0.25f * (row0[0] + row0[1] + row1[0] + row1[1]);
+            row0 += 2;
+            row1 += 2;
+        }
+    }
+}
+
 void Image_Texture::initialize_from_file(const std::string& image_path, const Image_Texture::Init_Params& params) {
     // Load image data from file.
     stbi_uc* rgba_texels = nullptr;
@@ -198,8 +303,17 @@ void Image_Texture::initialize_from_file(const std::string& image_path, const Im
     if (!is_power_of_2(width) || !is_power_of_2(height))
         upsample_base_level_to_power_of_two_resolution();
 
-    if (params.generate_mips)
-        generate_mips();
+    if (params.generate_mips) {
+        generate_mips(params.mip_filter);
+        // DEBUG
+        #if 0
+        for (int i = 0; i < int(mips.size()); i++) {
+            const std::string image_name = fs::path(image_path).filename().replace_extension("").string();
+            write_tga_image(image_name + "_" + get_filter_name(params.mip_filter) + "_mip_" + std::to_string(i) + ".tga",
+                mips[i], std::max(1, width >> i), std::max(1, height >> i));
+        }
+        #endif
+    }
 }
 
 void Image_Texture::upsample_base_level_to_power_of_two_resolution() {
@@ -220,7 +334,7 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution() {
             rw[i].first_pixel = int(filter_center - filter_radius + 0.5f);
             for (int k = 0; k < 4; k++) {
                 float pixel_pos = rw[i].first_pixel + k + 0.5f;
-                rw[i].pixel_weight[k] = lanczos_filter(pixel_pos - filter_center, filter_radius);
+                rw[i].pixel_weight[k] = lanczos_reconstruction_filter(pixel_pos - filter_center, filter_radius);
             }
             // Normalize weights.
             float weight_sum = 0.f;
@@ -276,19 +390,21 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution() {
     }
 }
 
-void Image_Texture::generate_mips() {
+void Image_Texture::generate_mips(Filter_Type filter) {
     int w = width;
     int h = height;
+
     for (int i = 1; i < int(mips.size()); i++) {
-        const std::vector<ColorRGB>& src = mips[i-1];
+        const std::vector<ColorRGB>& src = mips[i - 1];
         int new_w = std::max(1, w >> 1);
         int new_h = std::max(1, h >> 1);
         mips[i].resize(new_w * new_h);
+
         if (i <= 4)
-            mips[i] = generate_mip_level_with_separable_filter(mips[0], width, height, i, 3.f);
+            mips[i] = generate_mip_level_with_separable_filter(mips[0], width, height, i, filter);
         else
-            generate_next_mip_level_with_box_filter(mips[i-1], w, h, mips[i]);
-        //write_tga_image("animal_lanczos3_mip_" + std::to_string(i) + ".tga", mips[i], new_w, new_h);
+            generate_next_mip_level_with_box_filter(mips[i - 1], w, h, mips[i]);
+
         w = new_w;
         h = new_h;
     }
