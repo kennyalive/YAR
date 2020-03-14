@@ -143,7 +143,7 @@ static inline float evaluate_pre_aliasing_filter(Filter_Type filter, float x, fl
     }
 }
 
-// Wrap mode note: For filters with radius >= 2px mipmap generation algorithm
+// Wrap mode note: For filters with radius > 1.5 mipmap generation algorithm
 // should take into account texture wrap mode. The drawback of such correct
 // implementation is a dependency between the texture's content and the texture
 // addressing mode. Current implementation assumes clamp to edge texture
@@ -160,78 +160,49 @@ static std::vector<ColorRGB> generate_mip_level_with_separable_filter(
     // Filter's pixel footprint is computed based on the fact that the texels
     // from mip level >= 1 are mapped to integer coordinates of the base mip
     // (and base level texels are on the half-integer grid)
-    const int filter_pixel_count = int(get_filter_radius(filter) + 0.5f) * (1 << (mip_level_to_generate - 1));
+    const int filter_pixel_count = 2 * int(get_filter_radius(filter) + 0.5f) * (1 << (mip_level_to_generate - 1));
 
     std::vector<float> weights(filter_pixel_count);
     {
         float sampling_frequency = std::pow(0.5f, float(mip_level_to_generate));
         float sum = 0.f;
+        float x = float(-filter_pixel_count/2) + 0.5f;
         for (int i = 0; i < filter_pixel_count; i++) {
-            float x = float(i) + 0.5f;
             weights[i] = evaluate_pre_aliasing_filter(filter, x, sampling_frequency);
             sum += weights[i];
+            x += 1.f;
         }
-        sum *= 2.f; // take into account that computed weights are only half of the symmetrical filter
         for (float& w : weights) w /= sum; // normalize weights
     }
 
     // Downsample in horizontal direction.
     std::vector<ColorRGB> texels(mip_width * height);
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < mip_width; x++) {
-            ColorRGB& t = texels[y*mip_width + x];
-            float filter_center = (float(x) + 0.5f) * (width / mip_width);
-            // add contribution from left texels
-            {
-                int src_x = int(filter_center - 0.5f);
-                const ColorRGB* src_texel = &image[y*width + src_x];
-                for (int k = 0; k < filter_pixel_count; k++) {
-                    t += weights[k] * (*src_texel);
-                    if (--src_x >= 0)
-                        src_texel--;
-                }
+    {
+        const int width_ratio = width / mip_width;
+        for (int y = 0; y < height; y++) {
+            int filter_start_x = width_ratio / 2 - filter_pixel_count / 2;
+            for (int x = 0; x < mip_width; x++, filter_start_x += width_ratio) {
+                ColorRGB& t = texels[y*mip_width + x];
+                for (int k = 0; k < filter_pixel_count; k++)
+                    t += weights[k] * image[y*width + std::clamp(filter_start_x + k, 0, width - 1)];
             }
-            // add contribution from right texels
-            {
-                int src_x = int(filter_center + 0.5f);
-                const ColorRGB* src_texel = &image[y*width + src_x];
-                for (int k = 0; k < filter_pixel_count; k++) {
-                    t += weights[k] * (*src_texel);
-                    if (++src_x < width)
-                        src_texel++;
-                }
+        }
+    }
+    // Downsample in vertical direction.
+    std::vector<ColorRGB> result(mip_width * mip_height);
+    {
+        const int vertical_bucket_size = 16;
+        const int height_ratio = height / mip_height;
+        int filter_start_y = height_ratio / 2 - filter_pixel_count / 2;
+        for (int y = 0; y < mip_height; y++, filter_start_y += height_ratio) {
+            for (int x = 0; x < mip_width; x++) {
+                ColorRGB& t = result[y*mip_width + x];
+                for (int k = 0; k < filter_pixel_count; k++)
+                    t += weights[k] * texels[std::clamp(filter_start_y + k, 0, height - 1)*mip_width + x];
             }
         }
     }
 
-    // Downsample in vertical direction.
-    std::vector<ColorRGB> result(mip_width * mip_height);
-    for (int y = 0; y < mip_height; y++) {
-        for (int x = 0; x < mip_width; x++) {
-            ColorRGB& t = result[y*mip_width + x];
-            float filter_center = (float(y) + 0.5f) * (height / mip_height);
-            // add contribution from above texels
-            {
-                int src_y = int(filter_center - 0.5f);
-                const ColorRGB* src_texel = &texels[src_y*mip_width + x];
-                for (int k = 0; k < filter_pixel_count; k++) {
-                    t += weights[k] * (*src_texel);
-                    if (--src_y >= 0)
-                        src_texel -= mip_width;
-                }
-            }
-            // add contribution from below texels
-            {
-                int src_y = int(filter_center + 0.5f);
-                const ColorRGB* src_texel = &texels[src_y*mip_width + x];
-                for (int k = 0; k < filter_pixel_count; k++) {
-                    t += weights[k] * (*src_texel);
-                    if (++src_y < height)
-                        src_texel += mip_width;
-                }
-            }
-        }
-    }
     for (ColorRGB& p : result) {
         p.r = std::clamp(p.r, 0.f, 1.f);
         p.g = std::clamp(p.g, 0.f, 1.f);
@@ -395,7 +366,6 @@ void Image_Texture::generate_mips(Filter_Type filter) {
     int h = height;
 
     for (int i = 1; i < int(mips.size()); i++) {
-        const std::vector<ColorRGB>& src = mips[i - 1];
         int new_w = std::max(1, w >> 1);
         int new_h = std::max(1, h >> 1);
         mips[i].resize(new_w * new_h);
