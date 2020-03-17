@@ -14,7 +14,8 @@ enum class Filter_Type {
     lanczos3,
     kaiser2_alpha_4,
     kaiser3_alpha_4,
-    mitchell_B_1_3_C_1_3
+    mitchell_B_1_3_C_1_3,
+    box
 };
 
 class Image_Texture {

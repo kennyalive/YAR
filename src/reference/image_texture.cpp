@@ -101,6 +101,8 @@ static const char* get_filter_name(Filter_Type filter) {
         return "kaiser3_alpha_4";
     case Filter_Type::mitchell_B_1_3_C_1_3:
         return "mitchell";
+    case Filter_Type::box:
+        return "box";
     default:
         ASSERT(false);
         return nullptr;
@@ -153,6 +155,9 @@ static std::vector<ColorRGB> generate_mip_level_with_separable_filter(
     const std::vector<ColorRGB>& image, int width, int height,
     int mip_level_to_generate, Filter_Type filter)
 {
+    // for box filter each mip is generated directly from the previous one
+    ASSERT(filter != Filter_Type::box);
+
     ASSERT(mip_level_to_generate >= 1);
     const int mip_width = std::max(1, width >> mip_level_to_generate);
     const int mip_height = std::max(1, height >> mip_level_to_generate);
@@ -176,13 +181,13 @@ static std::vector<ColorRGB> generate_mip_level_with_separable_filter(
     }
 
     // Downsample in horizontal direction.
-    std::vector<ColorRGB> texels(mip_width * height);
+    std::vector<ColorRGB> temp(mip_width * height);
     {
         const int width_ratio = width / mip_width;
         for (int y = 0; y < height; y++) {
             int filter_start_x = width_ratio / 2 - filter_pixel_count / 2;
             for (int x = 0; x < mip_width; x++, filter_start_x += width_ratio) {
-                ColorRGB& t = texels[y*mip_width + x];
+                ColorRGB& t = temp[y*mip_width + x];
                 for (int k = 0; k < filter_pixel_count; k++)
                     t += weights[k] * image[y*width + std::clamp(filter_start_x + k, 0, width - 1)];
             }
@@ -191,14 +196,13 @@ static std::vector<ColorRGB> generate_mip_level_with_separable_filter(
     // Downsample in vertical direction.
     std::vector<ColorRGB> result(mip_width * mip_height);
     {
-        const int vertical_bucket_size = 16;
         const int height_ratio = height / mip_height;
         int filter_start_y = height_ratio / 2 - filter_pixel_count / 2;
         for (int y = 0; y < mip_height; y++, filter_start_y += height_ratio) {
             for (int x = 0; x < mip_width; x++) {
                 ColorRGB& t = result[y*mip_width + x];
                 for (int k = 0; k < filter_pixel_count; k++)
-                    t += weights[k] * texels[std::clamp(filter_start_y + k, 0, height - 1)*mip_width + x];
+                    t += weights[k] * temp[std::clamp(filter_start_y + k, 0, height - 1)*mip_width + x];
             }
         }
     }
@@ -211,26 +215,29 @@ static std::vector<ColorRGB> generate_mip_level_with_separable_filter(
     return result;
 }
 
-static void generate_next_mip_level_with_box_filter(const std::vector<ColorRGB>& src, int src_width, int src_height, std::vector<ColorRGB>& dst) {
-    // Process one-dimensional image by a separate code path.
-    if (src_width == 1 || src_height == 1) {
-        for (int i = 0; i < int(src.size()); i += 2) {
-            dst[i/2] = 0.5f * (src[i] + src[i+1]);
-        }
-        return;
-    }
-    // Downsample with box filter.
-    ColorRGB* p = dst.data();
-    for (int y = 0; y < src_height; y += 2) {
-        const ColorRGB* row0 = &src[y*src_width];
-        const ColorRGB* row0_end = row0 + src_width;
-        const ColorRGB* row1 = row0_end;
-        while (row0 != row0_end) {
-            *p++ = 0.25f * (row0[0] + row0[1] + row1[0] + row1[1]);
-            row0 += 2;
-            row1 += 2;
+static std::vector<ColorRGB> generate_next_mip_level_with_box_filter(const std::vector<ColorRGB>& image, int width, int height) {
+    std::vector<ColorRGB> result;
+    if (width == 1 || height == 1) { // one dimensional image
+        result.resize(width * height / 2);
+        for (int i = 0; i < int(image.size()); i += 2) {
+            result[i/2] = 0.5f * (image[i] + image[i+1]);
         }
     }
+    else {
+        result.resize(width * height / 4);
+        ColorRGB* p = result.data();
+        for (int y = 0; y < height; y += 2) {
+            const ColorRGB* row0 = &image[y*width];
+            const ColorRGB* row0_end = row0 + width;
+            const ColorRGB* row1 = row0_end;
+            while (row0 != row0_end) {
+                *p++ = 0.25f * (row0[0] + row0[1] + row1[0] + row1[1]);
+                row0 += 2;
+                row1 += 2;
+            }
+        }
+    }
+    return result;
 }
 
 void Image_Texture::initialize_from_file(const std::string& image_path, const Image_Texture::Init_Params& params) {
@@ -362,23 +369,22 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution() {
 }
 
 void Image_Texture::generate_mips(Filter_Type filter) {
-    int w = width;
-    int h = height;
-
     for (int i = 1; i < int(mips.size()); i++) {
-        int new_w = std::max(1, w >> 1);
-        int new_h = std::max(1, h >> 1);
-        mips[i].resize(new_w * new_h);
+        if (filter == Filter_Type::box) {
+            int src_width = std::max(1, width >> (i - 1));
+            int src_height = std::max(1, height >> (i - 1));
+            mips[i] = generate_next_mip_level_with_box_filter(mips[i - 1], src_width, src_height);
+        }
+        else {
+            // Performance optimization: only top few mips are generated
+            // directly from the base mip.
+            int src_mip = (i > 4) ? 4 : 0;
 
-        if (i <= 4)
-            mips[i] = generate_mip_level_with_separable_filter(mips[0], width, height, i, filter);
-        else
-            generate_next_mip_level_with_box_filter(mips[i - 1], w, h, mips[i]);
-
-        w = new_w;
-        h = new_h;
+            int src_width = std::max(1, width >> src_mip);
+            int src_height = std::max(1, height >> src_mip);
+            mips[i] = generate_mip_level_with_separable_filter(mips[src_mip], src_width, src_height, i - src_mip, filter);
+        }
     }
-    ASSERT(w == 1 && h == 1);
 }
 
 ColorRGB Image_Texture::sample_nearest(const Vector2& uv, Wrap_Mode wrap_mode) const {
