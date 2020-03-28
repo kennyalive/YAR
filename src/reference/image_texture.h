@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lib/color.h"
+#include "lib/image.h"
 
 struct Vector2;
 
@@ -28,15 +29,15 @@ public:
     };
 
     void initialize_from_file(const std::string& image_path, const Init_Params& params);
-    ColorRGB sample_nearest(const Vector2& uv, Wrap_Mode wrap_mode) const;
-    ColorRGB sample_bilinear(const Vector2& uv, Wrap_Mode wrap_mode) const;
+    ColorRGB sample_nearest(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const;
+    ColorRGB sample_bilinear(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const;
 
 private:
     void upsample_base_level_to_power_of_two_resolution();
     void generate_mips(Filter_Type filter);
 
 private:
-    int width = 0;
-    int height = 0;
-    std::vector<std::vector<ColorRGB>> mips;
+    int base_width = 0;
+    int base_height = 0;
+    std::vector<Image> mips;
 };
