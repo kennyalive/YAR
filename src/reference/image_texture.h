@@ -31,6 +31,7 @@ public:
     void initialize_from_file(const std::string& image_path, const Init_Params& params);
     ColorRGB sample_nearest(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const;
     ColorRGB sample_bilinear(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const;
+    ColorRGB sample_trilinear(const Vector2& uv, float lod_level, Wrap_Mode wrap_mode) const;
 
 private:
     void upsample_base_level_to_power_of_two_resolution();

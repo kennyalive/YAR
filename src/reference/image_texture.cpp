@@ -451,11 +451,31 @@ ColorRGB Image_Texture::sample_bilinear(const Vector2& uv, int mip_level, Wrap_M
     float w_j0 = 1.f - beta;
     float w_j1 = beta;
 
-    ColorRGB bilinear_texel =
+    ColorRGB bilinear_sample =
         texel00 * (w_j0 * w_i0) +
         texel01 * (w_j0 * w_i1) +
         texel10 * (w_j1 * w_i0) +
         texel11 * (w_j1 * w_i1);
 
-    return bilinear_texel;
+    return bilinear_sample;
+}
+
+ColorRGB Image_Texture::sample_trilinear(const Vector2& uv, float lod_level, Wrap_Mode wrap_mode) const {
+    lod_level = std::clamp(lod_level, 0.f, float(mips.size() - 1));
+
+    float lod_level_int;
+    float gamma = std::modf(lod_level, &lod_level_int);
+
+    if (gamma == 0.f) {
+        return sample_bilinear(uv, int(lod_level_int), wrap_mode);
+    }
+
+    int mip_level0 = int(lod_level_int);
+    int mip_level1 = std::min(mip_level0 + 1, int(mips.size() - 1));
+
+    ColorRGB bilinear_sample0 = sample_bilinear(uv, mip_level0, wrap_mode);
+    ColorRGB bilinear_sample1 = sample_bilinear(uv, mip_level1, wrap_mode);
+
+    ColorRGB trilinear_sample = (1.f - gamma) * bilinear_sample0 + gamma * bilinear_sample1;
+    return trilinear_sample;
 }
