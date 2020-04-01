@@ -106,6 +106,10 @@ struct Vector3 {
     bool is_normalized(float epsilon = 1e-3f) const {
         return std::abs(length() - 1.f) < epsilon;
     }
+
+    Vector3 abs() const {
+        return Vector3(std::abs(x), std::abs(y), std::abs(z));
+    }
 };
 
 constexpr Vector3 Vector3_Zero = Vector3(0.f);
@@ -157,7 +161,10 @@ template<> struct hash<Vector3> {
 // Vector2
 //
 struct Vector2 {
-    float x, y;
+    union {
+        struct { float x, y; };
+        struct { float u, v; };
+    };
 
     Vector2()
         : x(0.f), y(0.f) {}

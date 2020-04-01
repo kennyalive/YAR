@@ -6,13 +6,16 @@
 /*
 Camera space:
 
-            |   ^  Z (points into the scene)
+            ^ Z
+            |   ^ Y (points into the scene)
             |  /
             | /
-       -----------> X
+      ------------> X
             |
             |
-            v  Y
+
+Image space:
+    film position (0, 0) corresponds to the upper left corner
 */
 
 class Camera {

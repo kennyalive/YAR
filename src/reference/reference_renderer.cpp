@@ -133,7 +133,12 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
             if (!ctx.acceleration_structure->intersect(ray, isect))
                 continue;
 
-            Shading_Context shading_ctx(ctx, -ray.direction, isect, bsdf_allocation, bsdf_allocation_size);
+            Shading_Point_Rays rays;
+            rays.incident_ray = ray;
+            rays.auxilary_ray_dx_offset = ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
+            rays.auxilary_ray_dy_offset = ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
+
+            Shading_Context shading_ctx(ctx, rays, isect, bsdf_allocation, bsdf_allocation_size);
             ColorRGB radiance = compute_direct_lighting(ctx, shading_ctx, &rng);
             tile.add_sample(film_pos, radiance);
         }

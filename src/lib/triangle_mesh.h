@@ -49,6 +49,13 @@ struct Triangle_Mesh {
         return (1.f - b1 - b2)*uv0 + b1*uv1 + b2*uv2;
     }
 
+    void get_uvs(int triangle_index, Vector2 uv[3]) const {
+        const int* pi = &indices[triangle_index * 3];
+        uv[0] = uvs[pi[0]];
+        uv[1] = uvs[pi[1]];
+        uv[2] = uvs[pi[2]];
+    }
+
     Bounding_Box get_triangle_bounds(int triangle_index) const {
         const int* pi = &indices[triangle_index * 3];
         auto bounds = Bounding_Box(vertices[pi[0]]);
