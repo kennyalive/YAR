@@ -29,6 +29,8 @@ public:
     };
 
     void initialize_from_file(const std::string& image_path, const Init_Params& params);
+    const std::vector<Image>& get_mips() const { return mips; }
+
     ColorRGB sample_nearest(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const;
     ColorRGB sample_bilinear(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const;
     ColorRGB sample_trilinear(const Vector2& uv, float lod_level, Wrap_Mode wrap_mode) const;

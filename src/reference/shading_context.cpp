@@ -119,3 +119,19 @@ Shading_Context::Shading_Context(
         bsdf = create_bsdf(global_ctx, *this, intersection.scene_object->material, bsdf_allocation, bsdf_allocation_size);
     }
 }
+
+float Shading_Context::compute_texture_lod(int mip_count, const Vector2& uv_scale) const {
+    // To satisfy Nyquist limit the filter width should be twice as large as below and it is
+    // achieved implicitly by using bilinear filtering to sample mip levels.
+
+    Vector2 dUVdx_scaled = dUVdx * uv_scale;
+    Vector2 dUVdy_scaled = dUVdy * uv_scale;
+
+    /*float filter_width = std::max(
+            std::max(std::abs(dUVdx_scaled.u), std::abs(dUVdx_scaled.v)),
+            std::max(std::abs(dUVdy_scaled.u), std::abs(dUVdy_scaled.v)));*/
+
+    float filter_width = std::max(dUVdx_scaled.length(), dUVdy_scaled.length());
+
+    return std::max(0.f, mip_count - 1 + log2(std::clamp(filter_width, 1e-6f, 1.0f)));
+}

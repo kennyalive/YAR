@@ -13,9 +13,12 @@ ColorRGB evaluate_rgb_parameter(const Render_Context& global_ctx, const Shading_
     ASSERT(param.texture_index >= 0);
     const Image_Texture& texture = global_ctx.textures[param.texture_index];
 
+    float lod = shading_ctx.compute_texture_lod(int(texture.get_mips().size()), Vector2(param.u_scale, param.v_scale));
+
     Vector2 uv = shading_ctx.UV;
     uv.x *= param.u_scale;
     uv.y *= param.v_scale;
-    //return texture.sample_nearest(uv, Wrap_Mode::repeat);
-    return texture.sample_bilinear(uv, Wrap_Mode::repeat);
+    //return texture.sample_nearest(uv, 0, Wrap_Mode::repeat);
+    //return texture.sample_bilinear(uv, 0, Wrap_Mode::repeat);
+    return texture.sample_trilinear(uv, lod, Wrap_Mode::repeat);
 }

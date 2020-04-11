@@ -38,4 +38,6 @@ struct Shading_Context {
         const Render_Context& global_ctx,
         const Shading_Point_Rays& rays, const Intersection& intersection,
         void* bsdf_allocation, int bsdf_allocation_size);
+
+    float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
 };
