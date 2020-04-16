@@ -196,6 +196,12 @@ struct Vector2 {
         return (&x)[index];
     }
 
+    Vector2& operator*=(float t) {
+        x *= t;
+        y *= t;
+        return *this;
+    }
+
     float length() const {
         return std::sqrt(length_squared());
     }

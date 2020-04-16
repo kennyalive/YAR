@@ -79,10 +79,6 @@ inline constexpr float degrees(float radians) {
     return radians * rad_2_deg;
 }
 
-inline float lerp(float t, float a, float b) {
-    return a + (b - a)*t;
-}
-
 inline std::string to_lower(std::string s) {
     for (char& c : s)
         c = tolower(c);

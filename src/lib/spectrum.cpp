@@ -1,7 +1,9 @@
 #include "std.h"
 #include "common.h"
 #include "spectrum.h"
+
 #include "colorimetry.h"
+#include "math.h"
 
 static float compute_average_value_for_range(const float* lambdas, const float* values, int n, float range_start, float range_end) {
     ASSERT(n >= 2);
@@ -28,7 +30,7 @@ static float compute_average_value_for_range(const float* lambdas, const float* 
         if (range_start > lambdas[i]) {
             const float t = (range_start - lambdas[i]) / (lambdas[i+1] - lambdas[i]);
             l0 = range_start;
-            v0 = lerp(t, values[i], values[i+1]);
+            v0 = lerp(values[i], values[i+1], t);
         } else {
             l0 = lambdas[i];
             v0 = values[i];
@@ -38,7 +40,7 @@ static float compute_average_value_for_range(const float* lambdas, const float* 
         if (range_end < lambdas[i+1]) {
             const float t = (range_end - lambdas[i]) / (lambdas[i+1] - lambdas[i]);
             l1 = range_end;
-            v1 = lerp(t, values[i], values[i+1]);
+            v1 = lerp(values[i], values[i+1], t);
         } else {
             l1 = lambdas[i+1];
             v1 = values[i+1];

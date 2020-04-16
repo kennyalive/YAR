@@ -15,3 +15,8 @@ void coordinate_system_from_vector(const Vector3& v, Vector3* v1, Vector3* v2);
 // the ray is parallel to the plane and does not originate on the plane. If ray
 // if parallel to the plane and originates on the plane the function returns 0.
 float ray_plane_intersection(const Ray& ray, const Vector3& plane_n, float plane_d);
+
+template <typename T>
+inline T lerp(const T& a, const T& b, float t) {
+    return (1.f - t) * a + t * b;
+}

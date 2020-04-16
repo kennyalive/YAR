@@ -1,6 +1,8 @@
 #include "std.h"
 #include "utils.h"
 
+#include "lib/math.h"
+
 VkPipelineLayout create_pipeline_layout(std::initializer_list<VkDescriptorSetLayout> set_layouts,
     std::initializer_list<VkPushConstantRange> push_constant_ranges, const char* name)
 {
@@ -306,7 +308,7 @@ void GPU_Time_Keeper::retrieve_query_results() {
 
         ASSERT(query_results[2] >= query_results[0]); // check that end time >= start time
         float measured_duration = float(double(query_results[2] - query_results[0]) * vk.timestamp_period_ms);
-        scopes[start_query / 2].length_ms = lerp(0.25f, scopes[start_query / 2].length_ms, measured_duration);
+        scopes[start_query / 2].length_ms = lerp(scopes[start_query / 2].length_ms, measured_duration, 0.25f);
         vkCmdResetQueryPool(vk.command_buffer, vk.timestamp_query_pool, start_query, 2);
     }
     frame_active_scope_count = 0;
