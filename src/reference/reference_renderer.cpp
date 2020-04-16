@@ -149,6 +149,10 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
 }
 
 void render_reference_image(const YAR_Project& project, const Renderer_Options& options) {
+    // Initialize renderer
+    initalize_EWA_filter_weights(256, 2.f);
+
+    // Load project
     Timestamp t_load;
     Scene scene = load_scene(project);
     Scene_KdTree scene_kdtree = load_scene_kdtree(project, scene);
@@ -204,6 +208,7 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
     }
     printf("Project loaded in %d ms\n", int(elapsed_milliseconds(t_load)));
 
+    // Render image
     Timestamp t;
 
     if (options.cpu_core_count == 1) {

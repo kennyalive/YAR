@@ -2,6 +2,7 @@
 #include "lib/common.h"
 #include "image_texture.h"
 
+#include "lib/math.h"
 #include "lib/vector.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -385,24 +386,35 @@ void Image_Texture::generate_mips(Filter_Type filter) {
     }
 }
 
+inline ColorRGB get_texel_repeat(const Image& image, int x, int y) {
+    x %= image.width;
+    x = (x < 0) ? x + image.width : x;
+    y %= image.height;
+    y = (y < 0) ? y + image.height : y;
+    return image.data[y * image.width + x];
+}
+
+inline ColorRGB get_texel_clamp(const Image& image, int x, int y) {
+    x = std::clamp(x, 0, image.width - 1);
+    y = std::clamp(y, 0, image.height - 1);
+    return image.data[y * image.width + x];
+}
+
 ColorRGB Image_Texture::sample_nearest(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const {
     ASSERT(mip_level >= 0 && mip_level < mips.size());
     const Image& image = mips[mip_level];
 
-    int i = int(uv.x * image.width);
-    int j = int(uv.y * image.height);
+    int x = int(uv[0] * float(image.width));
+    int y = int(uv[1] * float(image.height));
 
+    ColorRGB nearest_texel;
     if (wrap_mode == Wrap_Mode::repeat) {
-        i %= image.width;
-        j %= image.height;
+        nearest_texel = get_texel_repeat(image, x, y);
     }
     else {
         ASSERT(wrap_mode == Wrap_Mode::clamp);
-        i = std::clamp(i, 0, image.width-1);
-        j = std::clamp(j, 0, image.height-1);
+        nearest_texel = get_texel_clamp(image, x, y);
     }
-
-    ColorRGB nearest_texel = image.data[j * image.width + i];
     return nearest_texel;
 }
 
@@ -410,72 +422,158 @@ ColorRGB Image_Texture::sample_bilinear(const Vector2& uv, int mip_level, Wrap_M
     ASSERT(mip_level >= 0 && mip_level < mips.size());
     const Image& image = mips[mip_level];
 
-    float a = uv.x * float(image.width) - 0.5f;
-    float b = uv.y * float(image.height) - 0.5f;
+    float x = uv.x * float(image.width) - 0.5f;
+    float y = uv.y * float(image.height) - 0.5f;
 
-    float a_floor = std::floor(a);
-    float b_floor = std::floor(b);
+    float x_floor;
+    float wx = std::modf(x, &x_floor);
 
-    int i0 = int(a_floor);
-    int j0 = int(b_floor);
-    int i1 = i0 + 1;
-    int j1 = j0 + 1;
+    float y_floor;
+    float wy = std::modf(y, &y_floor);
 
+    int x0 = int(x_floor);
+    int y0 = int(y_floor);
+    int x1 = x0 + 1;
+    int y1 = y0 + 1;
+
+    ColorRGB texel00, texel01, texel10, texel11;
     if (wrap_mode == Wrap_Mode::repeat) {
-        // The integer coordinate is additionally incremented before taking remainder
-        // in order to handle the case when coordinate's value is -1.
-        i0 = (i0 + image.width) % image.width;
-        j0 = (j0 + image.height) % image.height;
-        i1 = (i1 + image.width) % image.width;
-        j1 = (j1 + image.height) % image.height;
+        texel00 = get_texel_repeat(image, x0, y0);
+        texel01 = get_texel_repeat(image, x1, y0);
+        texel10 = get_texel_repeat(image, x0, y1);
+        texel11 = get_texel_repeat(image, x1, y1);
     }
     else {
         ASSERT(wrap_mode == Wrap_Mode::clamp);
-        i0 = std::clamp(i0, 0, image.width - 1);
-        j0 = std::clamp(j0, 0, image.height - 1);
-        i1 = std::clamp(i1, 0, image.width - 1);
-        j1 = std::clamp(j1, 0, image.height - 1);
+        texel00 = get_texel_clamp(image, x0, y0);
+        texel01 = get_texel_clamp(image, x1, y0);
+        texel10 = get_texel_clamp(image, x0, y1);
+        texel11 = get_texel_clamp(image, x1, y1);
     }
 
-    const std::vector<ColorRGB>& texels = image.data;
-    ColorRGB texel00 = texels[j0 * image.width + i0];
-    ColorRGB texel01 = texels[j0 * image.width + i1];
-    ColorRGB texel10 = texels[j1 * image.width + i0];
-    ColorRGB texel11 = texels[j1 * image.width + i1];
-
-    float alpha = a - a_floor;
-    float beta = b - b_floor;
-
-    float w_i0 = 1.f - alpha;
-    float w_i1 = alpha;
-    float w_j0 = 1.f - beta;
-    float w_j1 = beta;
-
     ColorRGB bilinear_sample =
-        texel00 * (w_j0 * w_i0) +
-        texel01 * (w_j0 * w_i1) +
-        texel10 * (w_j1 * w_i0) +
-        texel11 * (w_j1 * w_i1);
+        texel00 * ((1 - wy) * (1 - wx)) +
+        texel01 * ((1 - wy) * wx) +
+        texel10 * (wy * (1 - wx)) +
+        texel11 * (wy * wx);
 
     return bilinear_sample;
 }
 
-ColorRGB Image_Texture::sample_trilinear(const Vector2& uv, float lod_level, Wrap_Mode wrap_mode) const {
-    lod_level = std::clamp(lod_level, 0.f, float(mips.size() - 1));
+ColorRGB Image_Texture::sample_trilinear(const Vector2& uv, float lod, Wrap_Mode wrap_mode) const {
+    lod = std::clamp(lod, 0.f, float(mips.size() - 1));
 
-    float lod_level_int;
-    float gamma = std::modf(lod_level, &lod_level_int);
+    float lod_floor;
+    float t = std::modf(lod, &lod_floor);
 
-    if (gamma == 0.f) {
-        return sample_bilinear(uv, int(lod_level_int), wrap_mode);
+    int level0 = int(lod_floor);
+    int level1 = std::min(level0 + 1, int(mips.size() - 1));
+
+    ColorRGB mip0_sample = sample_bilinear(uv, level0, wrap_mode);
+    ColorRGB mip1_sample = sample_bilinear(uv, level1, wrap_mode);
+    ColorRGB trilinear_sample = lerp(mip0_sample, mip1_sample, t);
+    return trilinear_sample;
+}
+
+static std::vector<float> EWA_filter_weights;
+
+void initalize_EWA_filter_weights(int table_size, float alpha) {
+    EWA_filter_weights.resize(table_size);
+
+    for (int i = 0; i < int(EWA_filter_weights.size()); i++) {
+        float x = float(i) / float(table_size - 1);
+        EWA_filter_weights[i] = std::exp(-alpha * x);
+    }
+}
+
+static ColorRGB do_EWA(const Image& image, Vector2 uv,
+    float Ux, float Vx, float Uy, float Vy, Wrap_Mode wrap_mode)
+{
+    // Transition from UV space to texture space with texels placed at integer coordinates.
+    uv[0] = uv[0] * image.width - 0.5f;
+    uv[1] = uv[1] * image.height - 0.5f;
+    Ux *= image.width;
+    Vx *= image.height;
+    Uy *= image.width;
+    Vy *= image.height;
+
+    // Compute ellipse parameters (quadratic form).
+    float A = Vx*Vx + Vy*Vy + 1;
+    float B = -2 * (Ux*Vx + Uy*Vy);
+    float C = Ux*Ux + Uy*Uy + 1;
+    float F = A*C - 0.25f * B*B;
+    ASSERT(F != 0.f);
+
+    float inv_F = 1.f / F;
+    A *= inv_F;
+    B *= inv_F;
+    C *= inv_F;
+
+    // Determine ellipse bounding box.
+    float u_delta = 2 * std::sqrt(C / (0.25f * inv_F));
+    float x0 = std::ceil(uv[0] - u_delta);
+    float x1 = std::floor(uv[0] + u_delta);
+
+    float v_delta = 2 * std::sqrt(A / (0.25f * inv_F));
+    float y0 = std::ceil(uv[1] - v_delta);
+    float y1 = std::floor(uv[1] + v_delta);
+
+    // Apply pixel's filter (projected into ellipse) to the texels inside the ellipse.
+    ColorRGB sum;
+    float weight_sum = 0.f;
+    for (float y = y0; y <= y1; y++) {
+        float yy = y - uv[1];
+        for (float x = x0; x <= x1; x++) {
+            float xx = x - uv[0];
+            float r2 = A * xx*xx + B * xx*yy + C * yy*yy;
+            if (r2 < 1.f) {
+                int weight_index = int(r2 * EWA_filter_weights.size());
+                ASSERT(weight_index < EWA_filter_weights.size());
+                float weight = EWA_filter_weights[weight_index];
+                if (wrap_mode == Wrap_Mode::repeat) {
+                    sum += weight * get_texel_repeat(image, int(x), int(y));
+                }
+                else {
+                    ASSERT(wrap_mode == Wrap_Mode::clamp);
+                    sum += weight * get_texel_clamp(image, int(x), int(y));
+                }
+                weight_sum += weight;
+            }
+        }
+    }
+    ASSERT(weight_sum != 0.f);
+    return sum / weight_sum;
+}
+
+ColorRGB Image_Texture::sample_EWA(Vector2 uv, Vector2 UVx, Vector2 UVy,
+    Wrap_Mode wrap_mode, float max_anisotropy) const
+{
+    if (UVx.length_squared() < UVy.length_squared())
+        std::swap(UVx, UVy);
+
+    float major_length = UVx.length();
+    float minor_length = UVy.length();
+
+    if (minor_length < 1e-6f)
+        return sample_bilinear(uv, 0, wrap_mode);
+
+    if (minor_length * max_anisotropy < major_length) {
+        float scale = major_length / (minor_length * max_anisotropy);
+        minor_length *= scale;
+        UVy *= scale;
     }
 
-    int mip_level0 = int(lod_level_int);
-    int mip_level1 = std::min(mip_level0 + 1, int(mips.size() - 1));
+    float lod = int(mips.size()) - 1 + std::log2(minor_length);
+    lod = std::clamp(lod, 0.f, float(mips.size() - 1));
 
-    ColorRGB bilinear_sample0 = sample_bilinear(uv, mip_level0, wrap_mode);
-    ColorRGB bilinear_sample1 = sample_bilinear(uv, mip_level1, wrap_mode);
+    float lod_floor;
+    float t = std::modf(lod, &lod_floor);
 
-    ColorRGB trilinear_sample = (1.f - gamma) * bilinear_sample0 + gamma * bilinear_sample1;
-    return trilinear_sample;
+    int level0 = int(lod_floor);
+    int level1 = std::min(level0 + 1, int(mips.size() - 1));
+
+    ColorRGB mip0_sample = do_EWA(mips[level0], uv, UVx[0], UVx[1], UVy[0], UVy[1], wrap_mode);
+    ColorRGB mip1_sample = do_EWA(mips[level1], uv, UVx[0], UVx[1], UVy[0], UVy[1], wrap_mode);
+    ColorRGB final_sample = lerp(mip0_sample, mip1_sample, t);
+    return final_sample;
 }
