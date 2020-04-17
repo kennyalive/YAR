@@ -515,11 +515,11 @@ static ColorRGB do_EWA(const Image& image, Vector2 uv,
     float inv_det = 0.25f * F;
 
     // Determine ellipse bounding box.
-    float u_delta = 2 * std::sqrt(C * inv_det);
+    float u_delta = 2 * std::sqrt(C * inv_det); // or std::sqrt(C * F)
     float x0 = std::ceil(uv[0] - u_delta);
     float x1 = std::floor(uv[0] + u_delta);
 
-    float v_delta = 2 * std::sqrt(A * inv_det);
+    float v_delta = 2 * std::sqrt(A * inv_det); // or std::sqrt(A * F)
     float y0 = std::ceil(uv[1] - v_delta);
     float y1 = std::floor(uv[1] + v_delta);
 
