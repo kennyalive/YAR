@@ -509,12 +509,17 @@ static ColorRGB do_EWA(const Image& image, Vector2 uv,
     B *= inv_F;
     C *= inv_F;
 
+    // It's easy to show that after normalization the inverse determinant 1/(4*A*C - B*B)
+    // is equal to 0.25*F where F is from the original equation.
+    //float inv_det = 1.f / (4 * (A*C) - B * B);
+    float inv_det = 0.25f * F;
+
     // Determine ellipse bounding box.
-    float u_delta = 2 * std::sqrt(C / (0.25f * inv_F));
+    float u_delta = 2 * std::sqrt(C * inv_det);
     float x0 = std::ceil(uv[0] - u_delta);
     float x1 = std::floor(uv[0] + u_delta);
 
-    float v_delta = 2 * std::sqrt(A / (0.25f * inv_F));
+    float v_delta = 2 * std::sqrt(A * inv_det);
     float y0 = std::ceil(uv[1] - v_delta);
     float y1 = std::floor(uv[1] + v_delta);
 
