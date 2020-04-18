@@ -387,10 +387,28 @@ void Image_Texture::generate_mips(Filter_Type filter) {
 }
 
 inline ColorRGB get_texel_repeat(const Image& image, int x, int y) {
-    x %= image.width;
-    x = (x < 0) ? x + image.width : x;
-    y %= image.height;
-    y = (y < 0) ? y + image.height : y;
+    ASSERT(is_power_of_2(image.width));
+    ASSERT(is_power_of_2(image.height));
+
+    // Here's the straightforward branchless implementation that uses integral division.
+    // It is noticable slower comparing to the optimized version:
+    //x %= image.width;
+    //x = (x < 0) ? x + image.width : x;
+    //y %= image.height;
+    //y = (y < 0) ? y + image.height : y;
+
+    if (x >= 0) {
+        x &= (image.width - 1);
+    }
+    else {
+        x = image.width - ((~x + 1) & (image.width - 1)); // x < 0 => x = x%w + w
+    }
+    if (y >= 0) {
+        y &= (image.height - 1);
+    }
+    else {
+        y = image.height - ((~y + 1) & (image.height - 1)); // y < 0 => y = y%h + h
+    }
     return image.data[y * image.width + x];
 }
 
