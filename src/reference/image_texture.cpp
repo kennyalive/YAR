@@ -283,20 +283,14 @@ void Image_Texture::initialize_from_file(const std::string& image_path, const Im
         upsample_base_level_to_power_of_two_resolution();
 
     if (params.generate_mips) {
-        {
-            Timestamp t;
-            for (int i = 0; i < 100; i++)
-                generate_mips(params.mip_filter);
-            printf("mip gen time: %" PRId64 " ms\n", elapsed_milliseconds(t));
-        }
+        generate_mips(params.mip_filter);
         // DEBUG
-        #if 1
+        #if 0
         for (int i = 0; i < int(mips.size()); i++) {
             const std::string image_name = fs::path(image_path).filename().replace_extension("").string();
             mips[i].write_tga(image_name + "_" + get_filter_name(params.mip_filter) + "_mip_" + std::to_string(i) + ".tga");
         }
         #endif
-        //exit(0);
     }
 }
 
