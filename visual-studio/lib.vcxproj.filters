@@ -10,18 +10,9 @@
     <ClInclude Include="..\src\lib\ray.h" />
     <ClInclude Include="..\src\lib\vector.h" />
     <ClInclude Include="..\src\std.h" />
-    <ClInclude Include="..\src\lib\obj_loader.h">
-      <Filter>project</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\lib\colorimetry.h" />
     <ClInclude Include="..\src\lib\spectrum.h" />
-    <ClInclude Include="..\src\lib\pbrt_loader.h">
-      <Filter>project</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\lib\triangle_mesh.h" />
-    <ClInclude Include="..\src\lib\project.h">
-      <Filter>project</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\lib\geometry.h">
       <Filter>scene</Filter>
     </ClInclude>
@@ -40,6 +31,12 @@
     </ClInclude>
     <ClInclude Include="..\src\lib\image.h" />
     <ClInclude Include="..\src\lib\math.h" />
+    <ClInclude Include="..\src\lib\yar_project.h">
+      <Filter>scene_loader</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lib\scene_loader.h">
+      <Filter>scene_loader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />
@@ -47,33 +44,33 @@
     <ClCompile Include="..\src\lib\flying_camera.cpp" />
     <ClCompile Include="..\src\lib\matrix.cpp" />
     <ClCompile Include="..\src\std.cpp" />
-    <ClCompile Include="..\src\lib\obj_loader.cpp">
-      <Filter>project</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\lib\colorimetry.cpp" />
     <ClCompile Include="..\src\lib\spectrum.cpp" />
-    <ClCompile Include="..\src\lib\pbrt_loader.cpp">
-      <Filter>project</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\lib\triangle_mesh.cpp" />
-    <ClCompile Include="..\src\lib\project.cpp">
-      <Filter>project</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\lib\light.cpp">
-      <Filter>scene</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\lib\scene.cpp">
       <Filter>scene</Filter>
     </ClCompile>
     <ClCompile Include="..\src\lib\image.cpp" />
     <ClCompile Include="..\src\lib\math.cpp" />
+    <ClCompile Include="..\src\lib\yar_project.cpp">
+      <Filter>scene_loader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lib\scene_loader.cpp">
+      <Filter>scene_loader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lib\obj_scene.cpp">
+      <Filter>scene_loader</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\lib\pbrt_scene.cpp">
+      <Filter>scene_loader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="project">
-      <UniqueIdentifier>{ec2ad376-6032-4c43-af26-2b3da3b3887d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="scene">
       <UniqueIdentifier>{f833ae1e-cb6f-4b88-9721-d36f3bc9fe59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scene_loader">
+      <UniqueIdentifier>{ec2ad376-6032-4c43-af26-2b3da3b3887d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

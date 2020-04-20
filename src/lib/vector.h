@@ -302,10 +302,13 @@ inline Vector3::Vector3(const Vector4& v)
 // Vector2i
 //
 struct Vector2i {
-    int x, y;
+    int x = 0, y = 0;
 
-    bool operator==(const Vector2i& other) const {
+    bool operator==(Vector2i other) const {
         return x == other.x && y == other.y;
+    }
+    bool operator!=(Vector2i other) const {
+        return !(*this == other);
     }
 };
 

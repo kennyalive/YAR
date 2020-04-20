@@ -11,6 +11,7 @@
 
 #include "reference/reference_renderer.h"
 #include "lib/matrix.h"
+#include "lib/scene_loader.h"
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
@@ -209,9 +210,8 @@ void Renderer::restore_resolution_dependent_resources() {
     copy_to_swapchain.update_resolution_dependent_descriptors(output_image.view);
 }
 
-void Renderer::load_project(const std::string& yar_file_path) {
-    project = initialize_project(yar_file_path);
-    scene = load_scene(project);
+void Renderer::load_project(const std::string& input_file) {
+    scene = load_scene(input_file);
 
     flying_camera.initialize(scene.view_points[0]);
 
@@ -277,10 +277,10 @@ void Renderer::load_project(const std::string& yar_file_path) {
 
     // Materials.
     {
-        bool flip_texture_images = project.scene_type == Scene_Type::pbrt;
+        bool flip_texture_images = scene.type == Scene_Type::pbrt;
         gpu_scene.images_2d.reserve(gpu_scene.images_2d.size() + scene.materials.texture_names.size());
         for (const std::string& texture_name : scene.materials.texture_names) {
-            Vk_Image image = vk_load_texture((project.scene_path.parent_path() / texture_name).string(), flip_texture_images);
+            Vk_Image image = vk_load_texture((fs::path(scene.path).parent_path() / texture_name).string(), flip_texture_images);
             gpu_scene.images_2d.push_back(image);
         }
 
@@ -439,7 +439,7 @@ void Renderer::load_project(const std::string& yar_file_path) {
         patch_materials.dispatch(command_buffer, gpu_scene.material_descriptor_set);
     });
 
-    draw_mesh.create(kernel_context, raster_render_pass, project.mesh_disable_backfacing_culling,  scene.front_face_has_clockwise_winding);
+    draw_mesh.create(kernel_context, raster_render_pass, scene.mesh_disable_backfacing_culling,  scene.front_face_has_clockwise_winding);
     draw_mesh.update_point_lights((int)scene.lights.point_lights.size());
     draw_mesh.update_directional_lights((int)scene.lights.directional_lights.size());
     draw_mesh.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
@@ -495,7 +495,7 @@ void Renderer::run_frame() {
     ui.camera_position = flying_camera.get_camera_pose().get_column(3);
 
     if (project_loaded)
-        draw_mesh.update(flying_camera.get_view_transform(), scene.fovy);
+        draw_mesh.update(flying_camera.get_view_transform(), scene.camera_fov_y);
 
     if (project_loaded && vk.raytracing_supported)
         raytrace_scene.update_camera_transform(flying_camera.get_camera_pose());
@@ -697,7 +697,7 @@ void Renderer::draw_rasterized_image() {
 
 void Renderer::draw_raytraced_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
-    raytrace_scene.dispatch(scene.fovy, spp4);
+    raytrace_scene.dispatch(scene.camera_fov_y, spp4);
 }
 
 void Renderer::tone_mapping()
@@ -727,6 +727,7 @@ void Renderer::copy_output_image_to_swapchain() {
 }
 
 void Renderer::start_reference_renderer() {
+    /*
     const std::string temp_project_path = (get_data_directory() / "temp.yar").string();
 
     YAR_Project temp_project = project;
@@ -756,4 +757,5 @@ void Renderer::start_reference_renderer() {
 #else
 #error Unsupported platform
 #endif
+*/
 }

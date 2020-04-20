@@ -1,10 +1,9 @@
 #include "std.h"
 #include "common.h"
-#include "pbrt_loader.h"
 
 #include "colorimetry.h"
-#include "project.h"
-#include "scene_object.h"
+#include "scene.h"
+#include "yar_project.h"
 
 #include "pbrtParser/Scene.h"
 #include "pbrt-parser/impl/syntactic/Scene.h"
@@ -30,7 +29,7 @@ static Matrix3x4 get_transform_from_pbrt_transform(const pbrt::affine3f& pbrt_tr
     return transform;
 }
 
-Scene load_pbrt_project(const YAR_Project& project) {
+Scene load_pbrt_scene(const YAR_Project& project) {
     std::shared_ptr<pbrt::Scene> pbrt_scene = pbrt::importPBRT(project.scene_path.string());
     pbrt_scene->makeSingleLevel();
     Scene scene;
@@ -166,9 +165,8 @@ Scene load_pbrt_project(const YAR_Project& project) {
         scene.front_face_has_clockwise_winding = true;
 
     scene.view_points.push_back(view_point);
-    scene.fovy = pbrt_scene->cameras[0]->fov;
+    scene.camera_fov_y = pbrt_scene->cameras[0]->fov;
     scene.lights.append(project.lights);
     
     return scene;
 }
-

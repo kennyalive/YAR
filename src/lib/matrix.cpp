@@ -8,6 +8,10 @@ const Matrix3x4 Matrix3x4::identity = [] {
     return m;
 }();
 
+const Matrix3x4 Matrix3x4::zero = [] {
+    return Matrix3x4{};
+}();
+
 const Matrix4x4 Matrix4x4::identity = [] {
     Matrix4x4 m{};
     m.a[0][0] = m.a[1][1] = m.a[2][2] = m.a[3][3] = 1.f;
@@ -44,6 +48,14 @@ bool Matrix3x4::is_identity() const {
         for (int j = 0; j < 4; j++)
             if (a[i][j] != (i == j ? 1.f : 0.f))
                 return false;
+    return true;
+}
+
+bool Matrix3x4::is_zero() const {
+    const float* p = &a[0][0];
+    for (int i = 0; i < 12; i++, p++)
+        if (*p != 0.f)
+            return false;
     return true;
 }
 

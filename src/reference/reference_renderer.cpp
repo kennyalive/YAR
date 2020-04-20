@@ -12,8 +12,8 @@
 #include "shading_context.h"
 
 #include "lib/geometry.h"
-#include "lib/project.h"
 #include "lib/random.h"
+#include "lib/scene_loader.h"
 #include "lib/triangle_mesh.h"
 #include "lib/vector.h"
 
@@ -61,12 +61,12 @@ static void write_exr_image(const char* file_name, const ColorRGB* pixels, int w
 // NOTE: if per project temp directories are needed then one option is to create project
 // specific subdirectories inside temp scene directory - in this case we can share 
 // scene's additional data between multiple projects.
-static std::string get_project_unique_name(const YAR_Project& project) {
-    std::string file_name = to_lower(project.scene_path.filename().string());
+static std::string get_project_unique_name(const std::string& scene_path) {
+    std::string file_name = to_lower(fs::path(scene_path).filename().string());
     if (file_name.empty())
-        error("Failed to extract filename from project path: %s", project.scene_path.c_str());
+        error("Failed to extract filename from scene path: %s", scene_path.c_str());
 
-    std::string path_lowercase = to_lower(project.scene_path.string());
+    std::string path_lowercase = to_lower(scene_path);
     meow_u128 hash_128 = MeowHash(MeowDefaultSeed, path_lowercase.size(), (void*)path_lowercase.c_str());
     uint32_t hash_32 = MeowU32From(hash_128, 0);
 
@@ -76,8 +76,8 @@ static std::string get_project_unique_name(const YAR_Project& project) {
     return oss.str();
 }
 
-static Scene_KdTree load_scene_kdtree(const YAR_Project& project, const Scene& scene) {
-    fs::path kdtree_cache_directory = get_data_directory() / "kdtree-cache" / get_project_unique_name(project);
+static Scene_KdTree load_scene_kdtree(const Scene& scene) {
+    fs::path kdtree_cache_directory = get_data_directory() / "kdtree-cache" / get_project_unique_name(scene.path);
 
     // If kdtrees are not cached then build a cache.
     if (!fs_exists(kdtree_cache_directory)) {
@@ -148,23 +148,24 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
     _aligned_free(bsdf_allocation);
 }
 
-void render_reference_image(const YAR_Project& project, const Renderer_Options& options) {
+void render_reference_image(const std::string& input_file, const Renderer_Options& options) {
     // Initialize renderer
     initalize_EWA_filter_weights(256, 2.f);
 
     // Load project
+    printf("Loading project: %s\n", input_file.c_str());
     Timestamp t_load;
-    Scene scene = load_scene(project);
-    Scene_KdTree scene_kdtree = load_scene_kdtree(project, scene);
+    Scene scene = load_scene(input_file);
+    Scene_KdTree scene_kdtree = load_scene_kdtree(scene);
 
-    Camera camera(scene.view_points[0], Vector2(project.image_resolution), scene.fovy);
+    Camera camera(scene.view_points[0], Vector2(scene.image_resolution), scene.camera_fov_y);
 
-    Bounds2i render_region = project.render_region;
+    Bounds2i render_region = scene.render_region;
     if (render_region == Bounds2i{})
-        render_region = { {0, 0}, project.image_resolution }; // default render region
+        render_region = { {0, 0}, scene.image_resolution }; // default render region
 
     ASSERT(render_region.p0 >= Vector2i{});
-    ASSERT(render_region.p1 <= project.image_resolution);
+    ASSERT(render_region.p1 <= scene.image_resolution);
     ASSERT(render_region.p0 < render_region.p1);
 
     const float filter_radius = 0.5f;
@@ -196,11 +197,11 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
     // Load textures.
     {
         Image_Texture::Init_Params init_params;
-        init_params.flip_vertically = project.scene_type == Scene_Type::pbrt;
+        init_params.flip_vertically = scene.type == Scene_Type::pbrt;
 
         ctx.textures.reserve(scene.materials.texture_names.size());
         for (const std::string& texture_name : scene.materials.texture_names) {
-            std::string path = (project.scene_path.parent_path() / texture_name).string();
+            std::string path = (fs::path(scene.path).parent_path() / texture_name).string();
             Image_Texture texture;
             texture.initialize_from_file(path, init_params);
             ctx.textures.push_back(std::move(texture));
@@ -211,7 +212,7 @@ void render_reference_image(const YAR_Project& project, const Renderer_Options& 
     // Render image
     Timestamp t;
 
-    if (options.cpu_core_count == 1) {
+    if (options.thread_count == 1) {
         for (int y_tile = 0; y_tile < y_tile_count; y_tile++) {
             for (int x_tile = 0; x_tile < x_tile_count; x_tile++) {
                 Bounds2i tile_sample_bounds;

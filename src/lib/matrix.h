@@ -7,12 +7,14 @@
 struct Matrix3x4 {
     float a[3][4];
     static const Matrix3x4 identity;
+    static const Matrix3x4 zero;
 
     void set_column(int column_index, Vector3 c);
     void set_row(int row_index, Vector4 r);
     Vector3 get_column(int column) const;
     Vector4 get_row(int row) const;
     bool is_identity() const;
+    bool is_zero() const;
 };
 
 struct Matrix4x4 {

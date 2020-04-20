@@ -2,7 +2,6 @@
 #include "lib/common.h"
 #include "reference_renderer.h"
 #include "tests/test.h"
-#include "lib/project.h"
 
 #include "getopt/getopt.h"
 
@@ -59,12 +58,10 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    for (const std::string& file : files) {
-        printf("Loading project: %s\n", file.c_str());
-        YAR_Project project = initialize_project(file);
-        Renderer_Options options;
-        render_reference_image(project, options);
+    Renderer_Options options;
+
+    for (const std::string& input_file : files) {
+        render_reference_image(input_file, options);
     }
     return 0;
 }
-

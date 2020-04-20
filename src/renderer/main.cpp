@@ -6,7 +6,7 @@
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
 
-static std::string yar_project_file;
+static std::string input_file;
 static bool enable_validation_layers = false;
 
 static int window_width = 960;
@@ -38,7 +38,7 @@ static bool parse_command_line(int argc, char** argv) {
             return false;
         }
         else {
-            yar_project_file = argv[i];
+            input_file = argv[i];
         }
     }
     return true;
@@ -93,8 +93,8 @@ int run_realtime_renderer(bool enable_validation_layers) {
     renderer.initialize(vk_create_info, window);
     glfwSetWindowUserPointer(window, &renderer);
 
-    if (!yar_project_file.empty())
-        renderer.load_project(yar_project_file);
+    if (!input_file.empty())
+        renderer.load_project(input_file);
 
     bool prev_vsync = renderer.vsync_enabled();
     bool window_active = true;

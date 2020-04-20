@@ -1,13 +1,12 @@
 #include "std.h"
 #include "common.h"
-#include "project.h"
+#include "yar_project.h"
+
 #include "colorimetry.h"
 #include "spectrum.h"
 
 #define JSMN_STATIC 
 #include "jsmn/jsmn.h"
-
-#include <charconv> // from_chars
 
 static std::string unescape_json_string(const std::string_view& escaped_json_string) {
     std::string str;
@@ -181,15 +180,12 @@ struct Parser {
         }
         else if (match_string("image_resolution")) {
             get_fixed_numeric_array(2, &project.image_resolution.x);
-            project.has_image_resolution = true;
         }
         else if (match_string("render_region")) {
             get_fixed_numeric_array(4, &project.render_region.p0.x);
-            project.has_render_region = true;
         }
         else if (match_string("camera_to_world")) {
             get_fixed_numeric_array(12, &project.camera_to_world.a[0][0]);
-            project.has_camera_to_world = true;
         }
         else if (match_string("world_scale")) {
             project.world_scale = get_numeric<float>();
@@ -345,7 +341,9 @@ struct Parser {
 
 #undef CHECK
 
-static YAR_Project parse_yar_project(const std::string& yar_file_path) {
+YAR_Project parse_yar_file(const std::string& yar_file_path) {
+    ASSERT(to_lower(fs::path(yar_file_path).extension().string()) == ".yar");
+
     std::string content = read_text_file(yar_file_path);
     YAR_Project project;
     Parser parser(content, project);
@@ -354,58 +352,16 @@ static YAR_Project parse_yar_project(const std::string& yar_file_path) {
     } catch (const Parser::Error& parser_error) {
         error("Failed to parse yar project file [%s]: %s", yar_file_path.c_str(), parser_error.description.c_str());
     }
+
+    // The scene path, as defined in the yar file, is either an absolute path or a 
+    // relative path. If it is a relative path then we can't use it directly in the
+    // program for file operations because it's relative to the yar file's parent
+    // directory and not to the current working directory. The following code modifies
+    // relative scene path to be either an absolute path or to be relative to the
+    // current working directory.
+    if (project.scene_path.is_relative()) {
+        project.scene_path = fs::path(yar_file_path).parent_path() / project.scene_path;
+    }
+
     return project;
-}
-
-YAR_Project initialize_project(const std::string& file_path) {
-    fs::path path(file_path);
-    if (!path.has_extension())
-        error("Unknown file type: %s", file_path.c_str());
-
-    YAR_Project project;
-    std::string ext = to_lower(path.extension().string());
-    if (ext == ".yar") {
-        project = parse_yar_project(file_path);
-        // check if scene path is relative to the yar file's parent directory
-        if (project.scene_path.is_relative()) {
-            // make sure that scene path is either absolute or is relative to the current directory
-            project.scene_path = path.parent_path() / project.scene_path;
-        }
-    }
-    else if (ext == ".pbrt") {
-        project.scene_type = Scene_Type::pbrt;
-        project.scene_path = file_path;
-    }
-    else {
-        error("Unsupported file extension: %s", ext.c_str());
-        return YAR_Project{};
-    }
-    return project;
-}
-
-bool save_yar_file(const std::string& yar_file_path, const YAR_Project& project) {
-    std::ofstream file(yar_file_path);
-    if (!file)
-        return false;
-
-    if (project.scene_type == Scene_Type::pbrt)
-        file << "scene_type pbrt\n";
-    else if (project.scene_type == Scene_Type::obj)
-        file << "scene_type obj\n";
-    else
-        error("save_yar_project: unknown scene type");
-
-    file << "scene_path " << project.scene_path << "\n";
-
-    if (project.has_image_resolution)
-        file << "image_resolution " << project.image_resolution.x << " " << project.image_resolution.y << "\n";
-
-    if (project.has_camera_to_world) {
-        file << "camera_to_world\n";
-        for (int i = 0; i < 3; i++) {
-            const float* row = project.camera_to_world.a[i];
-            file << row[0] << " " << row[1] << " " << row[2] << " " << row[3] << "\n";
-        }
-    }
-    return true;
 }

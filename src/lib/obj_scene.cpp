@@ -1,10 +1,10 @@
 #include "std.h"
 #include "common.h"
-#include "obj_loader.h"
 
 #include "colorimetry.h"
-#include "project.h"
+#include "scene.h"
 #include "spectrum.h"
+#include "yar_project.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
@@ -12,6 +12,23 @@
 #include <unordered_map>
 
 namespace {
+struct Obj_Material {
+    ColorRGB k_diffuse;
+    ColorRGB k_specular;
+    std::string diffuse_texture;
+};
+
+struct Obj_Mesh {
+    std::string name;
+    Triangle_Mesh mesh;
+    int material_index = -1;
+};
+
+struct Obj_Data {
+    std::vector<Obj_Material> materials;
+    std::vector<Obj_Mesh> meshes;
+};
+
 struct Mesh_Vertex {
     Vector3 pos;
     Vector3 normal;
@@ -189,7 +206,7 @@ static const Matrix3x4 from_obj_to_world {
     0, 1,  0, 0
 };
 
-Scene load_obj_project(const YAR_Project& project) {
+Scene load_obj_scene(const YAR_Project& project) {
     Triangle_Mesh_Load_Params mesh_load_params;
     mesh_load_params.transform = uniform_scale(from_obj_to_world, project.world_scale);
     mesh_load_params.crease_angle = project.mesh_crease_angle;
@@ -258,6 +275,5 @@ Scene load_obj_project(const YAR_Project& project) {
     }
 
     scene.lights = project.lights;
-    scene.fovy = 45.f;
     return scene;
 }

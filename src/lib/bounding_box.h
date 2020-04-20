@@ -99,6 +99,9 @@ struct Bounds2i {
     bool operator==(const Bounds2i& other) const {
         return p0 == other.p0 && p1 == other.p1;
     }
+    bool operator!=(const Bounds2i& other) const {
+        return !(*this == other);
+    }
 };
 
 inline Bounds2i intersect_bounds(const Bounds2i& a, const Bounds2i& b) {

@@ -1,9 +1,9 @@
 #include "std.h"
 #include "lib/common.h"
-#include "lib/obj_loader.h"
 #include "lib/random.h"
 #include "lib/triangle_mesh.h"
 #include "lib/vector.h"
+#include "lib/yar_project.h"
 
 #include "../intersection.h"
 #include "../kdtree.h"
@@ -210,17 +210,16 @@ static Scene_KdTree get_scene_kdtree(const std::string& model_file_name,
 }
 */
 static void test_triangle_mesh(const Triangle_Mesh_Info& triangle_mesh_info) {
-    Geometries geometries;
-    {
-        Obj_Data obj_data = load_obj(triangle_mesh_info.file_name);
-        for (const Obj_Mesh& obj_mesh : obj_data.meshes) {
-            geometries.triangle_meshes.push_back(obj_mesh.mesh);
-        }
-    }
+    YAR_Project project;
+    project.scene_type = Scene_Type::obj;
+    project.scene_path = fs::path(triangle_mesh_info.file_name);
+
+    Scene load_obj_scene(const YAR_Project& project);
+    Scene scene = load_obj_scene(project);
 
     Timestamp t;
     KdTree_Build_Params build_params;
-    Geometry_KdTree triangle_mesh_kdtree = build_geometry_kdtree(&geometries, {Geometry_Type::triangle_mesh, 0}, build_params);
+    Geometry_KdTree triangle_mesh_kdtree = build_geometry_kdtree(&scene.geometries, {Geometry_Type::triangle_mesh, 0}, build_params);
     printf("kdtree build time = %.2fs\n\n", elapsed_milliseconds(t) / 1000.f);
     triangle_mesh_kdtree.calculate_stats().print();
 

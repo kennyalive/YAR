@@ -15,7 +15,6 @@
 
 #include "lib/flying_camera.h"
 #include "lib/matrix.h"
-#include "lib/project.h"
 #include "lib/scene.h"
 
 struct GLFWwindow;
@@ -30,7 +29,7 @@ public:
     bool vsync_enabled() const { return ui.vsync; }
     void toggle_ui() { ui.show_ui = !ui.show_ui; }
 
-    void load_project(const std::string& yar_file_path);
+    void load_project(const std::string& input_file);
     void run_frame();
 
 private:
@@ -98,7 +97,6 @@ private:
     } gpu_times;
 
     bool project_loaded = false;
-    YAR_Project project;
     Scene scene;
     UI ui;
 };
