@@ -31,3 +31,10 @@ void Lights::append(const Lights& lights) {
     append_lights(diffuse_rectangular_lights);
     #undef append_lights
 }
+
+bool Lights::has_lights() const {
+    return
+        point_lights.size() ||
+        directional_lights.size() ||
+        diffuse_rectangular_lights.size();
+}

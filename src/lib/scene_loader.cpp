@@ -44,6 +44,13 @@ static void finalize_scene(Scene& scene) {
 
         scene.objects.push_back(scene_object);
     }
+
+    if (!scene.lights.has_lights()) {
+        Directional_Light light;
+        light.direction = Vector3(1, 1, 1).normalized();
+        light.irradiance = ColorRGB(100, 100, 100);
+        scene.lights.directional_lights.push_back(light);
+    }
 }
 
 Scene load_scene(const std::string& input_file) {

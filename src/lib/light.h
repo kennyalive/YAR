@@ -67,4 +67,5 @@ struct Lights {
     std::vector<Diffuse_Rectangular_Light> diffuse_rectangular_lights;
 
     void append(const Lights& lights);
+    bool has_lights() const;
 };
