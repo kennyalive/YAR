@@ -5,9 +5,10 @@
 #include "light_resources.glsl"
 #include "shading_context.glsl"
 
-vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel, int point_light_count, int diffuse_rectangular_light_count)
+vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel, int point_light_count, int directional_light_count, int diffuse_rectangular_light_count)
 {
     vec3 L = vec3(0);
+    Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
 
     for (int i = 0; i < point_light_count; i++) {
         vec3 p = sc.P;
@@ -27,10 +28,20 @@ vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel,
         if (shadow_ray_payload.shadow_factor == 0.0)
             continue;
 
-        Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
         vec3 bsdf = compute_bsdf(mtl_handle, sc.UV, light_dir, sc.Wo);
         vec3 irradiance = point_lights[i].intensity * (n_dot_l / (light_dist * light_dist));
         L += shadow_ray_payload.shadow_factor * irradiance * bsdf;
+    }
+
+    for (int i = 0; i < directional_light_count; i++) {
+        vec3 light_dir = directional_lights[i].direction;
+
+        float n_dot_l = dot(sc.N, light_dir);
+        if (n_dot_l <= 0.0)
+            continue;
+
+        vec3 bsdf = compute_bsdf(mtl_handle, sc.UV, light_dir, sc.Wo);
+        L += bsdf * directional_lights[i].irradiance * n_dot_l;
     }
 
     uint seed = uint(gl_LaunchIDNV.y)*uint(800) + uint(gl_LaunchIDNV.x);
@@ -73,7 +84,6 @@ vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel,
             if (shadow_ray_payload.shadow_factor == 0.0)
                 continue;
 
-            Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
             vec3 bsdf = compute_bsdf(mtl_handle, sc.UV, light_dir, sc.Wo);
             L2 += shadow_ray_payload.shadow_factor * bsdf * light.area * light.emitted_radiance * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }

@@ -26,6 +26,7 @@ layout(std140, set=KERNEL_SET_0, binding=2)
 uniform Uniform_Block {
     mat4x3  camera_to_world;
     int     point_light_count;
+    int     directional_light_count;
     int     diffuse_rectangular_light_count;
     vec2    pad0;
 };
@@ -78,7 +79,7 @@ Shading_Context init_shading_context()
 void main()
 {
     Shading_Context sc = init_shading_context();
-    vec3 L = estimate_direct_lighting(sc, accel, point_light_count, diffuse_rectangular_light_count);
+    vec3 L = estimate_direct_lighting(sc, accel, point_light_count, directional_light_count, diffuse_rectangular_light_count);
 
     int area_light_index = instance_infos[gl_InstanceCustomIndexNV].area_light_index; 
     if (area_light_index != -1) {

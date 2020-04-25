@@ -12,6 +12,7 @@
 struct Rt_Uniform_Buffer {
     Matrix3x4   camera_to_world;
     uint32_t    point_light_count;
+    uint32_t    directional_light_count;
     uint32_t    diffuse_rectangular_light_count;
     Vector2     pad0;
 };
@@ -69,6 +70,10 @@ void Raytrace_Scene::update_camera_transform(const Matrix3x4& camera_to_world_tr
 
 void Raytrace_Scene::update_point_lights(int light_count) {
     mapped_uniform_buffer->point_light_count = light_count;
+}
+
+void Raytrace_Scene::update_directional_lights(int light_count) {
+    mapped_uniform_buffer->directional_light_count = light_count;
 }
 
 void Raytrace_Scene::update_diffuse_rectangular_lights(int light_count) {

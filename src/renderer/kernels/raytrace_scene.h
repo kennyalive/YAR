@@ -29,6 +29,7 @@ struct Raytrace_Scene {
     void update_output_image_descriptor(VkImageView output_image_view);
     void update_camera_transform(const Matrix3x4& camera_to_world_transform);
     void update_point_lights(int light_count);
+    void update_directional_lights(int light_count);
     void update_diffuse_rectangular_lights(int light_count);
 
     void dispatch(float fovy, bool spp4);

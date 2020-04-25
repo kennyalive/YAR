@@ -48,7 +48,7 @@ static void finalize_scene(Scene& scene) {
     if (!scene.lights.has_lights()) {
         Directional_Light light;
         light.direction = Vector3(1, 1, 1).normalized();
-        light.irradiance = ColorRGB(100, 100, 100);
+        light.irradiance = ColorRGB(5, 5, 5);
         scene.lights.directional_lights.push_back(light);
     }
 }

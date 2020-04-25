@@ -448,6 +448,7 @@ void Renderer::load_project(const std::string& input_file) {
         raytrace_scene.create(kernel_context, scene, gpu_meshes);
         raytrace_scene.update_output_image_descriptor(output_image.view);
         raytrace_scene.update_point_lights((int)scene.lights.point_lights.size());
+        raytrace_scene.update_directional_lights((int)scene.lights.directional_lights.size());
         raytrace_scene.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
     }
 
