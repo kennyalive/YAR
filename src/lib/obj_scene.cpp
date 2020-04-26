@@ -200,15 +200,9 @@ Obj_Data load_obj(const std::string& obj_file_path, const Triangle_Mesh_Load_Par
     return obj_data;
 }
 
-static const Matrix3x4 from_obj_to_world {
-    1, 0,  0, 0,
-    0, 0, -1, 0,
-    0, 1,  0, 0
-};
-
 Scene load_obj_scene(const YAR_Project& project) {
     Triangle_Mesh_Load_Params mesh_load_params;
-    mesh_load_params.transform = uniform_scale(from_obj_to_world, project.world_scale);
+    mesh_load_params.transform = uniform_scale(Matrix3x4::identity, project.world_scale);
     mesh_load_params.crease_angle = project.mesh_crease_angle;
     mesh_load_params.invert_winding_order = project.mesh_invert_winding_order;
     Obj_Data obj_data = load_obj(project.scene_path.string(), mesh_load_params, project.ignore_geometry_names);

@@ -213,7 +213,7 @@ void Renderer::restore_resolution_dependent_resources() {
 void Renderer::load_project(const std::string& input_file) {
     scene = load_scene(input_file);
 
-    flying_camera.initialize(scene.view_points[0]);
+    flying_camera.initialize(scene.view_points[0], scene.z_is_up);
 
     // TODO: temp structure. Use separate buffer per attribute.
     struct GPU_Vertex {
@@ -496,7 +496,7 @@ void Renderer::run_frame() {
     ui.camera_position = flying_camera.get_camera_pose().get_column(3);
 
     if (project_loaded)
-        draw_mesh.update(flying_camera.get_view_transform(), scene.camera_fov_y);
+        draw_mesh.update(flying_camera.get_view_transform(), scene.camera_fov_y, scene.z_is_up);
 
     if (project_loaded && vk.raytracing_supported)
         raytrace_scene.update_camera_transform(flying_camera.get_camera_pose());
@@ -698,7 +698,7 @@ void Renderer::draw_rasterized_image() {
 
 void Renderer::draw_raytraced_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
-    raytrace_scene.dispatch(scene.camera_fov_y, spp4);
+    raytrace_scene.dispatch(scene.camera_fov_y, spp4, scene.z_is_up);
 }
 
 void Renderer::tone_mapping()

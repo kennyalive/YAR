@@ -167,6 +167,9 @@ struct Parser {
             CHECK(token.type == JSMN_STRING);
             next_token();
         }
+        else if (match_string("obj_info")) {
+            parse_obj_info();
+        }
         else if (match_string("scene_type")) {
             if (match_string("pbrt"))
                 project.scene_type = Scene_Type::pbrt;
@@ -216,6 +219,25 @@ struct Parser {
         }
         else {
             check(false, "Unknown token [%.*s]", (int)get_current_token_string().size(), get_current_token_string().data());
+        }
+    }
+
+    void parse_obj_info() {
+        CHECK(token.type == JSMN_OBJECT);
+        const int num_fields = token.size;
+        next_token();
+        for (int i = 0; i < num_fields; i++) {
+            if (match_string("z_is_up")) {
+                project.obj_info.z_is_up = get_bool();
+                project.obj_info.z_is_up_specified = true;
+            }
+            else if (match_string("left_handed")) {
+                project.obj_info.left_handed = get_bool();
+                project.obj_info.left_handed_specified = true;
+            }
+            else {
+                check(false, "unknown coordinate system property");
+            }
         }
     }
 

@@ -80,12 +80,12 @@ void Raytrace_Scene::update_diffuse_rectangular_lights(int light_count) {
     mapped_uniform_buffer->diffuse_rectangular_light_count = light_count;
 }
 
-void Raytrace_Scene::dispatch(float fovy, bool spp4) {
+void Raytrace_Scene::dispatch(float fovy, bool spp4, bool z_is_up) {
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline_layout, KERNEL_SET_0, 1, &descriptor_set, 0, nullptr);
 
     float tan_fovy_over2 = std::tan(radians(fovy/2.f));
-    uint32_t push_constants[2] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2) };
-    vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_ALL, 0, 8, &push_constants[0]);
+    uint32_t push_constants[3] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2), z_is_up };
+    vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_ALL, 0, 12, &push_constants[0]);
 
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipeline);
 
@@ -122,6 +122,7 @@ void Raytrace_Scene::create_pipeline(const Kernel_Context& ctx, const std::vecto
         VkPushConstantRange push_constant_ranges[1];
         // offset 0: spp (samples per pixel)
         // offset 4: fovy
+        // offset 8: is_z_up
         push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_ALL;
         push_constant_ranges[0].offset = 0;
         push_constant_ranges[0].size = Compatible_Layout_Push_Constant_Count * sizeof(uint32_t);

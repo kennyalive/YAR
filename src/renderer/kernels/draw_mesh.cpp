@@ -136,13 +136,26 @@ void Draw_Mesh::update_diffuse_rectangular_lights(int light_count) {
     buf.diffuse_rectangular_light_count = light_count;
 }
 
-void Draw_Mesh::update(const Matrix3x4& view_transform, float fov) {
+void Draw_Mesh::update(const Matrix3x4& view_transform, float fov, bool z_is_up) {
     float aspect_ratio = (float)vk.surface_size.width / (float)vk.surface_size.height;
-    Matrix3x4 from_world_to_opengl = {{
-        {1,  0, 0, 0},
-        {0,  0, 1, 0},
-        {0, -1, 0, 0}
-    }};
+
+    Matrix3x4 from_world_to_opengl;
+    if (z_is_up) {
+        from_world_to_opengl = { {
+            {1,  0, 0, 0},
+            {0,  0, 1, 0},
+            {0, -1, 0, 0}
+        } };
+    }
+    else {
+        from_world_to_opengl = { {
+            {1,  0, 0, 0},
+            {0,  1, 0, 0},
+            {0, 0, 1, 0}
+        } };
+    }
+    
+   
     Matrix4x4 proj = perspective_transform_opengl_z01(radians(fov), aspect_ratio, 0.1f, 5000.0f) * from_world_to_opengl;
     Matrix4x4 model_view = Matrix4x4::identity * view_transform;
     Matrix4x4 model_view_proj = proj * view_transform;

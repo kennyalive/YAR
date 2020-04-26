@@ -8,8 +8,7 @@
 Scene load_pbrt_scene(const YAR_Project& project);
 // defined in obj_scene.cpp
 Scene load_obj_scene(const YAR_Project& project);
-// defined in yar_project.cpp
-YAR_Project parse_yar_file(const std::string& yar_file_path);
+
 
 static YAR_Project create_yar_project(const std::string& input_file) {
     fs::path path(input_file);
@@ -77,6 +76,11 @@ Scene load_scene(const std::string& input_file) {
         scene.render_region = project.render_region;
     if (scene.render_region == Bounds2i{})
         scene.render_region = Bounds2i{ {0, 0}, scene.image_resolution };
+
+    if (project.obj_info.z_is_up_specified) {
+        ASSERT(project.scene_type == Scene_Type::obj);
+        scene.z_is_up = project.obj_info.z_is_up;
+    }
 
     scene.mesh_disable_backfacing_culling = project.mesh_disable_backfacing_culling;
 

@@ -22,7 +22,7 @@ struct Draw_Mesh {
     void update_point_lights(int light_count);
     void update_directional_lights(int light_count);
     void update_diffuse_rectangular_lights(int light_count);
-    void update(const Matrix3x4& view_transform, float fov);
+    void update(const Matrix3x4& view_transform, float fov, bool z_is_up);
 
     void bind_sets_and_pipeline();
     void dispatch(const GPU_Mesh& gpu_mesh, int instance_index);

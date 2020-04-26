@@ -158,7 +158,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     Scene scene = load_scene(input_file);
     Scene_KdTree scene_kdtree = load_scene_kdtree(scene);
 
-    Camera camera(scene.view_points[0], Vector2(scene.image_resolution), scene.camera_fov_y);
+    Camera camera(scene.view_points[0], Vector2(scene.image_resolution), scene.camera_fov_y, scene.z_is_up);
 
     Bounds2i render_region = scene.render_region;
     if (render_region == Bounds2i{})

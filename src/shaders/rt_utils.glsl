@@ -26,9 +26,16 @@ vec3 get_direction(vec2 film_position) {
     vec2 uv = 2.0 * (film_position / vec2(gl_LaunchSizeNV.xy)) - 1.0;
     float aspect_ratio = float(gl_LaunchSizeNV.x) / float(gl_LaunchSizeNV.y);
 
-    float dir_x =  uv.x *  aspect_ratio * tan_fovy_over_2;
-    float dir_y = -uv.y * tan_fovy_over_2;
-    return normalize(vec3(dir_x, 1.f, dir_y));
+    float right = uv.x *  aspect_ratio * tan_fovy_over_2;
+    float up = -uv.y * tan_fovy_over_2;
+
+    // If Z is up then we are looking along Y axis.
+    // If Y is up then we are looking along -Z axis.
+    vec3 direction;
+    direction.x = right;
+    direction.y = bool(z_is_up) ? 1.f : up;
+    direction.z = bool(z_is_up) ? up : -1.f;
+    return normalize(direction);
 }
 
 Ray generate_ray(mat4x3 camera_to_world, vec2 film_position) {

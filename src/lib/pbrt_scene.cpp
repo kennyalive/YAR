@@ -155,10 +155,34 @@ Scene load_pbrt_scene(const YAR_Project& project) {
 
     Matrix3x4 view_point;
     {
-        view_point.set_column(0, Vector3(&rot.vx.x));
-        view_point.set_column(1, Vector3(&rot.vz.x));
-        view_point.set_column(2, Vector3(&rot.vy.x));
         view_point.set_column(3, Vector3(&pos.x));
+
+        // Assuming left-handed coordinate system (pbrt convention), the pbrt-parser library
+        // does the following setup of the camera orientation vectors:
+        // rot.vx - right vector
+        // rot.vy - up vector
+        // rot.vz - forward vector
+        Vector3 right = Vector3(&rot.vx.x);
+        Vector3 up = Vector3(&rot.vy.x);
+        Vector3 forward = Vector3(&rot.vz.x);
+
+        scene.z_is_up = std::abs(up.z) > std::abs(up.y);
+
+        view_point.set_column(0, right);
+        if (scene.z_is_up) {
+            view_point.set_column(2, up);
+            Vector3 y_axis = -forward;
+            // By inverting y_axis we effectively generate rays in the opposite direction
+            // along y axis so the result matches PBRT output which uses LH convention.
+            view_point.set_column(1, -y_axis);
+        }
+        else { // y_is_up
+            view_point.set_column(1, up);
+            Vector3 z_axis = forward;
+            // By inverting z_axis we effectively generate rays in the opposite direction
+            // along z axis so the result matches PBRT output which uses LH convention.
+            view_point.set_column(2, -z_axis);
+        }
     }
 
     if (is_transform_changes_handedness(view_point))

@@ -7,7 +7,8 @@
 
 layout(push_constant) uniform Push_Constants {
       layout(offset = 0) uint spp4;
-      layout(offset = 4) float tan_fovy_over_2; 
+      layout(offset = 4) float tan_fovy_over_2;
+      layout(offset = 8) uint z_is_up;
 };
 
 #define RGEN_SHADER

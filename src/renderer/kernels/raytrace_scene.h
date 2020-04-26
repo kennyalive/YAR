@@ -32,7 +32,7 @@ struct Raytrace_Scene {
     void update_directional_lights(int light_count);
     void update_diffuse_rectangular_lights(int light_count);
 
-    void dispatch(float fovy, bool spp4);
+    void dispatch(float fovy, bool spp4, bool z_is_up);
 
 private:
     void create_pipeline(const Kernel_Context& ctx, const std::vector<GPU_Mesh>& gpu_meshes);

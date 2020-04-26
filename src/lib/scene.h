@@ -21,6 +21,7 @@ struct Scene {
     Vector2i image_resolution;
     Bounds2i render_region;
     float camera_fov_y = 0.f;
+    bool  z_is_up = false;
     bool mesh_disable_backfacing_culling = false;
     bool front_face_has_clockwise_winding = false;
     
