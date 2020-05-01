@@ -10,11 +10,10 @@ vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel,
     vec3 L = vec3(0);
     Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
 
-    for (int i = 0; i < point_light_count; i++) {
-        vec3 p = sc.P;
-        p = offset_ray(p, sc.Ng);
+    const vec3 P = offset_ray(sc.P, sc.Ng);
 
-        vec3 light_vec = point_lights[i].position - p;
+    for (int i = 0; i < point_light_count; i++) {
+        vec3 light_vec = point_lights[i].position - P;
         float light_dist = length(light_vec);
         vec3 light_dir = light_vec / light_dist;
 
@@ -24,7 +23,7 @@ vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel,
 
         // trace shadow ray
         shadow_ray_payload.shadow_factor = 1.0f;
-        traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, p, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
+        traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, P, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
         if (shadow_ray_payload.shadow_factor == 0.0)
             continue;
 
@@ -38,6 +37,12 @@ vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel,
 
         float n_dot_l = dot(sc.N, light_dir);
         if (n_dot_l <= 0.0)
+            continue;
+
+        // trace shadow ray
+        shadow_ray_payload.shadow_factor = 1.0f;
+        traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, P, 0.0, light_dir, 1e5 /* compute tmax? */, 1);
+        if (shadow_ray_payload.shadow_factor == 0.0)
             continue;
 
         vec3 bsdf = compute_bsdf(mtl_handle, sc.UV, light_dir, sc.Wo);
@@ -62,10 +67,7 @@ vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel,
             vec3 local_light_point = vec3(light.size.x/2.0 * u.x, light.size.y/2.0 * u.y, 0.f);
             vec3 light_point = light.light_to_world_transform * vec4(local_light_point, 1.0);
 
-            vec3 p = sc.P;
-            p = offset_ray(p, sc.Ng);
-
-            vec3 light_vec = light_point - p;
+            vec3 light_vec = light_point - P;
             float light_dist = length(light_vec);
             vec3 light_dir = light_vec / light_dist;
 
@@ -80,7 +82,7 @@ vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel,
 
             // trace shadow ray
             shadow_ray_payload.shadow_factor = 1.0f;
-            traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, p, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
+            traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, P, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
             if (shadow_ray_payload.shadow_factor == 0.0)
                 continue;
 
