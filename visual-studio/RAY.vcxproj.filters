@@ -30,6 +30,9 @@
       <Filter>bsdf</Filter>
     </ClCompile>
     <ClCompile Include="..\src\reference\image_texture.cpp" />
+    <ClCompile Include="..\src\reference\scattering.cpp">
+      <Filter>bsdf</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -44,7 +47,6 @@
       <Filter>tests</Filter>
     </ClInclude>
     <ClInclude Include="..\src\reference\direct_lighting.h" />
-    <ClInclude Include="..\src\reference\scattering.h" />
     <ClInclude Include="..\src\reference\shading_context.h" />
     <ClInclude Include="..\src\reference\ray_lib.h" />
     <ClInclude Include="..\src\reference\bsdf\lambertian_brdf.h">
@@ -52,6 +54,9 @@
     </ClInclude>
     <ClInclude Include="..\src\reference\parameter_evaluation.h" />
     <ClInclude Include="..\src\reference\image_texture.h" />
+    <ClInclude Include="..\src\reference\scattering.h">
+      <Filter>bsdf</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

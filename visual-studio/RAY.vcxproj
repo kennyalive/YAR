@@ -107,6 +107,7 @@
     <ClCompile Include="..\src\reference\ray_lib.cpp" />
     <ClCompile Include="..\src\reference\reference_renderer.cpp" />
     <ClCompile Include="..\src\reference\sampling.cpp" />
+    <ClCompile Include="..\src\reference\scattering.cpp" />
     <ClCompile Include="..\src\reference\shading_context.cpp" />
     <ClCompile Include="..\src\reference\tests\test.cpp" />
     <ClCompile Include="..\src\reference\tests\test_kdtree.cpp" />

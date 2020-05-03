@@ -61,6 +61,10 @@ inline ColorRGB operator+(const ColorRGB& a, const ColorRGB& b) {
     return ColorRGB{ a[0] + b[0], a[1] + b[1], a[2] + b[2] };
 }
 
+inline ColorRGB operator-(const ColorRGB& a, const ColorRGB& b) {
+    return ColorRGB{ a[0] - b[0], a[1] - b[1], a[2] - b[2] };
+}
+
 // Conversion from XYZ to sRGB color space (without gamma encoding).
 ColorRGB ColorRGBFromXYZ(const Vector3& xyz);
 
