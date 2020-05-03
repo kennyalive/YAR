@@ -2,9 +2,9 @@
 #include "lib/common.h"
 #include "direct_lighting.h"
 
+#include "bsdf.h"
 #include "ray_lib.h"
 #include "render_context.h"
-#include "scattering.h"
 #include "shading_context.h"
 
 #include "lib/light.h"

@@ -94,8 +94,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\reference\bsdf\factory.cpp" />
-    <ClCompile Include="..\src\reference\bsdf\lambertian_brdf.cpp" />
+    <ClCompile Include="..\src\reference\bsdf.cpp" />
     <ClCompile Include="..\src\reference\camera.cpp" />
     <ClCompile Include="..\src\reference\film.cpp" />
     <ClCompile Include="..\src\reference\intersection.cpp" />
@@ -119,7 +118,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\reference\bsdf\lambertian_brdf.h" />
+    <ClInclude Include="..\src\reference\bsdf.h" />
     <ClInclude Include="..\src\reference\parameter_evaluation.h" />
     <ClInclude Include="..\src\reference\ray_lib.h" />
     <ClInclude Include="..\src\reference\scattering.h" />

@@ -2,8 +2,8 @@
 #include "lib/common.h"
 #include "shading_context.h"
 
+#include "bsdf.h"
 #include "intersection.h"
-#include "scattering.h"
 
 #include "lib/math.h"
 #include "lib/scene_object.h"
