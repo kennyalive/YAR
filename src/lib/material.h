@@ -5,7 +5,8 @@
 
 enum class Material_Type : uint32_t {
     none,
-    lambertian 
+    lambertian,
+    mirror
 };
 
 struct Material_Handle {
@@ -27,7 +28,12 @@ struct Lambertian_Material {
     RGB_Parameter reflectance;
 };
 
+struct Mirror_Material {
+    RGB_Parameter reflectance;
+};
+
 struct Materials {
     std::vector<std::string> texture_names;
     std::vector<Lambertian_Material> lambertian;
+    std::vector<Mirror_Material> mirror;
 };

@@ -37,6 +37,7 @@
     <ClInclude Include="..\src\lib\scene_loader.h">
       <Filter>scene_loader</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\lib\utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />
@@ -64,6 +65,7 @@
     <ClCompile Include="..\src\lib\pbrt_scene.cpp">
       <Filter>scene_loader</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\lib\utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="scene">

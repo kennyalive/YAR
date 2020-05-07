@@ -29,7 +29,7 @@ static Matrix3x4 get_transform_from_pbrt_transform(const pbrt::affine3f& pbrt_tr
     return transform;
 }
 
-static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pbrt_mesh, Scene* scene) {
+static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pbrt_mesh, Scene* scene, Material_Handle& mtl_handle) {
     Triangle_Mesh mesh;
 
     mesh.indices.resize(pbrt_mesh->index.size() * 3);
@@ -62,7 +62,7 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
 
     scene->geometries.triangle_meshes.emplace_back(mesh);
 
-    if (pbrt::MatteMaterial::SP matte_material = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_mesh->material);
+    if (auto matte_material = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_mesh->material);
         matte_material != nullptr)
     {
         Lambertian_Material mtl;
@@ -87,12 +87,23 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
             mtl.reflectance.constant_value = ColorRGB(&matte_material->kd.x);
         }
         scene->materials.lambertian.push_back(mtl);
+        mtl_handle = Material_Handle{ Material_Type::lambertian, int(scene->materials.lambertian.size() - 1) };
+    }
+    else if (auto mirror_material = std::dynamic_pointer_cast<pbrt::MirrorMaterial>(pbrt_mesh->material);
+        mirror_material != nullptr)
+    {
+        Mirror_Material mtl;
+        mtl.reflectance.is_constant = true;
+        mtl.reflectance.constant_value = ColorRGB(&mirror_material->kr.x);
+        scene->materials.mirror.push_back(mtl);
+        mtl_handle = Material_Handle{ Material_Type::mirror, int(scene->materials.mirror.size() - 1) };
     }
     else {
         Lambertian_Material mtl;
         mtl.reflectance.is_constant = true;
         mtl.reflectance.constant_value = ColorRGB{ 0.5f, 0.5f, 0.5f };
         scene->materials.lambertian.push_back(mtl);
+        mtl_handle = Material_Handle{ Material_Type::lambertian, int(scene->materials.lambertian.size() - 1) };
     }
     return Geometry_Handle{ Geometry_Type::triangle_mesh, (int)scene->geometries.triangle_meshes.size() - 1 };
 }
@@ -158,13 +169,14 @@ Scene load_pbrt_scene(const YAR_Project& project) {
     for (pbrt::Instance::SP instance : pbrt_scene->world->instances) {
         ASSERT(instance->object->instances.empty()); // becase we flattened instance hierarchy
         // Import shapes.
+        Material_Handle mtl;
         for (pbrt::Shape::SP shape : instance->object->shapes) {
             Geometry_Handle geometry = already_imported_shapes[shape];
             if (geometry == Null_Geometry) {
                 if (pbrt::TriangleMesh::SP pbrt_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(shape);
                     pbrt_mesh != nullptr)
                 {
-                    geometry = import_pbrt_triangle_mesh(pbrt_mesh, &scene);
+                    geometry = import_pbrt_triangle_mesh(pbrt_mesh, &scene, mtl);
                 }
                 else if (pbrt::Sphere::SP pbrt_sphere = std::dynamic_pointer_cast<pbrt::Sphere>(shape);
                     pbrt_sphere != nullptr)
@@ -180,7 +192,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
             if (geometry.type == Geometry_Type::triangle_mesh) {
                 Scene_Object scene_object;
                 scene_object.geometry = geometry;
-                scene_object.material = { Material_Type::lambertian, (int)scene.materials.lambertian.size() - 1 };
+                scene_object.material = mtl;
                 scene_object.object_to_world_transform = get_transform_from_pbrt_transform(instance->xfm);
                 scene_object.world_to_object_transform = get_inverted_transform(scene_object.object_to_world_transform);
                 scene.objects.push_back(scene_object);

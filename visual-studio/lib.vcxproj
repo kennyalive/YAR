@@ -106,6 +106,7 @@
     <ClInclude Include="..\src\lib\matrix.h" />
     <ClInclude Include="..\src\lib\parameter.h" />
     <ClInclude Include="..\src\lib\scene_loader.h" />
+    <ClInclude Include="..\src\lib\utils.h" />
     <ClInclude Include="..\src\lib\yar_project.h" />
     <ClInclude Include="..\src\lib\random.h" />
     <ClInclude Include="..\src\lib\ray.h" />
@@ -123,6 +124,7 @@
     <ClCompile Include="..\src\lib\flying_camera.cpp" />
     <ClCompile Include="..\src\lib\image.cpp" />
     <ClCompile Include="..\src\lib\math.cpp" />
+    <ClCompile Include="..\src\lib\utils.cpp" />
     <ClCompile Include="..\src\lib\yar_project.cpp" />
     <ClCompile Include="..\src\lib\light.cpp" />
     <ClCompile Include="..\src\lib\matrix.cpp" />

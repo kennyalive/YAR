@@ -6,6 +6,7 @@
 
 struct Intersection;
 struct Render_Context;
+struct Thread_Context;
 class BSDF;
 
 struct Shading_Point_Rays {
@@ -34,10 +35,13 @@ struct Shading_Context {
     Light_Handle area_light;
     const BSDF* bsdf = nullptr;
 
+    bool mirror_surface = false;
+    ColorRGB mirror_reflectance;
+
     Shading_Context(
         const Render_Context& global_ctx,
-        const Shading_Point_Rays& rays, const Intersection& intersection,
-        void* bsdf_allocation, int bsdf_allocation_size);
+        Thread_Context& thread_ctx,
+        const Shading_Point_Rays& rays, const Intersection& intersection);
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
 };

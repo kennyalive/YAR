@@ -3,15 +3,17 @@
 #include "shading_context.h"
 
 #include "bsdf.h"
+#include "context.h"
 #include "intersection.h"
+#include "parameter_evaluation.h"
 
 #include "lib/math.h"
 #include "lib/scene_object.h"
 
 Shading_Context::Shading_Context(
     const Render_Context& global_ctx,
-    const Shading_Point_Rays& rays, const Intersection& intersection,
-    void* bsdf_allocation, int bsdf_allocation_size)
+    Thread_Context& thread_ctx,
+    const Shading_Point_Rays& rays, const Intersection& intersection)
 {
     Wo = -rays.incident_ray.direction;
 
@@ -114,9 +116,17 @@ Shading_Context::Shading_Context(
         }
     }
 
-    // Allocate BSDF.
+    // Handle material.
     if (intersection.scene_object != nullptr && intersection.scene_object->material != Null_Material) {
-        bsdf = create_bsdf(global_ctx, *this, intersection.scene_object->material, bsdf_allocation, bsdf_allocation_size);
+        Material_Handle mtl = intersection.scene_object->material;
+        if (mtl.type == Material_Type::mirror) {
+            mirror_surface = true;
+            const Mirror_Material& params = global_ctx.materials.mirror[mtl.index];
+            mirror_reflectance = evaluate_rgb_parameter(global_ctx, *this, params.reflectance);
+        }
+        else {
+            bsdf = create_bsdf(global_ctx, thread_ctx, *this, intersection.scene_object->material);
+        }
     }
 }
 
