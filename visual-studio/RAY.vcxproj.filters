@@ -35,7 +35,6 @@
     <ClInclude Include="..\src\reference\kdtree_builder.h" />
     <ClInclude Include="..\src\reference\sampling.h" />
     <ClInclude Include="..\src\reference\reference_renderer.h" />
-    <ClInclude Include="..\src\reference\render_context.h" />
     <ClInclude Include="..\src\reference\tests\test.h">
       <Filter>tests</Filter>
     </ClInclude>
@@ -46,6 +45,7 @@
     <ClInclude Include="..\src\reference\image_texture.h" />
     <ClInclude Include="..\src\reference\scattering.h" />
     <ClInclude Include="..\src\reference\bsdf.h" />
+    <ClInclude Include="..\src\reference\context.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

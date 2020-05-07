@@ -5,6 +5,7 @@
 
 #include "lib/geometry.h"
 #include "lib/light.h"
+#include "lib/utils.h"
 
 class Camera;
 
@@ -15,4 +16,8 @@ struct Render_Context {
     Lights lights;
     Materials materials;
     std::vector<Image_Texture> textures;
+};
+
+struct Thread_Context {
+    Memory_Pool memory_pool;
 };

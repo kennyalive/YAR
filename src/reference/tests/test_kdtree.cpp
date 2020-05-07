@@ -5,11 +5,11 @@
 #include "lib/vector.h"
 #include "lib/yar_project.h"
 
+#include "../context.h"
 #include "../intersection.h"
 #include "../kdtree.h"
 #include "../kdtree_builder.h"
 #include "../sampling.h"
-#include "../render_context.h"
 #include "../shading_context.h"
 
 #ifdef _WIN32
@@ -107,7 +107,8 @@ static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
         time_ns += elapsed_nanoseconds(t2);
 
         if (hit_found) {
-            Shading_Context shading_ctx(Render_Context{}, Shading_Point_Rays{}, isect, nullptr, 0);
+            Thread_Context thread_ctx;
+            Shading_Context shading_ctx(Render_Context{}, thread_ctx, Shading_Point_Rays{}, isect);
             last_hit = shading_ctx.P;
             last_hit_epsilon = isect.t * 1e-3f;
         }
@@ -175,7 +176,8 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
         }
 
         if (kdtree_intersection.t != Infinity) {
-            Shading_Context shading_ctx(Render_Context{}, Shading_Point_Rays{}, kdtree_intersection, nullptr, 0);
+            Thread_Context thread_ctx;
+            Shading_Context shading_ctx(Render_Context{}, thread_ctx, Shading_Point_Rays{}, kdtree_intersection);
             last_hit = shading_ctx.P;
             last_hit_epsilon = kdtree_intersection.t * 1e-3f;
         }

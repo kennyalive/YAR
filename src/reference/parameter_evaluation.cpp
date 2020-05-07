@@ -1,7 +1,8 @@
 #include "std.h"
 #include "lib/common.h"
 #include "parameter_evaluation.h"
-#include "render_context.h"
+
+#include "context.h"
 #include "shading_context.h"
 
 #include "lib/parameter.h"

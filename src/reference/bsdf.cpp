@@ -2,15 +2,15 @@
 #include "lib/common.h"
 #include "bsdf.h"
 
+#include "context.h"
 #include "parameter_evaluation.h"
-#include "render_context.h"
 
-const BSDF* create_bsdf(const Render_Context& global_ctx, const Shading_Context& shading_ctx, Material_Handle material, void* bsdf_allocation, int bsdf_allocation_size) {
+const BSDF* create_bsdf(const Render_Context& global_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, Material_Handle material) {
     switch (material.type) {
     case Material_Type::lambertian:
     {
         const Lambertian_Material& params = global_ctx.materials.lambertian[material.index];
-        ASSERT(sizeof(Lambertian_Material) <= bsdf_allocation_size);
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Lambertian_BRDF>();
         return new (bsdf_allocation) Lambertian_BRDF(global_ctx, shading_ctx, params);
     }
     default:

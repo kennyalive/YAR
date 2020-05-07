@@ -3,12 +3,12 @@
 #include "reference_renderer.h"
 
 #include "camera.h"
+#include "context.h"
 #include "direct_lighting.h"
 #include "film.h"
 #include "intersection.h"
 #include "kdtree.h"
 #include "kdtree_builder.h"
-#include "render_context.h"
 #include "shading_context.h"
 
 #include "lib/geometry.h"
@@ -115,18 +115,17 @@ static Scene_KdTree load_scene_kdtree(const Scene& scene) {
     return scene_kdtree;
 }
 
-static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, uint64_t rng_seed, Film& film) {
+static void render_tile(const Render_Context& ctx, Thread_Context& thread_ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, uint64_t rng_seed, Film& film) {
     pcg32_random_t rng;
     pcg32_srandom_r(&rng, 0, rng_seed);
 
     Film_Tile tile(pixel_bounds, film.filter);
-    int bsdf_allocation_size = 1024 * 8;
-    void* bsdf_allocation =_aligned_malloc(bsdf_allocation_size, 64);
 
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
         for (int x = sample_bounds.p0.x; x < sample_bounds.p1.x; x++) {
-            Vector2 film_pos = Vector2(x + 0.5f, y + 0.5f);
+            thread_ctx.memory_pool.reset();
 
+            Vector2 film_pos = Vector2(x + 0.5f, y + 0.5f);
             Ray ray = ctx.camera->generate_ray(film_pos);
 
             Intersection isect;
@@ -138,15 +137,16 @@ static void render_tile(const Render_Context& ctx, Bounds2i sample_bounds, Bound
             rays.auxilary_ray_dx_offset = ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
             rays.auxilary_ray_dy_offset = ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
 
-            Shading_Context shading_ctx(ctx, rays, isect, bsdf_allocation, bsdf_allocation_size);
-            ColorRGB radiance = compute_direct_lighting(ctx, shading_ctx, &rng);
+            Shading_Context shading_ctx(ctx, thread_ctx, rays, isect);
+            ColorRGB radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx, &rng);
             tile.add_sample(film_pos, radiance);
         }
     }
-
     film.merge_tile(tile);
-    _aligned_free(bsdf_allocation);
 }
+
+static bool thread_context_initialized[32];
+static Thread_Context thread_contexts[32];
 
 void render_reference_image(const std::string& input_file, const Renderer_Options& options) {
     // Initialize renderer
@@ -213,6 +213,9 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     Timestamp t;
 
     if (options.thread_count == 1) {
+        thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
+        thread_context_initialized[0] = true;
+
         for (int y_tile = 0; y_tile < y_tile_count; y_tile++) {
             for (int x_tile = 0; x_tile < x_tile_count; x_tile++) {
                 Bounds2i tile_sample_bounds;
@@ -227,7 +230,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
                 tile_pixel_bounds.p1.y = std::min((int)std::ceil(tile_sample_bounds.p1.y - 1 + 0.5f + filter_radius) + 1, render_region.p1.y);
 
                 uint64_t rng_seed = y_tile * x_tile_count + x_tile;
-                render_tile(ctx, tile_sample_bounds, tile_pixel_bounds, rng_seed, film);
+                render_tile(ctx, thread_contexts[0], tile_sample_bounds, tile_pixel_bounds, rng_seed, film);
             }
         }
     } else {
@@ -238,8 +241,13 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
             uint64_t rng_seed;
             Film* film;
 
-            void ExecuteRange(enki::TaskSetPartition, uint32_t) override {
-                render_tile(*ctx, tile_sample_bounds, tile_pixel_bounds, rng_seed, *film);
+            void ExecuteRange(enki::TaskSetPartition, uint32_t threadnum) override {
+                ASSERT(threadnum < 32);
+                if (!thread_context_initialized[threadnum]) {
+                    thread_contexts[threadnum].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
+                    thread_context_initialized[threadnum] = true;
+                }
+                render_tile(*ctx, thread_contexts[threadnum], tile_sample_bounds, tile_pixel_bounds, rng_seed, *film);
             }
         };
 
