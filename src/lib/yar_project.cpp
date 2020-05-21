@@ -328,7 +328,7 @@ struct Parser {
         float radiant_exitance_per_wavelength = Pi * radiant_flux_per_wavelength; // [M/m]
         Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(radiant_exitance_per_wavelength);
         Vector3 xyz = s.emission_spectrum_to_XYZ();
-        light.emitted_radiance = ColorRGBFromXYZ(xyz);
+        light.emitted_radiance = XYZ_to_sRGB(xyz);
 
         project.lights.diffuse_rectangular_lights.emplace_back(std::move(light));
     }

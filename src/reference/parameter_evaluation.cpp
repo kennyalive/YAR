@@ -26,3 +26,12 @@ ColorRGB evaluate_rgb_parameter(const Render_Context& global_ctx, const Shading_
     //return texture.sample_trilinear(uv, lod, Wrap_Mode::repeat);
     return texture.sample_EWA(uv, shading_ctx.dUVdx * uv_scale, shading_ctx.dUVdy * uv_scale, Wrap_Mode::repeat, 32.f);
 }
+
+float evaluate_float_parameter(const  Render_Context& global_ctx, const Shading_Context& shading_ctx, const Float_Parameter& param) {
+    if (param.is_constant)
+        return param.constant_value;
+
+    // TODO: implement texture sampling
+    ASSERT(false);
+    return 0.f;
+}

@@ -9,7 +9,7 @@
 
 class Camera;
 
-struct Render_Context {
+struct Render_Context { // Scene_Context rename ???
     Bounds2i sample_bounds;
     const Camera* camera;
     const Scene_KdTree* acceleration_structure;

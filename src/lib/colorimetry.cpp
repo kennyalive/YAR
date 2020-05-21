@@ -1,11 +1,10 @@
 #include "std.h"
 #include "common.h"
-#include "spectrum.h"
+#include "colorimetry.h"
 
 //
 // Data is obtained from 'Colour & Vision Research Laboratory': http://www.cvrl.org
 //
-
 //CIE 1931 2 Degree Standard Observer.
 static double CIE_1931_2_Degree[471][3] = {
     /*360*/ {0.000129900000,0.000003917000,0.000606100000},
@@ -481,18 +480,55 @@ static double CIE_1931_2_Degree[471][3] = {
     /*830*/ {0.000001251141,0.000000451810,0.000000000000},
 };
 
+//
+// Data is from colour-science python library (colorimetry/datasets/illuminants/spds.py)
+//
+static double D65[97] = {
+    /*300*/ 0.034100, /*305*/ 1.664300, /*310*/ 3.294500, /*315*/ 11.765200, /*320*/ 20.236000,
+    /*325*/ 28.644700, /*330*/ 37.053500, /*335*/ 38.501100, /*340*/ 39.948800, /*345*/ 42.430200,
+    /*350*/ 44.911700, /*355*/ 45.775000, /*360*/ 46.638300, /*365*/ 49.363700, /*370*/ 52.089100,
+    /*375*/ 51.032300, /*380*/ 49.975500, /*385*/ 52.311800, /*390*/ 54.648200, /*395*/ 68.701500,
+    /*400*/ 82.754900, /*405*/ 87.120400, /*410*/ 91.486000, /*415*/ 92.458900, /*420*/ 93.431800,
+    /*425*/ 90.057000, /*430*/ 86.682300, /*435*/ 95.773600, /*440*/ 104.865000, /*445*/ 110.936000,
+    /*450*/ 117.008000, /*455*/ 117.410000, /*460*/ 117.812000, /*465*/ 116.336000, /*470*/ 114.861000,
+    /*475*/ 115.392000, /*480*/ 115.923000, /*485*/ 112.367000, /*490*/ 108.811000, /*495*/ 109.082000,
+    /*500*/ 109.354000, /*505*/ 108.578000, /*510*/ 107.802000, /*515*/ 106.296000, /*520*/ 104.790000,
+    /*525*/ 106.239000, /*530*/ 107.689000, /*535*/ 106.047000, /*540*/ 104.405000, /*545*/ 104.225000,
+    /*550*/ 104.046000, /*555*/ 102.023000, /*560*/ 100.000000, /*565*/ 98.167100, /*570*/ 96.334200,
+    /*575*/ 96.061100, /*580*/ 95.788000, /*585*/ 92.236800, /*590*/ 88.685600, /*595*/ 89.345900,
+    /*600*/ 90.006200, /*605*/ 89.802600, /*610*/ 89.599100, /*615*/ 88.648900, /*620*/ 87.698700,
+    /*625*/ 85.493600, /*630*/ 83.288600, /*635*/ 83.493900, /*640*/ 83.699200, /*645*/ 81.863000,
+    /*650*/ 80.026800, /*655*/ 80.120700, /*660*/ 80.214600, /*665*/ 81.246200, /*670*/ 82.277800,
+    /*675*/ 80.281000, /*680*/ 78.284200, /*685*/ 74.002700, /*690*/ 69.721300, /*695*/ 70.665200,
+    /*700*/ 71.609100, /*705*/ 72.979000, /*710*/ 74.349000, /*715*/ 67.976500, /*720*/ 61.604000,
+    /*725*/ 65.744800, /*730*/ 69.885600, /*735*/ 72.486300, /*740*/ 75.087000, /*745*/ 69.339800,
+    /*750*/ 63.592700, /*755*/ 55.005400, /*760*/ 46.418200, /*765*/ 56.611800, /*770*/ 66.805400,
+    /*775*/ 65.094100, /*780*/ 63.382800
+};
+
 // Converts given Color Matching Function to Sampled_Spectrum representation.
 static Sampled_Spectrum compute_CIE_sampled_spectrum(int cmf_index) {
-    const size_t n = std::size(CIE_1931_2_Degree);
-    std::vector<float> l(n);
-    std::vector<float> v(n);
+    constexpr int n = (int)std::size(CIE_1931_2_Degree);
+    float l[n];
+    float v[n];
 
-    for (size_t i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {
         l[i] = 360.f + i;
         v[i] = float(CIE_1931_2_Degree[i][cmf_index]);
     }
+    return Sampled_Spectrum::from_tabulated_data(l, v, n);
+}
 
-    return Sampled_Spectrum::from_tabulated_data(l.data(), v.data(), int(l.size()));
+static Sampled_Spectrum compute_D65_sampled_spectrum() {
+    constexpr int n = (int)std::size(D65);
+    float l[n];
+    float v[n];
+
+    for (int i = 0; i < n; i++) {
+        l[i] = 300.f + i * 5;
+        v[i] = float(D65[i]);
+    }
+    return Sampled_Spectrum::from_tabulated_data(l, v, n);
 }
 
 static float compute_CIE_Y_integral() {
@@ -504,8 +540,22 @@ static float compute_CIE_Y_integral() {
     return sum * Sampled_Spectrum::Interval_Length;
 }
 
+static float compute_CIE_Y_D65_integral() {
+    Sampled_Spectrum y = compute_CIE_sampled_spectrum(1);
+    Sampled_Spectrum d65 = compute_D65_sampled_spectrum();
+    float sum = 0.f;
+    for (int i = 0; i < Sampled_Spectrum::Sample_Count; i++) {
+        sum += y.c[i] * d65.c[i];
+    }
+    return sum * Sampled_Spectrum::Interval_Length;
+}
+
 extern const Sampled_Spectrum CIE_X = compute_CIE_sampled_spectrum(0);
 extern const Sampled_Spectrum CIE_Y = compute_CIE_sampled_spectrum(1);
 extern const Sampled_Spectrum CIE_Z = compute_CIE_sampled_spectrum(2);
+extern const Sampled_Spectrum D65_illuminant = compute_D65_sampled_spectrum();
+
 extern const float CIE_Y_integral = compute_CIE_Y_integral();
 extern const float CIE_Y_integral_inverse = 1.f / compute_CIE_Y_integral();
+extern const float CIE_Y_D65_integral = compute_CIE_Y_D65_integral();
+extern const float CIE_Y_D65_integral_inverse = 1.f / compute_CIE_Y_D65_integral();

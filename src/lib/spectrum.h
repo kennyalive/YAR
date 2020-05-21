@@ -19,7 +19,7 @@ struct Sampled_Spectrum {
     static Sampled_Spectrum constant_spectrum(float c);
 
     Vector3 emission_spectrum_to_XYZ() const;
-    Vector3 reflectance_spectrum_to_XYZ() const;
+    Vector3 reflectance_spectrum_to_XYZ_for_D65_illuminant() const;
 };
 
 ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminous_flux); 

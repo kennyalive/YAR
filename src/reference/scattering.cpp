@@ -4,12 +4,35 @@
 
 #include "lib/vector.h"
 
-ColorRGB schlick_fresnel(const ColorRGB& R0, float cos_theta) {
-    float k = std::max(0.f, 1.f - cos_theta);
-    float k2 = k * k;
-    float k4 = k2 * k2;
-    float k5 = k4 * k;
-    return R0 + (Color_White - R0) * k5;
+ColorRGB schlick_fresnel(const ColorRGB& R0, float cos_theta_i) {
+    float k = 1.f - std::abs(cos_theta_i);
+    float k5 = (k * k) * (k * k) * k;
+    return R0 + (ColorRGB(1) - R0) * k5;
+}
+
+ColorRGB conductor_fresnel(float cos_theta_i, float eta_i, const ColorRGB& eta_t, const ColorRGB& k_t) {
+    cos_theta_i = std::abs(std::clamp(cos_theta_i, -1.f, 1.f));
+    float cos_theta_i2 = cos_theta_i * cos_theta_i;
+    float sin_theta_i2 = 1.f - cos_theta_i2;
+
+    ColorRGB eta = eta_t / eta_i;
+    ColorRGB k = k_t / eta_i;
+    ColorRGB eta2 = eta * eta;
+    ColorRGB k2 = k * k;
+
+    auto t0 = eta2 - k2 - ColorRGB(sin_theta_i2);
+    auto a2_plus_b2 = ColorRGB::sqrt(t0*t0 + 4*eta2*k2);
+    auto t1 = a2_plus_b2 + ColorRGB(cos_theta_i2);
+    auto a = ColorRGB::sqrt(0.5f * (a2_plus_b2 + t0));
+    auto t2 = (2 * cos_theta_i) * a;
+    auto Rs = (t1 - t2) / (t1 + t2);
+
+    auto t3 = cos_theta_i2 * a2_plus_b2 + ColorRGB(sin_theta_i2 * sin_theta_i2);
+    auto t4 = t2 * sin_theta_i2;
+    auto Rp = Rs * (t3 - t4) / (t3 + t4);
+
+    ColorRGB F = 0.5f * (Rp + Rs);
+    return F;
 }
 
 float GGX_Distribution::D(const Vector3& wh, const Vector3& n, float alpha) {
@@ -17,22 +40,22 @@ float GGX_Distribution::D(const Vector3& wh, const Vector3& n, float alpha) {
     if (cos_theta <= 0.f)
         return 0.f;
 
-    float cos2_theta = cos_theta * cos_theta;
-    float alpha2 = alpha * alpha;
-
     // The formula as specified in "Microfacet Models for Refraction through Rough Surfaces".
     // https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf
     /*
+    float cos2_theta = cos_theta * cos_theta;
+    float a2 = alpha * alpha;
     float cos4_theta = cos2_theta * cos2_theta;
     float tan2_theta = (1.f - cos2_theta) / cos2_theta;
-    float k = alpha2 + tan2_theta;
-    float D = alpha2 / (Pi * cos4_theta * k * k);
+    float k = a2 + tan2_theta;
+    float D = a2 / (Pi * cos4_theta * k * k);
     */
 
     // Algebraic transformation of the above code which saves 1 div and 1 mul.
-    float k = cos2_theta * (alpha2 - 1) + 1;
-    float D = alpha2 / (Pi * k *k);
-
+    float cos2_theta = cos_theta * cos_theta;
+    float a2 = alpha * alpha;
+    float k = cos2_theta * (a2 - 1) + 1;
+    float D = a2 / (Pi * k *k);
     return D;
 }
 
@@ -41,9 +64,7 @@ inline float GGX_lambda(const Vector3& v, const Vector3& n, float alpha) {
     float cos2_theta = cos_theta * cos_theta;
     float tan2_theta = (1.f - cos2_theta) / cos2_theta; // could be Infinity, that's fine
 
-    float alpha2 = alpha * alpha;
-
-    float lambda = 0.5f * (-1.f + std::sqrt(1.f + alpha2 * tan2_theta));
+    float lambda = 0.5f * (-1.f + std::sqrt(1.f + alpha * alpha * tan2_theta));
     return lambda;
 }
 

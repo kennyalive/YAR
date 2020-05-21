@@ -9,7 +9,7 @@
 template <typename Type>
 struct Parameter {
     bool is_constant = false;
-    Type constant_value;
+    Type constant_value = Type();
     int texture_index = -1;
 };
 
@@ -17,3 +17,19 @@ struct RGB_Parameter : Parameter<ColorRGB> {
     float u_scale = 1.f;
     float v_scale = 1.f;
 };
+
+struct Float_Parameter : Parameter<float> {
+
+};
+
+template <typename Parameter_Type, typename Type>
+void set_constant_parameter(Parameter_Type& param, const Type& value) {
+    param.is_constant = true;
+    param.constant_value = value;
+}
+
+template <typename Parameter_Type>
+void set_texture_parameter(Parameter_Type& param, int texture_index) {
+    param.is_constant = false;
+    param.texture_index = texture_index;
+}

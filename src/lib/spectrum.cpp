@@ -56,8 +56,6 @@ Sampled_Spectrum Sampled_Spectrum::from_tabulated_data(const float* lambdas, con
     Sampled_Spectrum s;
 
     for (int i = 0; i < Sample_Count; i++) {
-        ASSERT(i == 0 || lambdas[i] > lambdas[i-1]);
-
         float interval_start = Wavelength_Range_Start + Interval_Length * float(i);
         float interval_end = interval_start + Interval_Length;
 
@@ -85,11 +83,14 @@ Vector3 Sampled_Spectrum::emission_spectrum_to_XYZ() const {
     return xyz;
 }
 
-// This implementation assumes a reference light with constant SPD.
-// One possible extension is to specify reference light explicitly.
-Vector3 Sampled_Spectrum::reflectance_spectrum_to_XYZ() const {
-    Vector3 xyz = emission_spectrum_to_XYZ();
-    xyz *= CIE_Y_integral_inverse;
+Vector3 Sampled_Spectrum::reflectance_spectrum_to_XYZ_for_D65_illuminant() const {
+    Vector3 xyz{ 0.f };
+    for (int i = 0; i < Sample_Count; i++) {
+        xyz[0] += c[i] * D65_illuminant.c[i] * CIE_X.c[i];
+        xyz[1] += c[i] * D65_illuminant.c[i] * CIE_Y.c[i];
+        xyz[2] += c[i] * D65_illuminant.c[i] * CIE_Z.c[i];
+    }
+    xyz *= (float)Interval_Length * CIE_Y_D65_integral_inverse;
     return xyz;
 }
 
@@ -105,6 +106,5 @@ ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminous_flux)
     Vector3 xyz_intensity = xyz_flux * uniform_radial_flux_to_intensity;
 
     // NOTE: Constant spectrum does not produce white RGB (for sRGB). It's a bit reddish.
-    return ColorRGBFromXYZ(xyz_intensity);
+    return XYZ_to_sRGB(xyz_intensity);
 }
-

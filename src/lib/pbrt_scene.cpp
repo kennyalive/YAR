@@ -2,34 +2,114 @@
 #include "common.h"
 
 #include "colorimetry.h"
+#include "spectrum.h"
 #include "scene.h"
 #include "yar_project.h"
 
 #include "pbrtParser/Scene.h"
 #include "pbrt-parser/impl/syntactic/Scene.h"
 
-static ColorRGB convert_flux_to_constant_spectrum_to_rgb_intensity(float luminous_flux) {
-    float radiant_flux_per_wavelength = luminous_flux / (683.f * CIE_Y_integral); // [W/m]
-                                                                                  // Get constant spectrum that produces given luminous_flux.
-    Sampled_Spectrum s = Sampled_Spectrum::constant_spectrum(radiant_flux_per_wavelength);
-    Vector3 xyz = s.emission_spectrum_to_XYZ();
-    // Constant spectrum does not produce white RGB (for sRGB). It's a bit reddish.
-    return ColorRGBFromXYZ(xyz);
-}
-
-// Returns objects-to-world transform.
-static Matrix3x4 get_transform_from_pbrt_transform(const pbrt::affine3f& pbrt_transform) {
+static Matrix3x4 to_matrix3x4(const pbrt::affine3f& pbrt_transform) {
     const pbrt::math::vec3f& pos = pbrt_transform.p;
     const pbrt::math::mat3f& rot = pbrt_transform.l;
-    Matrix3x4 transform;
-    transform.set_column(0, Vector3(&rot.vx.x));
-    transform.set_column(1, Vector3(&rot.vy.x));
-    transform.set_column(2, Vector3(&rot.vz.x));
-    transform.set_column(3, Vector3(&pos.x));
-    return transform;
+    Matrix3x4 mat;
+    mat.set_column(0, Vector3(&rot.vx.x));
+    mat.set_column(1, Vector3(&rot.vy.x));
+    mat.set_column(2, Vector3(&rot.vz.x));
+    mat.set_column(3, Vector3(&pos.x));
+    return mat;
 }
 
-static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pbrt_mesh, Scene* scene, Material_Handle& mtl_handle) {
+static Sampled_Spectrum to_sampled_spectrum(const pbrt::Spectrum& pbrt_spectrum) {
+    std::vector<float> lambdas(pbrt_spectrum.spd.size());
+    std::vector<float> values(pbrt_spectrum.spd.size());
+    for (int i = 0; i < int(pbrt_spectrum.spd.size()); i++) {
+        lambdas[i] = pbrt_spectrum.spd[i].first;
+        values[i] = pbrt_spectrum.spd[i].second;
+    }
+    return Sampled_Spectrum::from_tabulated_data(lambdas.data(), values.data(), (int)lambdas.size());
+}
+
+static float pbrt_roughness_to_everyday_people_roughness(float pbrt_roughness) {
+    pbrt_roughness = std::max(pbrt_roughness, 1e-3f);
+    float x = std::log(pbrt_roughness);
+    float alpha = 1.62142f + 0.819955f*x + 0.1734f*x*x + 0.0171201f*x*x*x + 0.000640711f*x*x*x*x;
+    float everyday_people_roughness = std::sqrt(alpha);
+    return everyday_people_roughness;
+}
+
+static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_material, Materials* materials) {
+    auto matte_material = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_material);
+    if (matte_material) {
+        Lambertian_Material mtl;
+        bool has_texture = false;
+        if (matte_material->map_kd != nullptr) {
+            if (pbrt::ImageTexture::SP image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(matte_material->map_kd);
+                image_texture != nullptr)
+            {
+                has_texture = true;
+                set_constant_parameter(mtl.reflectance, Color_White);
+                materials->texture_names.push_back(image_texture->fileName);
+                mtl.reflectance.texture_index = (int)materials->texture_names.size() - 1;
+
+                pbrt::syntactic::Texture::SP syntactic_texture = image_texture->syntacticObject;
+                mtl.reflectance.u_scale = syntactic_texture->getParam1f("uscale", 1.f);
+                mtl.reflectance.v_scale = syntactic_texture->getParam1f("vscale", 1.f);
+            }
+        }
+        if (!has_texture) {
+            set_constant_parameter(mtl.reflectance, ColorRGB(&matte_material->kd.x));
+        }
+        materials->lambertian.push_back(mtl);
+        return Material_Handle{ Material_Type::lambertian, int(materials->lambertian.size() - 1) };
+    }
+
+    auto mirror_material = std::dynamic_pointer_cast<pbrt::MirrorMaterial>(pbrt_material);
+    if (mirror_material) {
+        Mirror_Material mtl;
+        set_constant_parameter(mtl.reflectance, ColorRGB(&mirror_material->kr.x));
+        materials->mirror.push_back(mtl);
+        return Material_Handle{ Material_Type::mirror, int(materials->mirror.size() - 1) };
+    }
+
+    auto metal = std::dynamic_pointer_cast<pbrt::MetalMaterial>(pbrt_material);
+    if (metal) {
+        float roughness = pbrt_roughness_to_everyday_people_roughness(metal->roughness);
+        Metal_Material mtl;
+        set_constant_parameter(mtl.roughness, roughness);
+        set_constant_parameter(mtl.eta_i, 1.f);
+
+        if (!metal->spectrum_eta.spd.empty()) {
+            Sampled_Spectrum s = to_sampled_spectrum(metal->spectrum_eta);
+            Vector3 eta_xyz = s.reflectance_spectrum_to_XYZ_for_D65_illuminant();
+            ColorRGB eta_rgb = XYZ_to_sRGB(eta_xyz);
+            set_constant_parameter(mtl.eta, eta_rgb);
+        }
+        else {
+            set_constant_parameter(mtl.eta, ColorRGB(&metal->eta.x));
+        }
+
+        if (!metal->spectrum_k.spd.empty()) {
+            Sampled_Spectrum s = to_sampled_spectrum(metal->spectrum_k);
+            Vector3 k_xyz = s.reflectance_spectrum_to_XYZ_for_D65_illuminant();
+            ColorRGB k_rgb = XYZ_to_sRGB(k_xyz);
+            set_constant_parameter(mtl.k, k_rgb);
+        }
+        else {
+            set_constant_parameter(mtl.k, ColorRGB(&metal->k.x));
+        }
+        materials->metals.push_back(mtl);
+        return Material_Handle{ Material_Type::metal, int(materials->metals.size() - 1) };
+    }
+
+    // Default material.
+    Lambertian_Material mtl;
+    set_constant_parameter(mtl.reflectance, ColorRGB{ 0.5f, 0.5f, 0.5f });
+    materials->lambertian.push_back(mtl);
+    return Material_Handle{ Material_Type::lambertian, int(materials->lambertian.size() - 1) };
+}
+
+static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pbrt_mesh, Scene* scene) {
     Triangle_Mesh mesh;
 
     mesh.indices.resize(pbrt_mesh->index.size() * 3);
@@ -61,57 +141,13 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
         compute_normals(mesh, Normal_Average_Mode::area, 0.f);
 
     scene->geometries.triangle_meshes.emplace_back(mesh);
-
-    if (auto matte_material = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_mesh->material);
-        matte_material != nullptr)
-    {
-        Lambertian_Material mtl;
-        bool has_texture = false;
-        if (matte_material->map_kd != nullptr) {
-            if (pbrt::ImageTexture::SP image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(matte_material->map_kd);
-                image_texture != nullptr)
-            {
-                has_texture = true;
-                mtl.reflectance.is_constant = false;
-                mtl.reflectance.constant_value = Color_White;
-                scene->materials.texture_names.push_back(image_texture->fileName);
-                mtl.reflectance.texture_index = (int)scene->materials.texture_names.size() - 1;
-
-                pbrt::syntactic::Texture::SP syntactic_texture = image_texture->syntacticObject;
-                mtl.reflectance.u_scale = syntactic_texture->getParam1f("uscale", 1.f);
-                mtl.reflectance.v_scale = syntactic_texture->getParam1f("vscale", 1.f);
-            }
-        }
-        if (!has_texture) {
-            mtl.reflectance.is_constant = true;
-            mtl.reflectance.constant_value = ColorRGB(&matte_material->kd.x);
-        }
-        scene->materials.lambertian.push_back(mtl);
-        mtl_handle = Material_Handle{ Material_Type::lambertian, int(scene->materials.lambertian.size() - 1) };
-    }
-    else if (auto mirror_material = std::dynamic_pointer_cast<pbrt::MirrorMaterial>(pbrt_mesh->material);
-        mirror_material != nullptr)
-    {
-        Mirror_Material mtl;
-        mtl.reflectance.is_constant = true;
-        mtl.reflectance.constant_value = ColorRGB(&mirror_material->kr.x);
-        scene->materials.mirror.push_back(mtl);
-        mtl_handle = Material_Handle{ Material_Type::mirror, int(scene->materials.mirror.size() - 1) };
-    }
-    else {
-        Lambertian_Material mtl;
-        mtl.reflectance.is_constant = true;
-        mtl.reflectance.constant_value = ColorRGB{ 0.5f, 0.5f, 0.5f };
-        scene->materials.lambertian.push_back(mtl);
-        mtl_handle = Material_Handle{ Material_Type::lambertian, int(scene->materials.lambertian.size() - 1) };
-    }
     return Geometry_Handle{ Geometry_Type::triangle_mesh, (int)scene->geometries.triangle_meshes.size() - 1 };
 }
 
 static Geometry_Handle import_pbrt_sphere(const pbrt::Sphere::SP pbrt_sphere , Scene* scene) {
     Sphere sphere;
     sphere.radius = pbrt_sphere->radius;
-    sphere.origin = get_transform_from_pbrt_transform(pbrt_sphere->transform).get_column(3);
+    sphere.origin = to_matrix3x4(pbrt_sphere->transform).get_column(3);
     scene->geometries.spheres.push_back(sphere);
     return Geometry_Handle{ Geometry_Type::sphere, int(scene->geometries.spheres.size() - 1) };
 }
@@ -160,52 +196,59 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
 }
 
 Scene load_pbrt_scene(const YAR_Project& project) {
-    std::shared_ptr<pbrt::Scene> pbrt_scene = pbrt::importPBRT(project.scene_path.string());
+    pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(project.scene_path.string());
     pbrt_scene->makeSingleLevel();
+
+    struct Imported_Shape {
+        Geometry_Handle geometry;
+        Material_Handle material;
+    };
+    std::unordered_map<pbrt::Shape::SP, Imported_Shape> already_imported_shapes;
+
     Scene scene;
 
-    std::unordered_map<pbrt::Shape::SP, Geometry_Handle> already_imported_shapes;
-
     for (pbrt::Instance::SP instance : pbrt_scene->world->instances) {
-        ASSERT(instance->object->instances.empty()); // becase we flattened instance hierarchy
-        // Import shapes.
-        Material_Handle mtl;
+        ASSERT(instance->object->instances.empty()); // we flattened instance hierarchy
+
+        // Import pbrt shapes.
         for (pbrt::Shape::SP shape : instance->object->shapes) {
-            Geometry_Handle geometry = already_imported_shapes[shape];
-            if (geometry == Null_Geometry) {
-                if (pbrt::TriangleMesh::SP pbrt_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(shape);
-                    pbrt_mesh != nullptr)
-                {
-                    geometry = import_pbrt_triangle_mesh(pbrt_mesh, &scene, mtl);
-                }
-                else if (pbrt::Sphere::SP pbrt_sphere = std::dynamic_pointer_cast<pbrt::Sphere>(shape);
-                    pbrt_sphere != nullptr)
-                {
-                    geometry = import_pbrt_sphere(pbrt_sphere, &scene);
-                }
-                else
+            
+            Imported_Shape imported_shape = already_imported_shapes[shape];
+
+            if (imported_shape.geometry == Null_Geometry) {
+                pbrt::TriangleMesh::SP pbrt_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(shape);
+                if (pbrt_mesh != nullptr)
+                    imported_shape.geometry = import_pbrt_triangle_mesh(pbrt_mesh, &scene);
+
+                pbrt::Sphere::SP pbrt_sphere = std::dynamic_pointer_cast<pbrt::Sphere>(shape);
+                if (pbrt_sphere != nullptr)
+                    imported_shape.geometry = import_pbrt_sphere(pbrt_sphere, &scene);
+
+                if (imported_shape.geometry == Null_Geometry)
                     error("Unsupported pbrt shape type");
 
-                already_imported_shapes.insert(std::make_pair(shape, geometry));
+                imported_shape.material = import_pbrt_material(shape->material, &scene.materials);
+                already_imported_shapes.insert(std::make_pair(shape, imported_shape));
             }
 
-            if (geometry.type == Geometry_Type::triangle_mesh) {
+            if (imported_shape.geometry.type == Geometry_Type::triangle_mesh) {
                 Scene_Object scene_object;
-                scene_object.geometry = geometry;
-                scene_object.material = mtl;
-                scene_object.object_to_world_transform = get_transform_from_pbrt_transform(instance->xfm);
+                scene_object.geometry = imported_shape.geometry;
+                scene_object.material = imported_shape.material;
+                scene_object.object_to_world_transform = to_matrix3x4(instance->xfm);
                 scene_object.world_to_object_transform = get_inverted_transform(scene_object.object_to_world_transform);
                 scene.objects.push_back(scene_object);
             }
         }
-        // Import non-area lights.
+
+        // Import pbrt non-area lights.
         for (pbrt::LightSource::SP light : instance->object->lightSources) {
             if (pbrt::DistantLightSource::SP distant_light = std::dynamic_pointer_cast<pbrt::DistantLightSource>(light);
                 distant_light != nullptr)
             {
                 Directional_Light light;
                 Vector3 light_vec = Vector3(&distant_light->from.x) - Vector3(&distant_light->to.x);
-                light_vec = transform_vector(get_transform_from_pbrt_transform(instance->xfm), light_vec);
+                light_vec = transform_vector(to_matrix3x4(instance->xfm), light_vec);
                 light.direction = light_vec.normalized();
                 light.irradiance = ColorRGB(&distant_light->L.x) * ColorRGB(&distant_light->scale.x);
                 scene.lights.directional_lights.push_back(light);

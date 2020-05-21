@@ -7,7 +7,7 @@
 struct Intersection;
 struct Render_Context;
 struct Thread_Context;
-class BSDF;
+struct BSDF;
 
 struct Shading_Point_Rays {
     Ray incident_ray;
