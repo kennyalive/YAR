@@ -17,9 +17,15 @@ const BSDF* create_bsdf(const Render_Context& global_ctx, Thread_Context& thread
         }
         case Material_Type::metal:
         {
-            const Metal_Material& params = global_ctx.materials.metals[material.index];
+            const Metal_Material& params = global_ctx.materials.metal[material.index];
             void* bsdf_allocation = thread_ctx.memory_pool.allocate<Metal_BRDF>();
             return new (bsdf_allocation) Metal_BRDF(global_ctx, shading_ctx, params);
+        }
+        case Material_Type::plastic:
+        {
+            const Plastic_Material& params = global_ctx.materials.plastic[material.index];
+            void* bsdf_allocation = thread_ctx.memory_pool.allocate<Plastic_BRDF>();
+            return new (bsdf_allocation) Plastic_BRDF(global_ctx, shading_ctx, params);
         }
         default:
         {
@@ -62,4 +68,32 @@ ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
     
     ColorRGB f = (G * D) * F / (4.f * dot(shading_ctx->N, wo) * dot(shading_ctx->N, wi));
     return f;
+}
+
+Plastic_BRDF::Plastic_BRDF(const Render_Context& global_ctx, const Shading_Context& shading_ctx, const Plastic_Material& params)
+{
+    scene_ctx = &global_ctx;
+    this->shading_ctx = &shading_ctx;
+
+    roughness = evaluate_float_parameter(global_ctx, shading_ctx, params.roughness);
+    r0 = evaluate_float_parameter(global_ctx, shading_ctx, params.r0);
+    diffuse_reflectance = evaluate_rgb_parameter(global_ctx, shading_ctx, params.diffuse_reflectance);
+}
+
+ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
+    Vector3 wh = (wo + wi).normalized();
+
+    float cos_theta_i = dot(wi, wh);
+    ASSERT(cos_theta_i >= 0);
+
+    ColorRGB F = schlick_fresnel(ColorRGB(0.04f), cos_theta_i);
+
+    float alpha = roughness * roughness;
+    float D = GGX_Distribution::D(wh, shading_ctx->N, alpha);
+    float G = GGX_Distribution::G(wi, wo, shading_ctx->N, alpha);
+
+    ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(shading_ctx->N, wo) * dot(shading_ctx->N, wi));
+    ColorRGB diffuse_brdf = diffuse_reflectance * Pi_Inv;
+    return diffuse_brdf + specular_brdf;
+    return F;
 }

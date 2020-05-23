@@ -76,8 +76,9 @@ inline ColorRGB operator-(const ColorRGB& a, const ColorRGB& b) {
     return ColorRGB{ a[0] - b[0], a[1] - b[1], a[2] - b[2] };
 }
 
-// Conversion from XYZ to sRGB color space (without gamma encoding).
+// without gamma encoding
 ColorRGB XYZ_to_sRGB(const Vector3& xyz);
+ColorRGB sRGB_to_XYZ(const ColorRGB& rgb);
 
 constexpr ColorRGB Color_Black = ColorRGB{0, 0, 0};
 constexpr ColorRGB Color_White = ColorRGB{1, 1, 1};

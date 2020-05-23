@@ -31,3 +31,15 @@ struct Metal_BRDF : public BSDF {
     Metal_BRDF(const Render_Context& global_ctx, const Shading_Context& shading_ctx, const Metal_Material& material);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
 };
+
+struct Plastic_BRDF : public BSDF {
+    float roughness = 0.f;
+    float r0;
+    ColorRGB diffuse_reflectance;
+
+    const Render_Context* scene_ctx;
+    const Shading_Context* shading_ctx;
+
+    Plastic_BRDF(const Render_Context& global_ctx, const Shading_Context& shading_ctx, const Plastic_Material& params);
+    ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
+};

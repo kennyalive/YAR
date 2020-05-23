@@ -10,6 +10,25 @@ ColorRGB schlick_fresnel(const ColorRGB& R0, float cos_theta_i) {
     return R0 + (ColorRGB(1) - R0) * k5;
 }
 
+float dielectric_fresnel(float cos_theta_i, float eta) {
+    cos_theta_i = std::min(std::abs(cos_theta_i), 1.f);
+    float sin_theta_i = std::sqrt(1.f - cos_theta_i * cos_theta_i);
+    float sin_theta_t = (1.f / eta) * sin_theta_i;
+
+    if (sin_theta_t >= 1.f)
+        return 1.f;
+
+    float cos_theta_t = std::sqrt(1.f - sin_theta_t * sin_theta_t);
+
+    float Rp = (eta * cos_theta_i - cos_theta_t) /
+               (eta * cos_theta_i + cos_theta_t);
+
+    float Rs = (cos_theta_i - eta * cos_theta_t) /
+               (cos_theta_i + eta * cos_theta_t);
+
+    return 0.5f * (Rp*Rp + Rs*Rs);
+}
+
 ColorRGB conductor_fresnel(float cos_theta_i, float eta_i, const ColorRGB& eta_t, const ColorRGB& k_t) {
     cos_theta_i = std::abs(std::clamp(cos_theta_i, -1.f, 1.f));
     float cos_theta_i2 = cos_theta_i * cos_theta_i;

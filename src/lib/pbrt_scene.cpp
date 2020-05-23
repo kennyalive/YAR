@@ -98,8 +98,27 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         else {
             set_constant_parameter(mtl.k, ColorRGB(&metal->k.x));
         }
-        materials->metals.push_back(mtl);
-        return Material_Handle{ Material_Type::metal, int(materials->metals.size() - 1) };
+        materials->metal.push_back(mtl);
+        return Material_Handle{ Material_Type::metal, int(materials->metal.size() - 1) };
+    }
+
+    auto plastic = std::dynamic_pointer_cast<pbrt::PlasticMaterial>(pbrt_material);
+    if (plastic) {
+        // TODO: handle texture params
+        ASSERT(plastic->map_kd == nullptr);
+        ASSERT(plastic->map_ks == nullptr);
+        ASSERT(plastic->map_bump == nullptr);
+        ASSERT(plastic->map_roughness == nullptr);
+
+        float roughness = pbrt_roughness_to_everyday_people_roughness(plastic->roughness);
+        Plastic_Material mtl;
+        set_constant_parameter(mtl.roughness, roughness);
+        ColorRGB r0_xyz = sRGB_to_XYZ(ColorRGB(&plastic->ks.x));
+        set_constant_parameter(mtl.r0, r0_xyz[1]);
+        set_constant_parameter(mtl.diffuse_reflectance, ColorRGB(&plastic->kd.x));
+
+        materials->plastic.push_back(mtl);
+        return Material_Handle{ Material_Type::plastic, int(materials->plastic.size() - 1) };
     }
 
     // Default material.

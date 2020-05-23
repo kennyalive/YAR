@@ -7,6 +7,7 @@ enum class Material_Type : uint32_t {
     none,
     lambertian,
     metal,
+    plastic,
     mirror
 };
 
@@ -60,6 +61,12 @@ struct Metal_Material {
     Float_Parameter eta_i; // IOR of the dielectric that contacts the metal
 };
 
+struct Plastic_Material {
+    Float_Parameter roughness;
+    Float_Parameter r0; // reflectance at normal incident angle
+    RGB_Parameter diffuse_reflectance; // SSS reflectance inside plastic
+};
+
 struct Mirror_Material {
     RGB_Parameter reflectance;
 };
@@ -67,6 +74,7 @@ struct Mirror_Material {
 struct Materials {
     std::vector<std::string> texture_names;
     std::vector<Lambertian_Material> lambertian;
-    std::vector<Metal_Material> metals;
+    std::vector<Metal_Material> metal;
+    std::vector<Plastic_Material> plastic;
     std::vector<Mirror_Material> mirror;
 };
