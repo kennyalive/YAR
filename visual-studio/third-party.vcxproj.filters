@@ -43,6 +43,9 @@
     <Filter Include="stb">
       <UniqueIdentifier>{0e6232c6-7d53-4e14-be15-6008ebc1318f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tiny">
+      <UniqueIdentifier>{b2f09a33-2976-4404-89fa-97417ba6ddaa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third-party\enkiTS\TaskScheduler.cpp">
@@ -266,6 +269,12 @@
     </ClInclude>
     <ClInclude Include="..\third-party\stb\stb_image_write.h">
       <Filter>stb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\tiny\tinyexr.h">
+      <Filter>tiny</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\tiny\tiny_obj_loader.h">
+      <Filter>tiny</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

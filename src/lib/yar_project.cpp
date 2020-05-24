@@ -364,7 +364,7 @@ struct Parser {
 #undef CHECK
 
 YAR_Project parse_yar_file(const std::string& yar_file_path) {
-    ASSERT(to_lower(fs::path(yar_file_path).extension().string()) == ".yar");
+    ASSERT(get_extension(yar_file_path) == ".yar");
 
     std::string content = read_text_file(yar_file_path);
     YAR_Project project;

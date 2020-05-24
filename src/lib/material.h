@@ -72,7 +72,6 @@ struct Mirror_Material {
 };
 
 struct Materials {
-    std::vector<std::string> texture_names;
     std::vector<Lambertian_Material> lambertian;
     std::vector<Metal_Material> metal;
     std::vector<Plastic_Material> plastic;

@@ -28,6 +28,9 @@ struct Scene {
     // Predefined camera positions.
     std::vector<Matrix3x4> view_points;
 
+    // The list of textures used in the scene.
+    std::vector<std::string> texture_names;
+
     //
     // Description of the virtual environment.
     //

@@ -69,6 +69,10 @@ std::string read_text_file(const std::string& file_path) {
     return buffer.str();
 }
 
+std::string get_extension(const std::string& file_path) {
+    return to_lower(fs::path(file_path).extension().string());
+}
+
 double get_base_cpu_frequency_ghz() {
     auto rdtsc_start = __rdtsc();
     Timestamp t;

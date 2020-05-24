@@ -793,11 +793,10 @@ Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate
     return image;
 }
 
-Vk_Image vk_load_texture(const std::string& texture_path, bool flip_vertically) {
+Vk_Image vk_load_texture(const std::string& texture_path) {
     int w, h;
     int component_count;
 
-    stbi_set_flip_vertically_on_load(flip_vertically); // TODO: this call is not thread safe
     stbi_uc* rgba_pixels = stbi_load(texture_path.c_str(), &w, &h, &component_count,STBI_rgb_alpha);
     if (rgba_pixels == nullptr)
         error("failed to load image file: %s", texture_path.c_str());

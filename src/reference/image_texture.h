@@ -11,12 +11,12 @@ enum class Wrap_Mode {
 };
 
 enum class Filter_Type {
+    box,
     lanczos2,
     lanczos3,
     kaiser2_alpha_4,
     kaiser3_alpha_4,
     mitchell_B_1_3_C_1_3,
-    box
 };
 
 void initalize_EWA_filter_weights(int table_size, float alpha);
@@ -24,10 +24,9 @@ void initalize_EWA_filter_weights(int table_size, float alpha);
 class Image_Texture {
 public:
     struct Init_Params {
-        bool generate_mips = true;
+        bool generate_mips = false;
         Filter_Type mip_filter = Filter_Type::lanczos2;
-        bool decode_srgb = true;
-        bool flip_vertically = false;
+        bool decode_srgb = false;
     };
 
     void initialize_from_file(const std::string& image_path, const Init_Params& params);

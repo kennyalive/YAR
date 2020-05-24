@@ -5,9 +5,6 @@
 #include "lib/math.h"
 #include "lib/vector.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
-
 static float lanczos_reconstruction_filter(float x, float radius) {
     x = std::abs(x); // abs here is only to simplify comparisons, the function
                      // itself is symmetrical
@@ -91,6 +88,8 @@ static float kaiser_pre_aliasing_filter(float x, float radius, float alpha, floa
 
 static const char* get_filter_name(Filter_Type filter) {
     switch (filter) {
+    case Filter_Type::box:
+        return "box";
     case Filter_Type::lanczos2:
         return "lanczos2";
     case Filter_Type::lanczos3:
@@ -101,8 +100,6 @@ static const char* get_filter_name(Filter_Type filter) {
         return "kaiser3_alpha_4";
     case Filter_Type::mitchell_B_1_3_C_1_3:
         return "mitchell";
-    case Filter_Type::box:
-        return "box";
     default:
         ASSERT(false);
         return nullptr;
@@ -240,43 +237,22 @@ static Image generate_next_mip_level_with_box_filter(const Image& image) {
 }
 
 void Image_Texture::initialize_from_file(const std::string& image_path, const Image_Texture::Init_Params& params) {
-    // Load image data from file.
-    stbi_uc* rgba_texels = nullptr;
-    {
-        // we need lock because stbi_set_flip_vertically_on_load is not thread safe
-        static std::mutex stb_load_mutex;
-        std::scoped_lock<std::mutex> lock(stb_load_mutex);
-
-        stbi_set_flip_vertically_on_load(params.flip_vertically);
-        int component_count;
-        rgba_texels = stbi_load(image_path.c_str(), &base_width, &base_height, &component_count, STBI_rgb_alpha);
-    }
-    if (rgba_texels == nullptr)
+    // Load base mip level.
+    Image base_mip;
+    if (!base_mip.load_from_file(image_path, params.decode_srgb))
         error("failed to load image file: %s", image_path.c_str());
 
-    // Allocate array for mip images.
+    base_width = base_mip.width;
+    base_height = base_mip.height;
+
+    // Allocate mip array.
     int mip_count = 1;
     if (params.generate_mips) {
         uint32_t max_size = uint32_t(std::max(base_width, base_height));
         mip_count = log2_int(round_up_to_power_of_2(max_size)) + 1;
     }
     mips.resize(mip_count);
-
-    // Convert image data to floating point representation.
-    mips[0] = Image(base_width, base_height);
-    {
-        std::vector<ColorRGB>& dst = mips[0].data;
-        const stbi_uc* src = rgba_texels;
-        for (int i = 0; i < base_width * base_height; i++, src += 4) {
-            dst[i] = ColorRGB(src[0], src[1], src[2]) * (1.f / 255.f);
-            if (params.decode_srgb) {
-                dst[i].r = srgb_decode(dst[i].r);
-                dst[i].g = srgb_decode(dst[i].g);
-                dst[i].b = srgb_decode(dst[i].b);
-            }
-        }
-    }
-    stbi_image_free(rgba_texels);
+    mips[0] = std::move(base_mip);
 
     // Ensure that base mip level has power of two resolution.
     if (!is_power_of_2(base_width) || !is_power_of_2(base_height))

@@ -20,6 +20,9 @@ fs::path get_data_directory();
 std::vector<uint8_t> read_binary_file(const std::string& file_path);
 std::string read_text_file(const std::string& file_path);
 
+// Returns extension in lower case in the form ".ext".
+std::string get_extension(const std::string& file_path);
+
 struct Timestamp {
     Timestamp() : t(std::chrono::steady_clock::now()) {}
     std::chrono::time_point<std::chrono::steady_clock> t;

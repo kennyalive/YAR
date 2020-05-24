@@ -277,10 +277,9 @@ void Renderer::load_project(const std::string& input_file) {
 
     // Materials.
     {
-        bool flip_texture_images = scene.type == Scene_Type::pbrt;
-        gpu_scene.images_2d.reserve(gpu_scene.images_2d.size() + scene.materials.texture_names.size());
-        for (const std::string& texture_name : scene.materials.texture_names) {
-            Vk_Image image = vk_load_texture((fs::path(scene.path).parent_path() / texture_name).string(), flip_texture_images);
+        gpu_scene.images_2d.reserve(gpu_scene.images_2d.size() + scene.texture_names.size());
+        for (const std::string& texture_name : scene.texture_names) {
+            Vk_Image image = vk_load_texture((fs::path(scene.path).parent_path() / texture_name).string());
             gpu_scene.images_2d.push_back(image);
         }
 

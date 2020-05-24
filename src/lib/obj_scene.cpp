@@ -7,7 +7,7 @@
 #include "yar_project.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
+#include <tiny/tiny_obj_loader.h>
 
 #include <unordered_map>
 
@@ -217,8 +217,8 @@ Scene load_obj_scene(const YAR_Project& project) {
         }
         else {
             scene.materials.lambertian[i].reflectance.is_constant = false;
-            scene.materials.texture_names.push_back(obj_material.diffuse_texture);
-            scene.materials.lambertian[i].reflectance.texture_index = (int)scene.materials.texture_names.size()-1;
+            scene.texture_names.push_back(obj_material.diffuse_texture);
+            scene.materials.lambertian[i].reflectance.texture_index = (int)scene.texture_names.size()-1;
         }
     }
 

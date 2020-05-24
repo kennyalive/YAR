@@ -38,19 +38,20 @@ static float pbrt_roughness_to_everyday_people_roughness(float pbrt_roughness) {
     return everyday_people_roughness;
 }
 
-static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_material, Materials* materials) {
-    auto matte_material = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_material);
-    if (matte_material) {
+static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_material, Scene* scene) {
+    Materials& materials = scene->materials;
+    auto matte = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_material);
+    if (matte) {
         Lambertian_Material mtl;
         bool has_texture = false;
-        if (matte_material->map_kd != nullptr) {
-            if (pbrt::ImageTexture::SP image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(matte_material->map_kd);
+        if (matte->map_kd != nullptr) {
+            if (pbrt::ImageTexture::SP image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(matte->map_kd);
                 image_texture != nullptr)
             {
                 has_texture = true;
-                set_constant_parameter(mtl.reflectance, Color_White);
-                materials->texture_names.push_back(image_texture->fileName);
-                mtl.reflectance.texture_index = (int)materials->texture_names.size() - 1;
+                scene->texture_names.push_back(image_texture->fileName);
+
+                set_texture_parameter(mtl.reflectance, (int)scene->texture_names.size() - 1);
 
                 pbrt::syntactic::Texture::SP syntactic_texture = image_texture->syntacticObject;
                 mtl.reflectance.u_scale = syntactic_texture->getParam1f("uscale", 1.f);
@@ -58,18 +59,18 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
             }
         }
         if (!has_texture) {
-            set_constant_parameter(mtl.reflectance, ColorRGB(&matte_material->kd.x));
+            set_constant_parameter(mtl.reflectance, ColorRGB(&matte->kd.x));
         }
-        materials->lambertian.push_back(mtl);
-        return Material_Handle{ Material_Type::lambertian, int(materials->lambertian.size() - 1) };
+        materials.lambertian.push_back(mtl);
+        return Material_Handle{ Material_Type::lambertian, int(materials.lambertian.size() - 1) };
     }
 
     auto mirror_material = std::dynamic_pointer_cast<pbrt::MirrorMaterial>(pbrt_material);
     if (mirror_material) {
         Mirror_Material mtl;
         set_constant_parameter(mtl.reflectance, ColorRGB(&mirror_material->kr.x));
-        materials->mirror.push_back(mtl);
-        return Material_Handle{ Material_Type::mirror, int(materials->mirror.size() - 1) };
+        materials.mirror.push_back(mtl);
+        return Material_Handle{ Material_Type::mirror, int(materials.mirror.size() - 1) };
     }
 
     auto metal = std::dynamic_pointer_cast<pbrt::MetalMaterial>(pbrt_material);
@@ -98,8 +99,8 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         else {
             set_constant_parameter(mtl.k, ColorRGB(&metal->k.x));
         }
-        materials->metal.push_back(mtl);
-        return Material_Handle{ Material_Type::metal, int(materials->metal.size() - 1) };
+        materials.metal.push_back(mtl);
+        return Material_Handle{ Material_Type::metal, int(materials.metal.size() - 1) };
     }
 
     auto plastic = std::dynamic_pointer_cast<pbrt::PlasticMaterial>(pbrt_material);
@@ -117,15 +118,15 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         set_constant_parameter(mtl.r0, r0_xyz[1]);
         set_constant_parameter(mtl.diffuse_reflectance, ColorRGB(&plastic->kd.x));
 
-        materials->plastic.push_back(mtl);
-        return Material_Handle{ Material_Type::plastic, int(materials->plastic.size() - 1) };
+        materials.plastic.push_back(mtl);
+        return Material_Handle{ Material_Type::plastic, int(materials.plastic.size() - 1) };
     }
 
     // Default material.
     Lambertian_Material mtl;
     set_constant_parameter(mtl.reflectance, ColorRGB{ 0.5f, 0.5f, 0.5f });
-    materials->lambertian.push_back(mtl);
-    return Material_Handle{ Material_Type::lambertian, int(materials->lambertian.size() - 1) };
+    materials.lambertian.push_back(mtl);
+    return Material_Handle{ Material_Type::lambertian, int(materials.lambertian.size() - 1) };
 }
 
 static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pbrt_mesh, Scene* scene) {

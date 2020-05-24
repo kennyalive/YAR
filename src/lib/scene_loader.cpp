@@ -4,6 +4,8 @@
 
 #include "yar_project.h"
 
+#include "stb/stb_image.h"
+
 // defined in pbrt_scene.cpp
 Scene load_pbrt_scene(const YAR_Project& project);
 // defined in obj_scene.cpp
@@ -58,6 +60,11 @@ Scene load_scene(const std::string& input_file) {
     Scene scene;
     if (project.scene_type == Scene_Type::pbrt) {
         scene = load_pbrt_scene(project);
+
+        // In pbrt texture coordinate space has(0, 0) at the lower left corner.
+        // Workaround with flipping texture coordinates instead is not robust
+        // enough because it doesn't handle procedural texturing case.
+        stbi_set_flip_vertically_on_load(true);
     }
     else {
         ASSERT(project.scene_type == Scene_Type::obj);

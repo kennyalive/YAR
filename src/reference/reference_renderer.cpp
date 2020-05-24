@@ -197,11 +197,15 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     // Load textures.
     {
         Image_Texture::Init_Params init_params;
-        init_params.flip_vertically = scene.type == Scene_Type::pbrt;
+        init_params.generate_mips = true;
 
-        ctx.textures.reserve(scene.materials.texture_names.size());
-        for (const std::string& texture_name : scene.materials.texture_names) {
+        ctx.textures.reserve(scene.texture_names.size());
+        for (const std::string& texture_name : scene.texture_names) {
             std::string path = (fs::path(scene.path).parent_path() / texture_name).string();
+            std::string ext = get_extension(path);
+
+            init_params.decode_srgb = ext != ".exr";
+
             Image_Texture texture;
             texture.initialize_from_file(path, init_params);
             ctx.textures.push_back(std::move(texture));

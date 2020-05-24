@@ -9,5 +9,7 @@ struct Image {
 
     Image() = default;
     Image(int width, int height);
+
+    bool load_from_file(const std::string file_path, bool decode_srgb = false);
     bool write_tga(const std::string& file_path) const;
 };
