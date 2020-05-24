@@ -275,9 +275,17 @@ Scene load_pbrt_scene(const YAR_Project& project) {
         }
     }
 
+    // Import camera.
     ASSERT(!pbrt_scene->cameras.empty());
     pbrt::Camera::SP pbrt_camera = pbrt_scene->cameras[0];
     import_pbrt_camera(pbrt_camera, &scene);
+
+    // Import film.
+    pbrt::Film::SP pbrt_film = pbrt_scene->film;
+    if (pbrt_film) {
+        scene.image_resolution.x = pbrt_film->resolution.x;
+        scene.image_resolution.y = pbrt_film->resolution.y;
+    }
 
     scene.lights.append(project.lights);
     return scene;
