@@ -7,8 +7,10 @@
 
 static const getopt_option_t option_list[] =
 {
-    { "help", 'h', GETOPT_OPTION_TYPE_NO_ARG, 0, 'h', "print this help text", 0 },
-    { "test", 't', GETOPT_OPTION_TYPE_NO_ARG, 0, 't', "run the tests", 0 },
+    { "help", 0, GETOPT_OPTION_TYPE_NO_ARG, 0, 'h', "print this help text", 0 },
+    { "test", 0, GETOPT_OPTION_TYPE_NO_ARG, 0, 't', "run the tests", 0 },
+    { "nthreads", 0, GETOPT_OPTION_TYPE_REQUIRED, 0, 'n', "specify thread count", "thread_count" },
+    GETOPT_OPTIONS_END
 };
 
 static void print_help_string(getopt_context_t* ctx) {
@@ -28,24 +30,35 @@ int main(int argc, char** argv) {
     }
 
     std::vector<std::string> files;
+    Renderer_Options options;
+
     int opt;
     while ((opt = getopt_next(&ctx)) != -1) {
         if (opt == '?') {
             printf("unknown flag: %s\n", ctx.current_opt_arg);
             print_help_string(&ctx);
             return 0;
-        } else if (opt == '!') {
+        }
+        else if (opt == '!') {
             printf("invalid flag usage: %s\n", ctx.current_opt_arg);
             print_help_string(&ctx);
             return 0;
-        } else if (opt == 'h') {
+        }
+        else if (opt == 'h') {
             print_help_string(&ctx);
             return 0;
-        } else if (opt == 't') {
+        }
+        else if (opt == 't') {
             printf("running tests...\n");
             run_tests();
             return 0;
-        } else if (opt == '+') {
+        }
+        else if (opt == 'n') {
+            options.thread_count = atoi(ctx.current_opt_arg);
+            if (options.thread_count < 0 || options.thread_count > 1024)
+                options.thread_count = 0;
+        }
+        else if (opt == '+') {
             files.push_back(ctx.current_opt_arg);
         } else {
            ASSERT(!"unknown option");
@@ -57,9 +70,6 @@ int main(int argc, char** argv) {
         print_help_string(&ctx);
         return 1;
     }
-
-    Renderer_Options options;
-
     for (const std::string& input_file : files) {
         render_reference_image(input_file, options);
     }
