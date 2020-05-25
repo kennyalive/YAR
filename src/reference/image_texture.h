@@ -38,11 +38,9 @@ public:
     ColorRGB sample_EWA(Vector2 uv, Vector2 UVx, Vector2 UVy, Wrap_Mode wrap_mode, float max_anisotropy) const;
 
 private:
-    void upsample_base_level_to_power_of_two_resolution();
+    void upsample_base_level_to_power_of_two_resolution(bool clamp_color_values);
     void generate_mips(Filter_Type filter);
 
 private:
-    int base_width = 0;
-    int base_height = 0;
     std::vector<Image> mips;
 };

@@ -35,6 +35,8 @@ Image space: film position(0, 0) corresponds to the upper left corner.
 class Camera {
 public:
     Camera(const Matrix3x4& camera_to_world, Vector2 image_extent, float fovy, bool z_is_up);
+
+    // Returns ray in the world space for the given film position.
     Ray generate_ray(Vector2 film_position) const;
 
 private:

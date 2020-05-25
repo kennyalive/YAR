@@ -9,6 +9,7 @@ enum class Light_Type : uint32_t {
     point, // delta light
     directional, // delta light
     diffuse_rectangular,
+    environment_map
 };
 
 struct Light_Handle {
@@ -61,10 +62,18 @@ struct Diffuse_Rectangular_Light {
     Triangle_Mesh get_geometry() const;
 };
 
+struct Environment_Map_Light {
+    Matrix3x4 light_to_world;
+    Matrix3x4 world_to_light;
+    ColorRGB scale = ColorRGB(1);
+    int environment_map_index = -1;
+};
+
 struct Lights {
     std::vector<Point_Light> point_lights;
     std::vector<Directional_Light> directional_lights;
     std::vector<Diffuse_Rectangular_Light> diffuse_rectangular_lights;
+    std::vector<Environment_Map_Light> environment_map_lights;
 
     void append(const Lights& lights);
     bool has_lights() const;

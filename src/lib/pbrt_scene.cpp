@@ -215,6 +215,9 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
     scene->camera_fov_y = pbrt_camera->fov;
 }
 
+//
+// PBRT scene main loading routine.
+//
 Scene load_pbrt_scene(const YAR_Project& project) {
     pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(project.scene_path.string());
     pbrt_scene->makeSingleLevel();
@@ -247,7 +250,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                 if (imported_shape.geometry == Null_Geometry)
                     error("Unsupported pbrt shape type");
 
-                imported_shape.material = import_pbrt_material(shape->material, &scene.materials);
+                imported_shape.material = import_pbrt_material(shape->material, &scene);
                 already_imported_shapes.insert(std::make_pair(shape, imported_shape));
             }
 
@@ -263,15 +266,32 @@ Scene load_pbrt_scene(const YAR_Project& project) {
 
         // Import pbrt non-area lights.
         for (pbrt::LightSource::SP light : instance->object->lightSources) {
-            if (pbrt::DistantLightSource::SP distant_light = std::dynamic_pointer_cast<pbrt::DistantLightSource>(light);
-                distant_light != nullptr)
+            auto distant_light = std::dynamic_pointer_cast<pbrt::DistantLightSource>(light);
+            if (distant_light)
             {
                 Directional_Light light;
+
                 Vector3 light_vec = Vector3(&distant_light->from.x) - Vector3(&distant_light->to.x);
                 light_vec = transform_vector(to_matrix3x4(instance->xfm), light_vec);
                 light.direction = light_vec.normalized();
+
                 light.irradiance = ColorRGB(&distant_light->L.x) * ColorRGB(&distant_light->scale.x);
+
                 scene.lights.directional_lights.push_back(light);
+            }
+
+            auto env_map_light = std::dynamic_pointer_cast<pbrt::InfiniteLightSource>(light);
+            if (env_map_light) {
+                Environment_Map_Light light;
+
+                light.light_to_world = to_matrix3x4(instance->xfm) * to_matrix3x4(env_map_light->transform);
+                light.world_to_light = get_inverted_transform(light.light_to_world);
+                light.scale = ColorRGB(&env_map_light->scale.x) * ColorRGB(&env_map_light->L.x);
+
+                scene.texture_names.push_back(env_map_light->mapName);
+                light.environment_map_index = (int)scene.texture_names.size() - 1;
+
+                scene.lights.environment_map_lights.push_back(light);
             }
         }
     }

@@ -3,7 +3,9 @@
 #define ASSERT(expression) if (!(expression)) __debugbreak()
 
 constexpr float Pi = 3.14159265f;
+constexpr float Pi2 = 6.2831853f;
 constexpr float Pi_Inv = 1.f / Pi;
+constexpr float Pi2_Inv = 1.f / Pi2;
 constexpr float Infinity = std::numeric_limits<float>::infinity();
 
 void error(const std::string& message);

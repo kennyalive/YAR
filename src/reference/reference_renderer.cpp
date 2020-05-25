@@ -129,17 +129,22 @@ static void render_tile(const Render_Context& ctx, Thread_Context& thread_ctx, B
             Ray ray = ctx.camera->generate_ray(film_pos);
 
             Intersection isect;
-            if (!ctx.acceleration_structure->intersect(ray, isect))
-                continue;
+            if (ctx.acceleration_structure->intersect(ray, isect)) {
+                Shading_Point_Rays rays;
+                rays.incident_ray = ray;
+                rays.auxilary_ray_dx_offset = ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
+                rays.auxilary_ray_dy_offset = ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
 
-            Shading_Point_Rays rays;
-            rays.incident_ray = ray;
-            rays.auxilary_ray_dx_offset = ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
-            rays.auxilary_ray_dy_offset = ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
-
-            Shading_Context shading_ctx(ctx, thread_ctx, rays, isect);
-            ColorRGB radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx, &rng);
-            tile.add_sample(film_pos, radiance);
+                Shading_Context shading_ctx(ctx, thread_ctx, rays, isect);
+                ColorRGB radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx, &rng);
+                if (!radiance.is_black())
+                    tile.add_sample(film_pos, radiance);
+            }
+            else {
+                ColorRGB env_map_radiance = sample_environment_map_radiance(ctx, ray.direction);
+                if (!env_map_radiance.is_black())
+                    tile.add_sample(film_pos, env_map_radiance);
+            }
         }
     }
     film.merge_tile(tile);

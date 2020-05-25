@@ -44,6 +44,10 @@ struct ColorRGB {
         ASSERT(c.r >= 0 && c.g >= 0 && c.b >= 0);
         return ColorRGB(std::sqrt(c.r), std::sqrt(c.g), std::sqrt(c.b));
     }
+
+    bool is_black() const {
+        return r == 0 && g == 0 && b == 0;
+    }
 };
 
 inline ColorRGB operator*(const ColorRGB& c, float k) {

@@ -238,25 +238,23 @@ static Image generate_next_mip_level_with_box_filter(const Image& image) {
 
 void Image_Texture::initialize_from_file(const std::string& image_path, const Image_Texture::Init_Params& params) {
     // Load base mip level.
+    bool is_hdr_image;
     Image base_mip;
-    if (!base_mip.load_from_file(image_path, params.decode_srgb))
+    if (!base_mip.load_from_file(image_path, params.decode_srgb, &is_hdr_image))
         error("failed to load image file: %s", image_path.c_str());
-
-    base_width = base_mip.width;
-    base_height = base_mip.height;
 
     // Allocate mip array.
     int mip_count = 1;
     if (params.generate_mips) {
-        uint32_t max_size = uint32_t(std::max(base_width, base_height));
+        uint32_t max_size = uint32_t(std::max(base_mip.width, base_mip.height));
         mip_count = log2_int(round_up_to_power_of_2(max_size)) + 1;
     }
     mips.resize(mip_count);
     mips[0] = std::move(base_mip);
 
     // Ensure that base mip level has power of two resolution.
-    if (!is_power_of_2(base_width) || !is_power_of_2(base_height))
-        upsample_base_level_to_power_of_two_resolution();
+    if (!is_power_of_2(mips[0].width) || !is_power_of_2(mips[0].height))
+        upsample_base_level_to_power_of_two_resolution(!is_hdr_image);
 
     if (params.generate_mips) {
         generate_mips(params.mip_filter);
@@ -270,7 +268,7 @@ void Image_Texture::initialize_from_file(const std::string& image_path, const Im
     }
 }
 
-void Image_Texture::upsample_base_level_to_power_of_two_resolution() {
+void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool clamp_color_values) {
     struct Resample_Weight {
         int first_pixel;
         float pixel_weight[4]; // weights for 4 consecutive pixels covered by the filter kernel
@@ -302,45 +300,47 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution() {
     };
 
     // Resample in horizontal direction.
-    if (!is_power_of_2(base_width)) {
-        int new_width = int(round_up_to_power_of_2(uint32_t(base_width)));
-        const std::vector<Resample_Weight> rw = compute_resample_weights(base_width, new_width);
-        std::vector<ColorRGB> texels(base_height * new_width);
-        for (int y = 0; y < base_height; y++) {
+    if (!is_power_of_2(mips[0].width)) {
+        int new_width = int(round_up_to_power_of_2(uint32_t(mips[0].width)));
+        const std::vector<Resample_Weight> rw = compute_resample_weights(mips[0].width, new_width);
+        std::vector<ColorRGB> texels(mips[0].height * new_width);
+        for (int y = 0; y < mips[0].height; y++) {
             for (int x = 0; x < new_width; x++) {
                 ColorRGB& t = texels[y*new_width + x];
                 for (int k = 0; k < 4; k++) {
-                    int src_pixel_x = std::clamp(rw[x].first_pixel + k, 0, base_width - 1);
-                    t += rw[x].pixel_weight[k] * mips[0].data[y * base_width + src_pixel_x];
+                    int src_pixel_x = std::clamp(rw[x].first_pixel + k, 0, mips[0].width - 1);
+                    t += rw[x].pixel_weight[k] * mips[0].data[y * mips[0].width + src_pixel_x];
                 }
             }
         }
-        base_width = new_width;
+        mips[0].width = new_width;
         mips[0].data.swap(texels);
     }
 
     // Resample in vertical direction.
-    if (!is_power_of_2(base_height)) {
-        int new_height = int(round_up_to_power_of_2(uint32_t(base_height)));
-        const std::vector<Resample_Weight> rw = compute_resample_weights(base_height, new_height);
-        std::vector<ColorRGB> texels(new_height * base_width);
-        for (int x = 0; x < base_width; x++) {
+    if (!is_power_of_2(mips[0].height)) {
+        int new_height = int(round_up_to_power_of_2(uint32_t(mips[0].height)));
+        const std::vector<Resample_Weight> rw = compute_resample_weights(mips[0].height, new_height);
+        std::vector<ColorRGB> texels(new_height * mips[0].width);
+        for (int x = 0; x < mips[0].width; x++) {
             for (int y = 0; y < new_height; y++) {
-                ColorRGB& t = texels[y*base_width + x];
+                ColorRGB& t = texels[y*mips[0].width + x];
                 for (int k = 0; k < 4; k++) {
-                    int src_pixel_y = std::clamp(rw[y].first_pixel + k, 0, base_height - 1);
-                    t += rw[y].pixel_weight[k] * mips[0].data[src_pixel_y * base_width + x];
+                    int src_pixel_y = std::clamp(rw[y].first_pixel + k, 0, mips[0].height - 1);
+                    t += rw[y].pixel_weight[k] * mips[0].data[src_pixel_y * mips[0].width + x];
                 }
             }
         }
-        base_height = new_height;
+        mips[0].height = new_height;
         mips[0].data.swap(texels);
     }
 
-    for (ColorRGB& t : mips[0].data) {
-        t.r = std::clamp(t.r, 0.f, 1.f);
-        t.g = std::clamp(t.g, 0.f, 1.f);
-        t.b = std::clamp(t.b, 0.f, 1.f);
+    if (clamp_color_values) {
+        for (ColorRGB& t : mips[0].data) {
+            t.r = std::clamp(t.r, 0.f, 1.f);
+            t.g = std::clamp(t.g, 0.f, 1.f);
+            t.b = std::clamp(t.b, 0.f, 1.f);
+        }
     }
 }
 

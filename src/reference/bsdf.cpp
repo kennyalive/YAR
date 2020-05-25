@@ -95,5 +95,4 @@ ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
     ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(shading_ctx->N, wo) * dot(shading_ctx->N, wi));
     ColorRGB diffuse_brdf = diffuse_reflectance * Pi_Inv;
     return diffuse_brdf + specular_brdf;
-    return F;
 }

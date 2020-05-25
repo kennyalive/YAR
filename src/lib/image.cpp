@@ -26,7 +26,9 @@ Image::Image(int width, int height)
 {
 }
 
-bool Image::load_from_file(const std::string file_path, bool decode_srgb) {
+bool Image::load_from_file(const std::string file_path, bool decode_srgb, bool* is_hdr_image) {
+    if (is_hdr_image)
+        *is_hdr_image = false;
     if (get_extension(file_path) == ".exr") {
         // Load image using TinyEXR library.
         float* out;
@@ -38,6 +40,8 @@ bool Image::load_from_file(const std::string file_path, bool decode_srgb) {
             data[i] = ColorRGB(&out[i * 4]); // read rgb and ignore alpha
         }
         free(out);
+        if (is_hdr_image)
+            *is_hdr_image = true;
     }
     else {
         // Load image using STB library.

@@ -85,8 +85,9 @@ static ColorRGB reflect_from_mirror_surface(const Render_Context& ctx, Thread_Co
     reflected_ray.direction = shading_ctx.N * (2.f * dot(shading_ctx.N, shading_ctx.Wo)) - shading_ctx.Wo;
 
     Intersection isect;
-    if (!ctx.acceleration_structure->intersect(reflected_ray, isect))
-        return ColorRGB{};
+    if (!ctx.acceleration_structure->intersect(reflected_ray, isect)) {
+        return sample_environment_map_radiance(ctx, reflected_ray.direction);
+    }
 
     Shading_Point_Rays rays;
     rays.incident_ray = reflected_ray;
@@ -116,4 +117,26 @@ ColorRGB estimate_direct_lighting(const Render_Context& ctx, Thread_Context& thr
         L += ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
     }
     return L;
+}
+
+ColorRGB sample_environment_map_radiance(const Render_Context& ctx, const Vector3& world_direction) {
+    if (ctx.lights.environment_map_lights.empty())
+        return Color_Black;
+
+    const auto& env_light = ctx.lights.environment_map_lights[0];
+
+    ASSERT(env_light.environment_map_index != -1);
+    const Image_Texture& env_map_texture = ctx.textures[env_light.environment_map_index];
+
+    Vector3 env_map_direction = transform_vector(env_light.world_to_light, world_direction);
+
+    float phi = std::atan2(env_map_direction.y, env_map_direction.x);
+    phi = phi < 0 ? phi + Pi2 : phi;
+    float theta = std::acos(std::clamp(env_map_direction.z, -1.f, 1.f));
+
+    Vector2 uv;
+    uv[0] = phi * Pi2_Inv;
+    uv[1] = theta * Pi_Inv;
+
+    return env_map_texture.sample_bilinear(uv, 0, Wrap_Mode::clamp) * env_light.scale;
 }
