@@ -5,12 +5,12 @@
 #include "lib/vector.h"
 #include "lib/yar_project.h"
 
-#include "../context.h"
-#include "../intersection.h"
-#include "../kdtree.h"
-#include "../kdtree_builder.h"
-#include "../sampling.h"
-#include "../shading_context.h"
+#include "context.h"
+#include "intersection.h"
+#include "kdtree.h"
+#include "kdtree_builder.h"
+#include "sampling.h"
+#include "shading_context.h"
 
 #ifdef _WIN32
 #include <pmmintrin.h>
@@ -55,7 +55,7 @@ Ray Ray_Generator::generate_ray(const Vector3& last_hit, float last_hit_epsilon)
         origin = last_hit;
 
     // Ray direction.
-    auto direction = uniform_sample_sphere(random_float(&rng), random_float(&rng));
+    auto direction = sample_sphere_uniform(Vector2(random_float(&rng), random_float(&rng)));
     auto len = direction.length();
 
     if (random_float(&rng) < 1.0f / 32.0f && direction.z != 0.0)

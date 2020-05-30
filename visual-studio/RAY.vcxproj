@@ -108,10 +108,11 @@
     <ClCompile Include="..\src\reference\sampling.cpp" />
     <ClCompile Include="..\src\reference\scattering.cpp" />
     <ClCompile Include="..\src\reference\shading_context.cpp" />
-    <ClCompile Include="..\src\reference\tests\test.cpp" />
-    <ClCompile Include="..\src\reference\tests\test_kdtree.cpp" />
-    <ClCompile Include="..\src\reference\tests\test_triangle_intersection.cpp" />
     <ClCompile Include="..\src\reference\image_texture.cpp" />
+    <ClCompile Include="..\src\reference\test.cpp" />
+    <ClCompile Include="..\src\reference\test_kdtree.cpp" />
+    <ClCompile Include="..\src\reference\test_sampling.cpp" />
+    <ClCompile Include="..\src\reference\test_triangle_intersection.cpp" />
     <ClCompile Include="..\src\std.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -132,8 +133,8 @@
     <ClInclude Include="..\src\reference\reference_renderer.h" />
     <ClInclude Include="..\src\reference\sampling.h" />
     <ClInclude Include="..\src\reference\shading_context.h" />
-    <ClInclude Include="..\src\reference\tests\test.h" />
     <ClInclude Include="..\src\reference\image_texture.h" />
+    <ClInclude Include="..\src\reference\test.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

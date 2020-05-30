@@ -233,6 +233,22 @@ inline Vector2 operator*(const Vector2& v1, const Vector2& v2) {
     return Vector2(v1.x * v2.x, v1.y * v2.y);
 }
 
+inline bool operator<(Vector2 v1, Vector2 v2) {
+    return v1[0] < v2[0] && v1[1] < v2[1];
+}
+
+inline bool operator<=(Vector2 v1, Vector2 v2) {
+    return v1[0] <= v2[0] && v1[1] <= v2[1];
+}
+
+inline bool operator>(Vector2 v1, Vector2 v2) {
+    return v1[0] > v2[0] && v1[0] > v2[0];
+}
+
+inline bool operator>=(Vector2 v1, Vector2 v2) {
+    return v1[0] >= v2[0] && v1[0] >= v2[0];
+}
+
 namespace std {
 template<> struct hash<Vector2> {
     size_t operator()(Vector2 v) const {

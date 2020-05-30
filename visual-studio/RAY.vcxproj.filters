@@ -10,15 +10,6 @@
     <ClCompile Include="..\src\reference\sampling.cpp" />
     <ClCompile Include="..\src\reference\main.cpp" />
     <ClCompile Include="..\src\std.cpp" />
-    <ClCompile Include="..\src\reference\tests\test_kdtree.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\reference\tests\test_triangle_intersection.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\reference\tests\test.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\reference\direct_lighting.cpp" />
     <ClCompile Include="..\src\reference\shading_context.cpp" />
     <ClCompile Include="..\src\reference\ray_lib.cpp" />
@@ -26,6 +17,18 @@
     <ClCompile Include="..\src\reference\image_texture.cpp" />
     <ClCompile Include="..\src\reference\scattering.cpp" />
     <ClCompile Include="..\src\reference\bsdf.cpp" />
+    <ClCompile Include="..\src\reference\test.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\reference\test_kdtree.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\reference\test_triangle_intersection.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\reference\test_sampling.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -35,9 +38,6 @@
     <ClInclude Include="..\src\reference\kdtree_builder.h" />
     <ClInclude Include="..\src\reference\sampling.h" />
     <ClInclude Include="..\src\reference\reference_renderer.h" />
-    <ClInclude Include="..\src\reference\tests\test.h">
-      <Filter>tests</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\reference\direct_lighting.h" />
     <ClInclude Include="..\src\reference\shading_context.h" />
     <ClInclude Include="..\src\reference\ray_lib.h" />
@@ -46,6 +46,9 @@
     <ClInclude Include="..\src\reference\scattering.h" />
     <ClInclude Include="..\src\reference\bsdf.h" />
     <ClInclude Include="..\src\reference\context.h" />
+    <ClInclude Include="..\src\reference\test.h">
+      <Filter>tests</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

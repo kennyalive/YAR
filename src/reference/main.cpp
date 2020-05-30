@@ -1,7 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "reference_renderer.h"
-#include "tests/test.h"
+#include "test.h"
 
 #include "getopt/getopt.h"
 
