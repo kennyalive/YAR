@@ -291,6 +291,8 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                 scene.texture_names.push_back(env_map_light->mapName);
                 light.environment_map_index = (int)scene.texture_names.size() - 1;
 
+                light.sample_count = env_map_light->nSamples;
+                
                 scene.lights.environment_map_lights.push_back(light);
             }
         }

@@ -5,8 +5,10 @@
 #include "bsdf.h"
 #include "context.h"
 #include "ray_lib.h"
+#include "sampling.h"
 #include "shading_context.h"
 
+#include "lib/math.h"
 #include "lib/light.h"
 
 static ColorRGB sample_lights(const Render_Context& ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng) {
@@ -76,6 +78,38 @@ static ColorRGB sample_lights(const Render_Context& ctx, const Shading_Context& 
         L2 /= float(light.shadow_ray_count);
         L += L2;
     }
+
+    if (!ctx.lights.environment_map_lights.empty()) {
+        const Environment_Map_Light& light = ctx.lights.environment_map_lights[0];
+        ColorRGB L2;
+        for (int i = 0; i < light.sample_count; i++) {
+            Vector2 u{ random_float(rng), random_float(rng) };
+
+            Vector3 direction = sample_hemisphere_cosine(u);
+            Vector3 v1, v2;
+            coordinate_system_from_vector(shading_ctx.N, &v1, &v2);
+            Matrix3x4 local_to_world_transform{};
+            local_to_world_transform.set_column(0, v1);
+            local_to_world_transform.set_column(1, v2);
+            local_to_world_transform.set_column(2, shading_ctx.N);
+            direction = transform_vector(local_to_world_transform, direction);
+
+            float n_dot_l = dot(shading_ctx.N, direction);
+            ASSERT(n_dot_l >= 0.f); // because of hemisphere sampling
+
+            Ray shadow_ray(surface_point, direction);
+            bool in_shadow = ctx.acceleration_structure->intersect_any(shadow_ray, Infinity);
+            if (in_shadow)
+                continue;
+
+            ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, direction);
+            ColorRGB Le = sample_environment_map_radiance(ctx, direction);
+            L2 += Le * bsdf; // pdf = cos(theta) / Pi = n_dot_l / Pi
+        }
+        L2 *= Pi / float(light.sample_count);
+        L += L2;
+    }
+
     return L;
 }
 

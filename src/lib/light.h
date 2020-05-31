@@ -67,6 +67,7 @@ struct Environment_Map_Light {
     Matrix3x4 world_to_light;
     ColorRGB scale = ColorRGB(1);
     int environment_map_index = -1;
+    int sample_count = 0;
 };
 
 struct Lights {
