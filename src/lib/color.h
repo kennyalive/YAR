@@ -48,6 +48,12 @@ struct ColorRGB {
     bool is_black() const {
         return r == 0 && g == 0 && b == 0;
     }
+
+    void clamp_to_zero_negative_components() {
+        r = std::max(0.f, r);
+        g = std::max(0.f, g);
+        b = std::max(0.f, b);
+    }
 };
 
 inline ColorRGB operator*(const ColorRGB& c, float k) {

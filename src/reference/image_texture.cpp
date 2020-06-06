@@ -311,6 +311,8 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool clamp_co
                     int src_pixel_x = std::clamp(rw[x].first_pixel + k, 0, mips[0].width - 1);
                     t += rw[x].pixel_weight[k] * mips[0].data[y * mips[0].width + src_pixel_x];
                 }
+                // Filters with negative regions can produce negative color components.
+                t.clamp_to_zero_negative_components();
             }
         }
         mips[0].width = new_width;
@@ -329,6 +331,8 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool clamp_co
                     int src_pixel_y = std::clamp(rw[y].first_pixel + k, 0, mips[0].height - 1);
                     t += rw[y].pixel_weight[k] * mips[0].data[src_pixel_y * mips[0].width + x];
                 }
+                // Filters with negative regions can produce negative color components.
+                t.clamp_to_zero_negative_components();
             }
         }
         mips[0].height = new_height;

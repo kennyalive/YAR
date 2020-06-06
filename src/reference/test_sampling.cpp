@@ -218,8 +218,192 @@ void test_cosine_hemisphere_sampling() {
     printf("%s\n\n", fail_percentage < fail_threshold ? "PASSED" : "FAILED");
 }
 
+void test_uniform_cdf_sampling() {
+    printf("Testing uniform CDF sampling...\n");
+    const int N = 10;
+    const float interval_length = 1.f / N;
+
+    std::vector<float> pdf(N, 1.f);
+    std::vector<float> cdf(N);
+    for (int i = 0; i < N - 1; i++) {
+        cdf[i] = (i == 0 ? 0.f : cdf[i-1]) + pdf[i] * interval_length;
+    }
+    cdf[N-1] = 1.f;
+
+    pcg32_random_t rng;
+    pcg32_srandom_r(&rng, 0, 0x12345);
+
+    std::vector<int> buckets(100, 0);
+    const int Sample_Count = 100000;
+
+    for (int i = 0; i < Sample_Count; i++) {
+        float s = sample_from_CDF(random_float(&rng), cdf.data(), int(cdf.size()), interval_length);
+        ASSERT(s >= 0.f && s < 1.f);
+        int bucket_index = int(s * buckets.size());
+        ASSERT(bucket_index < (int)buckets.size());
+        buckets[bucket_index]++;
+    }
+
+    const float error_tolerance = 0.1f;
+    const int bucket_max_deviation = int(error_tolerance * Sample_Count / buckets.size());
+    const int bucket_estimate = int(Sample_Count / buckets.size());
+    int failures = 0;
+    for (int n : buckets) {
+        if (std::abs(bucket_estimate - n) > bucket_max_deviation)
+            failures++;
+    }
+
+    const float fail_threshold = 0.02f; 
+
+    printf("Failure count: %d\n", failures);
+    printf("%s\n\n", failures <= int(buckets.size() * fail_threshold) ? "PASSED" : "FAILED");
+}
+
+void test_non_uniform_cdf_sampling() {
+    printf("Testing non-uniform CDF sampling...\n");
+    const int N = 10;
+    const float interval_length = 1.f / N;
+
+    std::vector<float> pdf(N);
+    float sum = 0.f;
+    for (int i = 0; i < N; i++) {
+        pdf[i] = float(i);
+        sum += float(i);
+    }
+    for (float& p : pdf) {
+        p *= N / sum;
+    }
+
+    std::vector<float> cdf(N);
+    for (int i = 0; i < N - 1; i++) {
+        cdf[i] = (i == 0 ? 0.f : cdf[i-1]) + pdf[i] * interval_length;
+    }
+    cdf[N-1] = 1.f;
+
+    pcg32_random_t rng;
+    pcg32_srandom_r(&rng, 0, 0x12345);
+
+    std::vector<int> buckets(100, 0);
+    const int Sample_Count = 1'000'000;
+
+    for (int i = 0; i < Sample_Count; i++) {
+        float s = sample_from_CDF(random_float(&rng), cdf.data(), int(cdf.size()), interval_length);
+        ASSERT(s >= 0.f && s < 1.f);
+        int bucket_index = int(s * buckets.size());
+        ASSERT(bucket_index < (int)buckets.size());
+        buckets[bucket_index]++;
+    }
+
+    const float error_tolerance = 0.1f;
+    int failures = 0;
+    for (int i = 0; i < int(buckets.size()); i++) {
+        int pdf_interval_index = int(float(i) / buckets.size() * N);
+        int bucket_estimate = int((pdf[pdf_interval_index] * (1.f / buckets.size())) * Sample_Count);
+        int bucket_max_deviation = int(bucket_estimate * error_tolerance);
+        if (std::abs(bucket_estimate - buckets[i]) > bucket_max_deviation)
+            failures++;
+    }
+
+    const float fail_threshold = 0.02f;
+
+    printf("Failure count: %d\n", failures);
+    printf("%s\n\n", failures <= int(buckets.size() * fail_threshold) ? "PASSED" : "FAILED");
+}
+
+void test_uniform_2d_distribution_sampling() {
+    printf("Testing uniform 2D distribution sampling...\n");
+    std::vector<float> values(12, 1.f);
+    const int nx = 4;
+    const int ny = 3;
+
+    Distribution_2D_Sampling sampler;
+    sampler.initialize(values.data(), nx, ny);
+
+    std::vector<int> buckets(nx * ny, 0);
+    const int Sample_Count = 10'000;
+
+    pcg32_random_t rng;
+    pcg32_srandom_r(&rng, 0, 0x12345);
+
+    for (int i = 0; i < Sample_Count; i++) {
+        Vector2 u = { random_float(&rng), random_float(&rng) };
+        Vector2 s = sampler.sample(u);
+
+        int x = int(s[0] * nx);
+        ASSERT(x < nx);
+        int y = int(s[1] * ny);
+        ASSERT(y < ny);
+        buckets[y*nx + x]++;
+    }
+
+    const float error_tolerance = 0.1f;
+    int bucket_estimate = int(Sample_Count / buckets.size());
+    int bucket_max_deviation = int(bucket_estimate * error_tolerance);
+
+    int failures = 0;
+    for (int n : buckets) {
+        if (std::abs(bucket_estimate - n) > bucket_max_deviation)
+            failures++;
+    }   
+    const float fail_threshold = 0.02f; 
+    printf("Failure count: %d\n", failures);
+    printf("%s\n\n", failures <= int(buckets.size() * fail_threshold) ? "PASSED" : "FAILED");
+}
+
+void test_non_uniform_2d_distribution_sampling() {
+    printf("Testing non-uniform 2D distribution sampling...\n");
+    const int nx = 4;
+    const int ny = 6;
+    std::vector<float> values(nx * ny);
+
+    float sum = 0.f;
+    for (int i = 0; i < nx*ny; i++) {
+        values[i] = float(i);
+        sum += float(i);
+    }
+
+    Distribution_2D_Sampling sampler;
+    sampler.initialize(values.data(), nx, ny);
+
+    std::vector<int> buckets(nx * ny, 0);
+    const int Sample_Count = 100'000;
+
+    pcg32_random_t rng;
+    pcg32_srandom_r(&rng, 0, 0x12345);
+
+    for (int i = 0; i < Sample_Count; i++) {
+        Vector2 u = { random_float(&rng), random_float(&rng) };
+        Vector2 s = sampler.sample(u);
+
+        int x = int(s[0] * nx);
+        ASSERT(x < nx);
+        int y = int(s[1] * ny);
+        ASSERT(y < ny);
+        buckets[y*nx + x]++;
+    }
+
+    const float error_tolerance = 0.1f;
+    int failures = 0;
+    for (int i = 0; i < int(buckets.size()); i++) {
+
+        int bucket_estimate = int(values[i] / sum * Sample_Count);
+        int bucket_max_deviation = int(bucket_estimate * error_tolerance);
+        if (std::abs(bucket_estimate - buckets[i]) > bucket_max_deviation)
+            failures++;
+    }
+
+    const float fail_threshold = 0.02f;
+
+    printf("Failure count: %d\n", failures);
+    printf("%s\n\n", failures <= int(buckets.size() * fail_threshold) ? "PASSED" : "FAILED");
+}
+
 void test_sampling() {
     test_uniform_sphere_sampling();
     test_uniform_hemisphere_sampling();
     test_cosine_hemisphere_sampling();
+    test_uniform_cdf_sampling();
+    test_non_uniform_cdf_sampling();
+    test_uniform_2d_distribution_sampling();
+    test_non_uniform_2d_distribution_sampling();
 }

@@ -7,6 +7,7 @@ constexpr float Pi2 = 6.2831853f;
 constexpr float Pi_Inv = 1.f / Pi;
 constexpr float Pi2_Inv = 1.f / Pi2;
 constexpr float Infinity = std::numeric_limits<float>::infinity();
+constexpr float One_Minus_Epsilon = 0x1.fffffep-1;
 
 void error(const std::string& message);
 void error(const char* format, ...);
