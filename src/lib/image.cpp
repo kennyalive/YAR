@@ -87,12 +87,3 @@ bool Image::write_tga(const std::string& file_path) const {
     }
     return stbi_write_tga(file_path.c_str(), width, height, 3, srgb_image.data()) != 0;
 }
-
-std::vector<float> Image::get_luminance() const {
-    std::vector<float> luminance(data.size());
-
-    for (auto[i, c] : enumerate(data))
-        luminance[i] = sRGB_to_XYZ(c)[1];
-
-    return luminance;
-}

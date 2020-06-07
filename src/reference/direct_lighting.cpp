@@ -85,17 +85,22 @@ static ColorRGB sample_lights(const Render_Context& ctx, const Shading_Context& 
         for (int i = 0; i < light.sample_count; i++) {
             Vector2 u{ random_float(rng), random_float(rng) };
 
-            Vector3 direction = sample_hemisphere_cosine(u);
-            Vector3 v1, v2;
-            coordinate_system_from_vector(shading_ctx.N, &v1, &v2);
-            Matrix3x4 local_to_world_transform{};
-            local_to_world_transform.set_column(0, v1);
-            local_to_world_transform.set_column(1, v2);
-            local_to_world_transform.set_column(2, shading_ctx.N);
-            direction = transform_vector(local_to_world_transform, direction);
+            float pdf_uv;
+            Vector2 uv = ctx.environment_lights_sampling[light.environment_map_index].sample(u, &pdf_uv);
+            ASSERT(pdf_uv != 0.f);
+
+            float phi = uv[0] * Pi2;
+            float theta = uv[1] * Pi;
+            float sin_theta = std::sin(theta);
+
+            float pdf_omega = pdf_uv / (2*Pi*Pi*sin_theta); // pdf transformation from [0..1)^2 uv space to solid angle space
+
+            Vector3 direction = { sin_theta * std::cos(phi), sin_theta * std::sin(phi), std::cos(theta) };
+            direction = transform_vector(light.light_to_world, direction);
 
             float n_dot_l = dot(shading_ctx.N, direction);
-            ASSERT(n_dot_l >= 0.f); // because of hemisphere sampling
+            if (n_dot_l <= 0.f)
+                continue;
 
             Ray shadow_ray(surface_point, direction);
             bool in_shadow = ctx.acceleration_structure->intersect_any(shadow_ray, Infinity);
@@ -104,9 +109,9 @@ static ColorRGB sample_lights(const Render_Context& ctx, const Shading_Context& 
 
             ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, direction);
             ColorRGB Le = sample_environment_map_radiance(ctx, direction);
-            L2 += Le * bsdf; // pdf = cos(theta) / Pi = n_dot_l / Pi
+            L2 += Le * bsdf * n_dot_l / pdf_omega;
         }
-        L2 *= Pi / float(light.sample_count);
+        L2 /= float(light.sample_count);
         L += L2;
     }
 

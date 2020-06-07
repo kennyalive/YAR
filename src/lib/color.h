@@ -1,6 +1,11 @@
 #pragma once
 
 struct Vector3;
+struct ColorRGB;
+
+// without gamma encoding
+ColorRGB XYZ_to_sRGB(const Vector3& xyz);
+ColorRGB sRGB_to_XYZ(const ColorRGB& rgb);
 
 struct ColorRGB {
     float r;
@@ -49,6 +54,10 @@ struct ColorRGB {
         return r == 0 && g == 0 && b == 0;
     }
 
+    float luminance() const {
+        return sRGB_to_XYZ(*this)[1];
+    }
+
     void clamp_to_zero_negative_components() {
         r = std::max(0.f, r);
         g = std::max(0.f, g);
@@ -85,10 +94,6 @@ inline ColorRGB operator+(const ColorRGB& a, const ColorRGB& b) {
 inline ColorRGB operator-(const ColorRGB& a, const ColorRGB& b) {
     return ColorRGB{ a[0] - b[0], a[1] - b[1], a[2] - b[2] };
 }
-
-// without gamma encoding
-ColorRGB XYZ_to_sRGB(const Vector3& xyz);
-ColorRGB sRGB_to_XYZ(const ColorRGB& rgb);
 
 constexpr ColorRGB Color_Black = ColorRGB{0, 0, 0};
 constexpr ColorRGB Color_White = ColorRGB{1, 1, 1};

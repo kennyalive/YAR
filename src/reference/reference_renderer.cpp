@@ -223,11 +223,8 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         ctx.environment_lights_sampling.resize(scene.lights.environment_map_lights.size());
         for (auto[i, light] : enumerate(scene.lights.environment_map_lights)) {
             ASSERT(light.environment_map_index != -1);
-            const auto& texture = ctx.textures[light.environment_map_index];
-
-            const Image& env_map = texture.get_mips()[0];
-            std::vector<float> luminance = env_map.get_luminance();
-            ctx.environment_lights_sampling[i].initialize(luminance.data(), env_map.width, env_map.height);
+            const Image_Texture& env_map = ctx.textures[light.environment_map_index];
+            ctx.environment_lights_sampling[i].initialize_from_latitude_longitude_radiance_map(env_map);
         }
     }
 

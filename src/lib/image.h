@@ -12,5 +12,4 @@ struct Image {
 
     bool load_from_file(const std::string file_path, bool decode_srgb = false, bool* is_hdr_image = nullptr);
     bool write_tga(const std::string& file_path) const;
-    std::vector<float> get_luminance() const;
 };
