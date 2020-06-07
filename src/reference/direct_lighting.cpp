@@ -108,7 +108,7 @@ static ColorRGB sample_lights(const Render_Context& ctx, const Shading_Context& 
                 continue;
 
             ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, direction);
-            ColorRGB Le = sample_environment_map_radiance(ctx, direction);
+            ColorRGB Le = sample_environment_map_radiance(ctx, uv);
             L2 += Le * bsdf * n_dot_l / pdf_omega;
         }
         L2 /= float(light.sample_count);
@@ -177,5 +177,16 @@ ColorRGB sample_environment_map_radiance(const Render_Context& ctx, const Vector
     uv[0] = phi * Pi2_Inv;
     uv[1] = theta * Pi_Inv;
 
+    return env_map_texture.sample_bilinear(uv, 0, Wrap_Mode::clamp) * env_light.scale;
+}
+
+ColorRGB sample_environment_map_radiance(const Render_Context& ctx, Vector2 uv) {
+    if (ctx.lights.environment_map_lights.empty())
+        return Color_Black;
+
+    const auto& env_light = ctx.lights.environment_map_lights[0];
+
+    ASSERT(env_light.environment_map_index != -1);
+    const Image_Texture& env_map_texture = ctx.textures[env_light.environment_map_index];
     return env_map_texture.sample_bilinear(uv, 0, Wrap_Mode::clamp) * env_light.scale;
 }
