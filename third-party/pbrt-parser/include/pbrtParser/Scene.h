@@ -31,9 +31,6 @@
 #include <assert.h>
 #include <mutex>
 
-// Syntactic objects
-#include "pbrt-parser/impl/syntactic/Scene.h"
-
 /*! namespace for all things pbrt parser, both syntactical *and* semantical parser */
 namespace pbrt {
 
@@ -86,6 +83,23 @@ namespace pbrt {
     virtual void readFrom(BinaryReader &) {}
   };
 
+
+  /*! a spectrum is defined by a spectral power distribution,
+    i.e. a list of (wavelength, value) pairs */
+  struct Spectrum : public Entity {
+    typedef std::shared_ptr<Spectrum> SP;
+
+    /*! pretty-printer, for debugging */
+    virtual std::string toString() const override { return "Spectrum"; }
+    /*! serialize out to given binary writer */
+    virtual int writeTo(BinaryWriter &) override;
+    /*! serialize _in_ from given binary file reader */
+    virtual void readFrom(BinaryReader &) override;
+
+    pairNf spd;
+  };
+
+  
   /*! base abstraction for any material type. Note this is
     intentionally *not* abstract, since we will use it for any
     syntactic material type that we couldn't parse/recognize. This
@@ -165,6 +179,43 @@ namespace pbrt {
     vec3f L     { 1.f,1.f,1.f };
     vec3f scale { 1.f,1.f,1.f };
   };
+
+
+  struct SpotLightSource : public LightSource {
+    typedef std::shared_ptr<SpotLightSource> SP;
+    
+    /*! pretty-printer, for debugging */
+    virtual std::string toString() const override { return "SpotLightSource"; }
+    /*! serialize out to given binary writer */
+    virtual int writeTo(BinaryWriter &) override;
+    /*! serialize _in_ from given binary file reader */
+    virtual void readFrom(BinaryReader &) override;
+
+    vec3f       from;
+    vec3f       to;
+    vec3f       I              { 1.f,1.f,1.f };
+    Spectrum    Ispectrum;
+    float       coneAngle      { 0.f };
+    float       coneDeltaAngle { 0.f };
+    vec3f       scale          { 1.f,1.f,1.f };
+  };
+
+  struct PointLightSource : public LightSource {
+    typedef std::shared_ptr<PointLightSource> SP;
+    
+    /*! pretty-printer, for debugging */
+    virtual std::string toString() const override { return "PointLightSource"; }
+    /*! serialize out to given binary writer */
+    virtual int writeTo(BinaryWriter &) override;
+    /*! serialize _in_ from given binary file reader */
+    virtual void readFrom(BinaryReader &) override;
+
+    vec3f       from;
+    vec3f       I              { 1.f,1.f,1.f };
+    Spectrum    Ispectrum;
+    vec3f       scale          { 1.f,1.f,1.f };
+  };
+  
   
   // ==================================================================
   // Area Lights
@@ -212,21 +263,6 @@ namespace pbrt {
     float temperature, scale;
   };
 
-  /*! a spectrum is defined by a spectral power distribution,
-    i.e. a list of (wavelength, value) pairs */
-  struct Spectrum : public Entity {
-    typedef std::shared_ptr<Spectrum> SP;
-
-    /*! pretty-printer, for debugging */
-    virtual std::string toString() const override { return "Spectrum"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
-
-    pairNf spd;
-  };
-
   struct Texture : public Entity {
     typedef std::shared_ptr<Texture> SP;
     
@@ -243,7 +279,7 @@ namespace pbrt {
   struct ImageTexture : public Texture {
     typedef std::shared_ptr<ImageTexture> SP;
 
-    ImageTexture(const std::string &fileName="", syntactic::Texture::SP syntacticObject = nullptr) : fileName(fileName), syntacticObject(syntacticObject) {}
+    ImageTexture(const std::string &fileName="") : fileName(fileName) {}
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "ImageTexture"; }
@@ -253,7 +289,6 @@ namespace pbrt {
     virtual void readFrom(BinaryReader &) override;
 
     std::string fileName;
-    syntactic::Texture::SP syntacticObject;
   };
   
   /*! a texture defined by a disney ptex file. these are kind-of like
@@ -950,12 +985,18 @@ namespace pbrt {
     /*! serialize _in_ from given binary file reader */
     virtual void readFrom(BinaryReader &) override;
 
-    virtual box3f getBounds() const;
+    virtual box3f getBounds();
 
     typedef std::shared_ptr<Instance> SP;
       
     std::shared_ptr<Object> object;
     affine3f                xfm; // { PBRT_PARSER_VECTYPE_NAMESPACE::one };
+
+    /*! mutex to lock anything within this object that might get
+      changed by multiple threads (eg, computing bbox */
+    std::mutex         mutex;
+    bool  haveComputedBounds { false };
+    box3f bounds;
   };
 
   /*! a logical "NamedObject" that can be instanced */
@@ -966,7 +1007,8 @@ namespace pbrt {
     typedef std::shared_ptr<Object> SP;
 
     /*! constructor */
-    Object(const std::string &name="") : name(name) {}
+    Object(const std::string &name="") : name(name) {
+    }
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "Object"; }
@@ -975,7 +1017,7 @@ namespace pbrt {
     /*! serialize _in_ from given binary file reader */
     virtual void readFrom(BinaryReader &) override;
 
-    virtual box3f getBounds() const;
+    virtual box3f getBounds();
     
     std::vector<Shape::SP>       shapes;
     /*! all _non_-area light sources; in the pbrt spec area light
@@ -984,6 +1026,12 @@ namespace pbrt {
     std::vector<LightSource::SP> lightSources;
     std::vector<Instance::SP>    instances;
     std::string name = "";
+
+    /*! mutex to lock anything within this object that might get
+      changed by multiple threads (eg, computing bbox */
+    std::mutex         mutex;
+    bool  haveComputedBounds { false };
+    box3f bounds;
   };
 
   /*! a camera as specified in the root .pbrt file. Note that unlike
