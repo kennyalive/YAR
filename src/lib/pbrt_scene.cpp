@@ -52,10 +52,8 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
                 scene->texture_names.push_back(image_texture->fileName);
 
                 set_texture_parameter(mtl.reflectance, (int)scene->texture_names.size() - 1);
-
-                pbrt::syntactic::Texture::SP syntactic_texture = image_texture->syntacticObject;
-                mtl.reflectance.u_scale = syntactic_texture->getParam1f("uscale", 1.f);
-                mtl.reflectance.v_scale = syntactic_texture->getParam1f("vscale", 1.f);
+                mtl.reflectance.u_scale = image_texture->uscale;
+                mtl.reflectance.v_scale = image_texture->vscale;
             }
         }
         if (!has_texture) {
