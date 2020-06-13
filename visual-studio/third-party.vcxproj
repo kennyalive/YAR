@@ -117,6 +117,7 @@
     <ClCompile Include="..\third-party\imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\third-party\miniexr.cpp" />
+    <ClCompile Include="..\third-party\pbrt-parser\impl\3rdParty\rply.c" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\BinaryFileFormat.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Camera.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Geometry.cpp" />
@@ -165,6 +166,8 @@
     <ClInclude Include="..\third-party\imgui\imstb_truetype.h" />
     <ClInclude Include="..\third-party\jsmn\jsmn.h" />
     <ClInclude Include="..\third-party\meow-hash\meow_hash_x64_aesni.h" />
+    <ClInclude Include="..\third-party\pbrt-parser\impl\3rdParty\rply.h" />
+    <ClInclude Include="..\third-party\pbrt-parser\impl\3rdParty\rplyfile.h" />
     <ClInclude Include="..\third-party\pbrt-parser\impl\semantic\SemanticParser.h" />
     <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Buffer.h" />
     <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\FileMapping.h" />

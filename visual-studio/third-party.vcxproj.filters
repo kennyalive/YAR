@@ -46,6 +46,9 @@
     <Filter Include="tiny">
       <UniqueIdentifier>{b2f09a33-2976-4404-89fa-97417ba6ddaa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="pbrt-parser\impl\3rdParty">
+      <UniqueIdentifier>{20bc9545-f82c-44f1-85db-1a0e59cb9dfe}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third-party\enkiTS\TaskScheduler.cpp">
@@ -156,6 +159,9 @@
     </ClCompile>
     <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\Scene.cpp">
       <Filter>pbrt-parser\impl\syntactic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third-party\pbrt-parser\impl\3rdParty\rply.c">
+      <Filter>pbrt-parser\impl\3rdParty</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -275,6 +281,12 @@
     </ClInclude>
     <ClInclude Include="..\third-party\tiny\tiny_obj_loader.h">
       <Filter>tiny</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\pbrt-parser\impl\3rdParty\rply.h">
+      <Filter>pbrt-parser\impl\3rdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\pbrt-parser\impl\3rdParty\rplyfile.h">
+      <Filter>pbrt-parser\impl\3rdParty</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
