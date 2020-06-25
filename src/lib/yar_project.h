@@ -32,6 +32,10 @@ struct YAR_Project {
 
     bool mesh_disable_backfacing_culling = false;
     bool mesh_invert_winding_order = false;
+
+    // If the following option is enabled and the angle between face normals is larger or equal
+    // to the crease angle then face normals will be used as vertex shading normals.
+    bool mesh_use_crease_angle = false;
     float mesh_crease_angle = 0.f;
 
     // Lights defined in yar project file. The other source of lights is the

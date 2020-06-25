@@ -76,26 +76,38 @@ struct Triangle_Mesh {
 };
 
 // Defines how face normals are averaged to compute the vertex normal.
-enum class Normal_Average_Mode {
+enum class Normal_Averaging_Mode {
     area, // normals are averaged based on face area
     angle // normals are averaged based on angle between face edges
 };
 
+struct Normal_Calculation_Params {
+    Normal_Averaging_Mode averaging_mode = Normal_Averaging_Mode::area;
+
+    // If different vertices correspond to the same position and this flag is set then
+    // consider it's the same vertex for the purposes of normal calculation.
+    // If use_crease_angle flag is set then vertices with the same position could still
+    // be considered as separated.
+    bool detect_duplicated_vertices = false;
+
+    // Detection of edges that should have a sharp crease.
+    bool use_crease_angle = false;
+    float crease_angle = 0.f; // in radians
+
+    // If set then normals are computed per face. Could be useful for debugging to visualise faces.
+    bool face_normals = false;
+};
+
+void calculate_normals(const Normal_Calculation_Params& params, Triangle_Mesh& mesh);
+
 struct Triangle_Mesh_Load_Params {
     Matrix3x4 transform = Matrix3x4::identity;
 
-    // This is only used when model file does not provide normals.
-    Normal_Average_Mode normal_average_mode = Normal_Average_Mode::area;
+    // Forces normal calculation (overrides model's normals if they are provided).
+    // By default, normals are calculated only if they are not provided in the source data.
+    bool force_normal_calculation = false;
 
-    // crease_angle - in radians. 0.f to disable detection of edges that should have a sharp crease
-    float crease_angle = 0.f;
-
-    // If set then normals are computed per face. Could be useful for debugging to visualise faces.
-    // This will overwrite normmals that are provided by the model file.
-    bool face_normals = false;
+    Normal_Calculation_Params normal_calculation_params;
 
     bool invert_winding_order = false;
 };
-
-void compute_normals(Triangle_Mesh& mesh, Normal_Average_Mode normal_average_mode, float crease_angle);
-

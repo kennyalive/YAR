@@ -155,8 +155,10 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
             mesh.uvs[i] = Vector2_Zero;
     }
 
-    if (!has_normals)
-        compute_normals(mesh, Normal_Average_Mode::area, 0.f);
+    if (!has_normals) {
+        Normal_Calculation_Params normal_params;
+        calculate_normals(normal_params, mesh);
+    }
 
     scene->geometries.triangle_meshes.emplace_back(mesh);
     return Geometry_Handle{ Geometry_Type::triangle_mesh, (int)scene->geometries.triangle_meshes.size() - 1 };

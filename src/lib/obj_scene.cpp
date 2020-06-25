@@ -52,26 +52,6 @@ struct Mesh_Vertex_Hasher {
 static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyobj::attrib_t attrib,
     const Triangle_Mesh_Load_Params params, std::vector<Obj_Mesh>& obj_meshes)
 {
-    auto compute_mesh_normals = [&params](Triangle_Mesh& mesh, bool face_normals) {
-        if (params.face_normals) {
-            for (int i = 0; i < mesh.indices.size(); i += 3) {
-                uint32_t ia = mesh.indices[i + 0];
-                uint32_t ib = mesh.indices[i + 1];
-                uint32_t ic = mesh.indices[i + 2];
-                const Vector3& va = mesh.vertices[ia];
-                const Vector3& vb = mesh.vertices[ib];
-                const Vector3& vc = mesh.vertices[ic];
-
-                Vector3 n = cross(vb - va, vc - va).normalized();
-                mesh.normals[ia] = n;
-                mesh.normals[ib] = n;
-                mesh.normals[ic] = n;
-            }
-        }
-        else
-            compute_normals(mesh, params.normal_average_mode, params.crease_angle);
-    };
-
     int current_material_id = shape.mesh.material_ids.empty() ? -1 : shape.mesh.material_ids[0];
     std::unordered_map<Mesh_Vertex, uint32_t, Mesh_Vertex_Hasher> unique_vertices;
     bool has_normals = true;
@@ -89,8 +69,8 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
             int face_index = i/3;
             int material_id = shape.mesh.material_ids[face_index];
             if (material_id != current_material_id) {
-                if (!has_normals || params.face_normals)
-                    compute_mesh_normals(*mesh, params.face_normals);
+                if (!has_normals || params.force_normal_calculation)
+                    calculate_normals(params.normal_calculation_params, *mesh);
 
                 obj_meshes.push_back(Obj_Mesh{});
                 obj_meshes.back().name = shape.name;
@@ -129,27 +109,21 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
             vertex.uv = Vector2_Zero;
         }
 
-        if (params.face_normals) {
-            mesh->indices.push_back((uint32_t)mesh->vertices.size());
+        uint32_t vertex_index;
+        if (unique_vertices.count(vertex) == 0) {
+            vertex_index = (uint32_t)mesh->vertices.size();
+            unique_vertices[vertex] = (uint32_t)mesh->vertices.size();
             mesh->vertices.push_back(vertex.pos);
             mesh->normals.push_back(vertex.normal);
             mesh->uvs.push_back(vertex.uv);
         } else {
-            uint32_t index;
-            if (unique_vertices.count(vertex) == 0) {
-                index = (uint32_t)mesh->vertices.size();
-                unique_vertices[vertex] = (uint32_t)mesh->vertices.size();
-                mesh->vertices.push_back(vertex.pos);
-                mesh->normals.push_back(vertex.normal);
-                mesh->uvs.push_back(vertex.uv);
-            } else {
-                index = unique_vertices[vertex];
-            }
-            mesh->indices.push_back(index);
+            vertex_index = unique_vertices[vertex];
         }
+        mesh->indices.push_back(vertex_index);
     }
-    if (!has_normals || params.face_normals)
-        compute_mesh_normals(*mesh, params.face_normals);
+
+    if (!has_normals || params.force_normal_calculation)
+        calculate_normals(params.normal_calculation_params, *mesh);
 }
 
 Obj_Data load_obj(const std::string& obj_file_path, const Triangle_Mesh_Load_Params params,
@@ -203,7 +177,8 @@ Obj_Data load_obj(const std::string& obj_file_path, const Triangle_Mesh_Load_Par
 Scene load_obj_scene(const YAR_Project& project) {
     Triangle_Mesh_Load_Params mesh_load_params;
     mesh_load_params.transform = uniform_scale(Matrix3x4::identity, project.world_scale);
-    mesh_load_params.crease_angle = project.mesh_crease_angle;
+    mesh_load_params.normal_calculation_params.use_crease_angle = project.mesh_use_crease_angle;
+    mesh_load_params.normal_calculation_params.crease_angle = project.mesh_crease_angle;
     mesh_load_params.invert_winding_order = project.mesh_invert_winding_order;
     Obj_Data obj_data = load_obj(project.scene_path.string(), mesh_load_params, project.ignore_geometry_names);
 

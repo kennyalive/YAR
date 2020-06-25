@@ -207,6 +207,7 @@ struct Parser {
         else if (match_string("mesh_crease_angle")) {
             project.mesh_crease_angle = radians(get_numeric<float>());
             CHECK(project.mesh_crease_angle >= 0.f);
+            project.mesh_use_crease_angle = true;
         }
         else if (match_string("lights")) {
             parse_array_of_objects([this]() {parse_light_object();});

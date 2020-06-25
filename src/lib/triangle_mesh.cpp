@@ -16,7 +16,36 @@ void Triangle_Mesh::print_info() const {
     printf("\n");
 }
 
-static void duplicate_vertices_due_to_crease_angle_threshold(Triangle_Mesh& mesh, std::vector<uint64_t>& normal_groups, float crease_angle) {
+static void convert_to_mesh_with_face_normals(Triangle_Mesh& mesh) {
+    std::vector<Vector3> temp_positions(mesh.indices.size());
+    std::vector<Vector2> temp_uvs(mesh.indices.size());
+
+    mesh.normals.resize(mesh.indices.size());
+
+    ASSERT(mesh.indices.size() % 3 == 0);
+    for (int i = 0; i < (int)mesh.indices.size(); i += 3) {
+        int ia = mesh.indices[i + 0];
+        int ib = mesh.indices[i + 1];
+        int ic = mesh.indices[i + 2];
+
+        temp_positions[i + 0] = mesh.vertices[ia];
+        temp_positions[i + 1] = mesh.vertices[ib];
+        temp_positions[i + 2] = mesh.vertices[ic];
+
+        Vector3 n = cross(mesh.vertices[ib] - mesh.vertices[ia], mesh.vertices[ic] - mesh.vertices[ia]).normalized();
+        mesh.normals[i + 0] = n;
+        mesh.normals[i + 1] = n;
+        mesh.normals[i + 2] = n;
+
+        temp_uvs[i + 0] = mesh.uvs[ia];
+        temp_uvs[i + 1] = mesh.uvs[ib];
+        temp_uvs[i + 2] = mesh.uvs[ic];
+    }
+    std::swap(mesh.vertices, temp_positions);
+    std::swap(mesh.uvs, temp_uvs);
+}
+
+static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_groups(std::vector<uint64_t>& normal_groups, float crease_angle, Triangle_Mesh& mesh) {
     normal_groups.resize(mesh.vertices.size());
 
     std::unordered_map<Vector3, std::vector<int>> vertex_faces;
@@ -156,7 +185,7 @@ static void duplicate_vertices_due_to_crease_angle_threshold(Triangle_Mesh& mesh
     }
 }
 
-void compute_normals(Triangle_Mesh& mesh, Normal_Average_Mode normal_average_mode, float crease_angle) {
+static void adjust_normal_for_duplicated_vertices(const std::vector<uint64_t>& normal_groups, Triangle_Mesh& mesh) {
     struct Vertex_Info {
         Vector3 pos;
         uint64_t normal_group;
@@ -165,7 +194,6 @@ void compute_normals(Triangle_Mesh& mesh, Normal_Average_Mode normal_average_mod
             return pos == other.pos && normal_group == other.normal_group;
         }
     };
-
     struct Vertex_Info_Hasher {
         size_t operator()(const Vertex_Info& v) const {
             size_t hash = 0;
@@ -174,31 +202,64 @@ void compute_normals(Triangle_Mesh& mesh, Normal_Average_Mode normal_average_mod
             return hash;
         }
     };
+    // If vertex has no duplicates then store its position as 'index',
+    // otherwise store multiple 'indices'.
+    struct Siblings {
+        int index = -1;
+        std::vector<int> indices;
+    };
 
-    std::vector<uint64_t> normal_groups(mesh.vertices.size(), 0);
-
-    if (crease_angle != 0.f)
-        duplicate_vertices_due_to_crease_angle_threshold(mesh, normal_groups, crease_angle);
-
-    // Vertices with the same position and normal group but different texture coordinates.
-    std::unordered_map<Vertex_Info, std::vector<int>, Vertex_Info_Hasher> duplicated_vertices;
-
+    std::unordered_map<Vertex_Info, Siblings, Vertex_Info_Hasher> duplicated_vertices;
     for (int i = 0; i < (int)mesh.vertices.size(); i++) {
         Vertex_Info v_info = { mesh.vertices[i], normal_groups[i] };
-        duplicated_vertices[v_info].push_back(i);
+        auto it = duplicated_vertices.find(v_info);
+        if (it != duplicated_vertices.end()) {
+            Siblings& s = it->second;
+            if (s.index != -1) {
+                s.indices.push_back(s.index);
+                s.index = -1;
+                
+            }
+            s.indices.push_back(i);
+        }
+        else {
+            duplicated_vertices.insert({v_info, {i}});
+        }
     }
 
-    std::vector<bool> has_duplicates(mesh.vertices.size());
-    for (int i = 0; i < mesh.vertices.size(); i++) {
-        Vertex_Info v_info = { mesh.vertices[i], normal_groups[i] };
-        size_t vertex_count = duplicated_vertices[v_info].size();
-        ASSERT(vertex_count > 0);
-        has_duplicates[i] = vertex_count > 1;
+    for (const auto& entry : duplicated_vertices) {
+        const Siblings& siblings = entry.second;
+        if (siblings.indices.empty()) {
+            ASSERT(siblings.index != -1);
+            continue;
+        }
+        Vector3 n;
+        for (int i : siblings.indices) {
+            n += mesh.normals[i];
+        }
+        for (int i : siblings.indices) {
+            mesh.normals[i] = n;
+        }
+    }
+}
+
+void calculate_normals(const Normal_Calculation_Params& params, Triangle_Mesh& mesh) {
+    // Calculate face normals if requested.
+    if (params.face_normals) {
+        convert_to_mesh_with_face_normals(mesh);
+        return;
     }
 
-    for (Vector3& n : mesh.normals)
+    // Duplicate vertices due to crease angle if requested.
+    std::vector<uint64_t> normal_groups;
+    if (params.use_crease_angle != 0.f) {
+        normal_groups.resize(mesh.vertices.size(), 0);
+        duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_groups(normal_groups, params.crease_angle, mesh);
+    }
+
+    for (Vector3& n : mesh.normals) {
         n = Vector3_Zero;
-
+    }
     for (size_t i = 0; i < mesh.indices.size(); i += 3) {
         int i0 = mesh.indices[i + 0];
         int i1 = mesh.indices[i + 1];
@@ -212,7 +273,7 @@ void compute_normals(Triangle_Mesh& mesh, Normal_Average_Mode normal_average_mod
         Vector3 scaled_n_b;
         Vector3 scaled_n_c;
 
-        if (normal_average_mode == Normal_Average_Mode::angle) {
+        if (params.averaging_mode == Normal_Averaging_Mode::angle) {
             Vector3 d1 = b - a;
             Vector3 d2 = c - a;
             float angle = std::acos(std::clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
@@ -228,32 +289,19 @@ void compute_normals(Triangle_Mesh& mesh, Normal_Average_Mode normal_average_mod
             angle = std::acos(std::clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
             scaled_n_c = cross(d1, d2).normalized() * angle;
         } else {
-            ASSERT(normal_average_mode == Normal_Average_Mode::area);
+            ASSERT(params.averaging_mode == Normal_Averaging_Mode::area);
             scaled_n_a = cross(b - a, c - a);
             scaled_n_b = scaled_n_a;
             scaled_n_c = scaled_n_a;
         }
 
-        if (has_duplicates[i0]) {
-            for (int vi : duplicated_vertices[{a, normal_groups[i0]}])
-                mesh.normals[vi] += scaled_n_a;
-        } else {
-            mesh.normals[i0] += scaled_n_a;
-        }
+        mesh.normals[i0] += scaled_n_a;
+        mesh.normals[i1] += scaled_n_b;
+        mesh.normals[i2] += scaled_n_c;
+    }
 
-        if (has_duplicates[i1]) {
-            for (int vi : duplicated_vertices[{b, normal_groups[i1]}])
-                mesh.normals[vi] += scaled_n_b;
-        } else {
-            mesh.normals[i1] += scaled_n_b;
-        }
-
-        if (has_duplicates[i2]) {
-            for (int vi : duplicated_vertices[{c, normal_groups[i2]}])
-                mesh.normals[vi] += scaled_n_c;
-        } else {
-            mesh.normals[i2] += scaled_n_c;
-        }
+    if (params.detect_duplicated_vertices) {
+        adjust_normal_for_duplicated_vertices(normal_groups, mesh);
     }
 
     for (Vector3& n : mesh.normals) {
@@ -263,4 +311,3 @@ void compute_normals(Triangle_Mesh& mesh, Normal_Average_Mode normal_average_mod
         n.normalize();
     }
 }
-

@@ -216,8 +216,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
             ctx.textures.push_back(std::move(texture));
         }
     }
-    printf("Project loaded in %d ms\n", int(elapsed_milliseconds(t_load)));
-
+     
     // Init environment maps sampling.
     {
         ctx.environment_lights_sampling.resize(scene.lights.environment_map_lights.size());
@@ -227,6 +226,8 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
             ctx.environment_lights_sampling[i].initialize_from_latitude_longitude_radiance_map(env_map);
         }
     }
+
+    printf("Project loaded in %d ms\n", int(elapsed_milliseconds(t_load)));
 
     // Render image
     Timestamp t;
