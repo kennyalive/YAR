@@ -18,15 +18,28 @@
 // ply parser:
 #include "../3rdParty/rply.h"
 
-static int rply_vertex_callback(p_ply_argument argument) {
+static int rply_vertex_callback_vec3(p_ply_argument argument) {
   float* buffer;
   ply_get_argument_user_data(argument, (void**)&buffer, nullptr);
 
   long index;
   ply_get_argument_element(argument, nullptr, &index);
 
-  buffer[index * 3] = (float)ply_get_argument_value(argument);
+  float value = (float)ply_get_argument_value(argument);
+  buffer[index * 3] = value;
   return 1;
+}
+
+static int rply_vertex_callback_vec2(p_ply_argument argument) {
+    float* buffer;
+    ply_get_argument_user_data(argument, (void**)&buffer, nullptr);
+
+    long index;
+    ply_get_argument_element(argument, nullptr, &index);
+
+    float value = (float)ply_get_argument_value(argument);
+    buffer[index * 2] = value;
+    return 1;
 }
 
 static int rply_face_callback(p_ply_argument argument) {
@@ -154,19 +167,19 @@ namespace pbrt {
         idx.resize(face_count);
 
       // Set callbacks to process the PLY properties.
-      ply_set_read_cb(ply, "vertex", "x", rply_vertex_callback, &pos[0].x, 0);
-      ply_set_read_cb(ply, "vertex", "y", rply_vertex_callback, &pos[0].y, 0);
-      ply_set_read_cb(ply, "vertex", "z", rply_vertex_callback, &pos[0].z, 0);
+      ply_set_read_cb(ply, "vertex", "x", rply_vertex_callback_vec3, &pos[0].x, 0);
+      ply_set_read_cb(ply, "vertex", "y", rply_vertex_callback_vec3, &pos[0].y, 0);
+      ply_set_read_cb(ply, "vertex", "z", rply_vertex_callback_vec3, &pos[0].z, 0);
 
       if (has_normals) {
-        ply_set_read_cb(ply, "vertex", "nx", rply_vertex_callback, &nor[0].x, 0);
-        ply_set_read_cb(ply, "vertex", "ny", rply_vertex_callback, &nor[0].y, 0);
-        ply_set_read_cb(ply, "vertex", "nz", rply_vertex_callback, &nor[0].z, 0);
+        ply_set_read_cb(ply, "vertex", "nx", rply_vertex_callback_vec3, &nor[0].x, 0);
+        ply_set_read_cb(ply, "vertex", "ny", rply_vertex_callback_vec3, &nor[0].y, 0);
+        ply_set_read_cb(ply, "vertex", "nz", rply_vertex_callback_vec3, &nor[0].z, 0);
       }
 
       if (has_uvs) {
-        ply_set_read_cb(ply, "vertex", tex_coord_u_name, rply_vertex_callback, &tex[0].x, 0);
-        ply_set_read_cb(ply, "vertex", tex_coord_v_name, rply_vertex_callback, &tex[0].y, 0);
+        ply_set_read_cb(ply, "vertex", tex_coord_u_name, rply_vertex_callback_vec2, &tex[0].x, 0);
+        ply_set_read_cb(ply, "vertex", tex_coord_v_name, rply_vertex_callback_vec2, &tex[0].y, 0);
       }
 
       if (has_indices) {
