@@ -235,8 +235,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
 
         // Import pbrt shapes.
         for (pbrt::Shape::SP shape : instance->object->shapes) {
-            
-            Imported_Shape imported_shape = already_imported_shapes[shape];
+            Imported_Shape& imported_shape = already_imported_shapes[shape];
 
             if (imported_shape.geometry == Null_Geometry) {
                 pbrt::TriangleMesh::SP pbrt_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(shape);
@@ -251,7 +250,6 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                     error("Unsupported pbrt shape type");
 
                 imported_shape.material = import_pbrt_material(shape->material, &scene);
-                already_imported_shapes.insert(std::make_pair(shape, imported_shape));
             }
 
             if (imported_shape.geometry.type == Geometry_Type::triangle_mesh) {
