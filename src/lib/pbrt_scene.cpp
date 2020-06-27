@@ -38,27 +38,64 @@ static float pbrt_roughness_to_everyday_people_roughness(float pbrt_roughness) {
     return everyday_people_roughness;
 }
 
+static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_texture, Scene* scene) {
+    RGB_Parameter param;
+
+    if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture);
+        image_texture != nullptr)
+    {
+        scene->texture_names.push_back(image_texture->fileName);
+
+        set_texture_parameter(param, (int)scene->texture_names.size() - 1);
+        param.u_scale = image_texture->uscale;
+        param.v_scale = image_texture->vscale;
+    }
+    else if (auto constant_texture = std::dynamic_pointer_cast<pbrt::ConstantTexture>(pbrt_texture);
+        constant_texture != nullptr)
+    {
+        set_constant_parameter(param, ColorRGB(&constant_texture->value.x));
+    }
+    else
+        error("Unsupported pbrt texture type");
+
+    return param;
+}
+
+static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_texture, Scene* scene) {
+    Float_Parameter param;
+
+    if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture);
+        image_texture != nullptr)
+    {
+        scene->texture_names.push_back(image_texture->fileName);
+
+        set_texture_parameter(param, (int)scene->texture_names.size() - 1);
+        param.u_scale = image_texture->uscale;
+        param.v_scale = image_texture->vscale;
+    }
+    else if (auto constant_texture = std::dynamic_pointer_cast<pbrt::ConstantTexture>(pbrt_texture);
+        constant_texture != nullptr)
+    {
+        ColorRGB xyz = sRGB_to_XYZ(ColorRGB(&constant_texture->value.x));
+        set_constant_parameter(param, xyz[1]);
+    }
+    else
+        error("Unsupported pbrt texture type");
+
+    return param;
+}
+
 static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_material, Scene* scene) {
     Materials& materials = scene->materials;
     auto matte = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_material);
     if (matte) {
         Lambertian_Material mtl;
-        bool has_texture = false;
-        if (matte->map_kd != nullptr) {
-            if (pbrt::ImageTexture::SP image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(matte->map_kd);
-                image_texture != nullptr)
-            {
-                has_texture = true;
-                scene->texture_names.push_back(image_texture->fileName);
 
-                set_texture_parameter(mtl.reflectance, (int)scene->texture_names.size() - 1);
-                mtl.reflectance.u_scale = image_texture->uscale;
-                mtl.reflectance.v_scale = image_texture->vscale;
-            }
-        }
-        if (!has_texture) {
+        if (matte->map_kd)
+            mtl.reflectance = import_pbrt_texture_rgb(matte->map_kd, scene);
+        else 
             set_constant_parameter(mtl.reflectance, ColorRGB(&matte->kd.x));
-        }
+
         materials.lambertian.push_back(mtl);
         return Material_Handle{ Material_Type::lambertian, int(materials.lambertian.size() - 1) };
     }
@@ -104,17 +141,25 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
     auto plastic = std::dynamic_pointer_cast<pbrt::PlasticMaterial>(pbrt_material);
     if (plastic) {
         // TODO: handle texture params
-        ASSERT(plastic->map_kd == nullptr);
-        ASSERT(plastic->map_ks == nullptr);
         ASSERT(plastic->map_bump == nullptr);
         ASSERT(plastic->map_roughness == nullptr);
 
         float roughness = pbrt_roughness_to_everyday_people_roughness(plastic->roughness);
         Plastic_Material mtl;
         set_constant_parameter(mtl.roughness, roughness);
-        ColorRGB r0_xyz = sRGB_to_XYZ(ColorRGB(&plastic->ks.x));
-        set_constant_parameter(mtl.r0, r0_xyz[1]);
-        set_constant_parameter(mtl.diffuse_reflectance, ColorRGB(&plastic->kd.x));
+
+        if (plastic->map_ks) {
+            mtl.r0 = import_pbrt_texture_float(plastic->map_ks, scene);
+        }
+        else {
+            ColorRGB r0_xyz = sRGB_to_XYZ(ColorRGB(&plastic->ks.x));
+            set_constant_parameter(mtl.r0, r0_xyz[1]);
+        }
+
+        if (plastic->map_kd)
+            mtl.diffuse_reflectance = import_pbrt_texture_rgb(plastic->map_kd, scene);
+        else 
+            set_constant_parameter(mtl.diffuse_reflectance, ColorRGB(&plastic->kd.x));
 
         materials.plastic.push_back(mtl);
         return Material_Handle{ Material_Type::plastic, int(materials.plastic.size() - 1) };

@@ -11,11 +11,12 @@ struct Parameter {
     bool is_constant = false;
     Type constant_value = Type();
     int texture_index = -1;
+
+    float u_scale = 1.f;
+    float v_scale = 1.f;
 };
 
 struct RGB_Parameter : Parameter<ColorRGB> {
-    float u_scale = 1.f;
-    float v_scale = 1.f;
 };
 
 struct Float_Parameter : Parameter<float> {
