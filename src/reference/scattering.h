@@ -4,7 +4,7 @@
 #include "lib/material.h"
 
 struct Shading_Context;
-struct Render_Context;
+struct Scene_Context;
 struct Vector3;
 
 // theta_i is the angle between incident direction and normal.

@@ -108,7 +108,7 @@ static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
 
         if (hit_found) {
             Thread_Context thread_ctx;
-            Shading_Context shading_ctx(Render_Context{}, thread_ctx, Shading_Point_Rays{}, isect);
+            Shading_Context shading_ctx(Scene_Context{}, thread_ctx, Shading_Point_Rays{}, isect);
             last_hit = shading_ctx.P;
             last_hit_epsilon = isect.t * 1e-3f;
         }
@@ -177,7 +177,7 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
 
         if (kdtree_intersection.t != Infinity) {
             Thread_Context thread_ctx;
-            Shading_Context shading_ctx(Render_Context{}, thread_ctx, Shading_Point_Rays{}, kdtree_intersection);
+            Shading_Context shading_ctx(Scene_Context{}, thread_ctx, Shading_Point_Rays{}, kdtree_intersection);
             last_hit = shading_ctx.P;
             last_hit_epsilon = kdtree_intersection.t * 1e-3f;
         }

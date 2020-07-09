@@ -10,7 +10,7 @@
 
 class Camera;
 
-struct Render_Context { // Scene_Context rename ???
+struct Scene_Context {
     const Camera* camera;
     const Scene_KdTree* acceleration_structure;
     Lights lights;

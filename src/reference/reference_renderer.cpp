@@ -115,7 +115,7 @@ static Scene_KdTree load_scene_kdtree(const Scene& scene) {
     return scene_kdtree;
 }
 
-static void render_tile(const Render_Context& ctx, Thread_Context& thread_ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, uint64_t rng_seed, Film& film) {
+static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, uint64_t rng_seed, Film& film) {
     pcg32_random_t rng;
     pcg32_srandom_r(&rng, 0, rng_seed);
 
@@ -193,7 +193,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     const int x_tile_count = (sample_region_size.x + Tile_Size - 1) / Tile_Size;
     const int y_tile_count = (sample_region_size.y + Tile_Size - 1) / Tile_Size;
 
-    Render_Context ctx;
+    Scene_Context ctx;
     ctx.camera = &camera;
     ctx.acceleration_structure = &scene_kdtree;
     ctx.lights = scene.lights;
@@ -255,7 +255,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         }
     } else {
         struct Render_Tile_Task : public enki::ITaskSet {
-            Render_Context* ctx;
+            Scene_Context* ctx;
             Bounds2i tile_sample_bounds;
             Bounds2i tile_pixel_bounds;
             uint64_t rng_seed;
