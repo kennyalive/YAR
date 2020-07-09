@@ -316,7 +316,7 @@ void test_uniform_2d_distribution_sampling() {
     const int nx = 4;
     const int ny = 3;
 
-    Distribution_2D_Sampling sampler;
+    Distribution_2D sampler;
     sampler.initialize(values.data(), nx, ny);
 
     std::vector<int> buckets(nx * ny, 0);
@@ -362,7 +362,7 @@ void test_non_uniform_2d_distribution_sampling() {
         sum += float(i);
     }
 
-    Distribution_2D_Sampling sampler;
+    Distribution_2D sampler;
     sampler.initialize(values.data(), nx, ny);
 
     std::vector<int> buckets(nx * ny, 0);

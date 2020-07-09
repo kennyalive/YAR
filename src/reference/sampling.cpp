@@ -62,7 +62,7 @@ float sample_from_CDF(float u, const float* cdf, int n, float interval_length /*
     return std::min(x, One_Minus_Epsilon);
 }
 
-void Distribution_2D_Sampling::initialize(const float* values, int nx, int ny) {
+void Distribution_2D::initialize(const float* values, int nx, int ny) {
     this->nx = nx;
     this->ny = ny;
     x_interval_length = 1.f / nx;
@@ -99,7 +99,7 @@ void Distribution_2D_Sampling::initialize(const float* values, int nx, int ny) {
     }
 }
 
-void Distribution_2D_Sampling::initialize_from_latitude_longitude_radiance_map(const Image_Texture& env_map) {
+void Distribution_2D::initialize_from_latitude_longitude_radiance_map(const Image_Texture& env_map) {
     ASSERT(!env_map.get_mips().empty());
     const Image& image = env_map.get_mips()[0];
 
@@ -133,7 +133,7 @@ void Distribution_2D_Sampling::initialize_from_latitude_longitude_radiance_map(c
     initialize(distribution_coeffs.data(), image.width, image.height);
 }
 
-Vector2 Distribution_2D_Sampling::sample(Vector2 u, float* pdf) const {
+Vector2 Distribution_2D::sample(Vector2 u, float* pdf) const {
     ASSERT(u < Vector2(1));
 
     float pdf_y; 
@@ -149,4 +149,10 @@ Vector2 Distribution_2D_Sampling::sample(Vector2 u, float* pdf) const {
     }
 
     return {kx, ky};
+}
+
+float Distribution_2D::pdf(Vector2 sample) const {
+    ASSERT(sample < Vector2(1));
+    ASSERT(false);
+    return 0.;
 }

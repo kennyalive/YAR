@@ -11,13 +11,12 @@
 class Camera;
 
 struct Render_Context { // Scene_Context rename ???
-    Bounds2i sample_bounds;
     const Camera* camera;
     const Scene_KdTree* acceleration_structure;
     Lights lights;
     Materials materials;
     std::vector<Image_Texture> textures;
-    std::vector<Distribution_2D_Sampling> environment_lights_sampling;
+    std::vector<Distribution_2D> environment_lights_sampling;
 
 };
 

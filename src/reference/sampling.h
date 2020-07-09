@@ -16,18 +16,25 @@ Vector3 sample_hemisphere_cosine(Vector2 u);
 // u - uniformly distributed random variable from [0, 1).
 //
 // The function generates samples from [0, 1) distributed according to provided CDF.
-// The optional 'pdf' return value is a pdf of the selected sample with respect to length measure.
+// The optional 'pdf' return value is a pdf of the selected sample with respect to the length measure.
 float sample_from_CDF(float u, const float* cdf, int n, float interval_length /* 1/n */, float* sample_pdf = nullptr);
 
-class Distribution_2D_Sampling {
+// Distribution_2D represents PDF (probability density function) defined over [0..1]^2.
+// The PDF function is proportional to the initialization values.
+// The samples are drawn according to pdf function and belong to [0..1)^2 domain.
+class Distribution_2D {
 public:
     void initialize(const float* values, int nx, int ny);
     void initialize_from_latitude_longitude_radiance_map(const Image_Texture& env_map);
 
-    // The function generates values from [0..1)^2 distributed proportionally to the
-    // values specified during initialization.
-    // The optional 'pdf' return value is a pdf of the selected sample with respect to solid angle measure.
+    // Draws a sample from the distribution.
+    // The sample are from the closed-open region [0..1)^2
+    // The optional 'pdf' return value is a pdf of the drawn sample with respect to the solid angle measure.
+    // u - 2 uniformly distributed random variables from [0..1)
     Vector2 sample(Vector2 u, float *pdf = nullptr) const;
+
+    // For the given sample returns its probability density value.
+    float pdf(Vector2 sample) const;
 
 private:
     int nx = 0;
