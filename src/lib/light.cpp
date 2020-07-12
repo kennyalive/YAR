@@ -29,8 +29,12 @@ void Lights::append(const Lights& lights) {
     append_lights(point_lights);
     append_lights(directional_lights);
     append_lights(diffuse_rectangular_lights);
-    append_lights(environment_map_lights);
     #undef append_lights
+
+    if (lights.has_environment_light) {
+        environment_light = lights.environment_light;
+        has_environment_light = true;
+    }
 }
 
 bool Lights::has_lights() const {
@@ -38,5 +42,5 @@ bool Lights::has_lights() const {
         point_lights.size() ||
         directional_lights.size() ||
         diffuse_rectangular_lights.size() ||
-        environment_map_lights.size();
+        has_environment_light;
 }

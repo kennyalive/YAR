@@ -101,6 +101,7 @@
     <ClCompile Include="..\src\reference\kdtree.cpp" />
     <ClCompile Include="..\src\reference\kdtree_builder.cpp" />
     <ClCompile Include="..\src\reference\direct_lighting.cpp" />
+    <ClCompile Include="..\src\reference\light_sampling.cpp" />
     <ClCompile Include="..\src\reference\main.cpp" />
     <ClCompile Include="..\src\reference\parameter_evaluation.cpp" />
     <ClCompile Include="..\src\reference\ray_lib.cpp" />
@@ -120,6 +121,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\bsdf.h" />
+    <ClInclude Include="..\src\reference\light_sampling.h" />
     <ClInclude Include="..\src\reference\parameter_evaluation.h" />
     <ClInclude Include="..\src\reference\ray_lib.h" />
     <ClInclude Include="..\src\reference\scattering.h" />

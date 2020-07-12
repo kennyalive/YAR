@@ -1,14 +1,14 @@
 #pragma once
 
 #include "image_texture.h"
+#include "light_sampling.h"
 #include "kdtree.h"
-#include "sampling.h"
 
-#include "lib/geometry.h"
 #include "lib/light.h"
 #include "lib/utils.h"
 
 class Camera;
+class Image_Texture;
 
 struct Scene_Context {
     const Camera* camera;
@@ -16,8 +16,9 @@ struct Scene_Context {
     Lights lights;
     Materials materials;
     std::vector<Image_Texture> textures;
-    std::vector<Distribution_2D> environment_lights_sampling;
 
+    Environment_Light_Sampler environment_light_sampler;
+    bool has_environment_light_sampler = false;
 };
 
 struct Thread_Context {

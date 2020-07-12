@@ -8,10 +8,10 @@
 #include "sampling.h"
 #include "shading_context.h"
 
-#include "lib/math.h"
 #include "lib/light.h"
+#include "lib/math.h"
 
-static ColorRGB sample_lights(const Render_Context& ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng) {
+static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng) {
     ColorRGB L;
     Vector3 surface_point = offset_ray_origin(shading_ctx.P, shading_ctx.Ng);
 
@@ -79,67 +79,61 @@ static ColorRGB sample_lights(const Render_Context& ctx, const Shading_Context& 
         L += L2;
     }
 
-    if (!ctx.lights.environment_map_lights.empty()) {
-        const Environment_Map_Light& light = ctx.lights.environment_map_lights[0];
+    if (ctx.has_environment_light_sampler) {
         ColorRGB L2;
-        for (int i = 0; i < light.sample_count; i++) {
+        for (int i = 0; i < ctx.environment_light_sampler.light->sample_count; i++) {
             Vector2 u{ random_float(rng), random_float(rng) };
+            Light_Sample light_sample = ctx.environment_light_sampler.sample(u);
 
-            float pdf_uv;
-            Vector2 uv = ctx.environment_lights_sampling[light.environment_map_index].sample(u, &pdf_uv);
-            ASSERT(pdf_uv != 0.f);
+            float n_dot_l = dot(shading_ctx.N, light_sample.Wi);
 
-            float phi = uv[0] * Pi2;
-            float theta = uv[1] * Pi;
-            float sin_theta = std::sin(theta);
+            bool scattering_possible = n_dot_l > 0.f && shading_ctx.bsdf->reflection_scattering ||
+                                       n_dot_l < 0.f && shading_ctx.bsdf->transmission_scattering;
 
-            float pdf_omega = pdf_uv / (2*Pi*Pi*sin_theta); // pdf transformation from [0..1)^2 uv space to solid angle space
-
-            Vector3 direction = { sin_theta * std::cos(phi), sin_theta * std::sin(phi), std::cos(theta) };
-            direction = transform_vector(light.light_to_world, direction);
-
-            float n_dot_l = dot(shading_ctx.N, direction);
-            if (n_dot_l <= 0.f)
-                continue;
-
-            Ray shadow_ray(surface_point, direction);
-            bool in_shadow = ctx.acceleration_structure->intersect_any(shadow_ray, Infinity);
-            if (in_shadow)
-                continue;
-
-            ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, direction);
-            ColorRGB Le = sample_environment_map_radiance(ctx, uv);
-            L2 += Le * bsdf * n_dot_l / pdf_omega;
+            if (scattering_possible) {
+                ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light_sample.Wi);
+                if (!f.is_black()) {
+                    Ray shadow_ray(surface_point, light_sample.Wi);
+                    bool occluded = ctx.acceleration_structure->intersect_any(shadow_ray, Infinity);
+                    if (!occluded) {
+                        L2 += (light_sample.Le * f) * (std::abs(n_dot_l) / light_sample.pdf);
+                    }
+                }
+            }
         }
-        L2 /= float(light.sample_count);
+        L2 /= float(ctx.environment_light_sampler.light->sample_count);
         L += L2;
     }
 
     return L;
 }
 
-static ColorRGB reflect_from_mirror_surface(const Render_Context& ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng, int max_specular_depth) {
+static ColorRGB reflect_from_mirror_surface(const Scene_Context& ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng, int max_specular_depth) {
     Ray reflected_ray;
     reflected_ray.origin = offset_ray_origin(shading_ctx.P, shading_ctx.Ng);
     reflected_ray.direction = shading_ctx.N * (2.f * dot(shading_ctx.N, shading_ctx.Wo)) - shading_ctx.Wo;
 
     Intersection isect;
-    if (!ctx.acceleration_structure->intersect(reflected_ray, isect)) {
-        return sample_environment_map_radiance(ctx, reflected_ray.direction);
+    if (ctx.acceleration_structure->intersect(reflected_ray, isect)) {
+        Shading_Point_Rays rays;
+        rays.incident_ray = reflected_ray;
+        // TODO: generate auxilary rays for mirror?
+        rays.auxilary_ray_dx_offset = reflected_ray;
+        rays.auxilary_ray_dy_offset = reflected_ray;
+
+        Shading_Context shading_ctx2(ctx, thread_ctx, rays, isect);
+        ColorRGB reflected_radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx2, rng, max_specular_depth);
+        return reflected_radiance * shading_ctx.mirror_reflectance;
     }
-
-    Shading_Point_Rays rays;
-    rays.incident_ray = reflected_ray;
-    // TODO: generate auxilary rays for mirror?
-    rays.auxilary_ray_dx_offset = reflected_ray;
-    rays.auxilary_ray_dy_offset = reflected_ray;
-
-    Shading_Context shading_ctx2(ctx, thread_ctx, rays, isect);
-    ColorRGB reflected_radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx2, rng, max_specular_depth);
-    return reflected_radiance * shading_ctx.mirror_reflectance;
+    else if (ctx.has_environment_light_sampler) {
+        return ctx.environment_light_sampler.get_radiance_for_direction(reflected_ray.direction);
+    }
+    else {
+        return Color_Black;
+    }
 }
 
-ColorRGB estimate_direct_lighting(const Render_Context& ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng, int max_specular_depth)
+ColorRGB estimate_direct_lighting(const Scene_Context& ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng, int max_specular_depth)
 {
     ColorRGB L;
     if (shading_ctx.mirror_surface) {
@@ -156,37 +150,4 @@ ColorRGB estimate_direct_lighting(const Render_Context& ctx, Thread_Context& thr
         L += ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
     }
     return L;
-}
-
-ColorRGB sample_environment_map_radiance(const Render_Context& ctx, const Vector3& world_direction) {
-    if (ctx.lights.environment_map_lights.empty())
-        return Color_Black;
-
-    const auto& env_light = ctx.lights.environment_map_lights[0];
-
-    ASSERT(env_light.environment_map_index != -1);
-    const Image_Texture& env_map_texture = ctx.textures[env_light.environment_map_index];
-
-    Vector3 env_map_direction = transform_vector(env_light.world_to_light, world_direction);
-
-    float phi = std::atan2(env_map_direction.y, env_map_direction.x);
-    phi = phi < 0 ? phi + Pi2 : phi;
-    float theta = std::acos(std::clamp(env_map_direction.z, -1.f, 1.f));
-
-    Vector2 uv;
-    uv[0] = phi * Pi2_Inv;
-    uv[1] = theta * Pi_Inv;
-
-    return env_map_texture.sample_bilinear(uv, 0, Wrap_Mode::clamp) * env_light.scale;
-}
-
-ColorRGB sample_environment_map_radiance(const Render_Context& ctx, Vector2 uv) {
-    if (ctx.lights.environment_map_lights.empty())
-        return Color_Black;
-
-    const auto& env_light = ctx.lights.environment_map_lights[0];
-
-    ASSERT(env_light.environment_map_index != -1);
-    const Image_Texture& env_map_texture = ctx.textures[env_light.environment_map_index];
-    return env_map_texture.sample_bilinear(uv, 0, Wrap_Mode::clamp) * env_light.scale;
 }

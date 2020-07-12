@@ -140,10 +140,10 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
                 if (!radiance.is_black())
                     tile.add_sample(film_pos, radiance);
             }
-            else {
-                ColorRGB env_map_radiance = sample_environment_map_radiance(ctx, ray.direction);
-                if (!env_map_radiance.is_black())
-                    tile.add_sample(film_pos, env_map_radiance);
+            else if (ctx.has_environment_light_sampler) {
+                ColorRGB radiance = ctx.environment_light_sampler.get_radiance_for_direction(ray.direction);
+                if (!radiance.is_black())
+                    tile.add_sample(film_pos, radiance);
             }
         }
     }
@@ -216,14 +216,18 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
             ctx.textures.push_back(std::move(texture));
         }
     }
-     
-    // Init environment maps sampling.
+
+    // Init environment map sampling.
     {
-        ctx.environment_lights_sampling.resize(scene.lights.environment_map_lights.size());
-        for (auto[i, light] : enumerate(scene.lights.environment_map_lights)) {
+        if (scene.lights.has_environment_light) {
+            const Environment_Light& light = scene.lights.environment_light;
             ASSERT(light.environment_map_index != -1);
-            const Image_Texture& env_map = ctx.textures[light.environment_map_index];
-            ctx.environment_lights_sampling[i].initialize_from_latitude_longitude_radiance_map(env_map);
+            const Image_Texture& environment_map = ctx.textures[light.environment_map_index];
+
+            ctx.environment_light_sampler.light = &light;
+            ctx.environment_light_sampler.environment_map = &environment_map;
+            ctx.environment_light_sampler.radiance_distribution.initialize_from_latitude_longitude_radiance_map(environment_map);
+            ctx.has_environment_light_sampler = true;
         }
     }
 

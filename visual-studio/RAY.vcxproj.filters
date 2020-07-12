@@ -29,6 +29,7 @@
     <ClCompile Include="..\src\reference\test_sampling.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\reference\light_sampling.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -49,6 +50,7 @@
     <ClInclude Include="..\src\reference\test.h">
       <Filter>tests</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\reference\light_sampling.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

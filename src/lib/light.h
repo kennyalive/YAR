@@ -62,7 +62,7 @@ struct Diffuse_Rectangular_Light {
     Triangle_Mesh get_geometry() const;
 };
 
-struct Environment_Map_Light {
+struct Environment_Light {
     Matrix3x4 light_to_world;
     Matrix3x4 world_to_light;
     ColorRGB scale = ColorRGB(1);
@@ -74,7 +74,9 @@ struct Lights {
     std::vector<Point_Light> point_lights;
     std::vector<Directional_Light> directional_lights;
     std::vector<Diffuse_Rectangular_Light> diffuse_rectangular_lights;
-    std::vector<Environment_Map_Light> environment_map_lights;
+
+    Environment_Light environment_light;
+    bool has_environment_light = false;
 
     void append(const Lights& lights);
     bool has_lights() const;

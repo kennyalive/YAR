@@ -323,20 +323,20 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                 scene.lights.directional_lights.push_back(light);
             }
 
-            auto env_map_light = std::dynamic_pointer_cast<pbrt::InfiniteLightSource>(light);
-            if (env_map_light) {
-                Environment_Map_Light light;
+            auto infinite_light = std::dynamic_pointer_cast<pbrt::InfiniteLightSource>(light);
+            if (infinite_light) {
+                Environment_Light& light = scene.lights.environment_light;
 
-                light.light_to_world = to_matrix3x4(instance->xfm) * to_matrix3x4(env_map_light->transform);
+                light.light_to_world = to_matrix3x4(instance->xfm) * to_matrix3x4(infinite_light->transform);
                 light.world_to_light = get_inverted_transform(light.light_to_world);
-                light.scale = ColorRGB(&env_map_light->scale.x) * ColorRGB(&env_map_light->L.x);
+                light.scale = ColorRGB(&infinite_light->scale.x) * ColorRGB(&infinite_light->L.x);
 
-                scene.texture_names.push_back(env_map_light->mapName);
+                scene.texture_names.push_back(infinite_light->mapName);
                 light.environment_map_index = (int)scene.texture_names.size() - 1;
 
-                light.sample_count = env_map_light->nSamples;
-                
-                scene.lights.environment_map_lights.push_back(light);
+                light.sample_count = infinite_light->nSamples;
+
+                scene.lights.has_environment_light = true;
             }
         }
     }
