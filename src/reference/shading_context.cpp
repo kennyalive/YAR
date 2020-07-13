@@ -11,7 +11,7 @@
 #include "lib/scene_object.h"
 
 Shading_Context::Shading_Context(
-    const Render_Context& global_ctx,
+    const Scene_Context& global_ctx,
     Thread_Context& thread_ctx,
     const Shading_Point_Rays& rays, const Intersection& intersection)
 {
@@ -40,6 +40,9 @@ Shading_Context::Shading_Context(
     }
 
     calculate_UV_derivates(rays, dPdu, dPdv);
+
+    tangent2 = cross(N, dPdu).normalized();
+    tangent1 = cross(tangent2, N);
 
     Wo = -rays.incident_ray.direction;
     area_light = intersection.scene_object->area_light;
@@ -148,4 +151,12 @@ float Shading_Context::compute_texture_lod(int mip_count, const Vector2& uv_scal
     float filter_width = std::max(dUVdx_scaled.length(), dUVdy_scaled.length());
 
     return std::max(0.f, mip_count - 1 + log2(std::clamp(filter_width, 1e-6f, 1.0f)));
+}
+
+Vector3 Shading_Context::local_to_world(const Vector3& local_direction) const {
+    return Vector3{
+        tangent1.x * local_direction.x + tangent2.x * local_direction.y + N.x * local_direction.z,
+        tangent1.y * local_direction.x + tangent2.y * local_direction.y + N.y * local_direction.z,
+        tangent1.z * local_direction.x + tangent2.z * local_direction.y + N.z * local_direction.z
+    };
 }

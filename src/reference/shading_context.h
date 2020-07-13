@@ -5,7 +5,7 @@
 
 struct Intersection;
 struct Triangle_Intersection;
-struct Render_Context;
+struct Scene_Context;
 struct Thread_Context;
 struct BSDF;
 
@@ -27,6 +27,11 @@ struct Shading_Context {
     Vector2 dUVdx;
     Vector2 dUVdy;
 
+    // Tangent vectors for shading geometry.
+    // (tangent1, tangent2, N) triplet forms right-handed orthonormal coordinate system.
+    Vector3 tangent1;
+    Vector3 tangent2;
+
     Vector3 Wo; // outgoing direction
 
     Light_Handle area_light;
@@ -35,11 +40,15 @@ struct Shading_Context {
     ColorRGB mirror_reflectance;
 
     Shading_Context(
-        const Render_Context& global_ctx,
+        const Scene_Context& global_ctx,
         Thread_Context& thread_ctx,
         const Shading_Point_Rays& rays, const Intersection& intersection);
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
+
+    // Transforms direction from the local coordinate system defined
+    // by the normal and two tangent vectors to world space direction.
+    Vector3 local_to_world(const Vector3& local_direction) const;
 
 private:
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti, Vector3* dPdu, Vector3* dPdv);
