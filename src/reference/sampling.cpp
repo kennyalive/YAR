@@ -56,6 +56,7 @@ float sample_from_CDF(float u, const float* cdf, int n, float interval_length /*
 
     if (pdf) {
         *pdf = (cdf_b - cdf_a) * n;
+        ASSERT(*pdf > 0.f); // it can be shown this can't be zero
     }
 
     float x = (float(k) + (u - cdf_a) / (cdf_b - cdf_a)) * interval_length;
