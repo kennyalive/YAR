@@ -19,4 +19,5 @@ struct Environment_Light_Sampler {
 
     Light_Sample sample(Vector2 u) const;
     ColorRGB get_radiance_for_direction(const Vector3& world_direction) const;
+    float pdf(const Vector3& world_direction) const;
 };

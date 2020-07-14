@@ -11,6 +11,10 @@
 #include "lib/light.h"
 #include "lib/math.h"
 
+inline float mis_power_heuristic(float pdf1, float pdf2) {
+    return pdf1*pdf1 / (pdf1*pdf1 + pdf2*pdf2);
+}
+
 static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng) {
     ColorRGB L;
     Vector3 surface_point = offset_ray_origin(shading_ctx.P, shading_ctx.Ng);
@@ -82,21 +86,50 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
     if (ctx.has_environment_light_sampler) {
         ColorRGB L2;
         for (int i = 0; i < ctx.environment_light_sampler.light->sample_count; i++) {
-            Vector2 u{ random_float(rng), random_float(rng) };
-            Light_Sample light_sample = ctx.environment_light_sampler.sample(u);
+            // Light sampling part of MIS.
+            {
+                Vector2 u{ random_float(rng), random_float(rng) };
+                Light_Sample light_sample = ctx.environment_light_sampler.sample(u);
 
-            float n_dot_l = dot(shading_ctx.N, light_sample.Wi);
+                float n_dot_l = dot(shading_ctx.N, light_sample.Wi);
 
-            bool scattering_possible = n_dot_l > 0.f && shading_ctx.bsdf->reflection_scattering ||
-                                       n_dot_l < 0.f && shading_ctx.bsdf->transmission_scattering;
+                bool scattering_possible = n_dot_l > 0.f && shading_ctx.bsdf->reflection_scattering ||
+                                           n_dot_l < 0.f && shading_ctx.bsdf->transmission_scattering;
 
-            if (scattering_possible) {
-                ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light_sample.Wi);
-                if (!f.is_black()) {
-                    Ray shadow_ray(surface_point, light_sample.Wi);
+                if (scattering_possible) {
+                    ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light_sample.Wi);
+                    if (!f.is_black()) {
+                        Ray shadow_ray(surface_point, light_sample.Wi);
+                        bool occluded = ctx.acceleration_structure->intersect_any(shadow_ray, Infinity);
+                        if (!occluded) {
+                            float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.Wo, light_sample.Wi);
+                            float mis_weight = mis_power_heuristic(light_sample.pdf, bsdf_pdf);
+                            L2 += (light_sample.Le * f) * (mis_weight * std::abs(n_dot_l) / light_sample.pdf);
+                        }
+                    }
+                }
+            }
+
+            // BSDF sampling part of MIS.
+            {
+                Vector2 u{ random_float(rng), random_float(rng) };
+
+                Vector3 wi;
+                float bsdf_pdf;
+                ColorRGB f = shading_ctx.bsdf->sample(u, shading_ctx.Wo, &wi, &bsdf_pdf);
+                ASSERT(!f.is_black());
+
+                float n_dot_l = dot(shading_ctx.N, wi);
+
+                ColorRGB Le = ctx.environment_light_sampler.get_radiance_for_direction(wi);
+
+                if (!Le.is_black()) {
+                    Ray shadow_ray(surface_point, wi);
                     bool occluded = ctx.acceleration_structure->intersect_any(shadow_ray, Infinity);
                     if (!occluded) {
-                        L2 += (light_sample.Le * f) * (std::abs(n_dot_l) / light_sample.pdf);
+                        float light_pdf = ctx.environment_light_sampler.pdf(wi);
+                        float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
+                        L2 += (Le * f) * (mis_weight * std::abs(n_dot_l) / bsdf_pdf);
                     }
                 }
             }

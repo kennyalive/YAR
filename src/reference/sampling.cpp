@@ -134,8 +134,8 @@ void Distribution_2D::initialize_from_latitude_longitude_radiance_map(const Imag
     initialize(distribution_coeffs.data(), image.width, image.height);
 }
 
-Vector2 Distribution_2D::sample(Vector2 u, float* pdf) const {
-    ASSERT(u < Vector2(1));
+Vector2 Distribution_2D::sample(Vector2 u, float* pdf_uv) const {
+    ASSERT(u >= Vector2(0.f) && u < Vector2(1.f));
 
     float pdf_y; 
     float ky = sample_from_CDF(u[0], marginal_CDF_y.data(), int(marginal_CDF_y.size()), y_interval_length, &pdf_y);
@@ -145,15 +145,24 @@ Vector2 Distribution_2D::sample(Vector2 u, float* pdf) const {
     float pdf_x_given_y;
     float kx = sample_from_CDF(u[1], &CDFs_x[int(y) * nx], nx, x_interval_length, &pdf_x_given_y);
 
-    if (pdf) {
-        *pdf = pdf_y * pdf_x_given_y;
+    if (pdf_uv) {
+        *pdf_uv = pdf_y * pdf_x_given_y;
     }
 
     return {kx, ky};
 }
 
-float Distribution_2D::pdf(Vector2 sample) const {
-    ASSERT(sample < Vector2(1));
-    ASSERT(false);
-    return 0.;
+float Distribution_2D::pdf_uv(Vector2 sample) const {
+    ASSERT(sample >= Vector2(0.f) && sample < Vector2(1.f));
+
+    int x = int(sample.x * nx);
+    ASSERT(x < nx);
+    int y = int(sample.y * ny);
+    ASSERT(y < ny);
+
+    float pdf_y = (marginal_CDF_y[y] - (y == 0 ? 0.f : marginal_CDF_y[y - 1])) * ny;
+    float pdf_x_given_y = (CDFs_x[y*nx + x] - (x == 0 ? 0.f : CDFs_x[y*nx + x - 1])) * nx;
+    
+    float pdf = pdf_y * pdf_x_given_y;
+    return pdf;
 }

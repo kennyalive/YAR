@@ -34,10 +34,12 @@ public:
     // The optional 'pdf' return value is a pdf of the drawn sample with respect to the solid angle measure.
     // If pdf is returned it is guaranteed to be greater than zero.
     // u - 2 uniformly distributed random variables from [0..1)
-    Vector2 sample(Vector2 u, float *pdf = nullptr) const;
+    Vector2 sample(Vector2 u, float *pdf_uv = nullptr) const;
 
     // For the given sample returns its probability density value.
-    float pdf(Vector2 sample) const;
+    // The pdf is calculated with respect to [0..1]^2 UV measure, it
+    // should be converted to solid angle measure if necessary.
+    float pdf_uv(Vector2 sample) const;
 
 private:
     int nx = 0;
