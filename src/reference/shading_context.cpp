@@ -15,13 +15,14 @@ Shading_Context::Shading_Context(
     Thread_Context& thread_ctx,
     const Shading_Point_Rays& rays, const Intersection& intersection)
 {
-    Vector3 dPdu, dPdv;
+    Wo = -rays.incident_ray.direction;
 
     // Geometry_Type-specific initialization.
     //
     // The fields to set: P, N, Ng, UV.
     // The output parameters to set: dPdu, dPdv
     // The values should be calculated in the local coordinate system of the object.
+    Vector3 dPdu, dPdv;
     if (intersection.geometry_type == Geometry_Type::triangle_mesh) {
         init_from_triangle_mesh_intersection(intersection.triangle_intersection, &dPdu, &dPdv);
     }
@@ -44,7 +45,6 @@ Shading_Context::Shading_Context(
     tangent2 = cross(N, dPdu).normalized();
     tangent1 = cross(tangent2, N);
 
-    Wo = -rays.incident_ray.direction;
     area_light = intersection.scene_object->area_light;
 
     // Init scattering information.
@@ -63,14 +63,16 @@ Shading_Context::Shading_Context(
 
 void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Intersection& ti, Vector3* dPdu, Vector3* dPdv) {
     P = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
-    N = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
-    UV = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
 
-    // Ng
     Vector3 p0, p1, p2;
     ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);
     Ng = cross(p1 - p0, p2 - p0).normalized();
-    Ng = dot(Ng, N) < 0 ? -Ng : Ng;
+    Ng = dot(Ng, Wo) < 0 ? -Ng : Ng;
+
+    N = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
+    N = dot(N, Ng) < 0 ? -N : N;
+
+    UV = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
 
     // dPdu/dPdv
     Vector2 uvs[3];

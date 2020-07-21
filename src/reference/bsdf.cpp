@@ -8,6 +8,8 @@
 #include "scattering.h"
 #include "shading_context.h"
 
+#include "lib/math.h"
+
 const BSDF* create_bsdf(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, Material_Handle material) {
     switch (material.type) {
         case Material_Type::lambertian:
@@ -75,9 +77,11 @@ Metal_BRDF::Metal_BRDF(const Scene_Context& scene_ctx, const Shading_Context& sh
     : BSDF(shading_ctx)
 {
     this->scene_ctx = &scene_ctx;
-    this->shading_ctx = &shading_ctx;
+    reflection_scattering = true;
 
-    roughness = evaluate_float_parameter(scene_ctx, shading_ctx, material.roughness);
+    float roughness = evaluate_float_parameter(scene_ctx, shading_ctx, material.roughness);
+    alpha = roughness * roughness;
+
     eta_i = evaluate_float_parameter(scene_ctx, shading_ctx, material.eta_i);
     eta_t = evaluate_rgb_parameter(scene_ctx, shading_ctx, material.eta);
     k_t = evaluate_rgb_parameter(scene_ctx, shading_ctx, material.k);
@@ -91,12 +95,56 @@ ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
 
     ColorRGB F = conductor_fresnel(cos_theta_i, eta_i, eta_t, k_t);
 
-    float alpha = roughness * roughness;
     float D = GGX_Distribution::D(wh, shading_ctx->N, alpha);
     float G = GGX_Distribution::G(wi, wo, shading_ctx->N, alpha);
     
     ColorRGB f = (G * D) * F / (4.f * dot(shading_ctx->N, wo) * dot(shading_ctx->N, wi));
     return f;
+}
+
+// Helper function that accepts Wh directly.
+inline float metal_wi_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha) {
+    ASSERT(dot(n, wh) >= 0.f);
+
+    float D = GGX_Distribution::D(wh, n, alpha);
+    float wh_dot_n = dot(wh, n);
+    ASSERT(wh_dot_n >= 0.f);
+
+    float wh_pdf = D * wh_dot_n;
+
+    // Convert between probability densities:
+    // wi_pdf = wh_pdf * dWh/dWi
+    // dWh/dWi = 1/4(wh, wi) = 1/4(wh,wo)
+
+    float wi_pdf = wh_pdf / (4 * dot(wh, wo));
+    return wi_pdf;
+}
+
+ColorRGB Metal_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
+    ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u);
+
+    // Importance sampling of D(wh)*dot(wh, N)
+    float theta = std::atan(alpha * std::sqrt(u[0] / (1 - u[0])));
+    float phi = 2.f * Pi * u[1];
+    ASSERT(theta >= 0.f && theta <= Pi_Over_2 + 1e-4f);
+
+    Vector3 local_dir = get_direction_from_spherical_coordinates(theta, phi);
+    Vector3 wh = shading_ctx->local_to_world(local_dir);
+    ASSERT(dot(wh, N) >= 0.f);
+
+    *wi = wh * (2.f * dot(wo, wh)) - wo;
+
+    if (dot(N, *wi) <= 0.f)
+        return Color_Black;
+
+    *pdf = metal_wi_pdf(wo, wh, N, alpha);
+    return evaluate(wo, *wi);
+}
+
+float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
+    ASSERT(dot(N, wi) >= 0.f);
+    Vector3 wh = (wo + wi).normalized();
+    return metal_wi_pdf(wo, wh, N, alpha);
 }
 
 //
@@ -106,7 +154,8 @@ Plastic_BRDF::Plastic_BRDF(const Scene_Context& scene_ctx, const Shading_Context
     : BSDF(shading_ctx)
 {
     this->scene_ctx = &scene_ctx;
-    this->shading_ctx = &shading_ctx;
+
+    reflection_scattering = true;
 
     roughness = evaluate_float_parameter(scene_ctx, shading_ctx, params.roughness);
     r0 = evaluate_float_parameter(scene_ctx, shading_ctx, params.r0);

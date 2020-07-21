@@ -148,7 +148,7 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
                 //
                 // Similar check is performed for incident direction Wi when we sample lights.
                 if (dot(shading_ctx.Wo, shading_ctx.N) < 0) {
-                    tile.add_sample(film_pos, Color_Red); // for debugging
+                    //tile.add_sample(film_pos, Color_Red); // for debugging
                     continue;
                 }
 

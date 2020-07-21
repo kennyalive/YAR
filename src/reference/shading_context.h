@@ -17,9 +17,11 @@ struct Shading_Point_Rays {
 
 // Contains all the necessary information to perform shading at the intersection point.
 struct Shading_Context {
+    Vector3 Wo; // outgoing direction
+
     Vector3 P; // shading point position in world coordinates
-    Vector3 N; // shading normal
     Vector3 Ng; // geometric normal
+    Vector3 N; // shading normal
     Vector2 UV; // surface UV parameterization
 
     // UV derivatives with respect to screen coordinates.
@@ -31,8 +33,6 @@ struct Shading_Context {
     // (tangent1, tangent2, N) triplet forms right-handed orthonormal coordinate system.
     Vector3 tangent1;
     Vector3 tangent2;
-
-    Vector3 Wo; // outgoing direction
 
     Light_Handle area_light;
     const BSDF* bsdf = nullptr;
