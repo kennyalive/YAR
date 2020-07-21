@@ -136,6 +136,22 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
                 rays.auxilary_ray_dy_offset = ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
 
                 Shading_Context shading_ctx(ctx, thread_ctx, rays, isect);
+
+                // Check if outgoing direction (Wo) is below the hemisphere defined by the shading normal (N).
+                // NOTE: dot(Wo, Ng) is always non-negative by construction - we select Ng orientation
+                // to be in the same hemisphere as Wo.
+                //
+                // The implementation does not try to extend brdf/btdf functions, as described in the Veach thesis and
+                // PBRT book, in order to handle light leaking/blocking issues caused by ad-hoc nature of shading normals.
+                // That appoarch looks questionable for me and I do not try to solve this problem now.
+                // Instead when we have problematic configuration we assume zero contribution to the radiance.
+                //
+                // Similar check is performed for incident direction Wi when we sample lights.
+                if (dot(shading_ctx.Wo, shading_ctx.N) < 0) {
+                    tile.add_sample(film_pos, Color_Red); // for debugging
+                    continue;
+                }
+
                 ColorRGB radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx, &rng);
                 if (!radiance.is_black())
                     tile.add_sample(film_pos, radiance);

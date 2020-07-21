@@ -95,5 +95,6 @@ inline ColorRGB operator-(const ColorRGB& a, const ColorRGB& b) {
     return ColorRGB{ a[0] - b[0], a[1] - b[1], a[2] - b[2] };
 }
 
-constexpr ColorRGB Color_Black = ColorRGB{0, 0, 0};
-constexpr ColorRGB Color_White = ColorRGB{1, 1, 1};
+constexpr ColorRGB Color_Black  = ColorRGB{0, 0, 0};
+constexpr ColorRGB Color_White  = ColorRGB{1, 1, 1};
+constexpr ColorRGB Color_Red    = ColorRGB{1, 0, 0};
