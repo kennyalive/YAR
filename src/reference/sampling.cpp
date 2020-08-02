@@ -3,6 +3,9 @@
 #include "sampling.h"
 
 #include "image_texture.h"
+#include "scattering.h"
+
+#include "lib/math.h"
 
 Vector3 sample_sphere_uniform(Vector2 u) {
     ASSERT(u < Vector2(1));
@@ -165,4 +168,104 @@ float Distribution_2D::pdf_uv(Vector2 sample) const {
     
     float pdf = pdf_y * pdf_x_given_y;
     return pdf;
+}
+
+Vector3 GGX_sample_microfacet_normal(Vector2 u, float alpha) {
+    float theta = std::atan(alpha * std::sqrt(u[0] / (1 - u[0])));
+    float phi = 2.f * Pi * u[1];
+    ASSERT(theta >= 0.f && theta <= Pi_Over_2 + 1e-4f);
+
+    Vector3 wh_local = get_direction_from_spherical_coordinates(theta, phi);
+    return wh_local;
+}
+
+float GGX_microfacet_normal_pdf(const Vector3& wh, const Vector3& n, float alpha) {
+    ASSERT(dot(wh, n) >= 0.f);
+
+    float D = GGX_Distribution::D(wh, n, alpha);
+    return D * dot(wh, n);
+}
+
+static void sample_visible_slope(Vector2 u, float cos_theta, float* slope_x, float* slope_y) {
+    ASSERT(cos_theta >= -1.f && cos_theta <= 1.f);
+
+    // special case (normal incidence)
+    if (cos_theta > 0.9999f) {
+        float r = std::sqrt(u[0]/(1.f - u[0]));
+        float phi = Pi2 * u[1];
+        *slope_x = r * std::cos(phi);
+        *slope_y = r * std::cos(phi);
+        return;
+    }
+
+    float sin_theta = std::sqrt(1.f - cos_theta * cos_theta);
+    float tan_theta = sin_theta / cos_theta;
+    float a = 1.f / tan_theta;
+    float G1 = 2.f / (1.f + std::sqrt(1.f + 1.f/(a*a)));
+
+    // sample slope_x
+    float A = (2.f * u[0] / G1) - 1.f;
+    float tmp = 1.f / (A*A - 1.f);
+    if (tmp > 1e10)
+        tmp = 1e10;
+    float B = tan_theta;
+    float D = std::sqrt(std::max(0.f, B*B*tmp*tmp - (A*A - B*B)*tmp));
+    float slope_x_1 = B*tmp - D;
+    float slope_x_2 = B*tmp + D;
+    *slope_x = (A < 0 || slope_x_2 > 1.f/tan_theta) ? slope_x_1 : slope_x_2;
+
+    // sample slope_y
+    float S;
+    float u2 = u[1];
+    if (u2 > 0.5f) {
+        S = 1.f;
+        u2 = 2.f * (u2 - 0.5f);
+    }
+    else {
+        S = -1.f;
+        u2 = 2.f * (0.5f - u2);
+    }
+    float z = (u2 * (u2 * (u2 * 0.27385f - 0.73369f) + 0.46341f)) /
+              (u2 * (u2 * (u2 * 0.093073f + 0.309420f) - 1.f) + 0.597999f);
+    *slope_y = S * z * std::sqrt(1.f + (*slope_x) * (*slope_x));
+}
+
+Vector3 GGX_sample_visible_microfacet_normal(Vector2 u, const Vector3& wo_local, float alpha_x, float alpha_y) {
+    ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u);
+
+    // Stretch Wo (alpha_x/y are also stretched implicitly by the inverse values,
+    // so we get isotropic distribution).
+    Vector3 wo = Vector3(alpha_x * wo_local.x, alpha_y * wo_local.y, wo_local.z);
+    wo.normalize();
+
+    Direction_Info wo_info(wo);
+
+    // Sample P22_wo (for isotropic distribution and we can assume phi=0).
+    float slope_x, slope_y;
+    sample_visible_slope(u, wo_info.cos_theta, &slope_x, &slope_y);
+
+    // Rotate from default phi=0 frame to phi defined by wo.
+    float tmp = wo_info.cos_phi * slope_x - wo_info.sin_phi * slope_y;
+    slope_y   = wo_info.sin_phi * slope_x + wo_info.cos_phi * slope_y;
+    slope_x = tmp;
+
+    // Unstretch slope.
+    slope_x = alpha_x * slope_x;
+    slope_y = alpha_y * slope_y;
+
+    // Compute normal.
+    Vector3 wh_local = Vector3(-slope_x, -slope_y, 1.f).normalized();
+    return wh_local;
+}
+
+float GGX_visible_microfacet_normal_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha) {
+    ASSERT(dot(wh, n) >= 0.f);
+    ASSERT(dot(wo, wh) >= 0.f);
+    ASSERT(dot(wo, n) >= 0.f);
+
+    float G1 = GGX_Distribution::G1(wo, n, alpha);
+    float D = GGX_Distribution::D(wh, n, alpha);
+
+    float wh_pdf = G1 * D * dot(wo, wh) / dot(wo, n);
+    return wh_pdf;
 }

@@ -46,9 +46,10 @@ struct Shading_Context {
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
 
-    // Transforms direction from the local coordinate system defined
-    // by the normal and two tangent vectors to world space direction.
+    // Transformation of directions between local coordinate system defined
+    // by the normal and two tangent vectors and world space coordinate system.
     Vector3 local_to_world(const Vector3& local_direction) const;
+    Vector3 world_to_local(const Vector3& world_direction) const;
 
 private:
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti, Vector3* dPdu, Vector3* dPdv);

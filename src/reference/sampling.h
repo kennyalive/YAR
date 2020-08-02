@@ -49,3 +49,18 @@ private:
     std::vector<float> marginal_CDF_y; // cdf from marginal pdf p(y): ny elements
     std::vector<float> CDFs_x; // cdf for each row: nx * ny elements
 };
+
+// Importance sampling of GGX microfacet distribution: D(wh) * dot(wh, N)
+Vector3 GGX_sample_microfacet_normal(Vector2 u, float alpha);
+// Returns PDF of sampled wh direction.
+float GGX_microfacet_normal_pdf(const Vector3& wh, const Vector3& n, float alpha);
+
+// Sampling of visible normals distribution as described in:
+//      "Importance Sampling Microfacet-Based BSDFs using the Distribution of Visible Normals"
+//      by Eric Heitz, Eugene d’Eon
+// The implementation is based on the code from supplemental materials to the article.
+//
+// wo_local - outgoing direction in shading coordinate system.
+Vector3 GGX_sample_visible_microfacet_normal(Vector2 u, const Vector3& wo_local, float alpha_x, float alpha_y);
+// Returns PDF of sampled wh direction.
+float GGX_visible_microfacet_normal_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha);

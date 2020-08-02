@@ -162,3 +162,11 @@ Vector3 Shading_Context::local_to_world(const Vector3& local_direction) const {
         tangent1.z * local_direction.x + tangent2.z * local_direction.y + N.z * local_direction.z
     };
 }
+
+Vector3 Shading_Context::world_to_local(const Vector3& world_direction) const {
+    return Vector3 { 
+        dot(world_direction, tangent1),
+        dot(world_direction, tangent2),
+        dot(world_direction, N)
+    };
+}

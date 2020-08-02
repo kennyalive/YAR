@@ -26,4 +26,8 @@ struct GGX_Distribution {
     // wi/wo - incident/outgoing directions
     // n - shading normal
     static float G(const Vector3& wi, const Vector3& wo, const Vector3& n, float alpha);
+
+    // v - either wo or wi
+    // n - shading normal
+    static float G1(const Vector3& v, const Vector3& n, float alpha);
 };

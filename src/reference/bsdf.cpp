@@ -10,6 +10,15 @@
 
 #include "lib/math.h"
 
+static bool ggx_sample_visible_normals = false;
+
+// Converts between probability densities:
+// wi_pdf = wh_pdf * dWh/dWi
+// dWh/dWi = 1/4(wh, wi) = 1/4(wh,wo)
+inline float wh_pdf_to_wi_pdf(float wh_pdf, const Vector3& wh, const Vector3& wo) {
+    return wh_pdf / (4 * dot(wh, wo));
+}
+
 const BSDF* create_bsdf(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, Material_Handle material) {
     switch (material.type) {
         case Material_Type::lambertian:
@@ -102,34 +111,19 @@ ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
     return f;
 }
 
-// Helper function that accepts Wh directly.
-inline float metal_wi_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha) {
-    ASSERT(dot(n, wh) >= 0.f);
-
-    float D = GGX_Distribution::D(wh, n, alpha);
-    float wh_dot_n = dot(wh, n);
-    ASSERT(wh_dot_n >= 0.f);
-
-    float wh_pdf = D * wh_dot_n;
-
-    // Convert between probability densities:
-    // wi_pdf = wh_pdf * dWh/dWi
-    // dWh/dWi = 1/4(wh, wi) = 1/4(wh,wo)
-
-    float wi_pdf = wh_pdf / (4 * dot(wh, wo));
-    return wi_pdf;
-}
-
 ColorRGB Metal_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
     ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u);
 
-    // Importance sampling of D(wh)*dot(wh, N)
-    float theta = std::atan(alpha * std::sqrt(u[0] / (1 - u[0])));
-    float phi = 2.f * Pi * u[1];
-    ASSERT(theta >= 0.f && theta <= Pi_Over_2 + 1e-4f);
+    Vector3 wh_local;
+    if (ggx_sample_visible_normals) {
+        Vector3 wo_local = shading_ctx->world_to_local(wo);
+        wh_local = GGX_sample_visible_microfacet_normal(u, wo_local, alpha, alpha);
+    }
+    else {
+        wh_local = GGX_sample_microfacet_normal(u, alpha);
+    }
 
-    Vector3 local_dir = get_direction_from_spherical_coordinates(theta, phi);
-    Vector3 wh = shading_ctx->local_to_world(local_dir);
+    Vector3 wh = shading_ctx->local_to_world(wh_local);
     ASSERT(dot(wh, N) >= 0.f);
 
     *wi = wh * (2.f * dot(wo, wh)) - wo;
@@ -137,14 +131,29 @@ ColorRGB Metal_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pd
     if (dot(N, *wi) <= 0.f)
         return Color_Black;
 
-    *pdf = metal_wi_pdf(wo, wh, N, alpha);
+    float wh_pdf;
+    if (ggx_sample_visible_normals)
+        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, N, alpha);
+    else
+        wh_pdf = GGX_microfacet_normal_pdf(wh, N, alpha);
+
+    *pdf = wh_pdf_to_wi_pdf(wh_pdf, wh, wo);
+
     return evaluate(wo, *wi);
 }
 
 float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
     ASSERT(dot(N, wi) >= 0.f);
     Vector3 wh = (wo + wi).normalized();
-    return metal_wi_pdf(wo, wh, N, alpha);
+
+    float wh_pdf;
+    if (ggx_sample_visible_normals)
+        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, N, alpha);
+    else
+        wh_pdf = GGX_microfacet_normal_pdf(wh, N, alpha);
+
+    float wi_pdf = wh_pdf_to_wi_pdf(wh_pdf, wh, wo);
+    return wi_pdf;
 }
 
 //

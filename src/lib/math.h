@@ -27,5 +27,30 @@ inline Vector3 get_direction_from_spherical_coordinates(float theta, float phi) 
     return { sin_theta * std::cos(phi), sin_theta * std::sin(phi), std::cos(theta) };
 }
 
+struct Direction_Info {
+    float cos_theta;
+    float sin_theta;
+    float cos_phi;
+    float sin_phi;
+
+    Direction_Info(const Vector3& v) {
+        ASSERT(v >= Vector3(-1) && v <= Vector3(1));
+
+        cos_theta = v.z;
+        sin_theta = std::sqrt(1.f - cos_theta*cos_theta);
+        ASSERT(!std::isnan(sin_theta));
+
+        if (sin_theta == 0.f) {
+            cos_phi = 1.f;
+            sin_phi = 0.f;
+        }
+        else {
+            float sin_theta_inv = 1.f / sin_theta;
+            cos_phi = std::clamp(v.x * sin_theta_inv, -1.f, 1.f);
+            sin_phi = std::clamp(v.y * sin_theta_inv, -1.f, 1.f);
+        }
+    }
+};
+
 #define ASSERT_ZERO_TO_ONE_RANGE(u) ASSERT((u) >= 0.f && (u) < 1.f)
 #define ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u) ASSERT((u) >= Vector2(0.f) && (u) < Vector2(1.f))

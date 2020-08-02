@@ -81,7 +81,7 @@ float GGX_Distribution::D(const Vector3& wh, const Vector3& n, float alpha) {
 inline float GGX_lambda(const Vector3& v, const Vector3& n, float alpha) {
     float cos_theta = dot(v, n);
     float cos2_theta = cos_theta * cos_theta;
-    float tan2_theta = (1.f - cos2_theta) / cos2_theta; // could be Infinity, that's fine
+    float tan2_theta = std::max(0.f, (1.f - cos2_theta) / cos2_theta); // could be Infinity, that's fine
 
     float lambda = 0.5f * (-1.f + std::sqrt(1.f + alpha * alpha * tan2_theta));
     return lambda;
@@ -89,4 +89,8 @@ inline float GGX_lambda(const Vector3& v, const Vector3& n, float alpha) {
 
 float GGX_Distribution::G(const Vector3& wi, const Vector3& wo, const Vector3& n, float alpha) {
     return 1.f / (1.f + GGX_lambda(wi, n, alpha) + GGX_lambda(wo, n, alpha));
+}
+
+float GGX_Distribution::G1(const Vector3& v, const Vector3& n, float alpha) {
+    return 1.f / (1.f + GGX_lambda(v, n, alpha));
 }

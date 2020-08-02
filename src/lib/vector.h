@@ -134,6 +134,22 @@ inline Vector3 operator*(float t, const Vector3& v) {
     return v * t;
 }
 
+inline bool operator<(const Vector3& v1, const Vector3& v2) {
+    return v1[0] < v2[0] && v1[1] < v2[1] && v1[2] < v2[2];
+}
+
+inline bool operator<=(const Vector3& v1, const Vector3& v2) {
+    return v1[0] <= v2[0] && v1[1] <= v2[1] && v1[2] <= v2[2];
+}
+
+inline bool operator>(const Vector3& v1, const Vector3& v2) {
+    return v1[0] > v2[0] && v1[1] > v2[1] && v1[2] > v2[2];
+}
+
+inline bool operator>=(const Vector3& v1, const Vector3& v2) {
+    return v1[0] >= v2[0] && v1[1] >= v2[1] && v1[2] >= v2[2];
+}
+
 inline float dot(const Vector3& v1, const Vector3& v2) {
     return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
 }
