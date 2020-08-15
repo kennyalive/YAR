@@ -10,6 +10,36 @@
 #include "lib/math.h"
 #include "lib/scene_object.h"
 
+// Shading normal adaptation algorithm as described in:
+//  "The Iray Light Transport Simulation and Rendering System", Keller et al. 2017
+// Returns true if shading normal was modified and false otherwise.
+static bool adjust_shading_normal(const Vector3& Wo, const Vector3& Ng, Vector3* N) {
+    // check renderer convention: shading frame is oriented in such way that Wo is in the positive hemisphere
+    ASSERT(dot(Wo, Ng) >= 0.f);
+
+    Vector3 R = reflect(Wo, *N);
+
+    // If reflected direction is above the geometric surface then
+    // shading normal adaptation is not needed.
+    float a = dot(R, Ng);
+    if (a >= 0.f)
+        return false;
+
+    float b = dot(*N, Ng);
+    ASSERT(b > 0.f);
+
+    float epsilon = 1e-4f; // to ensure that tangent vector is a bit above the surface
+    float distance_to_surface_along_normal = std::abs(a)/b;
+    Vector3 tangent = R + (distance_to_surface_along_normal + epsilon) * (*N);
+    tangent.normalize();
+    ASSERT(dot(tangent, Ng) > 0.f);
+
+    Vector3 new_N = (Wo + tangent).normalized();
+    ASSERT(dot(Wo, new_N) >= 0.f);
+    *N = new_N;
+    return true;
+}
+
 Shading_Context::Shading_Context(
     const Scene_Context& global_ctx,
     Thread_Context& thread_ctx,
@@ -41,6 +71,8 @@ Shading_Context::Shading_Context(
     }
 
     calculate_UV_derivates(rays, dPdu, dPdv);
+
+    shading_normal_adjusted = adjust_shading_normal(Wo, Ng, &N);
 
     tangent2 = cross(N, dPdu).normalized();
     tangent1 = cross(tangent2, N);

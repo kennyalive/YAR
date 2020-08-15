@@ -39,6 +39,11 @@ struct Shading_Context {
     bool mirror_surface = false;
     ColorRGB mirror_reflectance;
 
+    // This flag is mostly for debugging purposes to mark regions where shading normal adaptation was applied.
+    // The shading normal adaptation modifies shading normal N and ensures that Wo is in the positive hemisphere.
+    // Described in: "The Iray Light Transport Simulation and Rendering System", Keller et al. 2017
+    bool shading_normal_adjusted = false;
+
     Shading_Context(
         const Scene_Context& global_ctx,
         Thread_Context& thread_ctx,

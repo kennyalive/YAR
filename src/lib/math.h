@@ -4,6 +4,9 @@
 
 struct Ray;
 
+#define ASSERT_ZERO_TO_ONE_RANGE(u) ASSERT((u) >= 0.f && (u) < 1.f)
+#define ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u) ASSERT((u) >= Vector2(0.f) && (u) < Vector2(1.f))
+
 // Solves a * x = b equation where a is 2x2 matrix, x and b are two-component vectors.
 template <typename T>
 bool solve_linear_system_2x2(float a[2][2], T b[2], T* x1, T* x2);
@@ -52,5 +55,6 @@ struct Direction_Info {
     }
 };
 
-#define ASSERT_ZERO_TO_ONE_RANGE(u) ASSERT((u) >= 0.f && (u) < 1.f)
-#define ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u) ASSERT((u) >= Vector2(0.f) && (u) < Vector2(1.f))
+inline Vector3 reflect(const Vector3& v, const Vector3& n) {
+    return (2.f * dot(v, n)) * n - v;
+}

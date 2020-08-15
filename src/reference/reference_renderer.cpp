@@ -2,6 +2,7 @@
 #include "lib/common.h"
 #include "reference_renderer.h"
 
+#include "bsdf.h"
 #include "camera.h"
 #include "context.h"
 #include "direct_lighting.h"
@@ -12,6 +13,7 @@
 #include "shading_context.h"
 
 #include "lib/geometry.h"
+#include "lib/math.h"
 #include "lib/random.h"
 #include "lib/scene_loader.h"
 #include "lib/triangle_mesh.h"
@@ -137,20 +139,11 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
 
                 Shading_Context shading_ctx(ctx, thread_ctx, rays, isect);
 
-                // Check if outgoing direction (Wo) is below the hemisphere defined by the shading normal (N).
-                // NOTE: dot(Wo, Ng) is always non-negative by construction - we select Ng orientation
-                // to be in the same hemisphere as Wo.
-                //
-                // The implementation does not try to extend brdf/btdf functions, as described in the Veach thesis and
-                // PBRT book, in order to handle light leaking/blocking issues caused by ad-hoc nature of shading normals.
-                // That appoarch looks questionable for me and I do not try to solve this problem now.
-                // Instead when we have problematic configuration we assume zero contribution to the radiance.
-                //
-                // Similar check is performed for incident direction Wi when we sample lights.
-                if (dot(shading_ctx.Wo, shading_ctx.N) < 0) {
-                    //tile.add_sample(film_pos, Color_Red); // for debugging
+                // debug visualization of samples with adjusted shading normal.
+                /*if (shading_ctx.shading_normal_adjusted) {
+                    tile.add_sample(film_pos, Color_Red); 
                     continue;
-                }
+                }*/
 
                 ColorRGB radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx, &rng);
                 if (!radiance.is_black())
