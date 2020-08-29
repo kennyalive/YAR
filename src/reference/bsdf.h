@@ -22,8 +22,6 @@ struct BSDF {
     bool transmission_scattering = false;
 };
 
-const BSDF* create_bsdf(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, Material_Handle material);
-
 struct Lambertian_BRDF : public BSDF {
     ColorRGB reflectance;
 
@@ -55,3 +53,5 @@ struct Plastic_BRDF : public BSDF {
     ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
+
+const BSDF* create_bsdf(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, Material_Handle material);

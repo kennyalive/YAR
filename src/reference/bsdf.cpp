@@ -12,39 +12,32 @@
 
 static bool ggx_sample_visible_normals = false;
 
-// Converts between probability densities:
-// wi_pdf = wh_pdf * dWh/dWi
-// dWh/dWi = 1/4(wh, wi) = 1/4(wh,wo)
-inline float wh_pdf_to_wi_pdf(float wh_pdf, const Vector3& wh, const Vector3& wo) {
-    return wh_pdf / (4 * dot(wh, wo));
+inline Vector3 sample_microfacet_normal(const Shading_Context& shading_ctx, Vector2 u, const Vector3& wo, float alpha) {
+    Vector3 wh_local;
+    if (ggx_sample_visible_normals) {
+        Vector3 wo_local = shading_ctx.world_to_local(wo);
+        wh_local = GGX_sample_visible_microfacet_normal(u, wo_local, alpha, alpha);
+    }
+    else {
+        wh_local = GGX_sample_microfacet_normal(u, alpha);
+    }
+    Vector3 wh = shading_ctx.local_to_world(wh_local);
+    ASSERT(dot(wh, shading_ctx.N) >= 0.f);
+    return wh;
 }
 
-const BSDF* create_bsdf(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, Material_Handle material) {
-    switch (material.type) {
-        case Material_Type::lambertian:
-        {
-            const Lambertian_Material& params = scene_ctx.materials.lambertian[material.index];
-            void* bsdf_allocation = thread_ctx.memory_pool.allocate<Lambertian_BRDF>();
-            return new (bsdf_allocation) Lambertian_BRDF(scene_ctx, shading_ctx, params);
-        }
-        case Material_Type::metal:
-        {
-            const Metal_Material& params = scene_ctx.materials.metal[material.index];
-            void* bsdf_allocation = thread_ctx.memory_pool.allocate<Metal_BRDF>();
-            return new (bsdf_allocation) Metal_BRDF(scene_ctx, shading_ctx, params);
-        }
-        case Material_Type::plastic:
-        {
-            const Plastic_Material& params = scene_ctx.materials.plastic[material.index];
-            void* bsdf_allocation = thread_ctx.memory_pool.allocate<Plastic_BRDF>();
-            return new (bsdf_allocation) Plastic_BRDF(scene_ctx, shading_ctx, params);
-        }
-        default:
-        {
-            ASSERT(false);
-            return nullptr;
-        }
-    }
+inline float calculate_microfacet_wi_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha) {
+    float wh_pdf;
+    if (ggx_sample_visible_normals)
+        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, n, alpha);
+    else
+        wh_pdf = GGX_microfacet_normal_pdf(wh, n, alpha);
+
+    // Converts between probability densities:
+    // wi_pdf = wh_pdf * dWh/dWi
+    // dWh/dWi = 1/4(wh, wi) = 1/4(wh,wo)
+    float wi_pdf = wh_pdf / (4 * dot(wh, wo));
+    return wi_pdf;
 }
 
 BSDF::BSDF(const Shading_Context& shading_ctx)
@@ -113,46 +106,20 @@ ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
 ColorRGB Metal_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
     ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u);
 
-    Vector3 wh_local;
-    if (ggx_sample_visible_normals) {
-        Vector3 wo_local = shading_ctx->world_to_local(wo);
-        wh_local = GGX_sample_visible_microfacet_normal(u, wo_local, alpha, alpha);
-    }
-    else {
-        wh_local = GGX_sample_microfacet_normal(u, alpha);
-    }
-
-    Vector3 wh = shading_ctx->local_to_world(wh_local);
-    ASSERT(dot(wh, N) >= 0.f);
-
-    *wi = wh * (2.f * dot(wo, wh)) - wo;
+    Vector3 wh = sample_microfacet_normal(*shading_ctx, u, wo, alpha);
+    *wi = reflect(wo, wh);
 
     if (dot(N, *wi) <= 0.f)
         return Color_Black;
 
-    float wh_pdf;
-    if (ggx_sample_visible_normals)
-        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, N, alpha);
-    else
-        wh_pdf = GGX_microfacet_normal_pdf(wh, N, alpha);
-
-    *pdf = wh_pdf_to_wi_pdf(wh_pdf, wh, wo);
-
+    *pdf = calculate_microfacet_wi_pdf(wo, wh, N, alpha);
     return evaluate(wo, *wi);
 }
 
 float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
     ASSERT(dot(N, wi) >= 0.f);
     Vector3 wh = (wo + wi).normalized();
-
-    float wh_pdf;
-    if (ggx_sample_visible_normals)
-        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, N, alpha);
-    else
-        wh_pdf = GGX_microfacet_normal_pdf(wh, N, alpha);
-
-    float wi_pdf = wh_pdf_to_wi_pdf(wh_pdf, wh, wo);
-    return wi_pdf;
+    return calculate_microfacet_wi_pdf(wo, wh, N, alpha);
 }
 
 //
@@ -193,53 +160,54 @@ ColorRGB Plastic_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* 
         Vector3 local_dir = sample_hemisphere_cosine(u);
         *wi = shading_ctx->local_to_world(local_dir);
     }
-    else { // sample spec
+    else { // sample specular
         u[0] = (u[0] - 0.5f) * 2.f; // remap u[0] to [0, 1) range
-
-        Vector3 wh_local;
-        if (ggx_sample_visible_normals) {
-            Vector3 wo_local = shading_ctx->world_to_local(wo);
-            wh_local = GGX_sample_visible_microfacet_normal(u, wo_local, alpha, alpha);
-        }
-        else {
-            wh_local = GGX_sample_microfacet_normal(u, alpha);
-        }
-
-        Vector3 wh = shading_ctx->local_to_world(wh_local);
-        ASSERT(dot(wh, N) >= 0.f);
-        *wi = wh * (2.f * dot(wo, wh)) - wo;
+        Vector3 wh = sample_microfacet_normal(*shading_ctx, u, wo, alpha);
+        *wi = reflect(wo, wh);
     }
 
     if (dot(N, *wi) <= 0.f)
         return Color_Black;
 
-    // compute diffuse pdf
-    float diffuse_pdf = dot(N, *wi) / Pi;
-
-    // compute specular pdf
-    Vector3 wh = (wo + *wi).normalized();
-    float wh_pdf;
-    if (ggx_sample_visible_normals)
-        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, N, alpha);
-    else
-        wh_pdf = GGX_microfacet_normal_pdf(wh, N, alpha);
-    float spec_pdf = wh_pdf_to_wi_pdf(wh_pdf, wh, wo);
-
-    *pdf = 0.5f * (diffuse_pdf + spec_pdf);
+    *pdf = Plastic_BRDF::pdf(wo, *wi);
     return evaluate(wo, *wi);
 }
 
 float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
+    ASSERT(dot(N, wi) >= 0.f);
     float diffuse_pdf = dot(N, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float wh_pdf;
-    if (ggx_sample_visible_normals)
-        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, N, alpha);
-    else
-        wh_pdf = GGX_microfacet_normal_pdf(wh, N, alpha);
-    float spec_pdf = wh_pdf_to_wi_pdf(wh_pdf, wh, wo);
+    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, N, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + spec_pdf);
     return pdf;
+}
+
+const BSDF* create_bsdf(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, Material_Handle material) {
+    switch (material.type) {
+    case Material_Type::lambertian:
+    {
+        const Lambertian_Material& params = scene_ctx.materials.lambertian[material.index];
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Lambertian_BRDF>();
+        return new (bsdf_allocation) Lambertian_BRDF(scene_ctx, shading_ctx, params);
+    }
+    case Material_Type::metal:
+    {
+        const Metal_Material& params = scene_ctx.materials.metal[material.index];
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Metal_BRDF>();
+        return new (bsdf_allocation) Metal_BRDF(scene_ctx, shading_ctx, params);
+    }
+    case Material_Type::plastic:
+    {
+        const Plastic_Material& params = scene_ctx.materials.plastic[material.index];
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Plastic_BRDF>();
+        return new (bsdf_allocation) Plastic_BRDF(scene_ctx, shading_ctx, params);
+    }
+    default:
+    {
+        ASSERT(false);
+        return nullptr;
+    }
+    }
 }
