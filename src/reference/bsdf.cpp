@@ -85,7 +85,6 @@ float Lambertian_BRDF::pdf(const Vector3& /*wo*/, const Vector3& wi) const {
 Metal_BRDF::Metal_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Metal_Material& material)
     : BSDF(shading_ctx)
 {
-    this->scene_ctx = &scene_ctx;
     reflection_scattering = true;
 
     float roughness = evaluate_float_parameter(scene_ctx, shading_ctx, material.roughness);
@@ -162,8 +161,6 @@ float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
 Plastic_BRDF::Plastic_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Plastic_Material& params)
     : BSDF(shading_ctx)
 {
-    this->scene_ctx = &scene_ctx;
-
     reflection_scattering = true;
 
     float roughness = evaluate_float_parameter(scene_ctx, shading_ctx, params.roughness);

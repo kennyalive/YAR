@@ -39,8 +39,6 @@ struct Metal_BRDF : public BSDF {
     ColorRGB eta_t;
     ColorRGB k_t;
 
-    const Scene_Context* scene_ctx;
-
     Metal_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Metal_Material& material);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
     ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
@@ -49,10 +47,8 @@ struct Metal_BRDF : public BSDF {
 
 struct Plastic_BRDF : public BSDF {
     float alpha = 0.f;
-    float r0;
+    float r0 = 0.f;
     ColorRGB diffuse_reflectance;
-
-    const Scene_Context* scene_ctx;
 
     Plastic_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Plastic_Material& params);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
