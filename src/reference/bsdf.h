@@ -48,7 +48,7 @@ struct Metal_BRDF : public BSDF {
 };
 
 struct Plastic_BRDF : public BSDF {
-    float roughness = 0.f;
+    float alpha = 0.f;
     float r0;
     ColorRGB diffuse_reflectance;
 
@@ -56,6 +56,6 @@ struct Plastic_BRDF : public BSDF {
 
     Plastic_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Plastic_Material& params);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
-    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override { ASSERT(false); return ColorRGB{}; }
-    float pdf(const Vector3& wo, const Vector3& wi) const override { ASSERT(false); return 0.f; }
+    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    float pdf(const Vector3& wo, const Vector3& wi) const override;
 };

@@ -166,7 +166,9 @@ Plastic_BRDF::Plastic_BRDF(const Scene_Context& scene_ctx, const Shading_Context
 
     reflection_scattering = true;
 
-    roughness = evaluate_float_parameter(scene_ctx, shading_ctx, params.roughness);
+    float roughness = evaluate_float_parameter(scene_ctx, shading_ctx, params.roughness);
+    alpha = roughness * roughness;
+
     r0 = evaluate_float_parameter(scene_ctx, shading_ctx, params.r0);
     diffuse_reflectance = evaluate_rgb_parameter(scene_ctx, shading_ctx, params.diffuse_reflectance);
 }
@@ -179,11 +181,68 @@ ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
 
     ColorRGB F = schlick_fresnel(ColorRGB(0.04f), cos_theta_i);
 
-    float alpha = roughness * roughness;
     float D = GGX_Distribution::D(wh, shading_ctx->N, alpha);
     float G = GGX_Distribution::G(wi, wo, shading_ctx->N, alpha);
 
     ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(shading_ctx->N, wo) * dot(shading_ctx->N, wi));
     ColorRGB diffuse_brdf = diffuse_reflectance * Pi_Inv;
     return diffuse_brdf + specular_brdf;
+}
+
+ColorRGB Plastic_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
+    if (u[0] < 0.5f) { // sample diffuse
+        u[0] *= 2.f; // remap u[0] to [0, 1) range
+
+        Vector3 local_dir = sample_hemisphere_cosine(u);
+        *wi = shading_ctx->local_to_world(local_dir);
+    }
+    else { // sample spec
+        u[0] = (u[0] - 0.5f) * 2.f; // remap u[0] to [0, 1) range
+
+        Vector3 wh_local;
+        if (ggx_sample_visible_normals) {
+            Vector3 wo_local = shading_ctx->world_to_local(wo);
+            wh_local = GGX_sample_visible_microfacet_normal(u, wo_local, alpha, alpha);
+        }
+        else {
+            wh_local = GGX_sample_microfacet_normal(u, alpha);
+        }
+
+        Vector3 wh = shading_ctx->local_to_world(wh_local);
+        ASSERT(dot(wh, N) >= 0.f);
+        *wi = wh * (2.f * dot(wo, wh)) - wo;
+    }
+
+    if (dot(N, *wi) <= 0.f)
+        return Color_Black;
+
+    // compute diffuse pdf
+    float diffuse_pdf = dot(N, *wi) / Pi;
+
+    // compute specular pdf
+    Vector3 wh = (wo + *wi).normalized();
+    float wh_pdf;
+    if (ggx_sample_visible_normals)
+        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, N, alpha);
+    else
+        wh_pdf = GGX_microfacet_normal_pdf(wh, N, alpha);
+    float spec_pdf = wh_pdf_to_wi_pdf(wh_pdf, wh, wo);
+
+    *pdf = 0.5f * (diffuse_pdf + spec_pdf);
+    return evaluate(wo, *wi);
+}
+
+float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
+    float diffuse_pdf = dot(N, wi) / Pi;
+
+    Vector3 wh = (wo + wi).normalized();
+    float wh_pdf;
+    if (ggx_sample_visible_normals)
+        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, N, alpha);
+    else
+        wh_pdf = GGX_microfacet_normal_pdf(wh, N, alpha);
+    float spec_pdf = wh_pdf_to_wi_pdf(wh_pdf, wh, wo);
+
+    float pdf = 0.5f * (diffuse_pdf + spec_pdf);
+    return pdf;
 }
