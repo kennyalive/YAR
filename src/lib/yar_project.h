@@ -21,6 +21,10 @@ struct YAR_Instance {
 
 struct YAR_Project {
     Scene_Type scene_type;
+
+    // Location of the scene file (*.pbrt, *.obj, etc).
+    // This path should be directly accessible by c/c++ file API -
+    // it must be either an absolute path or to be relative to the program's current working directory.
     fs::path scene_path;
 
     Vector2i image_resolution;

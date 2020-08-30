@@ -1,16 +1,15 @@
 #include "std.h"
 #include "lib/common.h"
+#include "lib/math.h"
 #include "lib/random.h"
 #include "lib/triangle_mesh.h"
 #include "lib/vector.h"
 #include "lib/yar_project.h"
 
-#include "context.h"
 #include "intersection.h"
 #include "kdtree.h"
 #include "kdtree_builder.h"
 #include "sampling.h"
-#include "shading_context.h"
 
 #ifdef _WIN32
 #include <pmmintrin.h>
@@ -79,9 +78,9 @@ struct Triangle_Mesh_Info {
 };
 
 static std::vector<Triangle_Mesh_Info> triangle_mesh_infos {
-    { "projects/test-files/teapot.obj", 100'000 },
-    { "projects/test-files/bunny.obj", 10'000 },
-    { "projects/test-files/dragon.obj", 5'000 },
+    { "../data/test-files/teapot.obj", 100'000 },
+    { "../data/test-files/bunny.obj", 10'000 },
+    { "../data/test-files/dragon.obj", 5'000 },
 };
 
 static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
@@ -107,9 +106,16 @@ static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
         time_ns += elapsed_nanoseconds(t2);
 
         if (hit_found) {
-            Thread_Context thread_ctx;
-            Shading_Context shading_ctx(Scene_Context{}, thread_ctx, Shading_Point_Rays{}, isect);
-            last_hit = shading_ctx.P;
+            const Triangle_Intersection& ti = isect.triangle_intersection;
+            Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
+
+            Vector3 p0, p1, p2;
+            ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);
+            Vector3 ng = cross(p1 - p0, p2 - p0).normalized();
+            ng = dot(ng, -ray.direction) < 0 ? -ng : ng;
+            p = offset_ray_origin(p, ng);
+
+            last_hit = p;
             last_hit_epsilon = isect.t * 1e-3f;
         }
 
@@ -176,9 +182,16 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
         }
 
         if (kdtree_intersection.t != Infinity) {
-            Thread_Context thread_ctx;
-            Shading_Context shading_ctx(Scene_Context{}, thread_ctx, Shading_Point_Rays{}, kdtree_intersection);
-            last_hit = shading_ctx.P;
+            const Triangle_Intersection& ti = kdtree_intersection.triangle_intersection;
+            Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
+
+            Vector3 p0, p1, p2;
+            ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);
+            Vector3 ng = cross(p1 - p0, p2 - p0).normalized();
+            ng = dot(ng, -ray.direction) < 0 ? -ng : ng;
+            p = offset_ray_origin(p, ng);
+
+            last_hit = p;
             last_hit_epsilon = kdtree_intersection.t * 1e-3f;
         }
     }
