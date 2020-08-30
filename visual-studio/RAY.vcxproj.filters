@@ -12,7 +12,6 @@
     <ClCompile Include="..\src\std.cpp" />
     <ClCompile Include="..\src\reference\direct_lighting.cpp" />
     <ClCompile Include="..\src\reference\shading_context.cpp" />
-    <ClCompile Include="..\src\reference\ray_lib.cpp" />
     <ClCompile Include="..\src\reference\parameter_evaluation.cpp" />
     <ClCompile Include="..\src\reference\image_texture.cpp" />
     <ClCompile Include="..\src\reference\scattering.cpp" />
@@ -41,7 +40,6 @@
     <ClInclude Include="..\src\reference\reference_renderer.h" />
     <ClInclude Include="..\src\reference\direct_lighting.h" />
     <ClInclude Include="..\src\reference\shading_context.h" />
-    <ClInclude Include="..\src\reference\ray_lib.h" />
     <ClInclude Include="..\src\reference\parameter_evaluation.h" />
     <ClInclude Include="..\src\reference\image_texture.h" />
     <ClInclude Include="..\src\reference\scattering.h" />

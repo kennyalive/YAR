@@ -70,6 +70,9 @@ Shading_Context::Shading_Context(
         dPdv = transform_vector(object_to_world, dPdv);
     }
 
+    // Trying to avoid self-shadowing.
+    P = offset_ray_origin(P, Ng);
+
     calculate_UV_derivates(rays, dPdu, dPdv);
 
     shading_normal_adjusted = adjust_shading_normal(Wo, Ng, &N);

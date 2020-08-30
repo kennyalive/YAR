@@ -4,7 +4,6 @@
 
 #include "bsdf.h"
 #include "context.h"
-#include "ray_lib.h"
 #include "sampling.h"
 #include "shading_context.h"
 
@@ -17,10 +16,9 @@ inline float mis_power_heuristic(float pdf1, float pdf2) {
 
 static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng) {
     ColorRGB L;
-    Vector3 surface_point = offset_ray_origin(shading_ctx.P, shading_ctx.Ng);
 
     for (const Point_Light& light : ctx.lights.point_lights) {
-        const Vector3 light_vec = (light.position - surface_point);
+        const Vector3 light_vec = (light.position - shading_ctx.P);
         const float light_dist = light_vec.length();
         const Vector3 light_dir = light_vec / light_dist;
 
@@ -28,7 +26,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
         if (n_dot_l <= 0.f)
             continue;
 
-        Ray shadow_ray(surface_point, light_dir);
+        Ray shadow_ray(shading_ctx.P, light_dir);
         bool in_shadow = ctx.acceleration_structure->intersect_any(shadow_ray, light_dist - 1e-4f);
         if (in_shadow)
             continue;
@@ -42,7 +40,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
         if (n_dot_l <= 0.f)
             continue;
 
-        Ray shadow_ray(surface_point, light.direction);
+        Ray shadow_ray(shading_ctx.P, light.direction);
         bool in_shadow = ctx.acceleration_structure->intersect_any(shadow_ray, Infinity);
         if (in_shadow)
             continue;
@@ -58,7 +56,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
             Vector3 local_light_point = Vector3{ light.size.x / 2.0f * u.x, light.size.y / 2.0f * u.y, 0.0f };
             Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
 
-            const Vector3 light_vec = (light_point - surface_point);
+            const Vector3 light_vec = (light_point - shading_ctx.P);
             const float light_dist = light_vec.length();
             const Vector3 light_dir = light_vec / light_dist;
 
@@ -71,7 +69,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
             if (n_dot_l <= 0.f)
                 continue;
 
-            Ray shadow_ray(surface_point, light_dir);
+            Ray shadow_ray(shading_ctx.P, light_dir);
             bool in_shadow = ctx.acceleration_structure->intersect_any(shadow_ray, light_dist - 1e-3f);
             if (in_shadow)
                 continue;
@@ -99,7 +97,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
                 if (scattering_possible) {
                     ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light_sample.Wi);
                     if (!f.is_black()) {
-                        Ray shadow_ray(surface_point, light_sample.Wi);
+                        Ray shadow_ray(shading_ctx.P, light_sample.Wi);
                         bool occluded = ctx.acceleration_structure->intersect_any(shadow_ray, Infinity);
                         if (!occluded) {
                             float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.Wo, light_sample.Wi);
@@ -122,7 +120,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
                     ASSERT(bsdf_pdf > 0.f);
                     ColorRGB Le = ctx.environment_light_sampler.get_radiance_for_direction(wi);
                     if (!Le.is_black()) {
-                        Ray shadow_ray(surface_point, wi);
+                        Ray shadow_ray(shading_ctx.P, wi);
                         bool occluded = ctx.acceleration_structure->intersect_any(shadow_ray, Infinity);
                         if (!occluded) {
                             float light_pdf = ctx.environment_light_sampler.pdf(wi);
@@ -143,7 +141,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
 
 static ColorRGB reflect_from_mirror_surface(const Scene_Context& ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng, int max_specular_depth) {
     Ray reflected_ray;
-    reflected_ray.origin = offset_ray_origin(shading_ctx.P, shading_ctx.Ng);
+    reflected_ray.origin = shading_ctx.P;
     reflected_ray.direction = shading_ctx.N * (2.f * dot(shading_ctx.N, shading_ctx.Wo)) - shading_ctx.Wo;
 
     Intersection isect;
