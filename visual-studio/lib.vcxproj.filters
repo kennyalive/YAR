@@ -38,6 +38,9 @@
       <Filter>scene_loader</Filter>
     </ClInclude>
     <ClInclude Include="..\src\lib\utils.h" />
+    <ClInclude Include="..\src\lib\obj_loader.h">
+      <Filter>scene_loader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />
@@ -66,6 +69,9 @@
       <Filter>scene_loader</Filter>
     </ClCompile>
     <ClCompile Include="..\src\lib\utils.cpp" />
+    <ClCompile Include="..\src\lib\obj_loader.cpp">
+      <Filter>scene_loader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="scene">

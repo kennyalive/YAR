@@ -1,10 +1,10 @@
 #include "std.h"
 #include "lib/common.h"
 #include "lib/math.h"
+#include "lib/obj_loader.h"
 #include "lib/random.h"
 #include "lib/triangle_mesh.h"
 #include "lib/vector.h"
-#include "lib/yar_project.h"
 
 #include "intersection.h"
 #include "kdtree.h"
@@ -74,7 +74,7 @@ const int benchmark_ray_count = 1'000'000;
 
 struct Triangle_Mesh_Info {
     std::string file_name;
-    int validation_ray_count;
+    int validation_ray_count = 0;
 };
 
 static std::vector<Triangle_Mesh_Info> triangle_mesh_infos {
@@ -199,42 +199,15 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
     printf("DONE\n");
 }
 
-/*
-static Scene_KdTree get_scene_kdtree(const std::string& model_file_name,
-    const std::vector<Triangle_Mesh>& model_meshes,
-    std::vector<Geometry_KdTree>& triangle_mesh_kdtrees)
-{
-    // Build kdtrees for all meshes.
-    Timestamp t;
-    KdTree_Build_Params build_params;
-    triangle_mesh_kdtrees.resize(model_meshes.size());
-    for (auto [i, mesh] : enumerate(model_meshes)) {
-        triangle_mesh_kdtrees[i] = build_geometry_kdtree(mesh, build_params);
-        printf("kdtree %d\n", static_cast<int>(i));
-        mesh_kdtrees[i].calculate_stats().print();
-    }
-    printf("Mesh kdtrees build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
-
-    // Build top-level kdtree.
-    Timestamp t2;
-    TwoLevel_KdTree top_level_kdtree = build_kdtree(mesh_kdtrees, build_params);
-    printf("top-level kdtree\n");
-    top_level_kdtree.calculate_stats().print();
-    printf("Top level kdtree build time = %.2fs\n", elapsed_milliseconds(t2) / 1000.f);
-    return top_level_kdtree;
-}
-*/
 static void test_triangle_mesh(const Triangle_Mesh_Info& triangle_mesh_info) {
-    YAR_Project project;
-    project.scene_type = Scene_Type::obj;
-    project.scene_path = fs::path(triangle_mesh_info.file_name);
+    Obj_Data obj_data = load_obj(triangle_mesh_info.file_name);
+    ASSERT(!obj_data.meshes.empty());
 
-    Scene load_obj_scene(const YAR_Project& project);
-    Scene scene = load_obj_scene(project);
+    Geometries geometries;
+    geometries.triangle_meshes.push_back(std::move(obj_data.meshes[0].mesh));
 
     Timestamp t;
-    KdTree_Build_Params build_params;
-    Geometry_KdTree triangle_mesh_kdtree = build_geometry_kdtree(&scene.geometries, {Geometry_Type::triangle_mesh, 0}, build_params);
+    Geometry_KdTree triangle_mesh_kdtree = build_geometry_kdtree(&geometries, {Geometry_Type::triangle_mesh, 0});
     printf("kdtree build time = %.2fs\n\n", elapsed_milliseconds(t) / 1000.f);
     triangle_mesh_kdtree.calculate_stats().print();
 
