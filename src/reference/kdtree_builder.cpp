@@ -190,16 +190,26 @@ void clip_bounds(const Geometry_Primitive_Source& primitive_source, int32_t tria
     }
 
     // find insersection points of two edges with a splitting plane
-    Vector3 isect_ab;
-    if (b[axis] == split_position) {
-        isect_ab = b;
-    } else {
-        Vector3 ab = b - a;
-        isect_ab = a + ab * ((split_position - a[axis]) / ab[axis]);
-    }
+    Vector3 isect_ab, isect_ac;
+    {
+        // This epsilon deals with the floating point imprecision and avoids the use case
+        // when calculated intersection point does not reach split_position plane.
+        // The above issue leads to the nodes that might not include some triangles that intersect them.
+        float epsilon = (left && !middle_on_the_left || !left && middle_on_the_left) ? 1e-5f : -1e-5f;
 
-    Vector3 ac = c - a;
-    Vector3 isect_ac = a + ac * ((split_position - a[axis]) / ac[axis]);
+        Vector3 ab = b - a;
+        isect_ab = a + ab * ((split_position - a[axis]) / ab[axis] + epsilon);
+
+        Vector3 ac = c - a;
+        isect_ac = a + ac * ((split_position - a[axis]) / ac[axis] + epsilon);
+
+        // Ensure that epsilon provides enough offset.
+        // If any of the asserts signal then epsilon should be increased.
+        // Larger epsilon is not a problem for the algorithm, it's not sensitive to the accuracy of the
+        // intersection point calculation, only to the fact whether it reaches the splitting plane or not.
+        ASSERT(left && isect_ab[axis] >= split_position || !left && isect_ab[axis] <= split_position);
+        ASSERT(left && isect_ac[axis] >= split_position || !left && isect_ac[axis] <= split_position);
+    }
 
     // construct bounding box
     Bounding_Box bounds2;

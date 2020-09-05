@@ -72,17 +72,6 @@ Ray Ray_Generator::generate_ray(const Vector3& last_hit, float last_hit_epsilon)
 
 const int benchmark_ray_count = 1'000'000;
 
-struct Triangle_Mesh_Info {
-    std::string file_name;
-    int validation_ray_count = 0;
-};
-
-static std::vector<Triangle_Mesh_Info> triangle_mesh_infos {
-    { "../data/test-files/teapot.obj", 100'000 },
-    { "../data/test-files/bunny.obj", 10'000 },
-    { "../data/test-files/dragon.obj", 5'000 },
-};
-
 static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
     const bool debug_rays = false;
     const int debug_ray_count = 4;
@@ -199,15 +188,30 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
     printf("DONE\n");
 }
 
-static void test_triangle_mesh(const Triangle_Mesh_Info& triangle_mesh_info) {
-    Obj_Data obj_data = load_obj(triangle_mesh_info.file_name);
-    ASSERT(!obj_data.meshes.empty());
+namespace {
+struct Triangle_Mesh_Info {
+    std::string file_name;
+    int validation_ray_count = 0;
+    Triangle_Mesh* custom_mesh = nullptr;
+};
+}
 
+static void test_triangle_mesh(const Triangle_Mesh_Info& triangle_mesh_info) {
     Geometries geometries;
-    geometries.triangle_meshes.push_back(std::move(obj_data.meshes[0].mesh));
+    if (!triangle_mesh_info.file_name.empty()) {
+        Obj_Data obj_data = load_obj(triangle_mesh_info.file_name);
+        ASSERT(!obj_data.meshes.empty());
+        geometries.triangle_meshes.push_back(std::move(obj_data.meshes[0].mesh));
+    }
+    else {
+        ASSERT(triangle_mesh_info.custom_mesh != nullptr);
+        geometries.triangle_meshes.push_back(*triangle_mesh_info.custom_mesh);
+    }
 
     Timestamp t;
-    Geometry_KdTree triangle_mesh_kdtree = build_geometry_kdtree(&geometries, {Geometry_Type::triangle_mesh, 0});
+    KdTree_Build_Params params;
+    //params.split_clipping = false;
+    Geometry_KdTree triangle_mesh_kdtree = build_geometry_kdtree(&geometries, {Geometry_Type::triangle_mesh, 0}, params);
     printf("kdtree build time = %.2fs\n\n", elapsed_milliseconds(t) / 1000.f);
     triangle_mesh_kdtree.calculate_stats().print();
 
@@ -219,11 +223,46 @@ static void test_triangle_mesh(const Triangle_Mesh_Info& triangle_mesh_info) {
     validate_triangle_mesh_kdtree(triangle_mesh_kdtree, triangle_mesh_info.validation_ray_count);
 }
 
+std::vector<Triangle_Mesh> create_custom_meshes() {
+    std::vector<Triangle_Mesh> meshes;
+    // mesh 0
+    {
+        Triangle_Mesh mesh;
+        mesh.vertices = {
+            {-10.0000000f, -4.14615011f, -10.0000000f },
+            {-10.0000000f, -4.14615011f,  10.0000000f },
+            { 10.0000000f, -4.14615011f,  10.0000000f },
+            { 10.0000000f, -4.14615011f, -10.0000000f },
+            {-10.0000000f, -10.0000000f, -2.00000000f },
+            { 10.0000000f, -10.0000000f, -2.00000000f },
+            { 10.0000000f,  10.0000000f, -2.00000000f },
+            {-10.0000000f,  10.0000000f, -2.00000000f }
+        };
+        mesh.indices = {
+            0, 1, 2,
+            2, 3, 0,
+            4, 5, 6,
+            6, 7, 4
+        };
+        meshes.push_back(std::move(mesh));
+    }
+    return meshes;
+}
+
 void test_kdtree() {
 #ifdef _WIN32
     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
     _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
 #endif
+
+    std::vector<Triangle_Mesh> custom_meshes = create_custom_meshes();
+
+    std::vector<Triangle_Mesh_Info> triangle_mesh_infos {
+        { "", 100'000, &custom_meshes[0]},
+        { "../data/test-files/teapot.obj", 100'000 },
+        { "../data/test-files/bunny.obj", 10'000 },
+        { "../data/test-files/dragon.obj", 5'000 },
+    };
 
     for (const Triangle_Mesh_Info& info : triangle_mesh_infos) {
         printf("---------------------\n");
@@ -231,4 +270,3 @@ void test_kdtree() {
         test_triangle_mesh(info);
     }
  }
-
