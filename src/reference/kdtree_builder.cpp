@@ -127,17 +127,17 @@ KdTree<Primitive_Source> KdTree_Builder<Primitive_Source>::build()
 
     primitive_buffer2.resize(primitive_count);
 
-    Bounding_Box mesh_bounds;
+    Bounding_Box total_bounds;
     for (int32_t i = 0; i < primitive_count; i++) {
         Bounding_Box bounds = primitive_source.get_primitive_bounds(i);
         primitive_buffer[i] = { i, bounds };
-        mesh_bounds = Bounding_Box::compute_union(mesh_bounds, bounds);
+        total_bounds = Bounding_Box::compute_union(total_bounds, bounds);
     }
 
     //
     // Recursively build all nodes.
     //
-    build_node(mesh_bounds, 0, primitive_count, build_params.max_depth, primitive_count);
+    build_node(total_bounds, 0, primitive_count, build_params.max_depth, primitive_count);
 
     return KdTree<Primitive_Source>(std::move(nodes), std::move(primitive_indices), std::move(primitive_source));
 }
@@ -240,7 +240,7 @@ void KdTree_Builder<Primitive_Source>::build_node(const Bounding_Box& node_bound
     }
 
     // select split position
-    auto split = select_split(node_bounds, &primitive_buffer[primitives_offset], primitive_count);
+    Split split = select_split(node_bounds, &primitive_buffer[primitives_offset], primitive_count);
     if (split.edge == -1) {
         create_leaf(&primitive_buffer[primitives_offset], primitive_count);
         return;
@@ -288,14 +288,14 @@ void KdTree_Builder<Primitive_Source>::build_node(const Bounding_Box& node_bound
     }
 
     // add interior node and recursively create children nodes
-    auto this_node_index = static_cast<int32_t>(nodes.size());
+    int32_t this_node_index = static_cast<int32_t>(nodes.size());
     nodes.push_back(KdNode());
 
     Bounding_Box bounds0 = node_bounds;
     bounds0.max_p[split.axis] = split_position;
     build_node(bounds0, 0, n0, depth - 1, above_primitives_offset + n1);
 
-    auto above_child = static_cast<int32_t>(nodes.size());
+    int32_t above_child = static_cast<int32_t>(nodes.size());
     nodes[this_node_index].init_interior_node(split.axis, above_child, split_position);
 
     Bounding_Box bounds1 = node_bounds;
@@ -356,7 +356,7 @@ Split KdTree_Builder<Primitive_Source>::select_split(const Bounding_Box& node_bo
     for (int axis : axes) {
         // initialize edges
         for (int32_t i = 0; i < primitive_count; i++) {
-            auto& bounds = primitives[i].bounds;
+            const Bounding_Box& bounds = primitives[i].bounds;
             edges[axis][2 * i + 0] = { bounds.min_p[axis], static_cast<uint32_t>(i) };
             edges[axis][2 * i + 1] = { bounds.max_p[axis], static_cast<uint32_t>(i) | Edge::edge_end_flag };
 
@@ -369,7 +369,7 @@ Split KdTree_Builder<Primitive_Source>::select_split(const Bounding_Box& node_bo
         std::stable_sort(edges[axis].data(), edges[axis].data() + 2 * primitive_count, Edge::less);
 
         // select split position
-        auto split = select_split_for_axis(node_bounds, primitive_count, axis);
+        Split split = select_split_for_axis(node_bounds, primitive_count, axis);
         if (split.edge != -1) {
             if (build_params.split_along_the_longest_axis)
                 return split;
@@ -426,9 +426,9 @@ Split KdTree_Builder<Primitive_Source>::select_split_for_axis(const Bounding_Box
             float p_below = below_s * inv_total_s;
             float p_above = above_s * inv_total_s;
 
-            auto empty_bonus = (num_below == 0 || num_above == 0) ? build_params.empty_bonus : 0.0f;
+            float empty_bonus = (num_below == 0 || num_above == 0) ? build_params.empty_bonus : 0.0f;
 
-            auto cost = build_params.traversal_cost + (1.0f - empty_bonus) * build_params.intersection_cost * (p_below * num_below + p_above * num_above);
+            float cost = build_params.traversal_cost + (1.0f - empty_bonus) * build_params.intersection_cost * (p_below * num_below + p_above * num_above);
 
             if (cost < best_split.cost) {
                 best_split.edge = (middle_edge == group_end) ? middle_edge - 1 : middle_edge;

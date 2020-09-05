@@ -115,7 +115,7 @@ public:
     KdTree& operator=(KdTree&& other) = default;
 
     bool intersect(const Ray& ray, Intersection& intersection) const;
-    bool intersect_any(const Ray& ray, float ray_tmax) const;
+    bool intersect_any(const Ray& ray, float tmax) const;
 
     const Primitive_Source& get_primitive_source() const { return primitive_source; }
     const Bounding_Box& get_bounds() const { return bounds; }
@@ -125,6 +125,9 @@ public:
 
 private:
     void intersect_leaf(const Ray& ray, KdNode leaf, Intersection& intersection) const;
+
+    // Brute force intersection routine for debugging/testing purposes.
+    bool intersect_brute_force(const Ray& ray, Intersection& intersection) const;
 
 private:
     KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& primitive_indices, Primitive_Source&& primitive_source);

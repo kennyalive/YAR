@@ -4,6 +4,8 @@
 
 #include "intersection.h"
 
+//#define BRUTE_FORCE_INTERSECTION
+
 template <typename Primitive_Source>
 KdTree<Primitive_Source>::KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& primitive_indices, Primitive_Source&& primitive_source)
 : nodes(std::move(nodes))
@@ -14,13 +16,16 @@ KdTree<Primitive_Source>::KdTree(std::vector<KdNode>&& nodes, std::vector<int32_
 }
 
 template <typename Primitive_Source>
-bool KdTree<Primitive_Source>::intersect_any(const Ray& ray, float ray_tmax) const {
-    Intersection intersection{ ray_tmax };
+bool KdTree<Primitive_Source>::intersect_any(const Ray& ray, float tmax) const {
+    Intersection intersection{ tmax };
     return intersect(ray, intersection);
 }
 
 template <typename Primitive_Source>
 bool KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersection) const {
+#ifdef BRUTE_FORCE_INTERSECTION
+    return intersect_brute_force(ray, intersection);
+#else
     float t_min, t_max; // parametric range for the ray's overlap with the current node
     if (!bounds.intersect_by_ray(ray, t_min, t_max))
         return false;
@@ -119,6 +124,7 @@ bool KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersect
         }
     } // while (intersection.t > t_min)
     return intersection.t < ray_tmax;
+#endif // !BRUTE_FORCE_INTERSECTION
 }
 
 template <typename Primitive_Source>
@@ -133,6 +139,15 @@ void KdTree<Primitive_Source>::intersect_leaf(const Ray& ray, KdNode leaf, Inter
         int32_t primitive_index = primitive_indices[leaf.get_index() + i];
         primitive_source.intersect_primitive(ray, primitive_index, intersection);
     }
+}
+
+template <typename Primitive_Source>
+bool KdTree<Primitive_Source>::intersect_brute_force(const Ray& ray, Intersection& intersection) const {
+    float tmax = intersection.t;
+    for (int i = 0; i < primitive_source.get_primitive_count(); i++) {
+        primitive_source.intersect_primitive(ray, i, intersection);
+    }
+    return intersection.t < tmax;
 }
 
 template <typename Primitive_Source>

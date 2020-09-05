@@ -32,8 +32,8 @@ struct Intersection {
     // Type of the intersected geometry.
     Geometry_Type geometry_type = Geometry_Type::none;
 
-    // Scene_Object associated with the intersected geometry. It is always null for Geometry_KdTree
-    // and it is always non-null for Scene_KdTree.
+    // Scene_Object associated with the intersected geometry.
+    // It is null for Geometry_KdTree and it is non-null for Scene_KdTree.
     const Scene_Object* scene_object = nullptr;
 
     union {
