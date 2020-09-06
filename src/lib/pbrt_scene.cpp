@@ -4,6 +4,7 @@
 #include "colorimetry.h"
 #include "spectrum.h"
 #include "scene.h"
+#include "tessellation.h"
 #include "yar_project.h"
 
 #include "pbrtParser/Scene.h"
@@ -209,12 +210,11 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
     return Geometry_Handle{ Geometry_Type::triangle_mesh, (int)scene->geometries.triangle_meshes.size() - 1 };
 }
 
-static Geometry_Handle import_pbrt_sphere(const pbrt::Sphere::SP pbrt_sphere , Scene* scene) {
-    Sphere sphere;
-    sphere.radius = pbrt_sphere->radius;
-    sphere.origin = to_matrix3x4(pbrt_sphere->transform).get_column(3);
-    scene->geometries.spheres.push_back(sphere);
-    return Geometry_Handle{ Geometry_Type::sphere, int(scene->geometries.spheres.size() - 1) };
+static Geometry_Handle import_pbrt_sphere(const pbrt::Sphere::SP pbrt_sphere, Matrix3x4* sphere_transform, Scene* scene) {
+    Triangle_Mesh sphere = create_sphere_mesh(pbrt_sphere->radius, 3);
+    scene->geometries.triangle_meshes.push_back(std::move(sphere));
+    *sphere_transform = to_matrix3x4(pbrt_sphere->transform);
+    return Geometry_Handle{ Geometry_Type::triangle_mesh, int(scene->geometries.triangle_meshes.size() - 1) };
 }
 
 static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
@@ -282,6 +282,8 @@ Scene load_pbrt_scene(const YAR_Project& project) {
         for (pbrt::Shape::SP shape : instance->object->shapes) {
             Imported_Shape& imported_shape = already_imported_shapes[shape];
 
+            Matrix3x4 shape_transform = Matrix3x4::identity;
+
             if (imported_shape.geometry == Null_Geometry) {
                 pbrt::TriangleMesh::SP pbrt_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(shape);
                 if (pbrt_mesh != nullptr)
@@ -289,7 +291,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
 
                 pbrt::Sphere::SP pbrt_sphere = std::dynamic_pointer_cast<pbrt::Sphere>(shape);
                 if (pbrt_sphere != nullptr)
-                    imported_shape.geometry = import_pbrt_sphere(pbrt_sphere, &scene);
+                    imported_shape.geometry = import_pbrt_sphere(pbrt_sphere, &shape_transform, &scene);
 
                 if (imported_shape.geometry == Null_Geometry)
                     error("Unsupported pbrt shape type");
@@ -301,7 +303,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                 Scene_Object scene_object;
                 scene_object.geometry = imported_shape.geometry;
                 scene_object.material = imported_shape.material;
-                scene_object.object_to_world_transform = to_matrix3x4(instance->xfm);
+                scene_object.object_to_world_transform = to_matrix3x4(instance->xfm) * shape_transform;
                 scene_object.world_to_object_transform = get_inverted_transform(scene_object.object_to_world_transform);
                 scene.objects.push_back(scene_object);
             }

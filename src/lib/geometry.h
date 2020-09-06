@@ -4,8 +4,7 @@
 
 enum class Geometry_Type : uint32_t {
     none,
-    triangle_mesh,
-    sphere
+    triangle_mesh
 };
 
 struct Geometry_Handle {
@@ -20,14 +19,8 @@ struct Geometry_Handle {
     }
 };
 
-struct Sphere {
-    float radius = 0.f;
-    Vector3 origin;
-};
-
 struct Geometries {
     std::vector<Triangle_Mesh> triangle_meshes;
-    std::vector<Sphere> spheres;
 };
 
 static_assert(sizeof(Geometry_Handle) == 8);

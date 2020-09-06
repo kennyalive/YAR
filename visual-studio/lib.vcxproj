@@ -107,6 +107,7 @@
     <ClInclude Include="..\src\lib\obj_loader.h" />
     <ClInclude Include="..\src\lib\parameter.h" />
     <ClInclude Include="..\src\lib\scene_loader.h" />
+    <ClInclude Include="..\src\lib\tessellation.h" />
     <ClInclude Include="..\src\lib\utils.h" />
     <ClInclude Include="..\src\lib\yar_project.h" />
     <ClInclude Include="..\src\lib\random.h" />
@@ -126,6 +127,7 @@
     <ClCompile Include="..\src\lib\image.cpp" />
     <ClCompile Include="..\src\lib\math.cpp" />
     <ClCompile Include="..\src\lib\obj_loader.cpp" />
+    <ClCompile Include="..\src\lib\tessellation.cpp" />
     <ClCompile Include="..\src\lib\utils.cpp" />
     <ClCompile Include="..\src\lib\yar_project.cpp" />
     <ClCompile Include="..\src\lib\light.cpp" />

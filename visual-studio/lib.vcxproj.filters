@@ -41,6 +41,7 @@
     <ClInclude Include="..\src\lib\obj_loader.h">
       <Filter>scene_loader</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\lib\tessellation.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />
@@ -72,6 +73,7 @@
     <ClCompile Include="..\src\lib\obj_loader.cpp">
       <Filter>scene_loader</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\lib\tessellation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="scene">

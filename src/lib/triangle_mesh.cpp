@@ -211,7 +211,7 @@ static void adjust_normal_for_duplicated_vertices(const std::vector<uint64_t>& n
 
     std::unordered_map<Vertex_Info, Siblings, Vertex_Info_Hasher> duplicated_vertices;
     for (int i = 0; i < (int)mesh.vertices.size(); i++) {
-        Vertex_Info v_info = { mesh.vertices[i], normal_groups[i] };
+        Vertex_Info v_info = { mesh.vertices[i], normal_groups.empty() ? 0 : normal_groups[i] };
         auto it = duplicated_vertices.find(v_info);
         if (it != duplicated_vertices.end()) {
             Siblings& s = it->second;
@@ -249,6 +249,8 @@ void calculate_normals(const Normal_Calculation_Params& params, Triangle_Mesh& m
         convert_to_mesh_with_face_normals(mesh);
         return;
     }
+
+    mesh.normals.resize(mesh.vertices.size());
 
     // Duplicate vertices due to crease angle if requested.
     std::vector<uint64_t> normal_groups;
