@@ -283,6 +283,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
             Imported_Shape& imported_shape = already_imported_shapes[shape];
 
             Matrix3x4 shape_transform = Matrix3x4::identity;
+            Light_Handle area_light;
 
             if (imported_shape.geometry == Null_Geometry) {
                 pbrt::TriangleMesh::SP pbrt_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(shape);
@@ -290,22 +291,42 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                     imported_shape.geometry = import_pbrt_triangle_mesh(pbrt_mesh, &scene);
 
                 pbrt::Sphere::SP pbrt_sphere = std::dynamic_pointer_cast<pbrt::Sphere>(shape);
-                if (pbrt_sphere != nullptr)
+                if (pbrt_sphere != nullptr) {
                     imported_shape.geometry = import_pbrt_sphere(pbrt_sphere, &shape_transform, &scene);
+                    if (shape->areaLight != nullptr) {
+                        pbrt::DiffuseAreaLightRGB::SP pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(shape->areaLight);
+                        if (pbrt_diffuse_area_light_rgb) {
+                            Diffuse_Sphere_Light light;
+                            light.light_to_world_transform = to_matrix3x4(instance->xfm) * shape_transform;
+                            light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
+                            light.radius = pbrt_sphere->radius;
+                            // TODO: init shadow ray count
+                            scene.lights.diffuse_sphere_lights.push_back(light);
+                            area_light = {Light_Type::diffuse_sphere, (int)scene.lights.diffuse_sphere_lights.size() - 1};
+                        }
+                    }
+                }
 
                 if (imported_shape.geometry == Null_Geometry)
                     error("Unsupported pbrt shape type");
 
-                imported_shape.material = import_pbrt_material(shape->material, &scene);
+                // The covention that area lights only emit light and do not exhibit relfection properties.
+                // Here we parse material only if the shape does not have associated area light.
+                if (shape->areaLight == nullptr)
+                    imported_shape.material = import_pbrt_material(shape->material, &scene);
             }
 
             if (imported_shape.geometry.type == Geometry_Type::triangle_mesh) {
                 Scene_Object scene_object;
                 scene_object.geometry = imported_shape.geometry;
                 scene_object.material = imported_shape.material;
+                scene_object.area_light = area_light;
                 scene_object.object_to_world_transform = to_matrix3x4(instance->xfm) * shape_transform;
                 scene_object.world_to_object_transform = get_inverted_transform(scene_object.object_to_world_transform);
                 scene.objects.push_back(scene_object);
+
+                // Material and area light are mutually exclusive properties and one of them must be defined.
+                ASSERT((scene_object.area_light == Null_Light) != (scene_object.material == Null_Material));
             }
         }
 

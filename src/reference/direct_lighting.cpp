@@ -51,7 +51,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
 
     for (const Diffuse_Rectangular_Light& light : ctx.lights.diffuse_rectangular_lights) {
         ColorRGB L2;
-        for (int i = 0; i < light.shadow_ray_count; i++) {
+        for (int i = 0; i < light.sample_count; i++) {
             Vector2 u{ 2.0f * random_float(rng) - 1.0f, 2.0f * random_float(rng) - 1.0f };
             Vector3 local_light_point = Vector3{ light.size.x / 2.0f * u.x, light.size.y / 2.0f * u.y, 0.0f };
             Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
@@ -77,7 +77,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
             ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light_dir);
             L2 += (light.size.x * light.size.y) * light.emitted_radiance * bsdf * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
-        L2 /= float(light.shadow_ray_count);
+        L2 /= float(light.sample_count);
         L += L2;
     }
 
@@ -177,8 +177,13 @@ ColorRGB estimate_direct_lighting(const Scene_Context& ctx, Thread_Context& thre
     }
     
     if (shading_ctx.area_light != Null_Light) {
-        ASSERT(shading_ctx.area_light.type == Light_Type::diffuse_rectangular);
-        L += ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
+        if (shading_ctx.area_light.type == Light_Type::diffuse_rectangular) {
+            L += ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
+        }
+        else {
+            ASSERT(shading_ctx.area_light.type == Light_Type::diffuse_sphere);
+            L += ctx.lights.diffuse_sphere_lights[shading_ctx.area_light.index].emitted_radiance;
+        }
     }
     return L;
 }

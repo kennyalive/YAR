@@ -318,8 +318,8 @@ struct Parser {
             else if (match_string("luminous_flux")) {
                 luminous_flux = get_numeric<float>(); 
             }
-            else if (match_string("shadow_ray_count")) {
-                light.shadow_ray_count = get_numeric<int>();
+            else if (match_string("sample_count")) {
+                light.sample_count = get_numeric<int>();
             }
             else
                 check(false, "unknown diffuse rectangular light attribute [%.*s", (int)get_current_token_string().size(), get_current_token_string().data());

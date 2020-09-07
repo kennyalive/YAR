@@ -57,7 +57,7 @@ struct Diffuse_Rectangular_Light {
 
         size                = data.size;
         area                = data.size.x * data.size.y;
-        shadow_ray_count    = data.shadow_ray_count;
+        shadow_ray_count    = data.sample_count;
     }
 #endif
 };
