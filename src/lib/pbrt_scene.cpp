@@ -31,12 +31,16 @@ static Sampled_Spectrum to_sampled_spectrum(const pbrt::Spectrum& pbrt_spectrum)
     return Sampled_Spectrum::from_tabulated_data(lambdas.data(), values.data(), (int)lambdas.size());
 }
 
-static float pbrt_roughness_to_everyday_people_roughness(float pbrt_roughness) {
-    pbrt_roughness = std::max(pbrt_roughness, 1e-3f);
-    float x = std::log(pbrt_roughness);
-    float alpha = 1.62142f + 0.819955f*x + 0.1734f*x*x + 0.0171201f*x*x*x + 0.000640711f*x*x*x*x;
-    float everyday_people_roughness = std::sqrt(alpha);
-    return everyday_people_roughness;
+// here we define disney roughness as quantity such that alpha = roughness^2
+static float pbrt_roughness_to_disney_roughness(float pbrt_roughness, bool remap) {
+    float alpha = pbrt_roughness;
+    if (remap) {
+        pbrt_roughness = std::max(pbrt_roughness, 1e-3f);
+        float x = std::log(pbrt_roughness);
+        alpha = 1.62142f + 0.819955f*x + 0.1734f*x*x + 0.0171201f*x*x*x + 0.000640711f*x*x*x*x;
+    }
+    float roughness = std::sqrt(alpha);
+    return roughness;
 }
 
 static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_texture, Scene* scene) {
@@ -111,7 +115,7 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
 
     auto metal = std::dynamic_pointer_cast<pbrt::MetalMaterial>(pbrt_material);
     if (metal) {
-        float roughness = pbrt_roughness_to_everyday_people_roughness(metal->roughness);
+        float roughness = pbrt_roughness_to_disney_roughness(metal->roughness, metal->remapRoughness);
         Metal_Material mtl;
         set_constant_parameter(mtl.roughness, roughness);
         set_constant_parameter(mtl.eta_i, 1.f);
@@ -145,7 +149,7 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         ASSERT(plastic->map_bump == nullptr);
         ASSERT(plastic->map_roughness == nullptr);
 
-        float roughness = pbrt_roughness_to_everyday_people_roughness(plastic->roughness);
+        float roughness = pbrt_roughness_to_disney_roughness(plastic->roughness, plastic->remapRoughness);
         Plastic_Material mtl;
         set_constant_parameter(mtl.roughness, roughness);
 
