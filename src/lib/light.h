@@ -64,7 +64,7 @@ struct Diffuse_Rectangular_Light {
 };
 
 struct Diffuse_Sphere_Light {
-    Matrix3x4 light_to_world_transform = Matrix3x4::identity;
+    Vector3 position;
     ColorRGB emitted_radiance;
     float radius = 0.f;
     int sample_count = 1;

@@ -81,6 +81,89 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
         L += L2;
     }
 
+    for (auto [light_num, light] : enumerate(ctx.lights.diffuse_sphere_lights)) {
+        const Light_Handle current_light_handle = { Light_Type::diffuse_sphere, (int)light_num};
+        const float light_area_pdf = 1.f / (4.f * Pi * light.radius * light.radius);
+
+        ColorRGB L2;
+        for (int i = 0; i < light.sample_count; i++) {
+            // Light sampling part of MIS.
+            {
+                Vector2 u{ random_float(rng), random_float(rng) };
+                Vector3 light_normal = sample_sphere_uniform(u);
+                Vector3 p = light.radius * light_normal;
+                p = offset_ray_origin(p, light_normal);
+                p += light.position;
+
+                Vector3 light_vector  = p - shading_ctx.P;
+                float light_distance = light_vector.length();
+                Vector3 wi = light_vector / light_distance;
+
+                float light_n_dot_wi = dot(light_normal, -wi);
+                if (light_n_dot_wi > 0.f) {
+                    float n_dot_wi = dot(shading_ctx.N, wi);
+
+                    bool scattering_possible = n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
+                                               n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
+
+                    if (scattering_possible) {
+                        ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.Wo, wi);
+                        if (!f.is_black()) {
+                            Ray visibility_ray(shading_ctx.P, wi);
+                            bool occluded = ctx.acceleration_structure->intersect_any(visibility_ray, light_distance);
+                            if (!occluded) {
+                                float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.Wo, wi);
+                                float light_pdf = (light_area_pdf * light_distance * light_distance) / light_n_dot_wi; // convert to solid angle pdf
+                                float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
+
+                                L2 += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) * light_n_dot_wi / (light_area_pdf * light_distance * light_distance));
+                            }
+                        }
+                    }
+                }
+            }
+
+            // BSDF sampling part of MIS.
+            {
+                Vector3 wi;
+                float bsdf_pdf;
+
+                Vector2 u{ random_float(rng), random_float(rng) };
+                ColorRGB f = shading_ctx.bsdf->sample(u, shading_ctx.Wo, &wi, &bsdf_pdf);
+
+                if (!f.is_black()) {
+                    ASSERT(bsdf_pdf > 0.f);
+                    Ray light_visibility_ray(shading_ctx.P, wi);
+                    Intersection isect;
+                    if (ctx.acceleration_structure->intersect(light_visibility_ray, isect)) {
+                        if (isect.scene_object->area_light == current_light_handle) {
+                            Vector3 light_normal;
+                            {
+                                // TODO: provide more simple way to init local geom having intersection data, without creating Shading_Context instance
+                                Shading_Point_Rays rays;
+                                rays.incident_ray = light_visibility_ray;
+                                rays.auxilary_ray_dx_offset = light_visibility_ray;
+                                rays.auxilary_ray_dy_offset = light_visibility_ray;
+                                Thread_Context temp_thread_ctx;
+                                Shading_Context shading_ctx2(ctx, temp_thread_ctx, rays, isect);
+                                light_normal = shading_ctx2.N;
+                            }
+                            float light_n_dot_wi = dot(light_normal, -wi);
+
+                            ASSERT(light_n_dot_wi >= 0.f);
+                            float light_pdf = light_area_pdf * isect.t * isect.t / light_n_dot_wi; // convert to solid angle pdf
+                            float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
+                            float n_dot_wi = dot(shading_ctx.N, wi);
+                            L2 += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / bsdf_pdf);
+                        }
+                    }
+                }
+            }
+        }
+        L2 /= float(light.sample_count);
+        L += L2;
+    }
+
     if (ctx.has_environment_light_sampler) {
         ColorRGB L2;
         for (int i = 0; i < ctx.environment_light_sampler.light->sample_count; i++) {
@@ -172,18 +255,17 @@ ColorRGB estimate_direct_lighting(const Scene_Context& ctx, Thread_Context& thre
             L = reflect_from_mirror_surface(ctx, thread_ctx, shading_ctx, rng, --max_specular_depth);
         }
     }
-    else {
-        L = sample_lights(ctx, shading_ctx, rng);
-    }
-    
-    if (shading_ctx.area_light != Null_Light) {
+    else if (shading_ctx.area_light != Null_Light) {
         if (shading_ctx.area_light.type == Light_Type::diffuse_rectangular) {
-            L += ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
+            L = ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
         }
         else {
             ASSERT(shading_ctx.area_light.type == Light_Type::diffuse_sphere);
-            L += ctx.lights.diffuse_sphere_lights[shading_ctx.area_light.index].emitted_radiance;
+            L = ctx.lights.diffuse_sphere_lights[shading_ctx.area_light.index].emitted_radiance;
         }
+    }
+    else {
+        L = sample_lights(ctx, shading_ctx, rng);
     }
     return L;
 }

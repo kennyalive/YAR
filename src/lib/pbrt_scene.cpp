@@ -301,7 +301,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                         pbrt::DiffuseAreaLightRGB::SP pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(shape->areaLight);
                         if (pbrt_diffuse_area_light_rgb) {
                             Diffuse_Sphere_Light light;
-                            light.light_to_world_transform = to_matrix3x4(instance->xfm) * shape_transform;
+                            light.position = (to_matrix3x4(instance->xfm) * shape_transform).get_column(3);
                             light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
                             light.radius = pbrt_sphere->radius;
                             // TODO: init shadow ray count
