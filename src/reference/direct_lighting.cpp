@@ -83,14 +83,21 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
 
     for (auto [light_num, light] : enumerate(ctx.lights.diffuse_sphere_lights)) {
         const Light_Handle current_light_handle = { Light_Type::diffuse_sphere, (int)light_num};
-        const float light_area_pdf = 1.f / (4.f * Pi * light.radius * light.radius);
+        const float light_area_pdf = 1.f / (2.f * Pi * light.radius * light.radius);
 
         ColorRGB L2;
         for (int i = 0; i < light.sample_count; i++) {
             // Light sampling part of MIS.
             {
-                Vector2 u{ random_float(rng), random_float(rng) };
-                Vector3 light_normal = sample_sphere_uniform(u);
+                Vector3 light_normal;
+                {
+                    Vector3 sphere_dir = shading_ctx.P - light.position;
+                    do {
+                        Vector2 u{ random_float(rng), random_float(rng) };
+                        light_normal = sample_sphere_uniform(u);
+                    } while (dot(sphere_dir, light_normal) <= 0.f);
+                }
+
                 Vector3 p = light.radius * light_normal;
                 p = offset_ray_origin(p, light_normal);
                 p += light.position;
