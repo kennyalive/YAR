@@ -45,6 +45,20 @@ Vector3 sample_hemisphere_cosine(Vector2 u) {
     return {x, y, z};
 }
 
+Vector3 uniform_sample_cone(Vector2 u, float cos_theta_max) {
+    ASSERT(u < Vector2(1));
+    float cos_theta = (1.f - u[0]) + u[0] * cos_theta_max;
+    ASSERT(cos_theta >= 0.f && cos_theta <= 1.f);
+    float sin_theta = std::sqrt(1.f - cos_theta * cos_theta);
+
+    float phi = 2.f * Pi * u[1];
+    return {sin_theta * std::cos(phi), sin_theta * std::sin(phi), cos_theta};
+}
+
+float uniform_cone_pdf(float cos_theta_max) {
+    return 1.f / (2.f * Pi * (1.f - cos_theta_max));
+}
+
 float sample_from_CDF(float u, const float* cdf, int n, float interval_length /* 1/n */, float* pdf) {
     ASSERT(u >= 0.f && u < 1.f);
     ASSERT(n >= 1);

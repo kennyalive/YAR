@@ -8,6 +8,10 @@ Vector3 sample_sphere_uniform(Vector2 u);
 Vector3 sample_hemisphere_uniform(Vector2 u);
 Vector3 sample_hemisphere_cosine(Vector2 u);
 
+Vector3 uniform_sample_cone(Vector2 u, float cos_theta_max);
+float uniform_cone_pdf(float cos_theta_max);
+
+
 // The assumption that CDF is defined over [0, 1] and is a piecewise-linear function.
 // If we divide [0, 1] into 'n' intervals then 'cdf' array defines cdf values at the
 // end of each interval. We also implicitly define that cdf(0) = 0.0. The last element
