@@ -24,6 +24,9 @@ static Vector2 get_uv_from_direction(const Vector3& env_map_direction) {
     return uv;
 }
 
+//
+// Environment_Light_Sampler
+//
 Light_Sample Environment_Light_Sampler::sample(Vector2 u) const {
     float pdf_uv;
     Vector2 uv = radiance_distribution.sample(u, &pdf_uv);
@@ -62,58 +65,56 @@ float Environment_Light_Sampler::pdf(const Vector3& world_direction) const {
     return pdf;
 }
 
-Diffuse_Sphere_Light_Area_Sampler::Diffuse_Sphere_Light_Area_Sampler(
-    const Scene_Context* scene_ctx,
-    pcg32_random_t* rng,
-    const Vector3& shading_pos,
-    int light_index)
+//
+// Diffuse_Sphere_Light_Sampler
+//
+Diffuse_Sphere_Light_Sampler::Diffuse_Sphere_Light_Sampler(const Diffuse_Sphere_Light& light, const Vector3& shading_pos)
+    : light(light)
+    , shading_pos(shading_pos)
 {
-    this->scene_ctx = scene_ctx;
-    this->rng = rng;
-    this->shading_pos = shading_pos;
-    light_handle = {Light_Type::diffuse_sphere, light_index};
+    axes[2] = shading_pos - light.position;
+    d_center = axes[2].length();
+    axes[2] /= d_center;
+    coordinate_system_from_vector(axes[2], &axes[0], &axes[1]);
 
-    const Diffuse_Sphere_Light& light = scene_ctx->lights.diffuse_sphere_lights[light_index];
-    sphere_center = light.position;
-    area_pdf = 1.f / (2.f * Pi * light.radius * light.radius);
+    float sin_theta_max = light.radius / d_center;
+    cos_theta_max = std::sqrt(std::max(0.f, 1.f - sin_theta_max * sin_theta_max));
+
+    cone_sampling_pdf = 1.f / (2.f * Pi * (1.f - cos_theta_max));
 }
 
-Vector3 Diffuse_Sphere_Light_Area_Sampler::sample_direction_on_sphere() {
-    Vector3 light_normal;
-    {
-        Vector3 sphere_dir = shading_pos - sphere_center;
-        do {
-            Vector2 u{ random_float(rng), random_float(rng) };
-            light_normal = sample_sphere_uniform(u);
-        } while (dot(sphere_dir, light_normal) <= 0.f);
-    }
-    return light_normal;
+float Diffuse_Sphere_Light_Sampler::sample(Vector2 u, Vector3* wi) const {
+    ASSERT(u < Vector2(1));
+
+    float radius2 = light.radius * light.radius;
+    float d_center2 = d_center * d_center;
+
+    // theta and phi are computed based on uniform sampling of cone's solid angle
+    float cos_theta = (1.f - u[0]) + u[0] * cos_theta_max;
+    float phi = 2.f * Pi * u[1];
+
+    // compute distance to the sample point, which is determined where (theta, phi) direction intersects the sphere
+    float sin_theta2 = std::max(0.f, 1.f - cos_theta * cos_theta);
+    float d_sample = d_center * cos_theta - std::sqrt(std::max(0.f, radius2 - d_center2 * sin_theta2));
+    ASSERT(d_sample >= 0.f);
+
+    // compute angle determined by the direction from the sphere center to the intersection point using the law of cosines
+    float cos_alpha = (d_center2 + radius2 - d_sample * d_sample) / (2.f * d_center * light.radius);
+    float sin_alpha = std::sqrt(std::max(0.f, 1.f - cos_alpha * cos_alpha));
+
+    // compute direction from the sphere center to the sampled point
+    Vector3 direction = (sin_alpha * std::cos(phi)) * axes[0] +  (sin_alpha * std::sin(phi)) * axes[1] + cos_alpha * axes[2];
+
+    Vector3 p = light.radius * direction;
+    p = offset_ray_origin(p, direction);
+    p += light.position;
+    Vector3 light_vector = p - shading_pos;
+
+    float distance_to_sample = light_vector.length();
+    *wi = light_vector / distance_to_sample;
+    return distance_to_sample;
 }
 
-float Diffuse_Sphere_Light_Area_Sampler::pdf(const Vector3& wi) const {
-    Ray light_visibility_ray(shading_pos, wi);
-
-    Intersection isect;
-    if (!scene_ctx->acceleration_structure->intersect(light_visibility_ray, isect))
-        return 0.f;
-
-     if (isect.scene_object->area_light != light_handle)
-         return 0.f;
-
-    Vector3 light_normal;
-    {
-        // TODO: provide more simple way to init local geom having intersection data, without creating Shading_Context instance
-        Shading_Point_Rays rays;
-        rays.incident_ray = light_visibility_ray;
-        rays.auxilary_ray_dx_offset = light_visibility_ray;
-        rays.auxilary_ray_dy_offset = light_visibility_ray;
-        Thread_Context temp_thread_ctx;
-        Shading_Context shading_ctx2(*scene_ctx, temp_thread_ctx, rays, isect);
-        light_normal = shading_ctx2.N;
-    }
-    float light_n_dot_wi = dot(light_normal, -wi);
-    ASSERT(light_n_dot_wi > 0.f);
-
-    float omega_pdf = area_pdf * isect.t * isect.t / light_n_dot_wi; // convert to solid angle pdf
-    return omega_pdf;
+bool Diffuse_Sphere_Light_Sampler::is_direction_inside_light_cone(const Vector3& wi) const {
+    return dot(-axes[2], wi) >= cos_theta_max;
 }

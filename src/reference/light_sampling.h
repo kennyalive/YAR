@@ -27,20 +27,25 @@ struct Environment_Light_Sampler {
     float pdf(const Vector3& world_direction) const;
 };
 
-struct Diffuse_Sphere_Light_Area_Sampler {
-    const Scene_Context* scene_ctx = nullptr;
-    pcg32_random_t* rng = nullptr;
+struct Diffuse_Sphere_Light_Sampler {
+    const Diffuse_Sphere_Light& light;
     Vector3 shading_pos;
-    Light_Handle light_handle;
-    Vector3 sphere_center;
-    float area_pdf = 0.f;
 
-    Diffuse_Sphere_Light_Area_Sampler(
-        const Scene_Context* scene_ctx,
-        pcg32_random_t* rng,
-        const Vector3& shading_pos,
-        int light_index);
+    // coordinate system formed by the direction (light position -> shading point) as z axis
+    // and two other orthogonal axes are choosen arbitrarily
+    Vector3 axes[3];
 
-    Vector3 sample_direction_on_sphere();
-    float pdf(const Vector3& wi) const;
+    float d_center = 0.f; // distance from shading_pos to light center
+    float cos_theta_max = 0.f;
+    float cone_sampling_pdf = 0.f;
+
+    Diffuse_Sphere_Light_Sampler(
+        const Diffuse_Sphere_Light& light,
+        const Vector3& shading_pos);
+
+    // Returns distance to the sampled point on the sphere.
+    // Output parameter wi - direction from the shading position to the sampled point
+    float sample(Vector2 u, Vector3* wi) const;
+
+    bool is_direction_inside_light_cone(const Vector3& wi) const;
 };

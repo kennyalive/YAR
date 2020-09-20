@@ -83,41 +83,35 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
     }
 
     for (auto [light_num, light] : enumerate(ctx.lights.diffuse_sphere_lights)) {
-        Diffuse_Sphere_Light_Area_Sampler sampler(&ctx, rng, shading_ctx.P, (int)light_num);
+        const Light_Handle light_handle = {Light_Type::diffuse_sphere, (int)light_num};
+        Diffuse_Sphere_Light_Sampler sampler(light, shading_ctx.P);
 
         ColorRGB L2;
         for (int i = 0; i < light.sample_count; i++) {
             // Light sampling part of MIS.
             {
-                Vector3 light_n = sampler.sample_direction_on_sphere();
+                Vector2 u{ random_float(rng), random_float(rng) };
 
-                Vector3 p = light.radius * light_n;
-                p = offset_ray_origin(p, light_n);
-                p += light.position;
+                Vector3 wi;
+                float distance_to_sample = sampler.sample(u, &wi);
 
-                Vector3 light_vector = p - shading_ctx.P;
-                float distance = light_vector.length();
-                Vector3 wi = light_vector / distance;
+                float n_dot_wi = dot(shading_ctx.N, wi);
+                bool scattering_possible = n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
+                                           n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
 
-                float light_n_dot_wi = dot(light_n, -wi);
-                if (light_n_dot_wi > 0.f) { // early light visiblity test
-                    float n_dot_wi = dot(shading_ctx.N, wi);
+                if (scattering_possible) {
+                    ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.Wo, wi);
 
-                    bool scattering_possible = n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
-                                               n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
+                    if (!f.is_black()) {
+                        Ray light_visibility_ray(shading_ctx.P, wi);
+                        bool occluded = ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample);
 
-                    if (scattering_possible) {
-                        ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.Wo, wi);
-                        if (!f.is_black()) {
-                            Ray visibility_ray(shading_ctx.P, wi);
-                            bool occluded = ctx.acceleration_structure->intersect_any(visibility_ray, distance);
-                            if (!occluded) {
-                                float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.Wo, wi);
-                                float light_pdf = (sampler.area_pdf * distance * distance) / light_n_dot_wi; // convert to solid angle pdf
-                                float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
+                        if (!occluded) {
+                            float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.Wo, wi);
+                            float light_pdf = sampler.cone_sampling_pdf;
+                            float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
 
-                                L2 += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
-                            }
+                            L2 += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
                         }
                     }
                 }
@@ -133,12 +127,19 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
 
                 if (!f.is_black()) {
                     ASSERT(bsdf_pdf > 0.f);
-                    float light_pdf = sampler.pdf(wi);
-                    if (light_pdf != 0.f) {
-                        ASSERT(light_pdf > 0.f);
-                        float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
-                        float n_dot_wi = dot(shading_ctx.N, wi);
-                        L2 += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / bsdf_pdf);
+
+                    if (sampler.is_direction_inside_light_cone(wi)) {
+                        Intersection isect;
+                        Ray light_visibility_ray(shading_ctx.P, wi);
+                        bool found_isect = ctx.acceleration_structure->intersect(light_visibility_ray, isect);
+
+                        if (found_isect && isect.scene_object->area_light == light_handle) {
+                            float light_pdf = sampler.cone_sampling_pdf;
+                            float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
+                            float n_dot_wi = dot(shading_ctx.N, wi);
+
+                            L2 += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / bsdf_pdf);
+                        }
                     }
                 }
             }
