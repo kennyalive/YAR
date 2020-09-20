@@ -1,13 +1,33 @@
 #pragma once
 
+#include "vector.h"
+
 #include "pcg/pcg_basic.h"
 
-// [0, 1)
-inline float random_float(pcg32_random_t* rng) {
-    union {
-        float f;
-        uint32_t i;
-    } u;
-    u.i = (pcg32_random_r(rng) >> 9) | 0x3f800000u;
-    return u.f - 1.0f;
-}
+struct RNG {
+    pcg32_random_t pcg_state;
+
+    void init(uint64_t init_state, uint64_t stream_id) {
+        pcg32_srandom_r(&pcg_state, init_state, stream_id);
+    }
+
+    // [0, 1)
+    float get_float() {
+        union {
+            float f;
+            uint32_t i;
+        } u;
+        u.i = (pcg32_random_r(&pcg_state) >> 9) | 0x3f800000u;
+        return u.f - 1.0f;
+    }
+
+    Vector2 get_vector2() {
+        float x = get_float();
+        float y = get_float();
+        return {x, y};
+    }
+
+    Vector2 get_signed_vector2() {
+        return 2.f * get_vector2() - Vector2(1.f);
+    }
+};

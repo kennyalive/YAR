@@ -30,13 +30,13 @@ void test_uniform_sphere_sampling() {
     for (auto& theta_slice : sphere_sectors)
         theta_slice.resize(phi_slice_count, 0);
 
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 0, 0x12345);
+    RNG rng;
+    rng.init(0, 0x12345);
 
     Timestamp t;
     int failed_estimate_count = 0;
     for (int i = 0; i < n; i++) {
-        Vector2 u = { random_float(&rng), random_float(&rng) };
+        Vector2 u = rng.get_vector2();
         Vector3 p = sample_sphere_uniform(u);
 
         ASSERT(std::abs(p.z) <= 1.f);
@@ -101,13 +101,13 @@ void test_uniform_hemisphere_sampling() {
     for (auto& theta_slice : sphere_sectors)
         theta_slice.resize(phi_slice_count, 0);
 
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 0, 0x12345);
+    RNG rng;
+    rng.init(0, 0x12345);
 
     Timestamp t;
     int failed_estimate_count = 0;
     for (int i = 0; i < n; i++) {
-        Vector2 u = { random_float(&rng), random_float(&rng) };
+        Vector2 u = rng.get_vector2();
         Vector3 p = sample_hemisphere_uniform(u);
 
         ASSERT(p.z >= 0 && p.z <= 1.f);
@@ -172,13 +172,13 @@ void test_cosine_hemisphere_sampling() {
     for (auto& theta_slice : sphere_sectors)
         theta_slice.resize(phi_slice_count, 0);
 
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 0, 0x12345);
+    RNG rng;
+    rng.init(0, 0x12345);
 
     Timestamp t;
     int failed_estimate_count = 0;
     for (int i = 0; i < n; i++) {
-        Vector2 u = { random_float(&rng), random_float(&rng) };
+        Vector2 u = rng.get_vector2();
         Vector3 p = sample_hemisphere_cosine(u);
 
         ASSERT(p.z >= 0 && p.z <= 1.f);
@@ -230,14 +230,14 @@ void test_uniform_cdf_sampling() {
     }
     cdf[N-1] = 1.f;
 
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 0, 0x12345);
+    RNG rng;
+    rng.init(0, 0x12345);
 
     std::vector<int> buckets(100, 0);
     const int Sample_Count = 100000;
 
     for (int i = 0; i < Sample_Count; i++) {
-        float s = sample_from_CDF(random_float(&rng), cdf.data(), int(cdf.size()), interval_length);
+        float s = sample_from_CDF(rng.get_float(), cdf.data(), int(cdf.size()), interval_length);
         ASSERT(s >= 0.f && s < 1.f);
         int bucket_index = int(s * buckets.size());
         ASSERT(bucket_index < (int)buckets.size());
@@ -280,14 +280,14 @@ void test_non_uniform_cdf_sampling() {
     }
     cdf[N-1] = 1.f;
 
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 0, 0x12345);
+    RNG rng;
+    rng.init(0, 0x12345);
 
     std::vector<int> buckets(100, 0);
     const int Sample_Count = 1'000'000;
 
     for (int i = 0; i < Sample_Count; i++) {
-        float s = sample_from_CDF(random_float(&rng), cdf.data(), int(cdf.size()), interval_length);
+        float s = sample_from_CDF(rng.get_float(), cdf.data(), int(cdf.size()), interval_length);
         ASSERT(s >= 0.f && s < 1.f);
         int bucket_index = int(s * buckets.size());
         ASSERT(bucket_index < (int)buckets.size());
@@ -322,11 +322,11 @@ void test_uniform_2d_distribution_sampling() {
     std::vector<int> buckets(nx * ny, 0);
     const int Sample_Count = 10'000;
 
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 0, 0x12345);
+    RNG rng;
+    rng.init(0, 0x12345);
 
     for (int i = 0; i < Sample_Count; i++) {
-        Vector2 u = { random_float(&rng), random_float(&rng) };
+        Vector2 u = rng.get_vector2();
         Vector2 s = sampler.sample(u);
 
         int x = int(s[0] * nx);
@@ -368,11 +368,11 @@ void test_non_uniform_2d_distribution_sampling() {
     std::vector<int> buckets(nx * ny, 0);
     const int Sample_Count = 100'000;
 
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 0, 0x12345);
+    RNG rng;
+    rng.init(0, 0x12345);
 
     for (int i = 0; i < Sample_Count; i++) {
-        Vector2 u = { random_float(&rng), random_float(&rng) };
+        Vector2 u = rng.get_vector2();
         Vector2 s = sampler.sample(u);
 
         int x = int(s[0] * nx);

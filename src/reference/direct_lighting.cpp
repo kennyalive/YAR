@@ -15,7 +15,7 @@ inline float mis_power_heuristic(float pdf1, float pdf2) {
     return pdf1*pdf1 / (pdf1*pdf1 + pdf2*pdf2);
 }
 
-static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng) {
+static ColorRGB sample_lights(const Scene_Context& ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx) {
     ColorRGB L;
 
     for (const Point_Light& light : ctx.lights.point_lights) {
@@ -53,7 +53,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
     for (const Diffuse_Rectangular_Light& light : ctx.lights.diffuse_rectangular_lights) {
         ColorRGB L2;
         for (int i = 0; i < light.sample_count; i++) {
-            Vector2 u{ 2.0f * random_float(rng) - 1.0f, 2.0f * random_float(rng) - 1.0f };
+            Vector2 u = thread_ctx.rng.get_signed_vector2();
             Vector3 local_light_point = Vector3{ light.size.x / 2.0f * u.x, light.size.y / 2.0f * u.y, 0.0f };
             Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
 
@@ -90,7 +90,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
         for (int i = 0; i < light.sample_count; i++) {
             // Light sampling part of MIS.
             {
-                Vector2 u{ random_float(rng), random_float(rng) };
+                Vector2 u = thread_ctx.rng.get_vector2();
 
                 Vector3 wi;
                 float distance_to_sample = sampler.sample(u, &wi);
@@ -119,7 +119,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
 
             // BSDF sampling part of MIS.
             {
-                Vector2 u{ random_float(rng), random_float(rng) };
+                Vector2 u = thread_ctx.rng.get_vector2();
 
                 Vector3 wi;
                 float bsdf_pdf;
@@ -153,7 +153,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
         for (int i = 0; i < ctx.environment_light_sampler.light->sample_count; i++) {
             // Light sampling part of MIS.
             {
-                Vector2 u{ random_float(rng), random_float(rng) };
+                Vector2 u = thread_ctx.rng.get_vector2();
                 Light_Sample light_sample = ctx.environment_light_sampler.sample(u);
 
                 float N_dot_Wi = dot(shading_ctx.N, light_sample.Wi);
@@ -180,7 +180,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
                 Vector3 wi;
                 float bsdf_pdf;
 
-                Vector2 u{ random_float(rng), random_float(rng) };
+                Vector2 u = thread_ctx.rng.get_vector2();
                 ColorRGB f = shading_ctx.bsdf->sample(u, shading_ctx.Wo, &wi, &bsdf_pdf);
 
                 if (!f.is_black()) {
@@ -206,7 +206,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, const Shading_Context& s
     return L;
 }
 
-static ColorRGB reflect_from_mirror_surface(const Scene_Context& ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng, int max_specular_depth) {
+static ColorRGB reflect_from_mirror_surface(const Scene_Context& ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, int max_specular_depth) {
     Ray reflected_ray;
     reflected_ray.origin = shading_ctx.P;
     reflected_ray.direction = shading_ctx.N * (2.f * dot(shading_ctx.N, shading_ctx.Wo)) - shading_ctx.Wo;
@@ -220,7 +220,7 @@ static ColorRGB reflect_from_mirror_surface(const Scene_Context& ctx, Thread_Con
         rays.auxilary_ray_dy_offset = reflected_ray;
 
         Shading_Context shading_ctx2(ctx, thread_ctx, rays, isect);
-        ColorRGB reflected_radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx2, rng, max_specular_depth);
+        ColorRGB reflected_radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx2, max_specular_depth);
         return reflected_radiance * shading_ctx.mirror_reflectance;
     }
     else if (ctx.has_environment_light_sampler) {
@@ -231,25 +231,25 @@ static ColorRGB reflect_from_mirror_surface(const Scene_Context& ctx, Thread_Con
     }
 }
 
-ColorRGB estimate_direct_lighting(const Scene_Context& ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, pcg32_random_t* rng, int max_specular_depth)
+ColorRGB estimate_direct_lighting(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, int max_specular_depth)
 {
     ColorRGB L;
     if (shading_ctx.mirror_surface) {
         if (max_specular_depth > 0) {
-            L = reflect_from_mirror_surface(ctx, thread_ctx, shading_ctx, rng, --max_specular_depth);
+            L = reflect_from_mirror_surface(scene_ctx, thread_ctx, shading_ctx, --max_specular_depth);
         }
     }
     else if (shading_ctx.area_light != Null_Light) {
         if (shading_ctx.area_light.type == Light_Type::diffuse_rectangular) {
-            L = ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
+            L = scene_ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
         }
         else {
             ASSERT(shading_ctx.area_light.type == Light_Type::diffuse_sphere);
-            L = ctx.lights.diffuse_sphere_lights[shading_ctx.area_light.index].emitted_radiance;
+            L = scene_ctx.lights.diffuse_sphere_lights[shading_ctx.area_light.index].emitted_radiance;
         }
     }
     else {
-        L = sample_lights(ctx, shading_ctx, rng);
+        L = sample_lights(scene_ctx, thread_ctx, shading_ctx);
     }
     return L;
 }

@@ -118,9 +118,7 @@ static Scene_KdTree load_scene_kdtree(const Scene& scene) {
 }
 
 static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, uint64_t rng_seed, Film& film) {
-    pcg32_random_t rng;
-    pcg32_srandom_r(&rng, 0, rng_seed);
-
+    thread_ctx.rng.init(0, rng_seed);
     Film_Tile tile(pixel_bounds, film.filter);
 
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
@@ -145,7 +143,7 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
                     continue;
                 }*/
 
-                ColorRGB radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx, &rng);
+                ColorRGB radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx);
                 if (!radiance.is_black())
                     tile.add_sample(film_pos, radiance);
             }

@@ -5,6 +5,7 @@
 #include "kdtree.h"
 
 #include "lib/light.h"
+#include "lib/random.h"
 #include "lib/utils.h"
 
 class Camera;
@@ -23,4 +24,5 @@ struct Scene_Context {
 
 struct Thread_Context {
     Memory_Pool memory_pool;
+    RNG rng;
 };
