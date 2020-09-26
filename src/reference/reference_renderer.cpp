@@ -144,13 +144,11 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
                 }*/
 
                 ColorRGB radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx);
-                if (!radiance.is_black())
-                    tile.add_sample(film_pos, radiance);
+                tile.add_sample(film_pos, radiance);
             }
             else if (ctx.has_environment_light_sampler) {
                 ColorRGB radiance = ctx.environment_light_sampler.get_radiance_for_direction(ray.direction);
-                if (!radiance.is_black())
-                    tile.add_sample(film_pos, radiance);
+                tile.add_sample(film_pos, radiance);
             }
         }
     }
