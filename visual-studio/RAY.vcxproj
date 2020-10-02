@@ -104,6 +104,7 @@
     <ClCompile Include="..\src\reference\light_sampling.cpp" />
     <ClCompile Include="..\src\reference\main.cpp" />
     <ClCompile Include="..\src\reference\parameter_evaluation.cpp" />
+    <ClCompile Include="..\src\reference\pixel_sampling.cpp" />
     <ClCompile Include="..\src\reference\reference_renderer.cpp" />
     <ClCompile Include="..\src\reference\sampling.cpp" />
     <ClCompile Include="..\src\reference\scattering.cpp" />
@@ -122,6 +123,7 @@
     <ClInclude Include="..\src\reference\bsdf.h" />
     <ClInclude Include="..\src\reference\light_sampling.h" />
     <ClInclude Include="..\src\reference\parameter_evaluation.h" />
+    <ClInclude Include="..\src\reference\pixel_sampling.h" />
     <ClInclude Include="..\src\reference\scattering.h" />
     <ClInclude Include="..\src\reference\camera.h" />
     <ClInclude Include="..\src\reference\context.h" />

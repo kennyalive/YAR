@@ -3,6 +3,7 @@
 #include "image_texture.h"
 #include "light_sampling.h"
 #include "kdtree.h"
+#include "pixel_sampling.h"
 
 #include "lib/light.h"
 #include "lib/random.h"
@@ -25,4 +26,5 @@ struct Scene_Context {
 struct Thread_Context {
     Memory_Pool memory_pool;
     RNG rng;
+    Stratified_Pixel_Sampler pixel_sampler;
 };

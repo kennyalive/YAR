@@ -1,8 +1,10 @@
 #pragma once
 
+#include "random.h"
 #include "vector.h"
 
 struct Ray;
+struct RNG;
 
 #define ASSERT_ZERO_TO_ONE_RANGE(u) ASSERT((u) >= 0.f && (u) < 1.f)
 #define ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u) ASSERT((u) >= Vector2(0.f) && (u) < Vector2(1.f))
@@ -63,3 +65,13 @@ inline Vector3 reflect(const Vector3& v, const Vector3& n) {
 // This can be used to prevent self-intersection issues when tracing a ray
 // with the origin that is set to a surface point.
 Vector3 offset_ray_origin(const Vector3& p, const Vector3& geometric_normal);
+
+template <typename T>
+void shuffle(T* first, T* last, RNG& rng) {
+    uint32_t n = uint32_t(last - first);
+    ASSERT(n > 0);
+    for (uint32_t i = 0; i < n-1; i++) {
+        uint32_t k = i + rng.get_bounded_uint(n - i);
+        std::swap(first[i], first[k]);
+    }
+}

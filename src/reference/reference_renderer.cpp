@@ -123,32 +123,37 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
 
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
         for (int x = sample_bounds.p0.x; x < sample_bounds.p1.x; x++) {
-            thread_ctx.memory_pool.reset();
+            thread_ctx.pixel_sampler.generate_pixel_samples(thread_ctx.rng);
 
-            Vector2 film_pos = Vector2(x + 0.5f, y + 0.5f);
-            Ray ray = ctx.camera->generate_ray(film_pos);
+            for (int s = 0; s < thread_ctx.pixel_sampler.get_pixel_sample_count(); s++) {
+                thread_ctx.memory_pool.reset();
 
-            Intersection isect;
-            if (ctx.acceleration_structure->intersect(ray, isect)) {
-                Shading_Point_Rays rays;
-                rays.incident_ray = ray;
-                rays.auxilary_ray_dx_offset = ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
-                rays.auxilary_ray_dy_offset = ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
+                Vector2 film_pos = Vector2((float)x, (float)y) + thread_ctx.pixel_sampler.get_pixel_sample(s);
+                Ray ray = ctx.camera->generate_ray(film_pos);
 
-                Shading_Context shading_ctx(ctx, thread_ctx, rays, isect);
+                Intersection isect;
+                if (ctx.acceleration_structure->intersect(ray, isect)) {
+                    Shading_Point_Rays rays;
+                    rays.incident_ray = ray;
+                    rays.auxilary_ray_dx_offset = ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
+                    rays.auxilary_ray_dy_offset = ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
 
-                // debug visualization of samples with adjusted shading normal.
-                /*if (shading_ctx.shading_normal_adjusted) {
-                    tile.add_sample(film_pos, Color_Red); 
-                    continue;
-                }*/
+                    Shading_Context shading_ctx(ctx, thread_ctx, rays, isect);
 
-                ColorRGB radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx);
-                tile.add_sample(film_pos, radiance);
-            }
-            else if (ctx.has_environment_light_sampler) {
-                ColorRGB radiance = ctx.environment_light_sampler.get_radiance_for_direction(ray.direction);
-                tile.add_sample(film_pos, radiance);
+                    // debug visualization of samples with adjusted shading normal.
+                    /*if (shading_ctx.shading_normal_adjusted) {
+                        tile.add_sample(film_pos, Color_Red); 
+                        continue;
+                    }*/
+
+                    ColorRGB radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx);
+                    tile.add_sample(film_pos, radiance);
+                }
+                else if (ctx.has_environment_light_sampler) {
+                    ColorRGB radiance = ctx.environment_light_sampler.get_radiance_for_direction(ray.direction);
+                    tile.add_sample(film_pos, radiance);
+                }
+
             }
         }
     }
@@ -243,6 +248,10 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
 
     if (options.thread_count == 1) {
         thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
+        thread_contexts[0].pixel_sampler.init(1, 1);
+        for (const Diffuse_Sphere_Light& light : scene.lights.diffuse_sphere_lights) {
+            thread_contexts[0].pixel_sampler.register_light(light.sample_count);
+        }
         thread_context_initialized[0] = true;
 
         for (int y_tile = 0; y_tile < y_tile_count; y_tile++) {
@@ -274,6 +283,10 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
                 ASSERT(threadnum < 32);
                 if (!thread_context_initialized[threadnum]) {
                     thread_contexts[threadnum].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
+                    thread_contexts[threadnum].pixel_sampler.init(1, 1);
+                    for (const Diffuse_Sphere_Light& light : ctx->lights.diffuse_sphere_lights) {
+                        thread_contexts[threadnum].pixel_sampler.register_light(light.sample_count);
+                    }
                     thread_context_initialized[threadnum] = true;
                 }
                 render_tile(*ctx, thread_contexts[threadnum], tile_sample_bounds, tile_pixel_bounds, rng_seed, *film);

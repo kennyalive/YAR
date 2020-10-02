@@ -6,6 +6,7 @@
 #include "scattering.h"
 
 #include "lib/math.h"
+#include "lib/random.h"
 
 Vector3 sample_sphere_uniform(Vector2 u) {
     ASSERT(u < Vector2(1));
@@ -57,6 +58,25 @@ Vector3 uniform_sample_cone(Vector2 u, float cos_theta_max) {
 
 float uniform_cone_pdf(float cos_theta_max) {
     return 1.f / (2.f * Pi * (1.f - cos_theta_max));
+}
+
+void generate_stratified_sequence_1d(RNG& rng, int n, float* result) {
+    float dx = 1.f / float(n);
+    for (int x = 0; x < n; x++) {
+        result[x] = std::min((float(x) + rng.get_float()) * dx, One_Minus_Epsilon);
+    }
+}
+
+void generate_stratified_sequence_2d(RNG& rng, int nx, int ny, Vector2* result) {
+    float dx = 1.f / float(nx);
+    float dy = 1.f / float(ny);
+    for (int y = 0; y < ny; y++) {
+        for (int x = 0; x < nx; x++) {
+            float sx = std::min((float(x) + rng.get_float()) * dx, One_Minus_Epsilon);
+            float sy = std::min((float(y) + rng.get_float()) * dy, One_Minus_Epsilon);
+            result[y * nx + x] = Vector2(sx, sy);
+        }
+    }
 }
 
 float sample_from_CDF(float u, const float* cdf, int n, float interval_length /* 1/n */, float* pdf) {

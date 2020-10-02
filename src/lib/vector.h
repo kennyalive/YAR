@@ -245,6 +245,11 @@ inline Vector2 operator*(float t, const Vector2& v) {
     return v * t;
 }
 
+inline Vector2 operator/(const Vector2& v, float t) {
+    float t_inv = 1.f / t;
+    return Vector2(v.x * t_inv, v.y * t_inv);
+}
+
 inline Vector2 operator*(const Vector2& v1, const Vector2& v2) {
     return Vector2(v1.x * v2.x, v1.y * v2.y);
 }
