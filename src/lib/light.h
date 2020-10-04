@@ -67,7 +67,7 @@ struct Diffuse_Sphere_Light {
     Vector3 position;
     ColorRGB emitted_radiance;
     float radius = 0.f;
-    int sample_count = 1;
+    int sample_count = 0;
 };
 
 struct Environment_Light {
