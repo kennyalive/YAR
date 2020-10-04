@@ -86,14 +86,16 @@ static ColorRGB sample_lights(const Scene_Context& ctx, Thread_Context& thread_c
         const Light_Handle light_handle = {Light_Type::diffuse_sphere, (int)light_num};
         Diffuse_Sphere_Light_Sampler sampler(light, shading_ctx.P);
 
+        const auto& sampling_ids = ctx.array2d_ids.sphere_lights_sampling[light_num];
+        const Vector2* light_samples = thread_ctx.pixel_sampler.get_array2d(thread_ctx.current_pixel_sample_index, sampling_ids.light_array2d_id);
+        const Vector2* bsdf_samples = thread_ctx.pixel_sampler.get_array2d(thread_ctx.current_pixel_sample_index, sampling_ids.bsdf_array2d_id);
+
         ColorRGB L2;
         for (int i = 0; i < light.sample_count; i++) {
             // Light sampling part of MIS.
             {
-                Vector2 u = thread_ctx.rng.get_vector2();
-
                 Vector3 wi;
-                float distance_to_sample = sampler.sample(u, &wi);
+                float distance_to_sample = sampler.sample(light_samples[i], &wi);
 
                 float n_dot_wi = dot(shading_ctx.N, wi);
                 bool scattering_possible = n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
@@ -119,11 +121,9 @@ static ColorRGB sample_lights(const Scene_Context& ctx, Thread_Context& thread_c
 
             // BSDF sampling part of MIS.
             {
-                Vector2 u = thread_ctx.rng.get_vector2();
-
                 Vector3 wi;
                 float bsdf_pdf;
-                ColorRGB f = shading_ctx.bsdf->sample(u, shading_ctx.Wo, &wi, &bsdf_pdf);
+                ColorRGB f = shading_ctx.bsdf->sample(bsdf_samples[i], shading_ctx.Wo, &wi, &bsdf_pdf);
 
                 if (!f.is_black()) {
                     ASSERT(bsdf_pdf > 0.f);

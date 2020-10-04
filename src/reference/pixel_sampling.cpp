@@ -7,74 +7,76 @@
 #include "lib/math.h"
 #include "lib/random.h"
 
-void Stratified_Pixel_Sampler::init(int x_pixel_samples, int y_pixel_samples) {
+void Stratified_Pixel_Sampler_Configuration::init(int x_pixel_samples, int y_pixel_samples) {
     this->x_pixel_samples = x_pixel_samples;
     this->y_pixel_samples = y_pixel_samples;
-    image_plane_samples.resize(x_pixel_samples * y_pixel_samples);
 }
 
-int Stratified_Pixel_Sampler::register_light(int light_sample_count) {
-    int k = (int)std::ceil(std::sqrt(light_sample_count));
-    ASSERT(k*k >= light_sample_count);
-    ASSERT((k-1)*(k-1) < light_sample_count);
+int Stratified_Pixel_Sampler_Configuration::register_array2d_samples(int x_size, int y_size) {
+    Array2D_Info info;
+    info.x_size = x_size;
+    info.y_size = y_size;
+    info.first_sample_offset = array2d_samples_per_pixel;
+    array2d_infos.push_back(info);
 
-    Light_Info info;
-    info.x_light_samples = k;
-    info.y_light_samples = k;
-    info.first_sample_offset = (int)light_samples.size();
-    light_infos.push_back(info);
+    array2d_samples_per_pixel += (x_size * y_size) * (x_pixel_samples * y_pixel_samples);
 
-    int light_samples_per_pixel = (info.x_light_samples * info.y_light_samples) * (x_pixel_samples * y_pixel_samples);
-    light_samples.resize(light_samples.size() + light_samples_per_pixel);
-    return (int)light_infos.size() - 1;
+    return (int)array2d_infos.size() - 1;
 }
 
-void Stratified_Pixel_Sampler::generate_pixel_samples(RNG& rng) {
-    int pixel_sample_count = x_pixel_samples * y_pixel_samples;
+void Stratified_Pixel_Sampler::init(const Stratified_Pixel_Sampler_Configuration* config) {
+    this->config = config;
+    image_plane_samples.resize(config->x_pixel_samples * config->y_pixel_samples);
+    array2d_samples.resize(config->array2d_samples_per_pixel);
+}
+
+void Stratified_Pixel_Sampler::generate_samples(RNG& rng) {
+    int pixel_sample_count = config->x_pixel_samples * config->y_pixel_samples;
 
     // Film plane samples.
-    generate_stratified_sequence_2d(rng, x_pixel_samples, y_pixel_samples, image_plane_samples.data());
+    generate_stratified_sequence_2d(rng, config->x_pixel_samples, config->y_pixel_samples, image_plane_samples.data());
 
-    // Light samples.
-    for (const Light_Info& light_info : light_infos) {
-        int light_sample_count = light_info.x_light_samples * light_info.y_light_samples;
+    // Array 2D samples.
+    for (const auto& array_info : config->array2d_infos) {
+        int array_sample_count = array_info.x_size * array_info.y_size;
 
-        // sequence of light_sample_count grids of stratified samples of size (x_pixel_samples, y_pixel_samples)
-        std::vector<Vector2> stratified_grids(light_sample_count * pixel_sample_count);
+        // sequence of array_sample_count grids of stratified samples of size (x_pixel_samples, y_pixel_samples)
+        std::vector<Vector2> stratified_grids(array_sample_count * pixel_sample_count);
 
-        for (int i = 0; i < light_sample_count; i++) {
+        for (int i = 0; i < array_sample_count; i++) {
             Vector2* grid = &stratified_grids[i * pixel_sample_count];
-            generate_stratified_sequence_2d(rng, x_pixel_samples, y_pixel_samples, grid);
+            generate_stratified_sequence_2d(rng, config->x_pixel_samples, config->y_pixel_samples, grid);
             shuffle(grid, grid + pixel_sample_count, rng);
         }
 
-        float dx_light = 1.f / float(light_info.x_light_samples);
-        float dy_light = 1.f / float(light_info.y_light_samples);
-        Vector2* s = &light_samples[light_info.first_sample_offset];
+        float dx_array = 1.f / float(array_info.x_size);
+        float dy_array = 1.f / float(array_info.y_size);
+        Vector2* s = &array2d_samples[array_info.first_sample_offset];
 
         for (int i = 0; i < pixel_sample_count; i++) {
 
-            // Get the first light sample for the current pixel sample 'i'.
+            // Get the first array2d sample for the current pixel sample 'i'.
             // This sample is in the first stratified grid in position defined by pixel sample index.
             Vector2* u  = &stratified_grids[i];
 
-            for (int k = 0; k < light_sample_count; k++) {
-                int x = k % light_info.x_light_samples;
-                int y = k / light_info.x_light_samples;
+            for (int k = 0; k < array_sample_count; k++) {
+                int x = k % array_info.x_size;
+                int y = k / array_info.x_size;
 
-                float sx = std::min(float(x + u->x) * dx_light, One_Minus_Epsilon);
-                float sy = std::min(float(y + u->y) * dy_light, One_Minus_Epsilon);
+                float sx = std::min(float(x + u->x) * dx_array, One_Minus_Epsilon);
+                float sy = std::min(float(y + u->y) * dy_array, One_Minus_Epsilon);
                 *s++ = Vector2(sx, sy);
 
-                // Go to the next light sample for the current pixel sample 'i' by jumping
+                // Go to the next array2d sample for the current pixel sample 'i' by jumping
                 // to the same location in the next stratified grid.
-                u += pixel_sample_count; 
+                u += pixel_sample_count;
             }
         }
     }
 }
 
-const Vector2* Stratified_Pixel_Sampler::get_light_samples(int pixel_sample_index, int light_index) const {
-    const Light_Info& info = light_infos[light_index];
-    return &light_samples[info.first_sample_offset + pixel_sample_index * info.x_light_samples * info.y_light_samples];
+const Vector2* Stratified_Pixel_Sampler::get_array2d(int pixel_sample_index, int array2d_id) const {
+    ASSERT(array2d_id >= 0);
+    const auto& info = config->array2d_infos[array2d_id];
+    return &array2d_samples[info.first_sample_offset + pixel_sample_index * info.x_size * info.y_size];
 }

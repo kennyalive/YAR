@@ -117,18 +117,34 @@ static Scene_KdTree load_scene_kdtree(const Scene& scene) {
     return scene_kdtree;
 }
 
+static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pixel_sampler_config, Scene_Context& scene_ctx) {
+    pixel_sampler_config.init(1, 1);
+
+    scene_ctx.array2d_ids.sphere_lights_sampling.reserve(scene_ctx.lights.diffuse_sphere_lights.size());
+    for (const Diffuse_Sphere_Light& light : scene_ctx.lights.diffuse_sphere_lights) {
+        int k = (int)std::ceil(std::sqrt(light.sample_count));
+        ASSERT(k*k >= light.sample_count);
+        ASSERT((k-1)*(k-1) < light.sample_count);
+
+        int light_array2d_id = pixel_sampler_config.register_array2d_samples(k, k);
+        int bsdf_array2d_id = pixel_sampler_config.register_array2d_samples(k, k);
+        scene_ctx.array2d_ids.sphere_lights_sampling.push_back({light_array2d_id, bsdf_array2d_id});
+    }
+}
+
 static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, uint64_t rng_seed, Film& film) {
     thread_ctx.rng.init(0, rng_seed);
     Film_Tile tile(pixel_bounds, film.filter);
 
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
         for (int x = sample_bounds.p0.x; x < sample_bounds.p1.x; x++) {
-            thread_ctx.pixel_sampler.generate_pixel_samples(thread_ctx.rng);
+            thread_ctx.pixel_sampler.generate_samples(thread_ctx.rng);
 
             for (int s = 0; s < thread_ctx.pixel_sampler.get_pixel_sample_count(); s++) {
                 thread_ctx.memory_pool.reset();
+                thread_ctx.current_pixel_sample_index = s;
 
-                Vector2 film_pos = Vector2((float)x, (float)y) + thread_ctx.pixel_sampler.get_pixel_sample(s);
+                Vector2 film_pos = Vector2((float)x, (float)y) + thread_ctx.pixel_sampler.get_image_plane_position(s);
                 Ray ray = ctx.camera->generate_ray(film_pos);
 
                 Intersection isect;
@@ -208,6 +224,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     ctx.acceleration_structure = &scene_kdtree;
     ctx.lights = scene.lights;
     ctx.materials = scene.materials;
+    init_pixel_sampler_config(ctx.pixel_sampler_config, ctx);
 
     // Load textures.
     {
@@ -248,10 +265,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
 
     if (options.thread_count == 1) {
         thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
-        thread_contexts[0].pixel_sampler.init(1, 1);
-        for (const Diffuse_Sphere_Light& light : scene.lights.diffuse_sphere_lights) {
-            thread_contexts[0].pixel_sampler.register_light(light.sample_count);
-        }
+        thread_contexts[0].pixel_sampler.init(&ctx.pixel_sampler_config);
         thread_context_initialized[0] = true;
 
         for (int y_tile = 0; y_tile < y_tile_count; y_tile++) {
@@ -283,10 +297,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
                 ASSERT(threadnum < 32);
                 if (!thread_context_initialized[threadnum]) {
                     thread_contexts[threadnum].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
-                    thread_contexts[threadnum].pixel_sampler.init(1, 1);
-                    for (const Diffuse_Sphere_Light& light : ctx->lights.diffuse_sphere_lights) {
-                        thread_contexts[threadnum].pixel_sampler.register_light(light.sample_count);
-                    }
+                    thread_contexts[threadnum].pixel_sampler.init(&ctx->pixel_sampler_config);
                     thread_context_initialized[threadnum] = true;
                 }
                 render_tile(*ctx, thread_contexts[threadnum], tile_sample_bounds, tile_pixel_bounds, rng_seed, *film);
