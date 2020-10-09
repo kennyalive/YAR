@@ -53,6 +53,7 @@ namespace pbrt {
     TYPE_CAMERA,
     TYPE_FILM,
     TYPE_SPECTRUM,
+    TYPE_SAMPLER,
     
     TYPE_MATERIAL=10,
     TYPE_DISNEY_MATERIAL,
@@ -580,6 +581,7 @@ namespace pbrt {
       binary.write(pixelSamples);
       binary.write(xSamples);
       binary.write(ySamples);
+      return TYPE_SAMPLER;
   }
 
   void Sampler::readFrom(BinaryReader &binary) {
