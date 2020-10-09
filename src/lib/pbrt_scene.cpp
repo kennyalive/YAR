@@ -380,6 +380,13 @@ Scene load_pbrt_scene(const YAR_Project& project) {
         scene.image_resolution.y = pbrt_film->resolution.y;
     }
 
+    // Import sampler.
+    pbrt::Sampler::SP pbrt_sampler = pbrt_scene->sampler;
+    if (pbrt_sampler) {
+        scene.x_pixel_samples = pbrt_sampler->xSamples;
+        scene.y_pixel_samples = pbrt_sampler->ySamples;
+    }
+
     scene.lights.append(project.lights);
     return scene;
 }

@@ -118,7 +118,7 @@ static Scene_KdTree load_scene_kdtree(const Scene& scene) {
 }
 
 static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pixel_sampler_config, Scene_Context& scene_ctx) {
-    pixel_sampler_config.init(1, 1);
+    pixel_sampler_config.init(scene_ctx.scene->x_pixel_samples, scene_ctx.scene->y_pixel_samples);
 
     scene_ctx.array2d_ids.sphere_lights_sampling.reserve(scene_ctx.lights.diffuse_sphere_lights.size());
     for (const Diffuse_Sphere_Light& light : scene_ctx.lights.diffuse_sphere_lights) {
@@ -220,6 +220,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     const int y_tile_count = (sample_region_size.y + Tile_Size - 1) / Tile_Size;
 
     Scene_Context ctx;
+    ctx.scene = &scene;
     ctx.camera = &camera;
     ctx.acceleration_structure = &scene_kdtree;
     ctx.lights = scene.lights;

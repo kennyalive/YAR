@@ -11,6 +11,7 @@
 
 class Camera;
 class Image_Texture;
+struct Scene;
 
 // Array2D ids that can be supplied to pixel sampler's get_array2d() function.
 struct Array2D_Ids {
@@ -23,6 +24,7 @@ struct Array2D_Ids {
 };
 
 struct Scene_Context {
+    const Scene* scene = nullptr;
     const Camera* camera;
     const Scene_KdTree* acceleration_structure;
     Materials materials;
