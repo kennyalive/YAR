@@ -1112,6 +1112,25 @@ namespace pbrt {
     std::string        fileName;
   };
 
+  struct Sampler : public Entity {
+      typedef std::shared_ptr<Sampler> SP;
+
+      enum class Type {
+          stratified
+      };
+
+      Type type = Type::stratified;
+      int pixelSamples = 1;
+
+      // used by stratified sampler
+      int xSamples = 1;
+      int ySamples = 1;
+
+      std::string toString() const override { return "Sampler"; }
+      int writeTo(BinaryWriter &) override;
+      void readFrom(BinaryReader &) override;
+  };
+
   /*! the complete scene - pretty much the 'root' object that
     contains the WorldBegin/WorldEnd entities, plus high-level
     stuff like camera, frame buffer specification, etc */
@@ -1156,6 +1175,8 @@ namespace pbrt {
     std::vector<Camera::SP> cameras;
       
     Film::SP                film;
+
+    Sampler::SP             sampler;
     
     /*! the worldbegin/worldend content */
     Object::SP              world;

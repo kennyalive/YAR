@@ -574,7 +574,22 @@ namespace pbrt {
     binary.read(fileName);
   }
 
+  int Sampler::writeTo(BinaryWriter &binary) {
+      int samplerType = static_cast<int>(type);
+      binary.write(samplerType);
+      binary.write(pixelSamples);
+      binary.write(xSamples);
+      binary.write(ySamples);
+  }
 
+  void Sampler::readFrom(BinaryReader &binary) {
+      int samplerType;
+      binary.read(samplerType);
+      type = static_cast<Type>(samplerType);
+      binary.read(pixelSamples);
+      binary.read(xSamples);
+      binary.read(ySamples);
+  }
 
   /*! serialize out to given binary writer */
   int Shape::writeTo(BinaryWriter &binary) 
