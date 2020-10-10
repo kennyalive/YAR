@@ -14,7 +14,7 @@ void createSampler(Scene::SP ours, pbrt::syntactic::Scene::SP pbrt)
     if (pbrt->sampler->type == "halton") {
         ours->sampler->type = Sampler::Type::stratified; // use stratified sampler until halton is supported
         int n = pbrt->sampler->getParam1i("pixelsamples", 1);
-        int k = (int)std::ceil(std::sqrt(ours->sampler->pixelSamples));
+        int k = (int)std::ceil(std::sqrt(n));
         ours->sampler->xSamples = k;
         ours->sampler->ySamples = k;
         ours->sampler->pixelSamples = k*k;

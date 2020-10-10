@@ -264,6 +264,55 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
     scene->camera_fov_y = pbrt_camera->fov;
 }
 
+static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size, Matrix3x4& transform) {
+    if (mesh.vertices.size() != 4 || mesh.indices.size() != 6)
+        return false;
+
+    Vector3 p[3] = {
+        mesh.vertices[mesh.indices[0]],
+        mesh.vertices[mesh.indices[1]],
+        mesh.vertices[mesh.indices[2]]
+    };
+    Vector3 v[3] = {
+        p[1] - p[0],
+        p[2] - p[1],
+        p[0] - p[2]
+    };
+    Vector3 d[3] = {
+        v[0].normalized(),
+        v[1].normalized(),
+        v[2].normalized()
+    };
+
+    int k = 0;
+    for (; k < 3; k++) {
+        if (std::abs(dot(d[k], d[(k+1)%3])) < 1e-4f) {
+            break;
+        }
+    }
+    if (k == 3)
+        return false;
+
+    Vector3 mid_point = (mesh.vertices[0] + mesh.vertices[1] + mesh.vertices[2] + mesh.vertices[3]) * 0.25f;
+    Vector3 test_point = (p[k] + p[(k+2)%3]) * 0.5f;
+
+    if ((mid_point - test_point).length() > 1e-4f)
+        return false;
+
+    Vector3 x_axis = d[k];
+    Vector3 y_axis = d[(k+1)%3];
+    Vector3 z_axis = cross(x_axis, y_axis);
+
+    size.x = v[k].length();
+    size.y = v[(k+1)%3].length();
+
+    transform.set_column(0, x_axis);
+    transform.set_column(1, y_axis);
+    transform.set_column(2, z_axis);
+    transform.set_column(3, mid_point);
+    return true;
+}
+
 //
 // PBRT scene main loading routine.
 //
@@ -291,8 +340,29 @@ Scene load_pbrt_scene(const YAR_Project& project) {
 
             if (imported_shape.geometry == Null_Geometry) {
                 pbrt::TriangleMesh::SP pbrt_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(shape);
-                if (pbrt_mesh != nullptr)
+                if (pbrt_mesh != nullptr) {
                     imported_shape.geometry = import_pbrt_triangle_mesh(pbrt_mesh, &scene);
+                    if (shape->areaLight != nullptr) {
+                        pbrt::DiffuseAreaLightRGB::SP pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(shape->areaLight);
+                        if (pbrt_diffuse_area_light_rgb) {
+                            Vector2 rect_size;
+                            Matrix3x4 rect_transform;
+                            const Triangle_Mesh& mesh = scene.geometries.triangle_meshes[imported_shape.geometry.index];
+                            if (check_if_mesh_is_rectangle(mesh, rect_size, rect_transform)) {
+                                Diffuse_Rectangular_Light light;
+                                light.light_to_world_transform = rect_transform;
+                                light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
+                                light.size = rect_size;
+                                light.sample_count = pbrt_diffuse_area_light_rgb->nSamples;
+                                scene.lights.diffuse_rectangular_lights.push_back(light);
+                                area_light = {Light_Type::diffuse_rectangular, (int)scene.lights.diffuse_rectangular_lights.size() - 1};
+                            }
+                            else {
+                                error("triangle mesh light sources are not supported yet");
+                            }
+                        }
+                    }
+                }
 
                 pbrt::Sphere::SP pbrt_sphere = std::dynamic_pointer_cast<pbrt::Sphere>(shape);
                 if (pbrt_sphere != nullptr) {
