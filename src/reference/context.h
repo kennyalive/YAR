@@ -13,14 +13,15 @@ class Camera;
 class Image_Texture;
 struct Scene;
 
-// Array2D ids that can be supplied to pixel sampler's get_array2d() function.
-struct Array2D_Ids {
-    struct MIS_Info {
-        int light_array2d_id = -1;
-        int bsdf_array2d_id = -1;
-    };
-    std::vector<MIS_Info> rectangular_lights_sampling;
-    std::vector<MIS_Info> sphere_lights_sampling;
+struct MIS_Array_Info {
+    int light_array_id = -1;
+    int bsdf_array_id = -1;
+    int array_size = 0;
+};
+
+struct Array2D_Registry {
+    std::vector<MIS_Array_Info> rectangular_light_arrays;
+    std::vector<MIS_Array_Info> sphere_light_arrays;
 };
 
 struct Scene_Context {
@@ -30,7 +31,7 @@ struct Scene_Context {
     Materials materials;
     std::vector<Image_Texture> textures;
     Stratified_Pixel_Sampler_Configuration pixel_sampler_config;
-    Array2D_Ids array2d_ids;
+    Array2D_Registry array2d_registry; // registered 2d arrays of samples
 
     // Light data
     Lights lights;

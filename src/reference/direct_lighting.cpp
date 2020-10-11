@@ -50,10 +50,15 @@ static ColorRGB sample_lights(const Scene_Context& ctx, Thread_Context& thread_c
         L += bsdf * light.irradiance * n_dot_l;
     }
 
-    for (const Diffuse_Rectangular_Light& light : ctx.lights.diffuse_rectangular_lights) {
+    for (auto [light_index, light] : enumerate(ctx.lights.diffuse_rectangular_lights)) {
+        const MIS_Array_Info& array_info = ctx.array2d_registry.rectangular_light_arrays[light_index];
+
+        const Vector2* light_samples = thread_ctx.pixel_sampler.get_array2d(thread_ctx.current_pixel_sample_index, array_info.light_array_id);
+        int sample_count = array_info.array_size;
+
         ColorRGB L2;
-        for (int i = 0; i < light.sample_count; i++) {
-            Vector2 u = thread_ctx.rng.get_signed_vector2();
+        for (int i = 0; i < sample_count; i++) {
+            Vector2 u = 2.f * light_samples[i] - Vector2(1.f);
             Vector3 local_light_point = Vector3{ light.size.x / 2.0f * u.x, light.size.y / 2.0f * u.y, 0.0f };
             Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
 
@@ -78,20 +83,21 @@ static ColorRGB sample_lights(const Scene_Context& ctx, Thread_Context& thread_c
             ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light_dir);
             L2 += (light.size.x * light.size.y) * light.emitted_radiance * bsdf * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
-        L2 /= float(light.sample_count);
+        L2 /= float(sample_count);
         L += L2;
     }
 
-    for (auto [light_num, light] : enumerate(ctx.lights.diffuse_sphere_lights)) {
-        const Light_Handle light_handle = {Light_Type::diffuse_sphere, (int)light_num};
+    for (auto [light_index, light] : enumerate(ctx.lights.diffuse_sphere_lights)) {
+        const Light_Handle light_handle = {Light_Type::diffuse_sphere, (int)light_index};
         Diffuse_Sphere_Light_Sampler sampler(light, shading_ctx.P);
 
-        const auto& sampling_ids = ctx.array2d_ids.sphere_lights_sampling[light_num];
-        const Vector2* light_samples = thread_ctx.pixel_sampler.get_array2d(thread_ctx.current_pixel_sample_index, sampling_ids.light_array2d_id);
-        const Vector2* bsdf_samples = thread_ctx.pixel_sampler.get_array2d(thread_ctx.current_pixel_sample_index, sampling_ids.bsdf_array2d_id);
+        const MIS_Array_Info& array_info = ctx.array2d_registry.sphere_light_arrays[light_index];
+        const Vector2* light_samples = thread_ctx.pixel_sampler.get_array2d(thread_ctx.current_pixel_sample_index, array_info.light_array_id);
+        const Vector2* bsdf_samples = thread_ctx.pixel_sampler.get_array2d(thread_ctx.current_pixel_sample_index, array_info.bsdf_array_id);
+        int sample_count = array_info.array_size;
 
         ColorRGB L2;
-        for (int i = 0; i < light.sample_count; i++) {
+        for (int i = 0; i < sample_count; i++) {
             // Light sampling part of MIS.
             {
                 Vector3 wi;
@@ -144,7 +150,7 @@ static ColorRGB sample_lights(const Scene_Context& ctx, Thread_Context& thread_c
                 }
             }
         }
-        L2 /= float(light.sample_count);
+        L2 /= float(sample_count);
         L += L2;
     }
 

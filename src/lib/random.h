@@ -37,8 +37,4 @@ struct RNG {
         float y = get_float();
         return {x, y};
     }
-
-    Vector2 get_signed_vector2() {
-        return 2.f * get_vector2() - Vector2(1.f);
-    }
 };

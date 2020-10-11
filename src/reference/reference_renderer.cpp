@@ -120,15 +120,30 @@ static Scene_KdTree load_scene_kdtree(const Scene& scene) {
 static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pixel_sampler_config, Scene_Context& scene_ctx) {
     pixel_sampler_config.init(scene_ctx.scene->x_pixel_samples, scene_ctx.scene->y_pixel_samples);
 
-    scene_ctx.array2d_ids.sphere_lights_sampling.reserve(scene_ctx.lights.diffuse_sphere_lights.size());
+    scene_ctx.array2d_registry.rectangular_light_arrays.reserve(scene_ctx.lights.diffuse_rectangular_lights.size());
+    for (const Diffuse_Rectangular_Light& light : scene_ctx.lights.diffuse_rectangular_lights) {
+        int k = (int)std::ceil(std::sqrt(light.sample_count));
+        ASSERT(k*k >= light.sample_count);
+        ASSERT((k-1)*(k-1) < light.sample_count);
+
+        MIS_Array_Info info;
+        info.light_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+        info.bsdf_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+        info.array_size = k*k;
+        scene_ctx.array2d_registry.rectangular_light_arrays.push_back(info);
+    }
+
+    scene_ctx.array2d_registry.sphere_light_arrays.reserve(scene_ctx.lights.diffuse_sphere_lights.size());
     for (const Diffuse_Sphere_Light& light : scene_ctx.lights.diffuse_sphere_lights) {
         int k = (int)std::ceil(std::sqrt(light.sample_count));
         ASSERT(k*k >= light.sample_count);
         ASSERT((k-1)*(k-1) < light.sample_count);
 
-        int light_array2d_id = pixel_sampler_config.register_array2d_samples(k, k);
-        int bsdf_array2d_id = pixel_sampler_config.register_array2d_samples(k, k);
-        scene_ctx.array2d_ids.sphere_lights_sampling.push_back({light_array2d_id, bsdf_array2d_id});
+        MIS_Array_Info info;
+        info.light_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+        info.bsdf_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+        info.array_size = k*k;
+        scene_ctx.array2d_registry.sphere_light_arrays.push_back(info);
     }
 }
 
