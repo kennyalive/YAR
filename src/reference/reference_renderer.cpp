@@ -206,9 +206,13 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
 
     Camera camera(scene.view_points[0], Vector2(scene.image_resolution), scene.camera_fov_y, scene.z_is_up);
 
-    Bounds2i render_region = scene.render_region;
-    if (render_region == Bounds2i{})
-        render_region = { {0, 0}, scene.image_resolution }; // default render region
+    Bounds2i render_region;
+    if (options.render_region != Bounds2i{})
+        render_region = options.render_region;
+    else if (scene.render_region != Bounds2i{})
+        render_region = scene.render_region;
+    else
+        render_region = { {0, 0}, scene.image_resolution };
 
     ASSERT(render_region.p0 >= Vector2i{});
     ASSERT(render_region.p1 <= scene.image_resolution);
