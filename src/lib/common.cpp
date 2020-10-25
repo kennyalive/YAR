@@ -1,6 +1,8 @@
 #include "std.h"
 #include "common.h"
 
+#include "immintrin.h"
+
 // Default data folder path. Can be changed with -data-dir command line option.
 std::string g_data_dir = "./../data";
 
@@ -104,4 +106,15 @@ int64_t elapsed_nanoseconds(Timestamp timestamp) {
     auto duration = std::chrono::steady_clock::now() - timestamp.t;
     auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
     return static_cast<int64_t>(nanoseconds);
+}
+
+void enable_invalid_fp_exception() {
+    _MM_SET_EXCEPTION_STATE(0); // reset current exception state
+    _MM_SET_EXCEPTION_MASK(_MM_MASK_MASK & ~_MM_MASK_INVALID /*un-mask invalid fp exception bit*/);
+}
+
+void initialize_fp_state() {
+#if ENABLE_INVALID_FP_EXCEPTION
+    enable_invalid_fp_exception();
+#endif
 }

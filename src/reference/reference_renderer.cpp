@@ -316,6 +316,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
             void ExecuteRange(enki::TaskSetPartition, uint32_t threadnum) override {
                 ASSERT(threadnum < 32);
                 if (!thread_context_initialized[threadnum]) {
+                    initialize_fp_state();
                     thread_contexts[threadnum].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
                     thread_contexts[threadnum].pixel_sampler.init(&ctx->pixel_sampler_config);
                     thread_context_initialized[threadnum] = true;

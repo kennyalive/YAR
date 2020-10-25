@@ -37,6 +37,7 @@ static void print_help_string(getopt_context_t* ctx) {
 }
 
 int main(int argc, char** argv) {
+    initialize_fp_state();
     getopt_context_t ctx;
     if (getopt_create_context(&ctx, argc, (const char**)argv, option_list) < 0) {
         printf("internal error: invalid configuration of commnad line option list");

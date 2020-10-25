@@ -4,6 +4,8 @@
 
 #define ENABLE_PROFILING 1
 
+#define ENABLE_INVALID_FP_EXCEPTION 0
+
 constexpr float Pi = 3.14159265f;
 constexpr float Pi2 = 6.2831853f;
 constexpr float Pi_Over_2 = 1.57079632f;
@@ -169,3 +171,7 @@ inline uint32_t round_up_to_power_of_2(uint32_t k) {
 inline bool is_power_of_2(uint32_t k) {
     return k != 0 && (k & (k - 1)) == 0;
 }
+
+// These functions control per-thread state.
+void enable_invalid_fp_exception();
+void initialize_fp_state();
