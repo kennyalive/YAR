@@ -224,13 +224,13 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
 
     Bounds2i sample_region {
         Vector2i {
-            (int32_t)std::ceil(render_region.p0.x + 0.5f - filter_radius),
-            (int32_t)std::ceil(render_region.p0.y + 0.5f - filter_radius)
+            (int32_t)std::floor(render_region.p0.x + 0.5f - filter_radius),
+            (int32_t)std::floor(render_region.p0.y + 0.5f - filter_radius)
         },
         Vector2i {
             (int32_t)std::ceil(render_region.p1.x-1 + 0.5f + filter_radius),
             (int32_t)std::ceil(render_region.p1.y-1 + 0.5f + filter_radius)
-        } + Vector2i{1, 1}
+        }
     };
 
     Vector2i sample_region_size = sample_region.p1 - sample_region.p0;
