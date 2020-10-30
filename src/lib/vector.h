@@ -21,6 +21,7 @@ struct Vector3 {
         : x(v), y(v), z(v) {}
 
     explicit Vector3(const Vector4& v);
+    Vector3(Vector2 v, float z);
 
     explicit Vector3(const float* v)
         : x(v[0]), y(v[1]), z(v[2]) {}
@@ -280,6 +281,10 @@ template<> struct hash<Vector2> {
     }
 };
 }
+
+inline Vector3::Vector3(Vector2 v, float z)
+    : x(v.x), y(v.y), z(z)
+{}
 
 //
 // Vector4

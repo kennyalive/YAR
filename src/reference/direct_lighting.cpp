@@ -55,37 +55,92 @@ static ColorRGB sample_lights(const Scene_Context& ctx, Thread_Context& thread_c
     }
 
     for (auto [light_index, light] : enumerate(ctx.lights.diffuse_rectangular_lights)) {
-        const MIS_Array_Info& array_info = ctx.array2d_registry.rectangular_light_arrays[light_index];
+        const Light_Handle light_handle = {Light_Type::diffuse_rectangular, (int)light_index};
 
+        const MIS_Array_Info& array_info = ctx.array2d_registry.rectangular_light_arrays[light_index];
         const Vector2* light_samples = thread_ctx.pixel_sampler.get_array2d(thread_ctx.current_pixel_sample_index, array_info.light_array_id);
+        const Vector2* bsdf_samples = thread_ctx.pixel_sampler.get_array2d(thread_ctx.current_pixel_sample_index, array_info.bsdf_array_id);
         int sample_count = array_info.array_size;
+
+        const Vector3 light_n = light.light_to_world_transform.get_column(2);
+        const Vector3 light_center = light.light_to_world_transform.get_column(3);
+
+        // rectangular light emits light only from the front side
+        if (dot(light_n, (shading_ctx.P - light_center).normalized()) <= 0.f)
+            continue;
 
         ColorRGB L2;
         for (int i = 0; i < sample_count; i++) {
-            Vector2 u = 2.f * light_samples[i] - Vector2(1.f);
-            Vector3 local_light_point = Vector3{ light.size.x / 2.0f * u.x, light.size.y / 2.0f * u.y, 0.0f };
-            Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
+            // Light sampling part of MIS.
+            {
+                Vector2 u = 2.f * light_samples[i] - Vector2(1.f);
+                Vector3 local_light_point = Vector3{ (light.size / 2.0f) * u, 0.0f };
+                Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
+                light_point = offset_ray_origin(light_point, light_n);
 
-            const Vector3 light_vec = (light_point - shading_ctx.P);
-            const float light_dist = light_vec.length();
-            const Vector3 light_dir = light_vec / light_dist;
+                const Vector3 light_vec = (light_point - shading_ctx.P);
+                float distance_to_sample = light_vec.length();
+                Vector3 wi = light_vec / distance_to_sample;
 
-            Vector3 light_normal = light.light_to_world_transform.get_column(2);
-            float light_n_dot_l = dot(light_normal, -light_dir);
-            if (light_n_dot_l <= 0.f)
-                continue;
+                float n_dot_wi = dot(shading_ctx.N, wi);
+                bool scattering_possible = n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
+                                            n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
 
-            float n_dot_l = dot(shading_ctx.N, light_dir);
-            if (n_dot_l <= 0.f)
-                continue;
+                if (scattering_possible) {
+                    ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.Wo, wi);
 
-            Ray shadow_ray(shading_ctx.P, light_dir);
-            bool in_shadow = ctx.acceleration_structure->intersect_any(shadow_ray, light_dist - 1e-3f);
-            if (in_shadow)
-                continue;
+                    if (!f.is_black()) {
+                        Ray light_visibility_ray(shading_ctx.P, wi);
+                        bool occluded = ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample);
 
-            ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light_dir);
-            L2 += (light.size.x * light.size.y) * light.emitted_radiance * bsdf * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
+                        if (!occluded) {
+                            // We already checked that the light is oriented towards the surface
+                            // but for specific point we still can get different result due fp finite precision.
+                            ASSERT(dot(light_n, -wi) > -1e-4f);
+                            float light_n_dot_wi = std::max(0.f, dot(light_n, -wi));
+
+                            float light_pdf = (distance_to_sample * distance_to_sample) / (light.size.x * light.size.y * light_n_dot_wi);
+                            float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.Wo, wi);
+                            float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
+                            L2 += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
+                        }
+                    }
+                }
+            }
+
+            // BSDF sampling part of MIS.
+            {
+                Vector3 wi;
+                float bsdf_pdf;
+                ColorRGB f = shading_ctx.bsdf->sample(bsdf_samples[i], shading_ctx.Wo, &wi, &bsdf_pdf);
+
+                if (!f.is_black()) {
+                    ASSERT(bsdf_pdf > 0.f);
+
+                    Intersection isect;
+                    Ray light_visibility_ray(shading_ctx.P, wi);
+                    bool found_isect = ctx.acceleration_structure->intersect(light_visibility_ray, isect);
+
+                    if (found_isect && isect.scene_object->area_light == light_handle) {
+                        ASSERT(isect.geometry_type == Geometry_Type::triangle_mesh);
+                        const Triangle_Intersection& ti = isect.triangle_intersection;
+                        Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
+                        float d = (p - shading_ctx.P).length();
+
+                        // We already checked that the light is oriented towards the surface
+                        // but for specific point we still can get different result due fp finite precision.
+                        ASSERT(dot(light_n, -wi) > -1e-4f);
+                        float light_n_dot_wi = std::max(0.f, dot(light_n, -wi));
+
+                        float light_pdf = (d * d) / (light.size.x * light.size.y * light_n_dot_wi);
+
+                        float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
+                        float n_dot_wi = dot(shading_ctx.N, wi);
+
+                        L2 += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / bsdf_pdf);
+                    }
+                }
+            }
         }
         L2 /= float(sample_count);
         L += L2;
