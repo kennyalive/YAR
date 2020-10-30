@@ -12,6 +12,10 @@
 #include "lib/math.h"
 
 inline float mis_power_heuristic(float pdf1, float pdf2) {
+    if (pdf1 == Infinity) {
+        ASSERT(pdf2 != Infinity);
+        return 1.f;
+    }
     return pdf1*pdf1 / (pdf1*pdf1 + pdf2*pdf2);
 }
 
