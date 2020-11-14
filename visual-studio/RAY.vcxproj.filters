@@ -30,6 +30,7 @@
     </ClCompile>
     <ClCompile Include="..\src\reference\light_sampling.cpp" />
     <ClCompile Include="..\src\reference\pixel_sampling.cpp" />
+    <ClCompile Include="..\src\reference\path_tracing.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -51,6 +52,7 @@
     </ClInclude>
     <ClInclude Include="..\src\reference\light_sampling.h" />
     <ClInclude Include="..\src\reference\pixel_sampling.h" />
+    <ClInclude Include="..\src\reference\path_tracing.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

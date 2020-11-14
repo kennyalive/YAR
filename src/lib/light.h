@@ -89,4 +89,7 @@ struct Lights {
 
     void append(const Lights& lights);
     bool has_lights() const;
+    void update_total_light_count();
+
+    int total_light_count = 0;
 };

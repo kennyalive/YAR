@@ -39,10 +39,16 @@ struct ColorRGB {
         g *= inv_v;
         b *= inv_v;
     }
-    void operator+=(const ColorRGB c) {
+    void operator+=(const ColorRGB& c) {
         r += c.r;
         g += c.g;
         b += c.b;
+    }
+
+    void operator*=(const ColorRGB& c) {
+        r *= c.r;
+        g *= c.g;
+        b *= c.b;
     }
 
     static ColorRGB sqrt(const ColorRGB& c) {

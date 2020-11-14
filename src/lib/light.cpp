@@ -46,3 +46,12 @@ bool Lights::has_lights() const {
         diffuse_sphere_lights.size() ||
         has_environment_light;
 }
+
+void Lights::update_total_light_count() {
+    total_light_count =
+        (int)point_lights.size() + 
+        (int)directional_lights.size() +
+        (int)diffuse_rectangular_lights.size() +
+        (int)diffuse_sphere_lights.size() +
+        has_environment_light;
+}

@@ -44,6 +44,7 @@ struct Shading_Context {
     // Described in: "The Iray Light Transport Simulation and Rendering System", Keller et al. 2017
     bool shading_normal_adjusted = false;
 
+    Shading_Context() {}
     Shading_Context(
         const Scene_Context& global_ctx,
         Thread_Context& thread_ctx,

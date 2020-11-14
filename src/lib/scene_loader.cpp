@@ -46,12 +46,15 @@ static void finalize_scene(Scene& scene) {
         scene.objects.push_back(scene_object);
     }
 
+    // Add default light if no other light is specified.
     if (!scene.lights.has_lights()) {
         Directional_Light light;
         light.direction = Vector3(1, 1, 1).normalized();
         light.irradiance = ColorRGB(5, 5, 5);
         scene.lights.directional_lights.push_back(light);
     }
+
+    scene.lights.update_total_light_count();
 }
 
 Scene load_scene(const std::string& input_file) {
