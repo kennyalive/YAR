@@ -19,6 +19,14 @@ void createSampler(Scene::SP ours, pbrt::syntactic::Scene::SP pbrt)
         ours->sampler->ySamples = k;
         ours->sampler->pixelSamples = k*k;
     }
+    else if (pbrt->sampler->type == "sobol") {
+        ours->sampler->type = Sampler::Type::stratified; // use stratified sampler until halton is supported
+        int n = pbrt->sampler->getParam1i("pixelsamples", 1);
+        int k = (int)std::ceil(std::sqrt(n));
+        ours->sampler->xSamples = k;
+        ours->sampler->ySamples = k;
+        ours->sampler->pixelSamples = k*k;
+    }
     else if (pbrt->sampler->type == "stratified") {
         ours->sampler->type = Sampler::Type::stratified;
         ours->sampler->xSamples = pbrt->sampler->getParam1i("xsamples", 1);
