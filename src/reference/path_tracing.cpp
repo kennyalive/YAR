@@ -13,9 +13,9 @@
 // 3 - first bounce of indirect lighting
 // 4 - second bound of indirect lighting
 // ...
-constexpr int max_path_length = 4;
+constexpr int max_path_length = 100;
 
-//constexpr int path_length_before_russian_roulette = 2;
+constexpr int path_length_to_apply_russian_roulette_ = 4;
 
 ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx) {
     ColorRGB L;
@@ -40,6 +40,18 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
         ColorRGB path_coeff(1.f);
 
         while (path_length != max_path_length) {
+            path_length++;
+
+            if (path_length >= path_length_to_apply_russian_roulette_) {
+                float max_coeff = std::max(path_coeff[0], std::max(path_coeff[1], path_coeff[2]));
+                float termination_probability = std::max(0.05f, 1.f - max_coeff);
+                float u = thread_ctx.rng.get_float();
+                if (u < termination_probability)
+                    break;
+
+                path_coeff /= 1 - termination_probability;
+            }
+
             // Evaluate light contribution for current path.
             float u_light_index = thread_ctx.rng.get_float();
             Vector2 u_light = thread_ctx.rng.get_vector2();
@@ -47,7 +59,6 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
             L += path_coeff * estimate_direct_lighting_from_single_sample(scene_ctx, *current_intersection_ctx, u_light_index, u_light, u_bsdf);
 
             // Generate next path segment.
-            path_length++;
             if (path_length != max_path_length) {
                 Vector2 u = thread_ctx.rng.get_vector2();
 
