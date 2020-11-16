@@ -122,6 +122,7 @@
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Camera.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Geometry.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\importPBRT.cpp" />
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Integrator.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Lights.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Materials.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Sampler.cpp" />

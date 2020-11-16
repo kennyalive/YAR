@@ -54,6 +54,7 @@ namespace pbrt {
     TYPE_FILM,
     TYPE_SPECTRUM,
     TYPE_SAMPLER,
+    TYPE_INTEGRATOR,
     
     TYPE_MATERIAL=10,
     TYPE_DISNEY_MATERIAL,
@@ -592,6 +593,20 @@ namespace pbrt {
       binary.read(xSamples);
       binary.read(ySamples);
   }
+
+int Integrator::writeTo(BinaryWriter &binary)  {
+    int integratorType = static_cast<int>(type);
+    binary.write(integratorType);
+    binary.write(maxDepth);
+    return TYPE_INTEGRATOR;
+}
+
+void Integrator::readFrom(BinaryReader &binary) {
+    int integratorType;
+    binary.read(integratorType);
+    type = static_cast<Type>(integratorType);
+    binary.read(maxDepth);
+}
 
   /*! serialize out to given binary writer */
   int Shape::writeTo(BinaryWriter &binary) 

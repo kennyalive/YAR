@@ -1131,6 +1131,22 @@ namespace pbrt {
       void readFrom(BinaryReader &) override;
   };
 
+  struct Integrator : public Entity {
+      typedef std::shared_ptr<Integrator> SP;
+
+      enum class Type {
+          direct_lighting,
+          path_tracer
+      };
+
+      Type type = Type::path_tracer;
+      int maxDepth = 0;
+
+      std::string toString() const override { return "Integrator"; }
+      int writeTo(BinaryWriter &) override;
+      void readFrom(BinaryReader &) override;
+  };
+
   /*! the complete scene - pretty much the 'root' object that
     contains the WorldBegin/WorldEnd entities, plus high-level
     stuff like camera, frame buffer specification, etc */
@@ -1177,7 +1193,9 @@ namespace pbrt {
     Film::SP                film;
 
     Sampler::SP             sampler;
-    
+
+    Integrator::SP          integrator;
+
     /*! the worldbegin/worldend content */
     Object::SP              world;
   };

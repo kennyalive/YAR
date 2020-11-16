@@ -166,6 +166,9 @@
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Sampler.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Integrator.cpp">
+      <Filter>pbrt-parser\impl\semantic</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\third-party\enkiTS\Atomics.h">

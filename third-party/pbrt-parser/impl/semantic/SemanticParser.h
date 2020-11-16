@@ -217,7 +217,9 @@ namespace pbrt {
   void createFilm(Scene::SP ours, pbrt::syntactic::Scene::SP pbrt);
 
   void createSampler(Scene::SP ours, pbrt::syntactic::Scene::SP pbrt);
-  
+
+  void createIntegrator(Scene::SP ours, pbrt::syntactic::Scene::SP pbrt);
+
   /*! create a scene->camera from the pbrt model, if specified, or
     leave unchanged if not */
   void createCamera(Scene::SP scene, pbrt::syntactic::Scene::SP pbrt);

@@ -835,6 +835,7 @@ namespace pbrt {
     Scene::SP scene = SemanticParser(pbrt).result;
     createFilm(scene,pbrt);
     createSampler(scene,pbrt);
+    createIntegrator(scene,pbrt);
     for (auto cam : pbrt->cameras)
       scene->cameras.push_back(createCamera(cam));
     return scene;
