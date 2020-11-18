@@ -11,6 +11,16 @@ enum class Scene_Type {
     obj,
 };
 
+enum class Raytracer_Renderer_Type {
+    direct_lighting,
+    path_tracer
+};
+
+struct Raytracer_Renderer_Config {
+    Raytracer_Renderer_Type type = Raytracer_Renderer_Type::path_tracer; 
+    int max_depth = 50;
+};
+
 struct Scene {
     Scene_Type type;
     std::string path;
@@ -26,6 +36,7 @@ struct Scene {
     bool front_face_has_clockwise_winding = false;
     int x_pixel_samples = 0;
     int y_pixel_samples = 0;
+    Raytracer_Renderer_Config raytracer_config;
 
     // Predefined camera positions.
     std::vector<Matrix3x4> view_points;

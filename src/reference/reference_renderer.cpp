@@ -178,8 +178,12 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
                         continue;
                     }*/
 
-                    //ColorRGB radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx);
-                    ColorRGB radiance = estimate_path_contribution(ctx, thread_ctx, shading_ctx);
+                    ColorRGB radiance;
+                    if (ctx.scene->raytracer_config.type == Raytracer_Renderer_Type::direct_lighting)
+                        radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx);
+                    else if (ctx.scene->raytracer_config.type == Raytracer_Renderer_Type::path_tracer)
+                        radiance = estimate_path_contribution(ctx, thread_ctx, shading_ctx);
+
                     tile.add_sample(film_pos, radiance);
                 }
                 else if (ctx.has_environment_light_sampler) {

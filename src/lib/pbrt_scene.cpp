@@ -457,6 +457,23 @@ Scene load_pbrt_scene(const YAR_Project& project) {
         scene.y_pixel_samples = pbrt_sampler->ySamples;
     }
 
+    // Import integrator.
+    pbrt::Integrator::SP pbrt_integrator = pbrt_scene->integrator;
+    if (pbrt_integrator) {
+        if (pbrt_integrator->type == pbrt::Integrator::Type::direct_lighting) {
+            scene.raytracer_config.type = Raytracer_Renderer_Type::direct_lighting;
+            scene.raytracer_config.max_depth = pbrt_integrator->maxDepth;
+        }
+        else if (pbrt_integrator->type == pbrt::Integrator::Type::path_tracer) {
+            scene.raytracer_config.type = Raytracer_Renderer_Type::path_tracer;
+            scene.raytracer_config.max_depth = pbrt_integrator->maxDepth;
+        }
+        else {
+            error("Unsupported pbrt integrator");
+        }
+        
+    }
+
     scene.lights.append(project.lights);
     return scene;
 }
