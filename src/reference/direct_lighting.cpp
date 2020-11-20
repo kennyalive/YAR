@@ -359,7 +359,7 @@ ColorRGB estimate_direct_lighting_from_single_sample(
     const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
     float u_light_selector, Vector2 u_light, Vector2 u_bsdf)
 {
-    int light_index = (int)u_light_selector * scene_ctx.lights.total_light_count;
+    int light_index = int(u_light_selector * scene_ctx.lights.total_light_count);
     ASSERT(light_index < scene_ctx.lights.total_light_count);
 
     if (light_index < scene_ctx.lights.point_lights.size()) {
