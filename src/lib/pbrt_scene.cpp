@@ -349,6 +349,11 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                             Matrix3x4 rect_transform;
                             const Triangle_Mesh& mesh = scene.geometries.triangle_meshes[imported_shape.geometry.index];
                             if (check_if_mesh_is_rectangle(mesh, rect_size, rect_transform)) {
+                                if (shape->reverseOrientation) {
+                                    rect_transform.set_column(0, -rect_transform.get_column(0));
+                                    rect_transform.set_column(1, -rect_transform.get_column(1));
+                                    rect_transform.set_column(2, -rect_transform.get_column(2));
+                                }
                                 Diffuse_Rectangular_Light light;
                                 light.light_to_world_transform = rect_transform;
                                 light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
