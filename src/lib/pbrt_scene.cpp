@@ -467,16 +467,19 @@ Scene load_pbrt_scene(const YAR_Project& project) {
     if (pbrt_integrator) {
         if (pbrt_integrator->type == pbrt::Integrator::Type::direct_lighting) {
             scene.raytracer_config.type = Raytracer_Renderer_Type::direct_lighting;
-            scene.raytracer_config.max_depth = pbrt_integrator->maxDepth;
         }
         else if (pbrt_integrator->type == pbrt::Integrator::Type::path_tracer) {
             scene.raytracer_config.type = Raytracer_Renderer_Type::path_tracer;
-            scene.raytracer_config.max_depth = pbrt_integrator->maxDepth;
         }
         else {
             error("Unsupported pbrt integrator");
         }
-        
+
+        if (pbrt_integrator->maxDepth > 0) {
+            // In pbrt maxdepth denotes the max number of bounces.
+            // We need to add plus one to convert to max path length.
+            scene.raytracer_config.max_path_length = pbrt_integrator->maxDepth + 1;
+        }
     }
 
     scene.lights.append(project.lights);

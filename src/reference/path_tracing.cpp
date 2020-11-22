@@ -7,21 +7,13 @@
 #include "direct_lighting.h"
 #include "shading_context.h"
 
-// max path length:
-// 1 - only emmited light
-// 2 - direct lighting
-// 3 - first bounce of indirect lighting
-// 4 - second bound of indirect lighting
-// ...
-constexpr int max_path_length = 100;
-
 constexpr int path_length_to_apply_russian_roulette_ = 4;
 
 ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx) {
-    ColorRGB L;
-
     ASSERT(!shading_ctx.mirror_surface);
+    const int max_path_length = scene_ctx.scene->raytracer_config.max_path_length;
 
+    ColorRGB L;
     if (shading_ctx.area_light != Null_Light) {
         if (shading_ctx.area_light.type == Light_Type::diffuse_rectangular) {
             L = scene_ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
