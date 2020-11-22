@@ -17,6 +17,11 @@ static bool adjust_shading_normal(const Vector3& Wo, const Vector3& Ng, Vector3*
     // check renderer convention: shading frame is oriented in such way that Wo is in the positive hemisphere
     ASSERT(dot(Wo, Ng) >= 0.f);
 
+    // Do not apply adjustment for almost tangential Wo.
+    // In this case we have catastrophic cancellation for 'Wo + tangent' expression.
+    if (dot(Wo, Ng) < 1e-3f)
+        return false;
+
     Vector3 R = reflect(Wo, *N);
 
     // If reflected direction is above the geometric surface then
