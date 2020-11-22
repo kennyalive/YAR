@@ -125,6 +125,7 @@
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Integrator.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Lights.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Materials.cpp" />
+    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\PixelFilter.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Sampler.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Scene.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)Scene-semantic.obj</ObjectFileName>

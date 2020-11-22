@@ -1147,6 +1147,26 @@ namespace pbrt {
       void readFrom(BinaryReader &) override;
   };
 
+  struct PixelFilter : public Entity {
+      typedef std::shared_ptr<PixelFilter> SP;
+
+      enum class Type {
+          box,
+          gaussian
+      };
+
+      Type type = Type::box;
+      float radius = 0.f;
+
+      // used by gaussian filter
+      float alpha = 0.f;
+
+      std::string toString() const override { return "PixelFilter"; }
+      int writeTo(BinaryWriter &) override;
+      void readFrom(BinaryReader &) override;
+
+  };
+
   /*! the complete scene - pretty much the 'root' object that
     contains the WorldBegin/WorldEnd entities, plus high-level
     stuff like camera, frame buffer specification, etc */
@@ -1195,6 +1215,8 @@ namespace pbrt {
     Sampler::SP             sampler;
 
     Integrator::SP          integrator;
+
+    PixelFilter::SP         pixelFilter;
 
     /*! the worldbegin/worldend content */
     Object::SP              world;
