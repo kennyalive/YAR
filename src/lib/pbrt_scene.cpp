@@ -466,10 +466,10 @@ Scene load_pbrt_scene(const YAR_Project& project) {
     pbrt::Integrator::SP pbrt_integrator = pbrt_scene->integrator;
     if (pbrt_integrator) {
         if (pbrt_integrator->type == pbrt::Integrator::Type::direct_lighting) {
-            scene.raytracer_config.type = Raytracer_Renderer_Type::direct_lighting;
+            scene.raytracer_config.rendering_algorithm = Raytracer_Config::Rendering_Algorithm::direct_lighting;
         }
         else if (pbrt_integrator->type == pbrt::Integrator::Type::path_tracer) {
-            scene.raytracer_config.type = Raytracer_Renderer_Type::path_tracer;
+            scene.raytracer_config.rendering_algorithm = Raytracer_Config::Rendering_Algorithm::path_tracer;
         }
         else {
             error("Unsupported pbrt integrator");
@@ -480,6 +480,19 @@ Scene load_pbrt_scene(const YAR_Project& project) {
             // We need to add plus one to convert to max path length.
             scene.raytracer_config.max_path_length = pbrt_integrator->maxDepth + 1;
         }
+    }
+
+    // Import pixel filter.
+    pbrt::PixelFilter::SP pbrt_pixel_filer = pbrt_scene->pixelFilter;
+    if (pbrt_pixel_filer) {
+        if (pbrt_pixel_filer->type == pbrt::PixelFilter::Type::box) {
+            scene.raytracer_config.pixel_filter_type = Raytracer_Config::Pixel_Filter_Type::box;
+        }
+        else if (pbrt_pixel_filer->type == pbrt::PixelFilter::Type::gaussian) {
+            scene.raytracer_config.pixel_filter_type = Raytracer_Config::Pixel_Filter_Type::gaussian;
+        }
+        scene.raytracer_config.pixel_filter_radius = pbrt_pixel_filer->radius;
+        scene.raytracer_config.pixel_filter_alpha = pbrt_pixel_filer->alpha;
     }
 
     scene.lights.append(project.lights);

@@ -42,6 +42,9 @@
       <Filter>scene_loader</Filter>
     </ClInclude>
     <ClInclude Include="..\src\lib\tessellation.h" />
+    <ClInclude Include="..\src\lib\raytracer_config.h">
+      <Filter>scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />

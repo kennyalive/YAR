@@ -179,9 +179,9 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
                     }*/
 
                     ColorRGB radiance;
-                    if (ctx.scene->raytracer_config.type == Raytracer_Renderer_Type::direct_lighting)
+                    if (ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::direct_lighting)
                         radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx);
-                    else if (ctx.scene->raytracer_config.type == Raytracer_Renderer_Type::path_tracer)
+                    else if (ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::path_tracer)
                         radiance = estimate_path_contribution(ctx, thread_ctx, shading_ctx);
 
                     tile.add_sample(film_pos, radiance);
@@ -224,9 +224,15 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     ASSERT(render_region.p1 <= scene.image_resolution);
     ASSERT(render_region.p0 < render_region.p1);
 
-    const float filter_radius = 0.5f;
-
-    Film film(render_region.size(), render_region, get_box_filter(filter_radius));
+    const float filter_radius = scene.raytracer_config.pixel_filter_radius;
+    Film_Filter film_filter;
+    if (scene.raytracer_config.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::box) {
+        film_filter = get_box_filter(filter_radius);
+    }
+    else if (scene.raytracer_config.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::gaussian) {
+        film_filter = get_gaussian_filter(filter_radius, scene.raytracer_config.pixel_filter_alpha);
+    }
+    Film film(render_region.size(), render_region, film_filter);
 
     Bounds2i sample_region {
         Vector2i {

@@ -106,6 +106,7 @@
     <ClInclude Include="..\src\lib\matrix.h" />
     <ClInclude Include="..\src\lib\obj_loader.h" />
     <ClInclude Include="..\src\lib\parameter.h" />
+    <ClInclude Include="..\src\lib\raytracer_config.h" />
     <ClInclude Include="..\src\lib\scene_loader.h" />
     <ClInclude Include="..\src\lib\tessellation.h" />
     <ClInclude Include="..\src\lib\utils.h" />
