@@ -364,32 +364,32 @@ ColorRGB estimate_direct_lighting_from_single_sample(
 
     if (light_index < scene_ctx.lights.point_lights.size()) {
         const Point_Light& light = scene_ctx.lights.point_lights[light_index];
-        return direct_lighting_from_point_light(scene_ctx, shading_ctx, light);
+        return scene_ctx.lights.total_light_count * direct_lighting_from_point_light(scene_ctx, shading_ctx, light);
     }
     light_index -= (int)scene_ctx.lights.point_lights.size();
 
     if (light_index < scene_ctx.lights.directional_lights.size()) {
         const Directional_Light& light = scene_ctx.lights.directional_lights[light_index];
-        return direct_lighting_from_directional_light(scene_ctx, shading_ctx, light);
+        return scene_ctx.lights.total_light_count * direct_lighting_from_directional_light(scene_ctx, shading_ctx, light);
     }
     light_index -= (int)scene_ctx.lights.directional_lights.size();
 
     if (light_index < scene_ctx.lights.diffuse_rectangular_lights.size()) {
         Light_Handle light_handle = {Light_Type::diffuse_rectangular, light_index};
         const Diffuse_Rectangular_Light& light = scene_ctx.lights.diffuse_rectangular_lights[light_index];
-        return direct_lighting_from_rectangular_light(scene_ctx, shading_ctx, light_handle, light, u_light, u_bsdf);
+        return scene_ctx.lights.total_light_count * direct_lighting_from_rectangular_light(scene_ctx, shading_ctx, light_handle, light, u_light, u_bsdf);
     }
     light_index -= (int)scene_ctx.lights.diffuse_rectangular_lights.size();
 
     if (light_index < scene_ctx.lights.diffuse_sphere_lights.size()) {
         Light_Handle light_handle = {Light_Type::diffuse_sphere, light_index};
         Diffuse_Sphere_Light_Sampler sampler(scene_ctx.lights.diffuse_sphere_lights[light_index], shading_ctx.P);
-        return  direct_lighting_from_sphere_light(scene_ctx, shading_ctx, light_handle, sampler, u_light, u_bsdf);
+        return scene_ctx.lights.total_light_count * direct_lighting_from_sphere_light(scene_ctx, shading_ctx, light_handle, sampler, u_light, u_bsdf);
     }
     light_index -= (int)scene_ctx.lights.diffuse_sphere_lights.size();
 
     // the only light left is environment light
     ASSERT(light_index == 0);
     ASSERT(scene_ctx.has_environment_light_sampler);
-    return direct_lighting_from_environment_light(scene_ctx, shading_ctx, u_light, u_bsdf);
+    return scene_ctx.lights.total_light_count * direct_lighting_from_environment_light(scene_ctx, shading_ctx, u_light, u_bsdf);
 }
