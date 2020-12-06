@@ -351,7 +351,6 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                             if (check_if_mesh_is_rectangle(mesh, rect_size, rect_transform)) {
                                 if (shape->reverseOrientation) {
                                     rect_transform.set_column(0, -rect_transform.get_column(0));
-                                    rect_transform.set_column(1, -rect_transform.get_column(1));
                                     rect_transform.set_column(2, -rect_transform.get_column(2));
                                 }
                                 Diffuse_Rectangular_Light light;
