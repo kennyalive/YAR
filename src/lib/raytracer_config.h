@@ -27,4 +27,7 @@ struct Raytracer_Config {
     Pixel_Filter_Type pixel_filter_type = Pixel_Filter_Type::box;
     float pixel_filter_radius = 0.5f;
     float pixel_filter_alpha = 2.f; // used by gaussian filter
+
+    int x_pixel_sample_count = 0;
+    int y_pixel_sample_count = 0;
 };

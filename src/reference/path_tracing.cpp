@@ -35,24 +35,28 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
             path_length++;
 
             if (path_length >= path_length_to_apply_russian_roulette_) {
+                // That's fine to get the next sample inside condition because condition
+                // is evaluated to the same value for all threads.
+                float u_termination = thread_ctx.pixel_sampler.get_next_1d_sample();
+
                 float max_coeff = std::max(path_coeff[0], std::max(path_coeff[1], path_coeff[2]));
                 float termination_probability = std::max(0.05f, 1.f - max_coeff);
-                float u = thread_ctx.rng.get_float();
-                if (u < termination_probability)
+
+                if (u_termination < termination_probability)
                     break;
 
                 path_coeff /= 1 - termination_probability;
             }
 
             // Evaluate light contribution for current path.
-            float u_light_index = thread_ctx.rng.get_float();
-            Vector2 u_light = thread_ctx.rng.get_vector2();
-            Vector2 u_bsdf = thread_ctx.rng.get_vector2();
+            float u_light_index = thread_ctx.pixel_sampler.get_next_1d_sample();
+            Vector2 u_light = thread_ctx.pixel_sampler.get_next_2d_sample();
+            Vector2 u_bsdf = thread_ctx.pixel_sampler.get_next_2d_sample();
             L += path_coeff * estimate_direct_lighting_from_single_sample(scene_ctx, *current_intersection_ctx, u_light_index, u_light, u_bsdf);
 
             // Generate next path segment.
             if (path_length != max_path_length) {
-                Vector2 u = thread_ctx.rng.get_vector2();
+                Vector2 u = thread_ctx.pixel_sampler.get_next_2d_sample();
 
                 Vector3 wi;
                 float bsdf_pdf;

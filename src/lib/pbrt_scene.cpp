@@ -457,8 +457,8 @@ Scene load_pbrt_scene(const YAR_Project& project) {
     // Import sampler.
     pbrt::Sampler::SP pbrt_sampler = pbrt_scene->sampler;
     if (pbrt_sampler) {
-        scene.x_pixel_samples = pbrt_sampler->xSamples;
-        scene.y_pixel_samples = pbrt_sampler->ySamples;
+        scene.raytracer_config.x_pixel_sample_count = pbrt_sampler->xSamples;
+        scene.raytracer_config.y_pixel_sample_count = pbrt_sampler->ySamples;
     }
 
     // Import integrator.

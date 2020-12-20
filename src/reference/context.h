@@ -43,9 +43,4 @@ struct Thread_Context {
     Memory_Pool memory_pool;
     RNG rng;
     Stratified_Pixel_Sampler pixel_sampler;
-    int current_pixel_sample_index = -1;
-
-    const Vector2* get_array2d_for_current_pixel_sample(int array2d_id) const {
-        return pixel_sampler.get_array2d(current_pixel_sample_index, array2d_id);
-    }
 };

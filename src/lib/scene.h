@@ -25,8 +25,6 @@ struct Scene {
     bool  z_is_up = false;
     bool mesh_disable_backfacing_culling = false;
     bool front_face_has_clockwise_winding = false;
-    int x_pixel_samples = 0;
-    int y_pixel_samples = 0;
     Raytracer_Config raytracer_config;
 
     // Predefined camera positions.

@@ -7,9 +7,14 @@
 #include "lib/math.h"
 #include "lib/random.h"
 
-void Stratified_Pixel_Sampler_Configuration::init(int x_pixel_samples, int y_pixel_samples) {
-    this->x_pixel_samples = x_pixel_samples;
-    this->y_pixel_samples = y_pixel_samples;
+void Stratified_Pixel_Sampler_Configuration::init(
+    int x_pixel_sample_count, int y_pixel_sample_count, 
+    int sample_vector_1d_size, int sample_vector_2d_size)
+{
+    this->x_pixel_sample_count = x_pixel_sample_count;
+    this->y_pixel_sample_count = y_pixel_sample_count;
+    this->sample_vector_1d_size = sample_vector_1d_size;
+    this->sample_vector_2d_size = sample_vector_2d_size;
 }
 
 int Stratified_Pixel_Sampler_Configuration::register_array2d_samples(int x_size, int y_size) {
@@ -19,22 +24,53 @@ int Stratified_Pixel_Sampler_Configuration::register_array2d_samples(int x_size,
     info.first_sample_offset = array2d_samples_per_pixel;
     array2d_infos.push_back(info);
 
-    array2d_samples_per_pixel += (x_size * y_size) * (x_pixel_samples * y_pixel_samples);
+    array2d_samples_per_pixel += (x_size * y_size) * (x_pixel_sample_count * y_pixel_sample_count);
 
     return (int)array2d_infos.size() - 1;
 }
 
-void Stratified_Pixel_Sampler::init(const Stratified_Pixel_Sampler_Configuration* config) {
+void Stratified_Pixel_Sampler::init(const Stratified_Pixel_Sampler_Configuration* config, RNG* rng) {
     this->config = config;
-    image_plane_samples.resize(config->x_pixel_samples * config->y_pixel_samples);
+    this->rng = rng;
+
+    int pixel_sample_count = config->x_pixel_sample_count * config->y_pixel_sample_count;
+    image_plane_samples.resize(pixel_sample_count);
+    samples_1d.resize(config->sample_vector_1d_size * pixel_sample_count);
+    samples_2d.resize(config->sample_vector_2d_size * pixel_sample_count);
     array2d_samples.resize(config->array2d_samples_per_pixel);
 }
 
-void Stratified_Pixel_Sampler::generate_samples(RNG& rng) {
-    int pixel_sample_count = config->x_pixel_samples * config->y_pixel_samples;
+void Stratified_Pixel_Sampler::next_pixel() {
+    current_sample_vector = 0;
 
     // Film plane samples.
-    generate_stratified_sequence_2d(rng, config->x_pixel_samples, config->y_pixel_samples, image_plane_samples.data());
+    generate_stratified_sequence_2d(*rng, config->x_pixel_sample_count, config->y_pixel_sample_count, image_plane_samples.data());
+
+    int pixel_sample_count = config->x_pixel_sample_count * config->y_pixel_sample_count;
+
+    // 1d samples
+    {
+        std::vector<float> samples(pixel_sample_count);
+        for (int i = 0; i < config->sample_vector_1d_size; i++) {
+            generate_stratified_sequence_1d(*rng, pixel_sample_count, samples.data());
+            shuffle(samples.data(), samples.data() + pixel_sample_count, *rng);
+            for (int k = 0; k < pixel_sample_count; k++) {
+                samples_1d[k * config->sample_vector_1d_size + i] = samples[k];
+            }
+        }
+    }
+
+    // 2d samples
+    {
+        std::vector<Vector2> samples(pixel_sample_count);
+        for (int i = 0; i < config->sample_vector_2d_size; i++) {
+            generate_stratified_sequence_2d(*rng, config->x_pixel_sample_count, config->y_pixel_sample_count, samples.data());
+            shuffle(samples.data(), samples.data() + pixel_sample_count, *rng);
+            for (int k = 0; k < pixel_sample_count; k++) {
+                samples_2d[k * config->sample_vector_2d_size + i] = samples[k];
+            }
+        }
+    }
 
     // Array 2D samples.
     for (const auto& array_info : config->array2d_infos) {
@@ -45,8 +81,8 @@ void Stratified_Pixel_Sampler::generate_samples(RNG& rng) {
 
         for (int i = 0; i < array_sample_count; i++) {
             Vector2* grid = &stratified_grids[i * pixel_sample_count];
-            generate_stratified_sequence_2d(rng, config->x_pixel_samples, config->y_pixel_samples, grid);
-            shuffle(grid, grid + pixel_sample_count, rng);
+            generate_stratified_sequence_2d(*rng, config->x_pixel_sample_count, config->y_pixel_sample_count, grid);
+            shuffle(grid, grid + pixel_sample_count, *rng);
         }
 
         float dx_array = 1.f / float(array_info.x_size);
@@ -75,8 +111,36 @@ void Stratified_Pixel_Sampler::generate_samples(RNG& rng) {
     }
 }
 
-const Vector2* Stratified_Pixel_Sampler::get_array2d(int pixel_sample_index, int array2d_id) const {
+bool Stratified_Pixel_Sampler::next_sample_vector() {
+    int pixel_sample_count = config->x_pixel_sample_count * config->y_pixel_sample_count;
+    if (current_sample_vector < pixel_sample_count) {
+        current_sample_vector++;
+        current_sample_1d = 0;
+        current_sample_2d = 0;
+    }
+    return current_sample_vector < pixel_sample_count;
+}
+
+Vector2 Stratified_Pixel_Sampler::get_image_plane_sample() const {
+    return image_plane_samples[current_sample_vector];
+}
+
+const Vector2* Stratified_Pixel_Sampler::get_array2d(int array2d_id) const {
     ASSERT(array2d_id >= 0);
     const auto& info = config->array2d_infos[array2d_id];
-    return &array2d_samples[info.first_sample_offset + pixel_sample_index * info.x_size * info.y_size];
+    return &array2d_samples[info.first_sample_offset + current_sample_vector * info.x_size * info.y_size];
+}
+
+float Stratified_Pixel_Sampler::get_next_1d_sample() {
+    if (current_sample_1d < config->sample_vector_1d_size)
+        return samples_1d[current_sample_vector * config->sample_vector_1d_size + current_sample_1d++];
+    else
+        return rng->get_float();
+}
+
+Vector2 Stratified_Pixel_Sampler::get_next_2d_sample() {
+    if (current_sample_2d < config->sample_vector_2d_size)
+        return samples_2d[current_sample_vector * config->sample_vector_2d_size + current_sample_2d++];
+    else
+        return rng->get_vector2();
 }
