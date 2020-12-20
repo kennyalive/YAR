@@ -240,6 +240,13 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     else if (scene.raytracer_config.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::gaussian) {
         film_filter = get_gaussian_filter(filter_radius, scene.raytracer_config.pixel_filter_alpha);
     }
+    else if (scene.raytracer_config.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::triangle) {
+        film_filter = get_triangle_filter(filter_radius);
+    }
+    else {
+        error("Unknown filter type");
+    }
+
     Film film(render_region.size(), render_region, film_filter);
 
     Bounds2i sample_region {

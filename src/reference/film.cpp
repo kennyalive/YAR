@@ -103,3 +103,10 @@ Film_Filter get_gaussian_filter(float radius, float alpha) {
     };
     return Film_Filter{ gaussian_filter, radius };
 }
+
+Film_Filter get_triangle_filter(float radius) {
+    auto triangle_filter = [radius](Vector2 p) {
+        return std::max(0.f, radius - std::abs(p.x)) * std::max(0.f, radius - std::abs(p.y));
+    };
+    return Film_Filter{ triangle_filter, radius };
+}

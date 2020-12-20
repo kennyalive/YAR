@@ -22,7 +22,8 @@ struct Raytracer_Config {
 
     enum class Pixel_Filter_Type {
         box,
-        gaussian
+        gaussian,
+        triangle
     };
     Pixel_Filter_Type pixel_filter_type = Pixel_Filter_Type::box;
     float pixel_filter_radius = 0.5f;

@@ -40,3 +40,4 @@ struct Film {
 
 Film_Filter get_box_filter(float radius);
 Film_Filter get_gaussian_filter(float radius, float alpha);
+Film_Filter get_triangle_filter(float radius);

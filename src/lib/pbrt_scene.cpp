@@ -482,16 +482,22 @@ Scene load_pbrt_scene(const YAR_Project& project) {
     }
 
     // Import pixel filter.
-    pbrt::PixelFilter::SP pbrt_pixel_filer = pbrt_scene->pixelFilter;
-    if (pbrt_pixel_filer) {
-        if (pbrt_pixel_filer->type == pbrt::PixelFilter::Type::box) {
+    pbrt::PixelFilter::SP pbrt_pixel_filter = pbrt_scene->pixelFilter;
+    if (pbrt_pixel_filter) {
+        if (pbrt_pixel_filter->type == pbrt::PixelFilter::Type::box) {
             scene.raytracer_config.pixel_filter_type = Raytracer_Config::Pixel_Filter_Type::box;
         }
-        else if (pbrt_pixel_filer->type == pbrt::PixelFilter::Type::gaussian) {
+        else if (pbrt_pixel_filter->type == pbrt::PixelFilter::Type::gaussian) {
             scene.raytracer_config.pixel_filter_type = Raytracer_Config::Pixel_Filter_Type::gaussian;
         }
-        scene.raytracer_config.pixel_filter_radius = pbrt_pixel_filer->radius;
-        scene.raytracer_config.pixel_filter_alpha = pbrt_pixel_filer->alpha;
+        else if (pbrt_pixel_filter->type == pbrt::PixelFilter::Type::triangle) {
+            scene.raytracer_config.pixel_filter_type = Raytracer_Config::Pixel_Filter_Type::triangle;
+        }
+        else {
+            error("Unsupported pbrt pixel filter");
+        }
+        scene.raytracer_config.pixel_filter_radius = pbrt_pixel_filter->radius;
+        scene.raytracer_config.pixel_filter_alpha = pbrt_pixel_filter->alpha;
     }
 
     scene.lights.append(project.lights);
