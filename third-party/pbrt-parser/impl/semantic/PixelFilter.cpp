@@ -20,8 +20,13 @@ void createPixelFilter(Scene::SP ours, pbrt::syntactic::Scene::SP pbrt)
         ours->pixelFilter->radius = pbrt->pixelFilter->getParam1f("xwidth", 2.f);
         ours->pixelFilter->alpha = pbrt->pixelFilter->getParam1f("alpha", 2.f);
     }
+    else if (pbrt->pixelFilter->type == "triangle") {
+        ours->pixelFilter->type = PixelFilter::Type::triangle;
+        ours->pixelFilter->radius = pbrt->pixelFilter->getParam1f("xwidth", 2.f);
+    }
     else {
         std::cout << "pbrt-parser: unsupported pixel filter type: " + pbrt->pixelFilter->type + "\n";
+        assert(false);
     }
 }
 

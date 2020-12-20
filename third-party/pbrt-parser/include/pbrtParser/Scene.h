@@ -1152,7 +1152,8 @@ namespace pbrt {
 
       enum class Type {
           box,
-          gaussian
+          gaussian,
+          triangle
       };
 
       Type type = Type::box;
