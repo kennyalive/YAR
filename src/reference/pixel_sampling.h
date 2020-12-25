@@ -41,6 +41,8 @@ struct Stratified_Pixel_Sampler_Configuration {
     // Registers 2d array of stratified samples distributed over [0, 1)^2.
     // Returns array2d_id to use in Stratified_Pixel_Sampler::get_array2d_samples
     int register_array2d_samples(int x_size, int y_size);
+
+    int get_samples_per_pixel() const { return x_pixel_sample_count * y_pixel_sample_count; }
 };
 
 // Generates a set of samples for entire pixel.

@@ -43,4 +43,8 @@ struct Thread_Context {
     Memory_Pool memory_pool;
     RNG rng;
     Stratified_Pixel_Sampler pixel_sampler;
+
+    // Variance estimation.
+    double variance_accumulator = 0.0;
+    int64_t variance_count = 0;
 };

@@ -162,9 +162,16 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
     thread_ctx.rng.init(0, rng_seed);
     Film_Tile tile(pixel_bounds, film.filter);
 
+    double tile_variance_accumulator = 0.0;
+
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
         for (int x = sample_bounds.p0.x; x < sample_bounds.p1.x; x++) {
             thread_ctx.pixel_sampler.next_pixel();
+
+            // variance estimation
+            double luminance_sum = 0.0;
+            double luminance_sq_sum = 0.0;
+
             do {
                 thread_ctx.memory_pool.reset();
 
@@ -196,9 +203,24 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
                     radiance = ctx.environment_light_sampler.get_radiance_for_direction(ray.direction);
                 }
                 tile.add_sample(film_pos, radiance);
+
+                float luminance = radiance.luminance(); 
+                luminance_sum += luminance;
+                luminance_sq_sum += luminance * luminance;
             } while (thread_ctx.pixel_sampler.next_sample_vector());
+
+            if (thread_ctx.pixel_sampler.config->get_samples_per_pixel() > 1) {
+                int n = thread_ctx.pixel_sampler.config->get_samples_per_pixel();
+                tile_variance_accumulator += (luminance_sq_sum - luminance_sum * luminance_sum / n) / (n * (n - 1));
+            }
         }
     }
+
+    if (thread_ctx.pixel_sampler.config->get_samples_per_pixel() > 1) {
+        thread_ctx.variance_accumulator += tile_variance_accumulator;
+        thread_ctx.variance_count += sample_bounds.area();
+    }
+
     film.merge_tile(tile);
 }
 
@@ -385,8 +407,18 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
 
     std::vector<ColorRGB> image = film.get_image();
 
+    double variance_accumulator = 0.0;
+    int64_t variance_count = 0;
+    for (auto [i, initialized] : enumerate(thread_context_initialized)) {
+        if (initialized) {
+            variance_accumulator += thread_contexts[i].variance_accumulator;
+            variance_count += thread_contexts[i].variance_count;
+        }
+    }
+    double variance_estimate  = variance_accumulator / variance_count;
+
     int time = int(elapsed_milliseconds(t));
     printf("Image rendered in %d ms\n", time);
-
+    printf("Variance estimate %.6f, stddev %.6f\n", variance_estimate, std::sqrt(variance_estimate));
     write_exr_image("image.exr",  image.data(), render_region.size().x, render_region.size().y);
 }
