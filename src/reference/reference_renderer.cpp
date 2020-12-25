@@ -171,6 +171,7 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
                 Vector2 film_pos = Vector2((float)x, (float)y) + thread_ctx.pixel_sampler.get_image_plane_sample();
                 Ray ray = ctx.camera->generate_ray(film_pos);
 
+                ColorRGB radiance;
                 Intersection isect;
                 if (ctx.acceleration_structure->intersect(ray, isect)) {
                     Shading_Point_Rays rays;
@@ -186,19 +187,15 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bo
                         continue;
                     }*/
 
-                    ColorRGB radiance;
                     if (ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::direct_lighting)
                         radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx);
                     else if (ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::path_tracer)
                         radiance = estimate_path_contribution(ctx, thread_ctx, shading_ctx);
-
-                    tile.add_sample(film_pos, radiance);
                 }
                 else if (ctx.has_environment_light_sampler) {
-                    ColorRGB radiance = ctx.environment_light_sampler.get_radiance_for_direction(ray.direction);
-                    tile.add_sample(film_pos, radiance);
+                    radiance = ctx.environment_light_sampler.get_radiance_for_direction(ray.direction);
                 }
-
+                tile.add_sample(film_pos, radiance);
             } while (thread_ctx.pixel_sampler.next_sample_vector());
         }
     }
