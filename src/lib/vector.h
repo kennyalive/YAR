@@ -357,8 +357,23 @@ struct Vector2i {
 inline Vector2i operator+(Vector2i a, Vector2i b) {
     return Vector2i{ a.x + b.x, a.y + b.y };
 }
+inline Vector2i operator+(Vector2i a, int k) {
+    return Vector2i{ a.x + k, a.y + k };
+}
 inline Vector2i operator-(Vector2i a, Vector2i b) {
     return Vector2i{ a.x - b.x, a.y - b.y };
+}
+inline Vector2i operator-(Vector2i a, int k) {
+    return Vector2i{ a.x - k, a.y - k };
+}
+inline Vector2i operator*(Vector2i a, int k) {
+    return Vector2i{ a.x * k, a.y * k };
+}
+inline Vector2i operator*(int k, Vector2i a) {
+    return Vector2i{ a * k };
+}
+inline Vector2i operator/(Vector2i a, int k) {
+    return Vector2i{ a.x / k, a.y / k };
 }
 inline bool operator>(Vector2i a, Vector2i b) {
     return a.x > b.x && a.y > b.y;

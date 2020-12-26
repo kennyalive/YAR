@@ -24,8 +24,6 @@
 #include "half/half.h"
 #include "meow-hash/meow_hash_x64_aesni.h"
 
-constexpr int Tile_Size = 64;
-
 // from third_party/miniexr.cpp
 unsigned char* miniexr_write(unsigned width, unsigned height, unsigned channels, const void* rgba16f, size_t* out_size);
 
@@ -266,23 +264,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         error("Unknown filter type");
     }
 
-    Film film(render_region.size(), render_region, film_filter);
-
-    Bounds2i sample_region {
-        Vector2i {
-            (int32_t)std::floor(render_region.p0.x + 0.5f - filter_radius),
-            (int32_t)std::floor(render_region.p0.y + 0.5f - filter_radius)
-        },
-        Vector2i {
-            (int32_t)std::ceil(render_region.p1.x-1 + 0.5f + filter_radius),
-            (int32_t)std::ceil(render_region.p1.y-1 + 0.5f + filter_radius)
-        }
-    };
-
-    Vector2i sample_region_size = sample_region.p1 - sample_region.p0;
-
-    const int x_tile_count = (sample_region_size.x + Tile_Size - 1) / Tile_Size;
-    const int y_tile_count = (sample_region_size.y + Tile_Size - 1) / Tile_Size;
+    Film film(render_region, film_filter);
 
     Scene_Context ctx;
     ctx.scene = &scene;
@@ -329,25 +311,20 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     // Render image
     Timestamp t;
 
+    Vector2i tile_grid_size = film.get_tile_grid_size();
+
     if (options.thread_count == 1) {
         thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
         thread_contexts[0].pixel_sampler.init(&ctx.pixel_sampler_config, &thread_contexts[0].rng);
         thread_context_initialized[0] = true;
 
-        for (int y_tile = 0; y_tile < y_tile_count; y_tile++) {
-            for (int x_tile = 0; x_tile < x_tile_count; x_tile++) {
+        for (int y_tile = 0; y_tile < tile_grid_size.y; y_tile++) {
+            for (int x_tile = 0; x_tile < tile_grid_size.x; x_tile++) {
                 Bounds2i tile_sample_bounds;
-                tile_sample_bounds.p0 = sample_region.p0 + Vector2i{ x_tile * Tile_Size, y_tile * Tile_Size };
-                tile_sample_bounds.p1.x = std::min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
-                tile_sample_bounds.p1.y = std::min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
-
                 Bounds2i tile_pixel_bounds;
-                tile_pixel_bounds.p0.x = std::max((int)std::ceil(tile_sample_bounds.p0.x + 0.5f - filter_radius), render_region.p0.x);
-                tile_pixel_bounds.p0.y = std::max((int)std::ceil(tile_sample_bounds.p0.y + 0.5f - filter_radius), render_region.p0.y);
-                tile_pixel_bounds.p1.x = std::min((int)std::ceil(tile_sample_bounds.p1.x - 1 + 0.5f + filter_radius) + 1, render_region.p1.x);
-                tile_pixel_bounds.p1.y = std::min((int)std::ceil(tile_sample_bounds.p1.y - 1 + 0.5f + filter_radius) + 1, render_region.p1.y);
+                film.get_tile_bounds({x_tile, y_tile}, tile_sample_bounds, tile_pixel_bounds);
 
-                uint64_t rng_seed = y_tile * x_tile_count + x_tile;
+                uint64_t rng_seed = y_tile * tile_grid_size.x + x_tile;
                 render_tile(ctx, thread_contexts[0], tile_sample_bounds, tile_pixel_bounds, rng_seed, film);
             }
         }
@@ -372,20 +349,13 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         };
 
         std::vector<Render_Tile_Task> tasks;
-        for (int y_tile = 0; y_tile < y_tile_count; y_tile++) {
-            for (int x_tile = 0; x_tile < x_tile_count; x_tile++) {
+        for (int y_tile = 0; y_tile < tile_grid_size.y; y_tile++) {
+            for (int x_tile = 0; x_tile < tile_grid_size.x; x_tile++) {
                 Bounds2i tile_sample_bounds;
-                tile_sample_bounds.p0 = sample_region.p0 + Vector2i{ x_tile * Tile_Size, y_tile * Tile_Size };
-                tile_sample_bounds.p1.x = std::min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
-                tile_sample_bounds.p1.y = std::min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
-
                 Bounds2i tile_pixel_bounds;
-                tile_pixel_bounds.p0.x = std::max((int)std::ceil(tile_sample_bounds.p0.x + 0.5f - filter_radius), render_region.p0.x);
-                tile_pixel_bounds.p0.y = std::max((int)std::ceil(tile_sample_bounds.p0.y + 0.5f - filter_radius), render_region.p0.y);
-                tile_pixel_bounds.p1.x = std::min((int)std::ceil(tile_sample_bounds.p1.x - 1 + 0.5f + filter_radius) + 1, render_region.p1.x);
-                tile_pixel_bounds.p1.y = std::min((int)std::ceil(tile_sample_bounds.p1.y - 1 + 0.5f + filter_radius) + 1, render_region.p1.y);
+                film.get_tile_bounds({x_tile, y_tile}, tile_sample_bounds, tile_pixel_bounds);
 
-                uint64_t rng_seed = y_tile * x_tile_count + x_tile;
+                uint64_t rng_seed = y_tile * tile_grid_size.x + x_tile;
 
                 Render_Tile_Task task{};
                 task.ctx = &ctx;

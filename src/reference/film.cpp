@@ -2,6 +2,8 @@
 #include "lib/common.h"
 #include "film.h"
 
+constexpr int Tile_Size = 64;
+
 static Film_Pixel& get_tile_pixel(Film_Tile& tile, Vector2i p) {
     ASSERT(is_inside_bounds(tile.pixel_bounds, p));
     int offset = (p.y - tile.pixel_bounds.p0.y) * tile.pixel_bounds.size().x + (p.x - tile.pixel_bounds.p0.x);
@@ -48,11 +50,38 @@ void Film_Tile::add_sample(Vector2 film_pos, ColorRGB color) {
     }
 }
 
-Film::Film(Vector2i image_resolution, Bounds2i render_region, Film_Filter filter) {
+Film::Film(Bounds2i render_region, Film_Filter filter) {
     this->render_region = render_region;
     this->filter = filter;
-    pixels.resize(image_resolution.x * image_resolution.y);
+
+    sample_region = Bounds2i {
+        Vector2i {
+            (int32_t)std::floor(render_region.p0.x + 0.5f - filter.radius),
+            (int32_t)std::floor(render_region.p0.y + 0.5f - filter.radius)
+        },
+        Vector2i {
+            (int32_t)std::ceil(render_region.p1.x-1 + 0.5f + filter.radius),
+            (int32_t)std::ceil(render_region.p1.y-1 + 0.5f + filter.radius)
+        }
+    };
+
+    pixels.resize(render_region.area());
     memset(pixels.data(), 0, pixels.size() * sizeof(Film_Pixel));
+}
+
+Vector2i Film::get_tile_grid_size() const {
+    return (sample_region.size() + (Tile_Size - 1)) / Tile_Size;
+}
+
+void Film::get_tile_bounds(Vector2i tile_index, Bounds2i& tile_sample_bounds, Bounds2i& tile_pixel_bounds) const {
+    tile_sample_bounds.p0 = sample_region.p0 + Vector2i{ tile_index.x * Tile_Size, tile_index.y * Tile_Size };
+    tile_sample_bounds.p1.x = std::min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
+    tile_sample_bounds.p1.y = std::min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
+
+    tile_pixel_bounds.p0.x = std::max((int)std::ceil(tile_sample_bounds.p0.x + 0.5f - filter.radius), render_region.p0.x);
+    tile_pixel_bounds.p0.y = std::max((int)std::ceil(tile_sample_bounds.p0.y + 0.5f - filter.radius), render_region.p0.y);
+    tile_pixel_bounds.p1.x = std::min((int)std::ceil(tile_sample_bounds.p1.x - 1 + 0.5f + filter.radius) + 1, render_region.p1.x);
+    tile_pixel_bounds.p1.y = std::min((int)std::ceil(tile_sample_bounds.p1.y - 1 + 0.5f + filter.radius) + 1, render_region.p1.y);
 }
 
 void Film::merge_tile(const Film_Tile& tile) {

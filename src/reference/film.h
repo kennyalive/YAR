@@ -29,11 +29,14 @@ struct Film_Tile {
 
 struct Film {
     Bounds2i render_region;
+    Bounds2i sample_region;
     Film_Filter filter;
     std::mutex pixels_mutex;
     std::vector<Film_Pixel> pixels;
 
-    Film(Vector2i image_resolution, Bounds2i render_region, Film_Filter filter);
+    Film(Bounds2i render_region, Film_Filter filter);
+    Vector2i get_tile_grid_size() const;
+    void get_tile_bounds(Vector2i tile_index, Bounds2i& tile_sample_bounds, Bounds2i& tile_pixel_bounds) const;
     void merge_tile(const Film_Tile& tile);
     std::vector<ColorRGB> get_image() const;
 };
