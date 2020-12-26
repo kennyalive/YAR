@@ -72,6 +72,7 @@ Film::Film(Bounds2i render_region, Film_Filter filter) {
 }
 
 void Film::get_tile_bounds(int tile_index, Bounds2i& tile_sample_bounds, Bounds2i& tile_pixel_bounds) const {
+    ASSERT(tile_index < get_tile_count());
     int tile_x_pos = tile_index % tile_grid_size.x;
     int tile_y_pos = tile_index / tile_grid_size.y;
 
@@ -79,10 +80,10 @@ void Film::get_tile_bounds(int tile_index, Bounds2i& tile_sample_bounds, Bounds2
     tile_sample_bounds.p1.x = std::min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
     tile_sample_bounds.p1.y = std::min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
 
-    tile_pixel_bounds.p0.x = std::max((int)std::ceil(tile_sample_bounds.p0.x + 0.5f - filter.radius), render_region.p0.x);
-    tile_pixel_bounds.p0.y = std::max((int)std::ceil(tile_sample_bounds.p0.y + 0.5f - filter.radius), render_region.p0.y);
-    tile_pixel_bounds.p1.x = std::min((int)std::ceil(tile_sample_bounds.p1.x - 1 + 0.5f + filter.radius) + 1, render_region.p1.x);
-    tile_pixel_bounds.p1.y = std::min((int)std::ceil(tile_sample_bounds.p1.y - 1 + 0.5f + filter.radius) + 1, render_region.p1.y);
+    tile_pixel_bounds.p0.x = std::max((int)std::ceil(tile_sample_bounds.p0.x - filter.radius - 0.5f), render_region.p0.x);
+    tile_pixel_bounds.p0.y = std::max((int)std::ceil(tile_sample_bounds.p0.y - filter.radius - 0.5f), render_region.p0.y);
+    tile_pixel_bounds.p1.x = std::min((int)std::floor(tile_sample_bounds.p1.x + filter.radius - 0.5f) + 1, render_region.p1.x);
+    tile_pixel_bounds.p1.y = std::min((int)std::floor(tile_sample_bounds.p1.y + filter.radius - 0.5f) + 1, render_region.p1.y);
 }
 
 void Film::merge_tile(const Film_Tile& tile) {
