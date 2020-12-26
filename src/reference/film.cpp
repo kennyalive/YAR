@@ -65,16 +65,17 @@ Film::Film(Bounds2i render_region, Film_Filter filter) {
         }
     };
 
+    tile_grid_size = (sample_region.size() + (Tile_Size - 1)) / Tile_Size;
+
     pixels.resize(render_region.area());
     memset(pixels.data(), 0, pixels.size() * sizeof(Film_Pixel));
 }
 
-Vector2i Film::get_tile_grid_size() const {
-    return (sample_region.size() + (Tile_Size - 1)) / Tile_Size;
-}
+void Film::get_tile_bounds(int tile_index, Bounds2i& tile_sample_bounds, Bounds2i& tile_pixel_bounds) const {
+    int tile_x_pos = tile_index % tile_grid_size.x;
+    int tile_y_pos = tile_index / tile_grid_size.y;
 
-void Film::get_tile_bounds(Vector2i tile_index, Bounds2i& tile_sample_bounds, Bounds2i& tile_pixel_bounds) const {
-    tile_sample_bounds.p0 = sample_region.p0 + Vector2i{ tile_index.x * Tile_Size, tile_index.y * Tile_Size };
+    tile_sample_bounds.p0 = sample_region.p0 + Vector2i{ tile_x_pos * Tile_Size, tile_y_pos * Tile_Size };
     tile_sample_bounds.p1.x = std::min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
     tile_sample_bounds.p1.y = std::min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
 

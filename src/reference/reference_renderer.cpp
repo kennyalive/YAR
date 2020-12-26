@@ -156,8 +156,13 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
     }
 }
 
-static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, Bounds2i sample_bounds, Bounds2i pixel_bounds, uint64_t rng_seed, Film& film) {
-    thread_ctx.rng.init(0, rng_seed);
+static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, int tile_index, Film& film) {
+    thread_ctx.rng.init(0, (uint64_t)tile_index);
+
+    Bounds2i sample_bounds;
+    Bounds2i pixel_bounds;
+    film.get_tile_bounds(tile_index, sample_bounds, pixel_bounds);
+
     Film_Tile tile(pixel_bounds, film.filter);
 
     double tile_variance_accumulator = 0.0;
@@ -311,29 +316,18 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     // Render image
     Timestamp t;
 
-    Vector2i tile_grid_size = film.get_tile_grid_size();
-
     if (options.thread_count == 1) {
         thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
         thread_contexts[0].pixel_sampler.init(&ctx.pixel_sampler_config, &thread_contexts[0].rng);
         thread_context_initialized[0] = true;
 
-        for (int y_tile = 0; y_tile < tile_grid_size.y; y_tile++) {
-            for (int x_tile = 0; x_tile < tile_grid_size.x; x_tile++) {
-                Bounds2i tile_sample_bounds;
-                Bounds2i tile_pixel_bounds;
-                film.get_tile_bounds({x_tile, y_tile}, tile_sample_bounds, tile_pixel_bounds);
-
-                uint64_t rng_seed = y_tile * tile_grid_size.x + x_tile;
-                render_tile(ctx, thread_contexts[0], tile_sample_bounds, tile_pixel_bounds, rng_seed, film);
-            }
+        for (int tile_index = 0; tile_index < film.get_tile_count(); tile_index++) {
+            render_tile(ctx, thread_contexts[0], tile_index, film);
         }
     } else {
         struct Render_Tile_Task : public enki::ITaskSet {
             Scene_Context* ctx;
-            Bounds2i tile_sample_bounds;
-            Bounds2i tile_pixel_bounds;
-            uint64_t rng_seed;
+            int tile_index;
             Film* film;
 
             void ExecuteRange(enki::TaskSetPartition, uint32_t threadnum) override {
@@ -344,33 +338,20 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
                     thread_contexts[threadnum].pixel_sampler.init(&ctx->pixel_sampler_config, &thread_contexts[threadnum].rng);
                     thread_context_initialized[threadnum] = true;
                 }
-                render_tile(*ctx, thread_contexts[threadnum], tile_sample_bounds, tile_pixel_bounds, rng_seed, *film);
+                render_tile(*ctx, thread_contexts[threadnum], tile_index, *film);
             }
         };
 
-        std::vector<Render_Tile_Task> tasks;
-        for (int y_tile = 0; y_tile < tile_grid_size.y; y_tile++) {
-            for (int x_tile = 0; x_tile < tile_grid_size.x; x_tile++) {
-                Bounds2i tile_sample_bounds;
-                Bounds2i tile_pixel_bounds;
-                film.get_tile_bounds({x_tile, y_tile}, tile_sample_bounds, tile_pixel_bounds);
-
-                uint64_t rng_seed = y_tile * tile_grid_size.x + x_tile;
-
-                Render_Tile_Task task{};
-                task.ctx = &ctx;
-                task.tile_sample_bounds = tile_sample_bounds;
-                task.tile_pixel_bounds = tile_pixel_bounds;
-                task.rng_seed = rng_seed;
-                task.film = &film;
-                tasks.push_back(task);
-            }
-        }
-
         enki::TaskScheduler task_scheduler;
         task_scheduler.Initialize();
-        for (Render_Tile_Task& task : tasks) {
-            task_scheduler.AddTaskSetToPipe(&task);
+        std::vector<Render_Tile_Task> tasks(film.get_tile_count());
+        for(int tile_index = 0; tile_index < film.get_tile_count(); tile_index++) {
+            Render_Tile_Task task{};
+            task.ctx = &ctx;
+            task.tile_index = tile_index;
+            task.film = &film;
+            tasks[tile_index] = task;
+            task_scheduler.AddTaskSetToPipe(&tasks[tile_index]);
         }
         task_scheduler.WaitforAllAndShutdown();
     }
