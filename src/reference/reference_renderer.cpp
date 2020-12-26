@@ -2,7 +2,6 @@
 #include "lib/common.h"
 #include "reference_renderer.h"
 
-#include "bsdf.h"
 #include "camera.h"
 #include "context.h"
 #include "direct_lighting.h"
@@ -13,11 +12,9 @@
 #include "path_tracing.h"
 #include "shading_context.h"
 
-#include "lib/geometry.h"
 #include "lib/math.h"
 #include "lib/random.h"
 #include "lib/scene_loader.h"
-#include "lib/triangle_mesh.h"
 #include "lib/vector.h"
 
 #include "enkiTS/TaskScheduler.h"
