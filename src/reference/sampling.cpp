@@ -63,7 +63,7 @@ float uniform_cone_pdf(float cos_theta_max) {
 void generate_stratified_sequence_1d(RNG& rng, int n, float* result) {
     float dx = 1.f / float(n);
     for (int x = 0; x < n; x++) {
-        result[x] = std::min((float(x) + rng.get_float()) * dx, One_Minus_Epsilon);
+        *result++ = std::min((float(x) + rng.get_float()) * dx, One_Minus_Epsilon);
     }
 }
 
@@ -74,7 +74,7 @@ void generate_stratified_sequence_2d(RNG& rng, int nx, int ny, Vector2* result) 
         for (int x = 0; x < nx; x++) {
             float sx = std::min((float(x) + rng.get_float()) * dx, One_Minus_Epsilon);
             float sy = std::min((float(y) + rng.get_float()) * dy, One_Minus_Epsilon);
-            result[y * nx + x] = Vector2(sx, sy);
+            *result++ = Vector2(sx, sy);
         }
     }
 }

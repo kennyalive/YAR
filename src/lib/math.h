@@ -67,11 +67,10 @@ inline Vector3 reflect(const Vector3& v, const Vector3& n) {
 Vector3 offset_ray_origin(const Vector3& p, const Vector3& geometric_normal);
 
 template <typename T>
-void shuffle(T* first, T* last, RNG& rng) {
-    uint32_t n = uint32_t(last - first);
+void shuffle(T* data, int n, RNG& rng) {
     ASSERT(n > 0);
-    for (uint32_t i = 0; i < n-1; i++) {
-        uint32_t k = i + rng.get_bounded_uint(n - i);
-        std::swap(first[i], first[k]);
+    for (int i = n; i > 1; i--) {
+        uint32_t k = rng.get_bounded_uint_fast_and_biased(i);
+        std::swap(data[i-1], data[k]);
     }
 }
