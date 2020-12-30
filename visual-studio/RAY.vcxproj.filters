@@ -31,6 +31,9 @@
     <ClCompile Include="..\src\reference\light_sampling.cpp" />
     <ClCompile Include="..\src\reference\pixel_sampling.cpp" />
     <ClCompile Include="..\src\reference\path_tracing.cpp" />
+    <ClCompile Include="..\src\reference\test_random.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />

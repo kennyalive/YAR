@@ -113,6 +113,7 @@
     <ClCompile Include="..\src\reference\image_texture.cpp" />
     <ClCompile Include="..\src\reference\test.cpp" />
     <ClCompile Include="..\src\reference\test_kdtree.cpp" />
+    <ClCompile Include="..\src\reference\test_random.cpp" />
     <ClCompile Include="..\src\reference\test_sampling.cpp" />
     <ClCompile Include="..\src\reference\test_triangle_intersection.cpp" />
     <ClCompile Include="..\src\std.cpp">
