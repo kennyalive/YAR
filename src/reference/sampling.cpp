@@ -70,11 +70,11 @@ void generate_stratified_sequence_1d(RNG& rng, int n, float* result) {
 void generate_stratified_sequence_2d(RNG& rng, int nx, int ny, Vector2* result) {
     float dx = 1.f / float(nx);
     float dy = 1.f / float(ny);
+    float* f = &result->x;
     for (int y = 0; y < ny; y++) {
         for (int x = 0; x < nx; x++) {
-            float sx = std::min((float(x) + rng.get_float()) * dx, One_Minus_Epsilon);
-            float sy = std::min((float(y) + rng.get_float()) * dy, One_Minus_Epsilon);
-            *result++ = Vector2(sx, sy);
+            *f++ = std::min((float(x) + rng.get_float()) * dx, One_Minus_Epsilon);
+            *f++ = std::min((float(y) + rng.get_float()) * dy, One_Minus_Epsilon);
         }
     }
 }
