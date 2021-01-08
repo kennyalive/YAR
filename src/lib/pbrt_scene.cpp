@@ -92,8 +92,8 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
 
 static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_material, Scene* scene) {
     Materials& materials = scene->materials;
-    auto matte = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_material);
-    if (matte) {
+
+    if (auto matte = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_material)) {
         Lambertian_Material mtl;
 
         if (matte->map_kd)
@@ -105,16 +105,14 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         return Material_Handle{ Material_Type::lambertian, int(materials.lambertian.size() - 1) };
     }
 
-    auto mirror_material = std::dynamic_pointer_cast<pbrt::MirrorMaterial>(pbrt_material);
-    if (mirror_material) {
+    if (auto mirror_material = std::dynamic_pointer_cast<pbrt::MirrorMaterial>(pbrt_material)) {
         Mirror_Material mtl;
         set_constant_parameter(mtl.reflectance, ColorRGB(&mirror_material->kr.x));
         materials.mirror.push_back(mtl);
         return Material_Handle{ Material_Type::mirror, int(materials.mirror.size() - 1) };
     }
 
-    auto metal = std::dynamic_pointer_cast<pbrt::MetalMaterial>(pbrt_material);
-    if (metal) {
+    if (auto metal = std::dynamic_pointer_cast<pbrt::MetalMaterial>(pbrt_material)) {
         float roughness = pbrt_roughness_to_disney_roughness(metal->roughness, metal->remapRoughness);
         Metal_Material mtl;
         set_constant_parameter(mtl.roughness, roughness);
@@ -143,9 +141,7 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         return Material_Handle{ Material_Type::metal, int(materials.metal.size() - 1) };
     }
 
-    auto plastic = std::dynamic_pointer_cast<pbrt::PlasticMaterial>(pbrt_material);
-    if (plastic) {
-        // TODO: handle texture params
+    if (auto plastic = std::dynamic_pointer_cast<pbrt::PlasticMaterial>(pbrt_material)) {
         ASSERT(plastic->map_bump == nullptr);
         ASSERT(plastic->map_roughness == nullptr);
 
@@ -168,6 +164,31 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
 
         materials.plastic.push_back(mtl);
         return Material_Handle{ Material_Type::plastic, int(materials.plastic.size() - 1) };
+    }
+
+    if (auto coated_diffuse = std::dynamic_pointer_cast<pbrt::SubstrateMaterial>(pbrt_material)) {
+        ASSERT(coated_diffuse->map_uRoughness == nullptr);
+        ASSERT(coated_diffuse->map_vRoughness == nullptr);
+        ASSERT(coated_diffuse->map_bump == nullptr);
+
+        ASSERT(coated_diffuse->uRoughness == coated_diffuse->vRoughness);
+        float roughness = pbrt_roughness_to_disney_roughness(coated_diffuse->uRoughness, coated_diffuse->remapRoughness);
+
+        Coated_Diffuse_Material mtl;
+        set_constant_parameter(mtl.roughness, roughness);
+
+        if (coated_diffuse->map_ks)
+            mtl.r0 = import_pbrt_texture_rgb(coated_diffuse->map_ks, scene);
+        else
+            set_constant_parameter(mtl.r0, ColorRGB(&coated_diffuse->ks.x));
+
+        if (coated_diffuse->map_kd)
+            mtl.diffuse_reflectance = import_pbrt_texture_rgb(coated_diffuse->map_kd, scene);
+        else
+            set_constant_parameter(mtl.diffuse_reflectance, ColorRGB(&coated_diffuse->kd.x));
+
+        materials.coated_diffuse.push_back(mtl);
+        return Material_Handle{ Material_Type::coated_diffuse, int(materials.coated_diffuse.size() - 1) };
     }
 
     // Default material.

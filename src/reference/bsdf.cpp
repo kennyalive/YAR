@@ -184,6 +184,75 @@ float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
     return pdf;
 }
 
+//
+// Ashikhmin_Shirley_Phong_BRDF
+//
+// BRDF described in "An Anisotropic Phong Light Reflection Model", Michael Ashikhmin, Peter Shirley.
+// https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.18.4504&rep=rep1&type=pdf
+//
+Ashikhmin_Shirley_Phong_BRDF::Ashikhmin_Shirley_Phong_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Coated_Diffuse_Material& params)
+    : BSDF(shading_ctx)
+{
+    reflection_scattering = true;
+
+    float roughness = evaluate_float_parameter(scene_ctx, shading_ctx, params.roughness);
+    alpha = roughness * roughness;
+
+    r0 = evaluate_rgb_parameter(scene_ctx, shading_ctx, params.r0);
+    diffuse_reflectance = evaluate_rgb_parameter(scene_ctx, shading_ctx, params.diffuse_reflectance);
+}
+
+ColorRGB Ashikhmin_Shirley_Phong_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
+    Vector3 wh = (wo + wi).normalized();
+
+    float cos_theta_i = dot(wi, wh);
+    ASSERT(cos_theta_i >= 0);
+
+    ColorRGB F = schlick_fresnel(r0, cos_theta_i);
+    float D = GGX_Distribution::D(wh, N, alpha);
+
+    ColorRGB specular_brdf = F * (D / (4.f * cos_theta_i * std::max(dot(N, wo), dot(N, wi))));
+
+    auto pow5 = [](float v) { return (v * v) * (v * v) * v; };
+
+    ColorRGB diffuse_brdf =
+            (diffuse_reflectance * (ColorRGB(1.f) - r0)) *
+            (28.f / (23.f*Pi) * (1.f - pow5(1.f - 0.5f * dot(N, wi))) * (1.f - pow5(1.f - 0.5f * dot(N, wo))));
+
+    return diffuse_brdf + specular_brdf;
+}
+
+ColorRGB Ashikhmin_Shirley_Phong_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
+    if (u[0] < 0.5f) { // sample diffuse
+        u[0] *= 2.f; // remap u[0] to [0, 1) range
+
+        Vector3 local_dir = sample_hemisphere_cosine(u);
+        *wi = shading_ctx->local_to_world(local_dir);
+    }
+    else { // sample specular
+        u[0] = (u[0] - 0.5f) * 2.f; // remap u[0] to [0, 1) range
+        Vector3 wh = sample_microfacet_normal(*shading_ctx, u, wo, alpha);
+        *wi = reflect(wo, wh);
+    }
+
+    if (dot(N, *wi) <= 0.f)
+        return Color_Black;
+
+    *pdf = Ashikhmin_Shirley_Phong_BRDF::pdf(wo, *wi);
+    return evaluate(wo, *wi);
+}
+
+float Ashikhmin_Shirley_Phong_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
+    ASSERT(dot(N, wi) >= 0.f);
+    float diffuse_pdf = dot(N, wi) / Pi;
+
+    Vector3 wh = (wo + wi).normalized();
+    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, N, alpha);
+
+    float pdf = 0.5f * (diffuse_pdf + spec_pdf);
+    return pdf;
+}
+
 const BSDF* create_bsdf(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, Material_Handle material) {
     switch (material.type) {
     case Material_Type::lambertian:
@@ -203,6 +272,12 @@ const BSDF* create_bsdf(const Scene_Context& scene_ctx, Thread_Context& thread_c
         const Plastic_Material& params = scene_ctx.materials.plastic[material.index];
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Plastic_BRDF>();
         return new (bsdf_allocation) Plastic_BRDF(scene_ctx, shading_ctx, params);
+    }
+    case Material_Type::coated_diffuse:
+    {
+        const Coated_Diffuse_Material& params = scene_ctx.materials.coated_diffuse[material.index];
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Ashikhmin_Shirley_Phong_BRDF>();
+        return new (bsdf_allocation) Ashikhmin_Shirley_Phong_BRDF(scene_ctx, shading_ctx, params);
     }
     default:
     {

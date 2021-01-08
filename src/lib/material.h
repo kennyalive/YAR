@@ -8,7 +8,8 @@ enum class Material_Type : uint32_t {
     lambertian,
     metal,
     plastic,
-    mirror
+    mirror,
+    coated_diffuse,
 };
 
 struct Material_Handle {
@@ -71,9 +72,16 @@ struct Mirror_Material {
     RGB_Parameter reflectance;
 };
 
+struct Coated_Diffuse_Material {
+    Float_Parameter roughness; // roughness of the glossy layer
+    RGB_Parameter r0; // reflectance of the glossy layer at normal incident angle
+    RGB_Parameter diffuse_reflectance; // reflectance of the diffuse layer
+};
+
 struct Materials {
     std::vector<Lambertian_Material> lambertian;
     std::vector<Metal_Material> metal;
     std::vector<Plastic_Material> plastic;
     std::vector<Mirror_Material> mirror;
+    std::vector<Coated_Diffuse_Material> coated_diffuse;
 };
