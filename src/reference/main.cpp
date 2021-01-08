@@ -13,6 +13,7 @@ enum Options {
     OPT_RENDER_REGION_Y,
     OPT_RENDER_REGION_W,
     OPT_RENDER_REGION_H,
+    OPT_RENDER_TILE,
 };
 
 static const getopt_option_t option_list[] =
@@ -24,6 +25,7 @@ static const getopt_option_t option_list[] =
     { "y", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_REGION_Y, "render region top-left corner y coordinate", "y"},
     { "w", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_REGION_W, "render region width", "width"},
     { "h", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_REGION_H, "render region height", "height"},
+    { "tile", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_TILE, "render single tile with the given index", "tile index"},
     GETOPT_OPTIONS_END
 };
 
@@ -49,6 +51,7 @@ int main(int argc, char** argv) {
 
     Vector2i render_region_position {-1, -1};
     Vector2i render_region_size;
+    int render_tile_index = -1;
 
     int opt;
     while ((opt = getopt_next(&ctx)) != -1) {
@@ -91,6 +94,9 @@ int main(int argc, char** argv) {
         else if (opt == OPT_RENDER_REGION_H) {
             render_region_size.y = atoi(ctx.current_opt_arg);
         }
+        else if (opt == OPT_RENDER_TILE) {
+            render_tile_index = atoi(ctx.current_opt_arg);
+        }
         else {
            ASSERT(!"unknown option");
         }
@@ -103,6 +109,10 @@ int main(int argc, char** argv) {
     {
         options.render_region.p0 = render_region_position;
         options.render_region.p1 = render_region_position + render_region_size;
+    }
+
+    if (render_tile_index >= 0) {
+        options.render_tile_index = render_tile_index;
     }
 
     if (files.empty()) {

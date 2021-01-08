@@ -313,7 +313,14 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     // Render image
     Timestamp t;
 
-    if (options.thread_count == 1) {
+    if (options.render_tile_index >= 0) {
+        thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
+        thread_contexts[0].pixel_sampler.init(&ctx.pixel_sampler_config, &thread_contexts[0].rng);
+        thread_context_initialized[0] = true;
+
+        render_tile(ctx, thread_contexts[0], options.render_tile_index, film);
+    }
+    else if (options.thread_count == 1) {
         thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
         thread_contexts[0].pixel_sampler.init(&ctx.pixel_sampler_config, &thread_contexts[0].rng);
         thread_context_initialized[0] = true;
@@ -321,7 +328,8 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         for (int tile_index = 0; tile_index < film.get_tile_count(); tile_index++) {
             render_tile(ctx, thread_contexts[0], tile_index, film);
         }
-    } else {
+    }
+    else {
         struct Render_Tile_Task : public enki::ITaskSet {
             Scene_Context* ctx;
             int tile_index;
