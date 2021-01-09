@@ -105,8 +105,8 @@ std::vector<ColorRGB> Film::get_image() const {
     std::vector<ColorRGB> image(pixels.size());
     for (size_t i = 0; i < pixels.size(); i++) {
         const Film_Pixel& pixel = pixels[i];
-        
-        ColorRGB color = pixel.color_sum / pixel.weight_sum;
+
+        ColorRGB color = pixel.color_sum.is_black() ? Color_Black : pixel.color_sum / pixel.weight_sum;
 
         // handle out-of-gamut values
         color.r = std::max(0.f, color.r);
