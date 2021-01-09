@@ -140,7 +140,13 @@ inline T round_up(T k, T alignment) {
 
 inline uint32_t count_leading_zeros(uint32_t k) {
 #ifdef _MSC_VER
-    return __lzcnt(k);
+    // LZCNT instruction is exactly what we need but it's not supported on pre-Haswell Intel CPUs.
+    // Example implementation with LZCNT instruction:
+    // return __lzcnt(k);
+
+    unsigned long index;
+    unsigned char result = _BitScanReverse(&index, k);
+    return result ? (31 - (uint32_t)index) : 32;
 #else
     uint32_t n = 0;
     while (k > 0) {
@@ -151,9 +157,19 @@ inline uint32_t count_leading_zeros(uint32_t k) {
 #endif
 }
 
+inline uint32_t most_significant_bit_index(uint32_t k) {
+#ifdef _MSC_VER
+    unsigned long index;
+    unsigned char result = _BitScanReverse(&index, k);
+    return result ? (uint32_t)index : 32;
+#else
+#error most_significant_bit_index is not implemented for non-MSVC compiler
+#endif
+}
+
 inline uint32_t log2_int(uint32_t k) {
     ASSERT(k > 0);
-    return 31 - count_leading_zeros(k);
+    return most_significant_bit_index(k);
 }
 
 inline uint32_t round_up_to_power_of_2(uint32_t k) {
