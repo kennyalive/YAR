@@ -364,24 +364,28 @@ inline ColorRGB get_texel_repeat(const Image& image, int x, int y) {
     ASSERT(is_power_of_2(image.width));
     ASSERT(is_power_of_2(image.height));
 
-    // Here's the straightforward branchless implementation that uses integral division.
-    // It is noticable slower comparing to the optimized version:
-    //x %= image.width;
-    //x = (x < 0) ? x + image.width : x;
-    //y %= image.height;
-    //y = (y < 0) ? y + image.height : y;
+    // Simple and correct implementation.
+    /*
+    x %= image.width;
+    x = (x < 0) ? x + image.width : x;
+    y %= image.height;
+    y = (y < 0) ? y + image.height : y;
+    */
 
+    // TODO: can we get rid of % in else blocks?
     if (x >= 0) {
         x &= (image.width - 1);
     }
     else {
-        x = image.width - ((~x + 1) & (image.width - 1)); // x < 0 => x = x%w + w
+        x %= image.width;
+        x += (x >> 31) & image.width;
     }
     if (y >= 0) {
         y &= (image.height - 1);
     }
     else {
-        y = image.height - ((~y + 1) & (image.height - 1)); // y < 0 => y = y%h + h
+        y %= image.height;
+        y += (y >> 31) & image.height;
     }
     return image.data[y * image.width + x];
 }
