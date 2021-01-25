@@ -35,11 +35,19 @@ static bool adjust_shading_normal(const Vector3& Wo, const Vector3& Ng, Vector3*
     float b = dot(*N, Ng);
     ASSERT(b > 0.f);
 
-    float epsilon = 1e-4f; // to ensure that tangent vector is a bit above the surface
+    // This epsilon pulls tangent vector up a bit, so it's not strictly parallel to the surface.
+    // In the scenario of ideal specular reflection it helps to avoid self intersection.
+    float epsilon = 1e-4f;
+
     float distance_to_surface_along_normal = std::abs(a)/b;
     Vector3 tangent = R + (distance_to_surface_along_normal + epsilon) * (*N);
     tangent.normalize();
-    ASSERT(dot(tangent, Ng) > 0.f);
+
+    // Check that tangent vector is either above the surface or only a little bit below it.
+    // The second scenario is still possible in rare situations due to finite FP precision when we have
+    // extreme orientation of the shading normal N relative to the geometric normal Ng (almost orthogonal).
+    // This is not a problem per se, because tangent vector only provides characteristic orientation.
+    ASSERT(dot(tangent, Ng) > -1e-5f);
 
     Vector3 new_N = (Wo + tangent).normalized();
     ASSERT(dot(Wo, new_N) >= 0.f);
