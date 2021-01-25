@@ -86,14 +86,36 @@ float sample_from_CDF(float u, const float* cdf, int n, float interval_length /*
 
     auto it = std::lower_bound(cdf, cdf + n, u);
     ASSERT(it != cdf + n);
+    ASSERT(*it >= u); // just for clarity, it's std::lower_bound guarantee
 
     int k = int(it - cdf);
     float cdf_a = (k == 0) ? 0.f : cdf[k-1];
     float cdf_b = cdf[k];
 
+    // Check for horizontal segment which means pdf == 0. We should never sample from it.
+    // The binary search above in general will skip horizontal segments and the only corner
+    // case is when horizontal segment is the first one and u == 0.
+    if (cdf_a == cdf_b) {
+        // Just to detect this special case the first time and do proper debugging on hot data.
+        // After that this assert should be removed and the code below should be uncommented.
+        ASSERT(false);
+
+        // Make this code part of implementation when the assert above triggers.
+        /*
+        ASSERT(k == 0);
+        ASSERT(u == 0.f);
+
+        do {
+            ASSERT(k < n);
+            cdf_a = cdf_b;
+            cdf_b = cdf[++k];
+        } while (cdf_a == cdf_b);
+        */
+    }
+
     if (pdf) {
         *pdf = (cdf_b - cdf_a) * n;
-        ASSERT(*pdf > 0.f); // it can be shown this can't be zero
+        ASSERT(*pdf > 0.f);
     }
 
     float x = (float(k) + (u - cdf_a) / (cdf_b - cdf_a)) * interval_length;
@@ -130,6 +152,14 @@ void Distribution_2D::initialize(const float* values, int nx, int ny) {
     CDFs_x.resize(nx*ny);
     for (int y = 0; y < ny; y++) {
         float* cdf = &CDFs_x[y*nx];
+
+        if (row_sums[y] == 0.f) {
+            // Zeroed rows should never be selected by marginal_CDF_y sampling.
+            // Initialize correspodning cdf function with invalid distribution.
+            memset(cdf, 0, nx * sizeof(float));
+            continue;
+        }
+        
         for (int x = 0; x < nx - 1; x++) {
             cdf[x] = (x == 0 ? 0.f : cdf[x-1]) + values[y*nx + x] / row_sums[y];
         }
@@ -176,16 +206,18 @@ Vector2 Distribution_2D::sample(Vector2 u, float* pdf_uv) const {
 
     float pdf_y; 
     float ky = sample_from_CDF(u[0], marginal_CDF_y.data(), int(marginal_CDF_y.size()), y_interval_length, &pdf_y);
+    ASSERT(pdf_y > 0.f);
+
     float y = ky * ny;
     ASSERT(y < float(ny));
 
     float pdf_x_given_y;
     float kx = sample_from_CDF(u[1], &CDFs_x[int(y) * nx], nx, x_interval_length, &pdf_x_given_y);
+    ASSERT(pdf_x_given_y > 0.f);
 
     if (pdf_uv) {
         *pdf_uv = pdf_y * pdf_x_given_y;
     }
-
     return {kx, ky};
 }
 
