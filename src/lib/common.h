@@ -3,16 +3,7 @@
 #define ASSERT(expression) if (!(expression)) __debugbreak()
 
 #define ENABLE_PROFILING 1
-
 #define ENABLE_INVALID_FP_EXCEPTION 0
-
-constexpr float Pi = 3.14159265f;
-constexpr float Pi2 = 6.2831853f;
-constexpr float Pi_Over_2 = 1.57079632f;
-constexpr float Pi_Inv = 1.f / Pi;
-constexpr float Pi2_Inv = 1.f / Pi2;
-constexpr float Infinity = std::numeric_limits<float>::infinity();
-constexpr float One_Minus_Epsilon = 0x1.fffffep-1;
 
 void error(const std::string& message);
 void error(const char* format, ...);
@@ -96,16 +87,6 @@ template <typename T,
     return iterable_wrapper{ std::forward<T>(iterable) };
 }
 
-inline constexpr float radians(float degrees) {
-    constexpr float deg_2_rad = Pi / 180.f;
-    return degrees * deg_2_rad;
-}
-
-inline constexpr float degrees(float radians) {
-    constexpr float rad_2_deg = 180.f / Pi;
-    return radians * rad_2_deg;
-}
-
 inline std::string to_lower(std::string s) {
     for (char& c : s)
         c = tolower(c);
@@ -131,11 +112,6 @@ inline float srgb_decode(float f) {
         return f / 12.92f;
     else
         return std::pow((f + 0.055f) / 1.055f, 2.4f);
-}
-
-template <typename T>
-inline T round_up(T k, T alignment) {
-    return (k + alignment - 1) & ~(alignment - 1);
 }
 
 inline uint32_t count_leading_zeros(uint32_t k) {
@@ -165,27 +141,6 @@ inline uint32_t most_significant_bit_index(uint32_t k) {
 #else
 #error most_significant_bit_index is not implemented for non-MSVC compiler
 #endif
-}
-
-inline uint32_t log2_int(uint32_t k) {
-    ASSERT(k > 0);
-    return most_significant_bit_index(k);
-}
-
-inline uint32_t round_up_to_power_of_2(uint32_t k) {
-    ASSERT(k > 0);
-    k--;
-    k |= k >> 1;
-    k |= k >> 2;
-    k |= k >> 4;
-    k |= k >> 8;
-    k |= k >> 16;
-    k++;
-    return k;
-}
-
-inline bool is_power_of_2(uint32_t k) {
-    return k != 0 && (k & (k - 1)) == 0;
 }
 
 // These functions control per-thread state.

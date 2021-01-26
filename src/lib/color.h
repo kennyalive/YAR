@@ -1,5 +1,7 @@
 #pragma once
 
+#include "math.h"
+
 struct Vector3;
 struct ColorRGB;
 

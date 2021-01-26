@@ -3,6 +3,7 @@
 
 #include "sampling.h"
 
+#include "lib/math.h"
 #include "lib/random.h"
 #include "lib/vector.h"
 
