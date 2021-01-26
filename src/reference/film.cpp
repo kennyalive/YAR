@@ -74,7 +74,7 @@ Film::Film(Bounds2i render_region, Film_Filter filter) {
 void Film::get_tile_bounds(int tile_index, Bounds2i& tile_sample_bounds, Bounds2i& tile_pixel_bounds) const {
     ASSERT(tile_index < get_tile_count());
     int tile_x_pos = tile_index % tile_grid_size.x;
-    int tile_y_pos = tile_index / tile_grid_size.y;
+    int tile_y_pos = tile_index / tile_grid_size.x;
 
     tile_sample_bounds.p0 = sample_region.p0 + Vector2i{ tile_x_pos * Tile_Size, tile_y_pos * Tile_Size };
     tile_sample_bounds.p1.x = std::min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
