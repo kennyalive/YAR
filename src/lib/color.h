@@ -71,6 +71,10 @@ struct ColorRGB {
         g = std::max(0.f, g);
         b = std::max(0.f, b);
     }
+
+    bool is_finite() const {
+        return ::is_finite(r) && ::is_finite(g) && ::is_finite(b);
+    }
 };
 
 inline ColorRGB operator*(const ColorRGB& c, float k) {

@@ -202,9 +202,10 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, in
                 else if (ctx.has_environment_light_sampler) {
                     radiance = ctx.environment_light_sampler.get_radiance_for_direction(ray.direction);
                 }
+                ASSERT(radiance.is_finite());
                 tile.add_sample(film_pos, radiance);
 
-                float luminance = radiance.luminance(); 
+                float luminance = radiance.luminance();
                 luminance_sum += luminance;
                 luminance_sq_sum += luminance * luminance;
             } while (thread_ctx.pixel_sampler.next_sample_vector());
