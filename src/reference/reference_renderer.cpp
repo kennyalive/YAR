@@ -153,7 +153,7 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
     }
 }
 
-static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, int tile_index, Film& film) {
+static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, int tile_index, Film& film) {
     thread_ctx.rng.init(0, (uint64_t)tile_index);
 
     Bounds2i sample_bounds;
@@ -176,32 +176,18 @@ static void render_tile(const Scene_Context& ctx, Thread_Context& thread_ctx, in
                 thread_ctx.memory_pool.reset();
 
                 Vector2 film_pos = Vector2((float)x, (float)y) + thread_ctx.pixel_sampler.get_image_plane_sample();
-                Ray ray = ctx.camera->generate_ray(film_pos);
+
+                Footprint_Tracking_Ray footprint_tracking_ray;
+                footprint_tracking_ray.main_ray = scene_ctx.camera->generate_ray(film_pos);
+                footprint_tracking_ray.auxilary_ray_dx_offset = scene_ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
+                footprint_tracking_ray.auxilary_ray_dy_offset = scene_ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
 
                 ColorRGB radiance;
-                Intersection isect;
-                if (ctx.acceleration_structure->intersect(ray, isect)) {
-                    Shading_Point_Rays rays;
-                    rays.incident_ray = ray;
-                    rays.auxilary_ray_dx_offset = ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
-                    rays.auxilary_ray_dy_offset = ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
+                if (scene_ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::direct_lighting)
+                    radiance = estimate_direct_lighting(scene_ctx, thread_ctx, footprint_tracking_ray);
+                else if (scene_ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::path_tracer)
+                    radiance = estimate_path_contribution(scene_ctx, thread_ctx, footprint_tracking_ray);
 
-                    Shading_Context shading_ctx(ctx, thread_ctx, rays, isect);
-
-                    // debug visualization of samples with adjusted shading normal.
-                    /*if (shading_ctx.shading_normal_adjusted) {
-                        tile.add_sample(film_pos, Color_Red); 
-                        continue;
-                    }*/
-
-                    if (ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::direct_lighting)
-                        radiance = estimate_direct_lighting(ctx, thread_ctx, shading_ctx);
-                    else if (ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::path_tracer)
-                        radiance = estimate_path_contribution(ctx, thread_ctx, shading_ctx);
-                }
-                else if (ctx.has_environment_light_sampler) {
-                    radiance = ctx.environment_light_sampler.get_radiance_for_direction(ray.direction);
-                }
                 ASSERT(radiance.is_finite());
                 tile.add_sample(film_pos, radiance);
 

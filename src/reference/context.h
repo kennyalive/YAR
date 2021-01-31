@@ -4,6 +4,7 @@
 #include "light_sampling.h"
 #include "kdtree.h"
 #include "pixel_sampling.h"
+#include "shading_context.h"
 
 #include "lib/light.h"
 #include "lib/random.h"
@@ -43,6 +44,7 @@ struct Thread_Context {
     Memory_Pool memory_pool;
     RNG rng;
     Stratified_Pixel_Sampler pixel_sampler;
+    Shading_Context shading_context;
 
     // Variance estimation.
     double variance_accumulator = 0.0;

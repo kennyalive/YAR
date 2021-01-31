@@ -3,19 +3,15 @@
 #include "lib/light.h"
 #include "lib/vector.h"
 
+struct Footprint_Tracking_Ray;
 struct Intersection;
 struct Triangle_Intersection;
 struct Scene_Context;
 struct Thread_Context;
 struct BSDF;
 
-struct Shading_Point_Rays {
-    Ray incident_ray;
-    Ray auxilary_ray_dx_offset;
-    Ray auxilary_ray_dy_offset;
-};
-
 // Contains all the necessary information to perform shading at the intersection point.
+// We keep one instance of Shading_Context per thread.
 struct Shading_Context {
     Vector3 Wo; // outgoing direction
 
@@ -45,10 +41,9 @@ struct Shading_Context {
     bool shading_normal_adjusted = false;
 
     Shading_Context() {}
-    Shading_Context(
-        const Scene_Context& global_ctx,
-        Thread_Context& thread_ctx,
-        const Shading_Point_Rays& rays, const Intersection& intersection);
+
+    void initialize_from_intersection(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
+        const Footprint_Tracking_Ray& footprint_tracking_ray, const Intersection& intersection);
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
 
@@ -58,6 +53,10 @@ struct Shading_Context {
     Vector3 world_to_local(const Vector3& world_direction) const;
 
 private:
+    // Copying is forbiden because we allow caching of shading context references (BSDF does this).
+    // We still keep private default assignment for internal usage (convenient initialization with default values).
+    Shading_Context& operator=(const Shading_Context&) = default;
+
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti, Vector3* dPdu, Vector3* dPdv);
-    void calculate_UV_derivates(const Shading_Point_Rays& rays, const Vector3& dPdu, const Vector3& dPdv);
+    void calculate_UV_derivates(const Footprint_Tracking_Ray& footprint_tracking_ray, const Vector3& dPdu, const Vector3& dPdv);
 };

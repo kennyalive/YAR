@@ -1,14 +1,16 @@
 #pragma once
 
 #include "lib/color.h"
-#include "lib/random.h"
 #include "lib/vector.h"
 
-struct Shading_Context;
+struct Footprint_Tracking_Ray;
 struct Scene_Context;
+struct Shading_Context;
 struct Thread_Context;
 
-ColorRGB estimate_direct_lighting(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, int max_specular_depth = 10);
+ColorRGB estimate_direct_lighting(
+    const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
+    const Footprint_Tracking_Ray& footprint_tracking_ray, int max_specular_depth = 10);
 
 ColorRGB estimate_direct_lighting_from_single_sample(
     const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
