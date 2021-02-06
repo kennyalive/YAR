@@ -8,6 +8,10 @@ struct Scene_Context;
 struct Shading_Context;
 struct Thread_Context;
 
+bool trace_ray(
+    const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
+    Footprint_Tracking_Ray* footprint_tracking_ray, ColorRGB* specular_attenuation, int max_specular_bounces);
+
 ColorRGB estimate_direct_lighting(
     const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
     const Footprint_Tracking_Ray& footprint_tracking_ray, int max_specular_depth = 10);

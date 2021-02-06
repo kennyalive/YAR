@@ -10,23 +10,21 @@
 constexpr int path_length_to_apply_russian_roulette_ = 4;
 
 ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Footprint_Tracking_Ray& ray) {
-    Intersection isect;
-    if (!scene_ctx.acceleration_structure->intersect(ray.main_ray, isect)) {
+    Footprint_Tracking_Ray current_ray = ray;
+    ColorRGB specular_attenuation;
+
+    if (!trace_ray(scene_ctx, thread_ctx, &current_ray, &specular_attenuation, 10)) {
         if (scene_ctx.has_environment_light_sampler)
             return scene_ctx.environment_light_sampler.get_radiance_for_direction(ray.main_ray.direction);
         else
             return Color_Black;
     }
 
-    Shading_Context& shading_ctx = thread_ctx.shading_context;
-     shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, ray, isect);
-
     // debug visualization of samples with adjusted shading normal.
-    /*if (shading_ctx.shading_normal_adjusted) {
-        tile.add_sample(film_pos, Color_Red); 
-        continue;
-    }*/
+    /*if (shading_ctx.shading_normal_adjusted)
+        return Color_Red;*/
 
+    const Shading_Context& shading_ctx = thread_ctx.shading_context;
     ASSERT(!shading_ctx.mirror_surface);
     const int max_path_length = scene_ctx.scene->raytracer_config.max_path_length;
 
@@ -42,7 +40,7 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
     }
     else {
         int path_length = 1; // start with the camera ray
-        ColorRGB path_coeff(1.f);
+        ColorRGB path_coeff = specular_attenuation;
 
         while (path_length != max_path_length) {
             path_length++;
@@ -81,19 +79,18 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
 
                 Ray next_segment_ray(shading_ctx.P, wi);
 
-                Intersection isect;
-                if (!scene_ctx.acceleration_structure->intersect(next_segment_ray, isect))
+                Footprint_Tracking_Ray next_ray;
+                next_ray.main_ray = next_segment_ray;
+                next_ray.auxilary_ray_dx_offset = next_segment_ray;
+                next_ray.auxilary_ray_dy_offset = next_segment_ray;
+
+                if (!trace_ray(scene_ctx, thread_ctx, &next_ray, &specular_attenuation, 10))
                     break;
 
-                if (isect.scene_object->area_light != Null_Light)
+                path_coeff *= specular_attenuation;
+
+                if (shading_ctx.area_light != Null_Light)
                     break;
-
-                Footprint_Tracking_Ray ray;
-                ray.main_ray = next_segment_ray;
-                ray.auxilary_ray_dx_offset = next_segment_ray;
-                ray.auxilary_ray_dy_offset = next_segment_ray;
-
-                shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, ray, isect);
             }
         }
     }

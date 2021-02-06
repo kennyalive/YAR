@@ -259,7 +259,7 @@ static ColorRGB direct_lighting_from_environment_light(
 // For non-delta surfaces footprint_tracking_ray remains unchanged.
 //
 // specular_attenuation (output) defines how scattering on specular surfaces scales radiance.
-static bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, Footprint_Tracking_Ray* footprint_tracking_ray, ColorRGB* specular_attenuation, int max_specular_bounces) {
+bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, Footprint_Tracking_Ray* footprint_tracking_ray, ColorRGB* specular_attenuation, int max_specular_bounces) {
     *specular_attenuation = Color_White;
 
     Intersection isect;
