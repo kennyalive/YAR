@@ -3,18 +3,19 @@
 #include "lib/color.h"
 #include "lib/vector.h"
 
-struct Footprint_Tracking_Ray;
+struct Auxilary_Rays;
+struct Ray;
 struct Scene_Context;
 struct Shading_Context;
 struct Thread_Context;
 
 bool trace_ray(
     const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    Footprint_Tracking_Ray* footprint_tracking_ray, ColorRGB* specular_attenuation, int max_specular_bounces);
+    Ray* ray, Auxilary_Rays* auxilary_rays /*optional*/, ColorRGB* specular_attenuation, int max_specular_bounces);
 
 ColorRGB estimate_direct_lighting(
     const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    const Footprint_Tracking_Ray& footprint_tracking_ray, int max_specular_depth = 10);
+    const Ray& ray, const Auxilary_Rays& auxilary_rays, int max_specular_depth = 10);
 
 ColorRGB estimate_direct_lighting_from_single_sample(
     const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,

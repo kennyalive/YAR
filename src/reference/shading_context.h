@@ -3,7 +3,6 @@
 #include "lib/light.h"
 #include "lib/vector.h"
 
-struct Footprint_Tracking_Ray;
 struct Intersection;
 struct Triangle_Intersection;
 struct Scene_Context;
@@ -43,7 +42,7 @@ struct Shading_Context {
     Shading_Context() {}
 
     void initialize_from_intersection(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-        const Footprint_Tracking_Ray& footprint_tracking_ray, const Intersection& intersection);
+        const Ray& ray, const Auxilary_Rays* auxilary_rays, const Intersection& intersection);
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
 
@@ -58,5 +57,5 @@ private:
     Shading_Context& operator=(const Shading_Context&) = default;
 
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti, Vector3* dPdu, Vector3* dPdv);
-    void calculate_UV_derivates(const Footprint_Tracking_Ray& footprint_tracking_ray, const Vector3& dPdu, const Vector3& dPdv);
+    void calculate_UV_derivates(const Auxilary_Rays& auxilary_rays, const Vector3& dPdu, const Vector3& dPdv);
 };

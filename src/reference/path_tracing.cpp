@@ -9,13 +9,14 @@
 
 constexpr int path_length_to_apply_russian_roulette_ = 4;
 
-ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Footprint_Tracking_Ray& ray) {
-    Footprint_Tracking_Ray current_ray = ray;
+ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays& auxilary_rays) {
+    Ray current_ray = ray;
+    Auxilary_Rays current_auxilary_rays = auxilary_rays;
     ColorRGB specular_attenuation;
 
-    if (!trace_ray(scene_ctx, thread_ctx, &current_ray, &specular_attenuation, 10)) {
+    if (!trace_ray(scene_ctx, thread_ctx, &current_ray, &current_auxilary_rays, &specular_attenuation, 10)) {
         if (scene_ctx.has_environment_light_sampler)
-            return scene_ctx.environment_light_sampler.get_radiance_for_direction(ray.main_ray.direction);
+            return scene_ctx.environment_light_sampler.get_radiance_for_direction(ray.direction);
         else
             return Color_Black;
     }
@@ -77,14 +78,8 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
 
                 path_coeff *= f * (std::abs(dot(shading_ctx.N, wi)) / bsdf_pdf);
 
-                Ray next_segment_ray(shading_ctx.P, wi);
-
-                Footprint_Tracking_Ray next_ray;
-                next_ray.main_ray = next_segment_ray;
-                next_ray.auxilary_ray_dx_offset = next_segment_ray;
-                next_ray.auxilary_ray_dy_offset = next_segment_ray;
-
-                if (!trace_ray(scene_ctx, thread_ctx, &next_ray, &specular_attenuation, 10))
+                current_ray = Ray(shading_ctx.P, wi);
+                if (!trace_ray(scene_ctx, thread_ctx, &current_ray, nullptr, &specular_attenuation, 10))
                     break;
 
                 path_coeff *= specular_attenuation;

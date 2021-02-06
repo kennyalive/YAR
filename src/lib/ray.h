@@ -22,8 +22,9 @@ struct Ray {
     }
 };
 
-struct Footprint_Tracking_Ray {
-    Ray main_ray;
-    Ray auxilary_ray_dx_offset;
-    Ray auxilary_ray_dy_offset;
+// Additional rays around the main ray that allow to determine the size of the pixel footprint on the surface.
+// It is used to compute UV derivatives with respect to pixel coordinates and ultimately texture lod level.
+struct Auxilary_Rays {
+    Ray ray_dx_offset;
+    Ray ray_dy_offset;
 };

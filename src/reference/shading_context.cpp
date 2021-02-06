@@ -58,11 +58,11 @@ static bool adjust_shading_normal(const Vector3& Wo, const Vector3& Ng, Vector3*
 void Shading_Context::initialize_from_intersection(
     const Scene_Context& global_ctx,
     Thread_Context& thread_ctx,
-    const Footprint_Tracking_Ray& footprint_tracking_ray, const Intersection& intersection)
+    const Ray& ray, const Auxilary_Rays* auxilary_rays, const Intersection& intersection)
 {
     *this = Shading_Context{};
 
-    Wo = -footprint_tracking_ray.main_ray.direction;
+    Wo = -ray.direction;
 
     // Geometry_Type-specific initialization.
     //
@@ -90,7 +90,8 @@ void Shading_Context::initialize_from_intersection(
     // Trying to avoid self-shadowing.
     P = offset_ray_origin(P, Ng);
 
-    calculate_UV_derivates(footprint_tracking_ray, dPdu, dPdv);
+    if (auxilary_rays)
+        calculate_UV_derivates(*auxilary_rays, dPdu, dPdv);
 
     shading_normal_adjusted = adjust_shading_normal(Wo, Ng, &N);
 
@@ -142,14 +143,14 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
     }
 }
 
-void Shading_Context::calculate_UV_derivates(const Footprint_Tracking_Ray& footprint_tracking_ray, const Vector3& dPdu, const Vector3& dPdv) {
+void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays, const Vector3& dPdu, const Vector3& dPdv) {
     // Compute position derivatives with respect to screen coordinates using auxilary offset rays.
     float plane_d = -dot(Ng, P);
-    float tx = ray_plane_intersection(footprint_tracking_ray.auxilary_ray_dx_offset, Ng, plane_d);
-    float ty = ray_plane_intersection(footprint_tracking_ray.auxilary_ray_dy_offset, Ng, plane_d);
+    float tx = ray_plane_intersection(auxilary_rays.ray_dx_offset, Ng, plane_d);
+    float ty = ray_plane_intersection(auxilary_rays.ray_dy_offset, Ng, plane_d);
 
-    Vector3 px = footprint_tracking_ray.auxilary_ray_dx_offset.get_point(tx);
-    Vector3 py = footprint_tracking_ray.auxilary_ray_dy_offset.get_point(ty);
+    Vector3 px = auxilary_rays.ray_dx_offset.get_point(tx);
+    Vector3 py = auxilary_rays.ray_dy_offset.get_point(ty);
     Vector3 dPdx = px - P;
     Vector3 dPdy = py - P;
 

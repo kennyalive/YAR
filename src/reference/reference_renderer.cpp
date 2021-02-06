@@ -177,16 +177,17 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
 
                 Vector2 film_pos = Vector2((float)x, (float)y) + thread_ctx.pixel_sampler.get_image_plane_sample();
 
-                Footprint_Tracking_Ray footprint_tracking_ray;
-                footprint_tracking_ray.main_ray = scene_ctx.camera->generate_ray(film_pos);
-                footprint_tracking_ray.auxilary_ray_dx_offset = scene_ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
-                footprint_tracking_ray.auxilary_ray_dy_offset = scene_ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
+                Ray ray = scene_ctx.camera->generate_ray(film_pos);
+
+                Auxilary_Rays auxilary_rays;
+                auxilary_rays.ray_dx_offset = scene_ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
+                auxilary_rays.ray_dy_offset = scene_ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
 
                 ColorRGB radiance;
                 if (scene_ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::direct_lighting)
-                    radiance = estimate_direct_lighting(scene_ctx, thread_ctx, footprint_tracking_ray);
+                    radiance = estimate_direct_lighting(scene_ctx, thread_ctx, ray, auxilary_rays);
                 else if (scene_ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::path_tracer)
-                    radiance = estimate_path_contribution(scene_ctx, thread_ctx, footprint_tracking_ray);
+                    radiance = estimate_path_contribution(scene_ctx, thread_ctx, ray, auxilary_rays);
 
                 ASSERT(radiance.is_finite());
                 tile.add_sample(film_pos, radiance);
