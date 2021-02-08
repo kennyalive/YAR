@@ -1140,7 +1140,7 @@ namespace pbrt {
       };
 
       Type type = Type::path_tracer;
-      int maxDepth = 0;
+      int maxDepth = -1;
 
       std::string toString() const override { return "Integrator"; }
       int writeTo(BinaryWriter &) override;
