@@ -336,7 +336,11 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         };
 
         enki::TaskScheduler task_scheduler;
-        task_scheduler.Initialize();
+        if (options.thread_count > 0)
+            task_scheduler.Initialize(options.thread_count);
+        else
+            task_scheduler.Initialize();
+
         std::vector<Render_Tile_Task> tasks(film.get_tile_count());
         for(int tile_index = 0; tile_index < film.get_tile_count(); tile_index++) {
             Render_Tile_Task task{};
