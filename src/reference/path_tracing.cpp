@@ -7,14 +7,14 @@
 #include "direct_lighting.h"
 #include "shading_context.h"
 
-constexpr int path_length_to_apply_russian_roulette_ = 4;
+constexpr int bounce_count_when_to_apply_russian_roulette = 3;
 
 ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays& auxilary_rays) {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
-    const int max_path_length = scene_ctx.scene->raytracer_config.max_path_length;
-    ASSERT(max_path_length >= 2); // at least direct lighting component
+    const int max_bounces = scene_ctx.scene->raytracer_config.max_light_bounces;
+    ASSERT(max_bounces >= 1); // at least direct lighting component
 
-    int path_length = 1; // start with the camera ray
+    int bounce_count = 0;
     ColorRGB path_coeff = Color_White;
     Ray current_ray = ray;
     Auxilary_Rays current_auxilary_rays = auxilary_rays;
@@ -22,8 +22,8 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
     ColorRGB L;
     while (true) {
         ColorRGB specular_attenuation;
-        if (!trace_ray(scene_ctx, thread_ctx, &current_ray, path_length == 1 ? &current_auxilary_rays : nullptr, &specular_attenuation, 10)) {
-            if (path_length > 1) {
+        if (!trace_ray(scene_ctx, thread_ctx, &current_ray, bounce_count == 0 ? &current_auxilary_rays : nullptr, &specular_attenuation, 10)) {
+            if (bounce_count > 0) {
                 break;
             }
             if (scene_ctx.has_environment_light_sampler) {
@@ -32,7 +32,7 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
             return Color_Black;
         }
 
-        if (path_length == 1 && shading_ctx.area_light != Null_Light) {
+        if (bounce_count == 0 && shading_ctx.area_light != Null_Light) {
             if (shading_ctx.area_light.type == Light_Type::diffuse_rectangular) {
                 return specular_attenuation * scene_ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
             }
@@ -56,12 +56,12 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
         // Add contribution of the current path.
         L += path_coeff * estimate_direct_lighting_from_single_sample(scene_ctx, shading_ctx, u_light_index, u_light, u_bsdf);
 
-        path_length++;
-        if (path_length == max_path_length)
+        bounce_count++;
+        if (bounce_count == max_bounces)
             break;
 
         // Apply russian roulette.
-        if (path_length >= path_length_to_apply_russian_roulette_) {
+        if (bounce_count >= bounce_count_when_to_apply_russian_roulette) {
             // That's fine to get the next sample inside condition because condition
             // is evaluated to the same value for all threads.
             float u_termination = thread_ctx.pixel_sampler.get_next_1d_sample();

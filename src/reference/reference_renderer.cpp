@@ -118,11 +118,11 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
     int sample_1d_count = 0;
     int sample_2d_count = 0;
     if (rt_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::path_tracer) {
-        ASSERT(rt_config.max_path_length >= 1);
+        ASSERT(rt_config.max_light_bounces >= 0);
         const int sample_1d_count_per_bounce = 2; // light index selection + path termination probability
         const int sample_2d_count_per_bounce = 3; // MIS light sample + MIS bsdf sample + bsdf sample for new direction
-        sample_1d_count = std::min(10, (rt_config.max_path_length - 1)) * sample_1d_count_per_bounce;
-        sample_2d_count = std::min(10, (rt_config.max_path_length - 1)) * sample_2d_count_per_bounce;
+        sample_1d_count = std::min(10, rt_config.max_light_bounces) * sample_1d_count_per_bounce;
+        sample_2d_count = std::min(10, rt_config.max_light_bounces) * sample_2d_count_per_bounce;
     }
     pixel_sampler_config.init(rt_config.x_pixel_sample_count, rt_config.y_pixel_sample_count, sample_1d_count, sample_2d_count);
 
