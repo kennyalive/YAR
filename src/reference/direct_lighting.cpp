@@ -254,44 +254,41 @@ static ColorRGB direct_lighting_from_environment_light(
     return L;
 }
 
-// ray/auxilary_rays (input/ouput) are modified only if we bounce off a specular surface and
-// the updated values represent the rays reflected from the last specular surface.
-// For non-delta surfaces the rays remains unchanged.
-//
 // specular_attenuation (output) defines how scattering on specular surfaces scales radiance.
-bool trace_ray(
-    const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    Ray* ray, Auxilary_Rays* auxilary_rays /*optional*/,
-    ColorRGB* specular_attenuation, int max_specular_bounces)
+bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Ray& ray,
+    const Auxilary_Rays* auxilary_rays, ColorRGB* specular_attenuation, int max_specular_bounces)
 {
+    Shading_Context& shading_ctx = thread_ctx.shading_context;
     *specular_attenuation = Color_White;
 
     Intersection isect;
-    if (!scene_ctx.acceleration_structure->intersect(*ray, isect))
+    if (!scene_ctx.acceleration_structure->intersect(ray, isect)) {
+        shading_ctx.miss_ray = ray;
         return false;
-
-    Shading_Context& shading_ctx = thread_ctx.shading_context;
-    shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, *ray, auxilary_rays, isect);
+    }
+    shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, ray, auxilary_rays, isect);
 
     while (shading_ctx.mirror_surface && max_specular_bounces > 0) {
         max_specular_bounces--;
         *specular_attenuation *= shading_ctx.mirror_reflectance;
 
-        Ray reflected_ray;
-        reflected_ray.origin = shading_ctx.P;
-        reflected_ray.direction = reflect(shading_ctx.Wo, shading_ctx.N);
+        Ray ray2;
+        ray2.origin = shading_ctx.P;
+        ray2.direction = reflect(shading_ctx.Wo, shading_ctx.N);
 
-        *ray = reflected_ray;
-        // TODO: generate auxilary rays?
-        if (auxilary_rays) {
-            auxilary_rays->ray_dx_offset = reflected_ray;
-            auxilary_rays->ray_dy_offset = reflected_ray;
+        if (!scene_ctx.acceleration_structure->intersect(ray2, isect)) {
+            shading_ctx.miss_ray = ray2;
+            return false;
         }
 
-        if (!scene_ctx.acceleration_structure->intersect(*ray, isect))
-            return false;
+        Auxilary_Rays auxilary_rays2;
+        // TODO: generate auxilary rays?
+        if (auxilary_rays) {
+            auxilary_rays2.ray_dx_offset = ray2;
+            auxilary_rays2.ray_dy_offset = ray2;
+        }
 
-        shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, *ray, auxilary_rays, isect);
+        shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, ray2, auxilary_rays ? &auxilary_rays2 : nullptr, isect);
     }
 
     // check if we end up on specular surface after reaching max_specular_bounces
@@ -299,30 +296,21 @@ bool trace_ray(
         *specular_attenuation = Color_Black;
         return false;
     }
-    ASSERT(!shading_ctx.mirror_surface);
     return true;
 }
 
-ColorRGB estimate_direct_lighting(
-    const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
+ColorRGB estimate_direct_lighting(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
     const Ray& ray, const Auxilary_Rays& auxilary_rays, int max_specular_bounces)
 {
-    Ray current_ray = ray;
-    Auxilary_Rays current_auxilary_rays = auxilary_rays;
+    const Shading_Context& shading_ctx = thread_ctx.shading_context;
     ColorRGB specular_attenuation;
 
-    bool found_shading_surface = trace_ray(scene_ctx, thread_ctx, &current_ray, &current_auxilary_rays, &specular_attenuation, max_specular_bounces);
-
-    if (!found_shading_surface) {
+    if (!trace_ray(scene_ctx, thread_ctx, ray, &auxilary_rays, &specular_attenuation, max_specular_bounces)) {
         if (scene_ctx.has_environment_light_sampler) {
-            return specular_attenuation * scene_ctx.environment_light_sampler.get_radiance_for_direction(current_ray.direction);
+            return specular_attenuation * scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
         }
-        else {
-            return Color_Black;
-        }
+        return Color_Black;
     }
-
-    const Shading_Context& shading_ctx = thread_ctx.shading_context;
 
     // debug visualization of samples with adjusted shading normal.
     /*if (shading_ctx.shading_normal_adjusted)
@@ -391,7 +379,6 @@ ColorRGB estimate_direct_lighting(
             L += L2;
         }
     }
-
     return specular_attenuation * L;
 }
 

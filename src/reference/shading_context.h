@@ -39,6 +39,10 @@ struct Shading_Context {
     // Described in: "The Iray Light Transport Simulation and Rendering System", Keller et al. 2017
     bool shading_normal_adjusted = false;
 
+    // If ray cast does not find a point to shade then this is the last traced ray (there could be more than one
+    // ray cast if we traverse specular surfaces). This can be used to look up environment map.
+    Ray miss_ray;
+
     Shading_Context() {}
 
     void initialize_from_intersection(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
