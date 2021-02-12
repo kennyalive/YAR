@@ -355,18 +355,21 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
 
     std::vector<ColorRGB> image = film.get_image();
 
-    double variance_accumulator = 0.0;
-    int64_t variance_count = 0;
-    for (auto [i, initialized] : enumerate(thread_context_initialized)) {
-        if (initialized) {
-            variance_accumulator += thread_contexts[i].variance_accumulator;
-            variance_count += thread_contexts[i].variance_count;
-        }
-    }
-    double variance_estimate  = variance_accumulator / variance_count;
-
     int time = int(elapsed_milliseconds(t));
     printf("Image rendered in %d ms\n", time);
-    printf("Variance estimate %.6f, stddev %.6f\n", variance_estimate, std::sqrt(variance_estimate));
+
+    if (ctx.pixel_sampler_config.get_samples_per_pixel() > 1) {
+        double variance_accumulator = 0.0;
+        int64_t variance_count = 0;
+        for (auto [i, initialized] : enumerate(thread_context_initialized)) {
+            if (initialized) {
+                variance_accumulator += thread_contexts[i].variance_accumulator;
+                variance_count += thread_contexts[i].variance_count;
+            }
+        }
+        double variance_estimate  = variance_accumulator / variance_count;
+        printf("Variance estimate %.6f, stddev %.6f\n", variance_estimate, std::sqrt(variance_estimate));
+    }
+
     write_exr_image("image.exr",  image.data(), render_region.size().x, render_region.size().y);
 }
