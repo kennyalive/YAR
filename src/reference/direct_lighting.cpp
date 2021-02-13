@@ -276,6 +276,7 @@ bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const
         ray2.origin = shading_ctx.P;
         ray2.direction = reflect(shading_ctx.Wo, shading_ctx.N);
 
+        isect = Intersection{};
         if (!scene_ctx.acceleration_structure->intersect(ray2, isect)) {
             shading_ctx.miss_ray = ray2;
             return false;
