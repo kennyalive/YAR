@@ -56,6 +56,13 @@ struct Triangle_Mesh {
         uv[2] = uvs[pi[2]];
     }
 
+    void get_normals(int triangle_index, Vector3 n[3]) const {
+        const int* pi = &indices[triangle_index * 3];
+        n[0] = normals[pi[0]];
+        n[1] = normals[pi[1]];
+        n[2] = normals[pi[2]];
+    }
+
     Bounding_Box get_triangle_bounds(int triangle_index) const {
         const int* pi = &indices[triangle_index * 3];
         auto bounds = Bounding_Box(vertices[pi[0]]);

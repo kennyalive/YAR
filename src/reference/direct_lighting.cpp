@@ -283,10 +283,35 @@ bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const
         }
 
         Auxilary_Rays auxilary_rays2;
-        // TODO: generate auxilary rays?
         if (auxilary_rays) {
-            auxilary_rays2.ray_dx_offset = ray2;
-            auxilary_rays2.ray_dy_offset = ray2;
+            Vector3 wo = shading_ctx.Wo;
+            Vector3 n = shading_ctx.N;
+            Vector3 dndu = shading_ctx.dNdu;
+            Vector3 dndv = shading_ctx.dNdv;
+            Vector3 dpdx = shading_ctx.dPdx;
+            Vector3 dpdy = shading_ctx.dPdy;
+            float dudx = shading_ctx.dUVdx.u;
+            float dvdx = shading_ctx.dUVdx.v;
+            float dudy = shading_ctx.dUVdy.u;
+            float dvdy = shading_ctx.dUVdy.v;
+            // dx auxilary ray
+            {
+                Vector3 dndx = dndu * dudx + dndv * dvdx;
+                Vector3 dwo_dx = (-auxilary_rays->ray_dx_offset.direction) - wo;
+                float d_wo_dot_n_dx = dot(dwo_dx, n) + dot(wo, dndx);
+                Vector3 dwi_dx = 2.f * (d_wo_dot_n_dx * n + dot(wo, n) * dndx) - dwo_dx;
+                auxilary_rays2.ray_dx_offset.origin = ray2.origin + dpdx;
+                auxilary_rays2.ray_dx_offset.direction = (ray2.direction + dwi_dx).normalized();
+            }
+            // dy auxilary ray
+            {
+                Vector3 dndy = dndu * dudy + dndv * dvdy;
+                Vector3 dwo_dy = (-auxilary_rays->ray_dy_offset.direction) - wo;
+                float d_wo_dot_n_dy = dot(dwo_dy, n) + dot(wo, dndy);
+                Vector3 dwi_dy = 2.f * (d_wo_dot_n_dy * n + dot(wo, n) * dndy) - dwo_dy;
+                auxilary_rays2.ray_dy_offset.origin = ray2.origin + dpdy;
+                auxilary_rays2.ray_dy_offset.direction = (ray2.direction + dwi_dy).normalized();
+            }
         }
 
         shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, ray2, auxilary_rays ? &auxilary_rays2 : nullptr, isect);

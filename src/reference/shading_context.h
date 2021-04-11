@@ -19,8 +19,17 @@ struct Shading_Context {
     Vector3 N; // shading normal
     Vector2 UV; // surface UV parameterization
 
-    // UV derivatives with respect to screen coordinates.
-    // These values can be used to compute texture lod for mip-mapping.
+    Vector3 dPdu;
+    Vector3 dPdv;
+    Vector3 dNdu;
+    Vector3 dNdv;
+
+    // The dx/dy derivatives below (position and uv) measure the change with respect to
+    // an average distance between the samples (not pixels!).
+    //
+    Vector3 dPdx;
+    Vector3 dPdy;
+    // The uv derivatices are used to compute texture lod for mip-mapping.
     Vector2 dUVdx;
     Vector2 dUVdy;
 
@@ -60,6 +69,6 @@ private:
     // We still keep private default assignment for internal usage (convenient initialization with default values).
     Shading_Context& operator=(const Shading_Context&) = default;
 
-    void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti, Vector3* dPdu, Vector3* dPdv);
-    void calculate_UV_derivates(const Auxilary_Rays& auxilary_rays, const Vector3& dPdu, const Vector3& dPdv);
+    void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti);
+    void calculate_UV_derivates(const Auxilary_Rays& auxilary_rays);
 };

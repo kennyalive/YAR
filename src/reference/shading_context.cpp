@@ -66,12 +66,11 @@ void Shading_Context::initialize_from_intersection(
 
     // Geometry_Type-specific initialization.
     //
-    // The fields to set: P, N, Ng, UV.
-    // The output parameters to set: dPdu, dPdv
+    // The following fields should be initialized: P, N, Ng, UV, dPdu, dPdv, dNdu, dNdv.
     // The values should be calculated in the local coordinate system of the object.
     Vector3 dPdu, dPdv;
     if (intersection.geometry_type == Geometry_Type::triangle_mesh) {
-        init_from_triangle_mesh_intersection(intersection.triangle_intersection, &dPdu, &dPdv);
+        init_from_triangle_mesh_intersection(intersection.triangle_intersection);
     }
     else {
         ASSERT(false);
@@ -85,14 +84,19 @@ void Shading_Context::initialize_from_intersection(
         Ng   = transform_vector(object_to_world, Ng);
         dPdu = transform_vector(object_to_world, dPdu);
         dPdv = transform_vector(object_to_world, dPdv);
+        dNdu = transform_vector(object_to_world, dNdu);
+        dNdv = transform_vector(object_to_world, dNdv);
     }
 
     // Trying to avoid self-shadowing.
     P = offset_ray_origin(P, Ng);
 
     if (auxilary_rays)
-        calculate_UV_derivates(*auxilary_rays, dPdu, dPdv);
+        calculate_UV_derivates(*auxilary_rays);
 
+    // NOTE: adjustment of shading normal invalidates dNdu/dNdv. For now it's not clear to which degree
+    // it could be an issue (in most cases shading normals are left unchanged). Until further evidence,
+    // we assume that dNdu/dNdv is still a reasonable approximation.
     shading_normal_adjusted = adjust_shading_normal(Wo, Ng, &N);
 
     tangent2 = cross(N, dPdu).normalized();
@@ -114,7 +118,7 @@ void Shading_Context::initialize_from_intersection(
     }
 }
 
-void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Intersection& ti, Vector3* dPdu, Vector3* dPdv) {
+void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Intersection& ti) {
     P = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
 
     Vector3 p0, p1, p2;
@@ -127,23 +131,38 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
 
     UV = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
 
-    // dPdu/dPdv
     Vector2 uvs[3];
     ti.mesh->get_uvs(ti.triangle_index, uvs);
     float a[2][2] = {
         { uvs[1].u - uvs[0].u, uvs[1].v - uvs[0].v },
         { uvs[2].u - uvs[0].u, uvs[2].v - uvs[0].v }
     };
-    Vector3 b[2] = {
-        p1 - p0,
-        p2 - p0
-    };
-    if (!solve_linear_system_2x2(a, b, dPdu, dPdv)) {
-        coordinate_system_from_vector(Ng, dPdu, dPdv);
+
+    // dPdu/dPdv
+    {
+        Vector3 b[2] = {
+            p1 - p0,
+            p2 - p0
+        };
+        if (!solve_linear_system_2x2(a, b, &dPdu, &dPdv)) {
+            coordinate_system_from_vector(Ng, &dPdu, &dPdv);
+        }
+    }
+    // dNdu/dNdv
+    {
+        Vector3 n[3];
+        ti.mesh->get_normals(ti.triangle_index, n);
+        Vector3 b[2] = {
+            n[1] - n[0],
+            n[2] - n[0]
+        };
+        if (!solve_linear_system_2x2(a, b, &dNdu, &dNdv)) {
+            coordinate_system_from_vector(Ng, &dNdu, &dNdv);
+        }
     }
 }
 
-void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays, const Vector3& dPdu, const Vector3& dPdv) {
+void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays) {
     // Compute position derivatives with respect to screen coordinates using auxilary offset rays.
     float plane_d = -dot(Ng, P);
     float tx = ray_plane_intersection(auxilary_rays.ray_dx_offset, Ng, plane_d);
@@ -151,8 +170,8 @@ void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays,
 
     Vector3 px = auxilary_rays.ray_dx_offset.get_point(tx);
     Vector3 py = auxilary_rays.ray_dy_offset.get_point(ty);
-    Vector3 dPdx = px - P;
-    Vector3 dPdy = py - P;
+    dPdx = px - P;
+    dPdy = py - P;
 
     // Compute UV derivatives with respect to screen coordinates (PBRT, 10.1.1).
     //
