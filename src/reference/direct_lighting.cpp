@@ -20,35 +20,35 @@ inline float mis_power_heuristic(float pdf1, float pdf2) {
 }
 
 static ColorRGB direct_lighting_from_point_light(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Point_Light& light) {
-    const Vector3 light_vec = (light.position - shading_ctx.P);
+    const Vector3 light_vec = (light.position - shading_ctx.p);
     const float light_dist = light_vec.length();
     const Vector3 light_dir = light_vec / light_dist;
 
-    float n_dot_l = dot(shading_ctx.N, light_dir);
+    float n_dot_l = dot(shading_ctx.n, light_dir);
     if (n_dot_l <= 0.f)
         return Color_Black;
 
-    Ray light_visibility_ray(shading_ctx.P, light_dir);
+    Ray light_visibility_ray(shading_ctx.p, light_dir);
     bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, light_dist - 1e-4f);
     if (occluded)
         return Color_Black;
 
-    ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light_dir);
+    ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.wo, light_dir);
     ColorRGB L = (light.intensity * bsdf)  * (n_dot_l / (light_dist * light_dist));
     return L;
 }
 
 static ColorRGB direct_lighting_from_directional_light(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Directional_Light& light) {
-    float n_dot_l = dot(shading_ctx.N, light.direction);
+    float n_dot_l = dot(shading_ctx.n, light.direction);
     if (n_dot_l <= 0.f)
         return Color_Black;
 
-    Ray light_visibility_ray(shading_ctx.P, light.direction);
+    Ray light_visibility_ray(shading_ctx.p, light.direction);
     bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
     if (occluded)
         return Color_Black;
 
-    ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light.direction);
+    ColorRGB bsdf = shading_ctx.bsdf->evaluate(shading_ctx.wo, light.direction);
     ColorRGB L = (light.irradiance * bsdf) * n_dot_l;
     return L;
 }
@@ -64,7 +64,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
     const Vector3 light_center = light.light_to_world_transform.get_column(3);
 
     // rectangular light emits light only from the front side
-    if (dot(light_n, (shading_ctx.P - light_center).normalized()) <= 0.f)
+    if (dot(light_n, (shading_ctx.p - light_center).normalized()) <= 0.f)
         return Color_Black;
 
     ColorRGB L;
@@ -74,19 +74,19 @@ static ColorRGB direct_lighting_from_rectangular_light(
         Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
         light_point = offset_ray_origin(light_point, light_n);
 
-        const Vector3 light_vec = (light_point - shading_ctx.P);
+        const Vector3 light_vec = (light_point - shading_ctx.p);
         float distance_to_sample = light_vec.length();
         Vector3 wi = light_vec / distance_to_sample;
 
-        float n_dot_wi = dot(shading_ctx.N, wi);
+        float n_dot_wi = dot(shading_ctx.n, wi);
         bool scattering_possible = n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
                                    n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
 
         if (scattering_possible) {
-            ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.Wo, wi);
+            ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
 
             if (!f.is_black()) {
-                Ray light_visibility_ray(shading_ctx.P, wi);
+                Ray light_visibility_ray(shading_ctx.p, wi);
                 bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample);
 
                 if (!occluded) {
@@ -96,7 +96,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
                     float light_n_dot_wi = std::max(0.f, dot(light_n, -wi));
 
                     float light_pdf = (distance_to_sample * distance_to_sample) / (light.size.x * light.size.y * light_n_dot_wi);
-                    float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.Wo, wi);
+                    float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, wi);
                     float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
 
                     L += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
@@ -108,20 +108,20 @@ static ColorRGB direct_lighting_from_rectangular_light(
     {
         Vector3 wi;
         float bsdf_pdf;
-        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, shading_ctx.Wo, &wi, &bsdf_pdf);
+        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, shading_ctx.wo, &wi, &bsdf_pdf);
 
         if (!f.is_black()) {
             ASSERT(bsdf_pdf > 0.f);
 
             Intersection isect;
-            Ray light_visibility_ray(shading_ctx.P, wi);
+            Ray light_visibility_ray(shading_ctx.p, wi);
             bool found_isect = scene_ctx.acceleration_structure->intersect(light_visibility_ray, isect);
 
             if (found_isect && isect.scene_object->area_light == light_handle) {
                 ASSERT(isect.geometry_type == Geometry_Type::triangle_mesh);
                 const Triangle_Intersection& ti = isect.triangle_intersection;
                 Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
-                float d = (p - shading_ctx.P).length();
+                float d = (p - shading_ctx.p).length();
 
                 // We already checked that the light is oriented towards the surface
                 // but for specific point we still can get different result due fp finite precision.
@@ -130,7 +130,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
 
                 float light_pdf = (d * d) / (light.size.x * light.size.y * light_n_dot_wi);
                 float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
-                float n_dot_wi = dot(shading_ctx.N, wi);
+                float n_dot_wi = dot(shading_ctx.n, wi);
 
                 L += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / bsdf_pdf);
             }
@@ -152,20 +152,20 @@ static ColorRGB direct_lighting_from_sphere_light(
         Vector3 wi;
         float distance_to_sample = light_sampler.sample(u_light, &wi);
 
-        float n_dot_wi = dot(shading_ctx.N, wi);
+        float n_dot_wi = dot(shading_ctx.n, wi);
         bool scattering_possible = n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
                                    n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
 
         if (scattering_possible) {
-            ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.Wo, wi);
+            ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
 
             if (!f.is_black()) {
-                Ray light_visibility_ray(shading_ctx.P, wi);
+                Ray light_visibility_ray(shading_ctx.p, wi);
                 bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample);
 
                 if (!occluded) {
                     float light_pdf = light_sampler.cone_sampling_pdf;
-                    float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.Wo, wi);
+                    float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, wi);
                     float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
 
                     L += (light_sampler.light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
@@ -177,21 +177,21 @@ static ColorRGB direct_lighting_from_sphere_light(
     {
         Vector3 wi;
         float bsdf_pdf;
-        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, shading_ctx.Wo, &wi, &bsdf_pdf);
+        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, shading_ctx.wo, &wi, &bsdf_pdf);
 
         if (!f.is_black()) {
             ASSERT(bsdf_pdf > 0.f);
 
             if (light_sampler.is_direction_inside_light_cone(wi)) {
                 Intersection isect;
-                Ray light_visibility_ray(shading_ctx.P, wi);
+                Ray light_visibility_ray(shading_ctx.p, wi);
                 bool found_isect = scene_ctx.acceleration_structure->intersect(light_visibility_ray, isect);
 
                 if (found_isect && isect.scene_object->area_light == light_handle) {
                     float light_pdf = light_sampler.cone_sampling_pdf;
                     float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
 
-                    L += (light_sampler.light.emitted_radiance * f) * (mis_weight * std::abs(dot(shading_ctx.N, wi)) / bsdf_pdf);
+                    L += (light_sampler.light.emitted_radiance * f) * (mis_weight * std::abs(dot(shading_ctx.n, wi)) / bsdf_pdf);
                 }
             }
         }
@@ -208,19 +208,19 @@ static ColorRGB direct_lighting_from_environment_light(
     {
         Light_Sample light_sample = scene_ctx.environment_light_sampler.sample(u_light);
 
-        float n_dot_wi = dot(shading_ctx.N, light_sample.Wi);
+        float n_dot_wi = dot(shading_ctx.n, light_sample.Wi);
         bool scattering_possible = n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
                                    n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
 
         if (scattering_possible) {
-            ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.Wo, light_sample.Wi);
+            ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, light_sample.Wi);
 
             if (!f.is_black()) {
-                Ray light_visibility_ray(shading_ctx.P, light_sample.Wi);
+                Ray light_visibility_ray(shading_ctx.p, light_sample.Wi);
                 bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
 
                 if (!occluded) {
-                    float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.Wo, light_sample.Wi);
+                    float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, light_sample.Wi);
                     float mis_weight = mis_power_heuristic(light_sample.pdf, bsdf_pdf);
 
                     L += (light_sample.Le * f) * (mis_weight * std::abs(n_dot_wi) / light_sample.pdf);
@@ -232,21 +232,21 @@ static ColorRGB direct_lighting_from_environment_light(
     {
         Vector3 wi;
         float bsdf_pdf;
-        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, shading_ctx.Wo, &wi, &bsdf_pdf);
+        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, shading_ctx.wo, &wi, &bsdf_pdf);
 
         if (!f.is_black()) {
             ASSERT(bsdf_pdf > 0.f);
             ColorRGB Le = scene_ctx.environment_light_sampler.get_radiance_for_direction(wi);
 
             if (!Le.is_black()) {
-                Ray light_visibility_ray(shading_ctx.P, wi);
+                Ray light_visibility_ray(shading_ctx.p, wi);
                 bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
 
                 if (!occluded) {
                     float light_pdf = scene_ctx.environment_light_sampler.pdf(wi);
                     float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
 
-                    L += (Le * f) * (mis_weight * std::abs(dot(shading_ctx.N, wi)) / bsdf_pdf);
+                    L += (Le * f) * (mis_weight * std::abs(dot(shading_ctx.n, wi)) / bsdf_pdf);
                 }
             }
         }
@@ -273,8 +273,8 @@ bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const
         *specular_attenuation *= shading_ctx.mirror_reflectance;
 
         Ray ray2;
-        ray2.origin = shading_ctx.P;
-        ray2.direction = reflect(shading_ctx.Wo, shading_ctx.N);
+        ray2.origin = shading_ctx.p;
+        ray2.direction = reflect(shading_ctx.wo, shading_ctx.n);
 
         isect = Intersection{};
         if (!scene_ctx.acceleration_structure->intersect(ray2, isect)) {
@@ -284,16 +284,16 @@ bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const
 
         Auxilary_Rays auxilary_rays2;
         if (auxilary_rays) {
-            Vector3 wo = shading_ctx.Wo;
-            Vector3 n = shading_ctx.N;
+            Vector3 wo = shading_ctx.wo;
+            Vector3 n = shading_ctx.n;
             Vector3 dndu = shading_ctx.dNdu;
             Vector3 dndv = shading_ctx.dNdv;
-            Vector3 dpdx = shading_ctx.dPdx;
-            Vector3 dpdy = shading_ctx.dPdy;
-            float dudx = shading_ctx.dUVdx.u;
-            float dvdx = shading_ctx.dUVdx.v;
-            float dudy = shading_ctx.dUVdy.u;
-            float dvdy = shading_ctx.dUVdy.v;
+            Vector3 dpdx = shading_ctx.dpdx;
+            Vector3 dpdy = shading_ctx.dpdy;
+            float dudx = shading_ctx.dudx;
+            float dvdx = shading_ctx.dvdx;
+            float dudy = shading_ctx.dudy;
+            float dvdy = shading_ctx.dvdy;
             // dx auxilary ray
             {
                 Vector3 dndx = dndu * dudx + dndv * dvdx;
@@ -380,7 +380,7 @@ ColorRGB estimate_direct_lighting(const Scene_Context& scene_ctx, Thread_Context
 
         for (auto [light_index, light] : enumerate(scene_ctx.lights.diffuse_sphere_lights)) {
             Light_Handle light_handle = {Light_Type::diffuse_sphere, (int)light_index};
-            Diffuse_Sphere_Light_Sampler sampler(light, shading_ctx.P);
+            Diffuse_Sphere_Light_Sampler sampler(light, shading_ctx.p);
 
             const MIS_Array_Info& array_info = scene_ctx.array2d_registry.sphere_light_arrays[light_index];
             const Vector2* light_samples = thread_ctx.pixel_sampler.get_array2d(array_info.light_array_id);
@@ -436,7 +436,7 @@ ColorRGB estimate_direct_lighting_from_single_sample(
 
     if (light_index < scene_ctx.lights.diffuse_sphere_lights.size()) {
         Light_Handle light_handle = {Light_Type::diffuse_sphere, light_index};
-        Diffuse_Sphere_Light_Sampler sampler(scene_ctx.lights.diffuse_sphere_lights[light_index], shading_ctx.P);
+        Diffuse_Sphere_Light_Sampler sampler(scene_ctx.lights.diffuse_sphere_lights[light_index], shading_ctx.p);
         return (float)scene_ctx.lights.total_light_count * direct_lighting_from_sphere_light(scene_ctx, shading_ctx, light_handle, sampler, u_light, u_bsdf);
     }
     light_index -= (int)scene_ctx.lights.diffuse_sphere_lights.size();

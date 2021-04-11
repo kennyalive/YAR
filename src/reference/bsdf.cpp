@@ -22,7 +22,7 @@ inline Vector3 sample_microfacet_normal(const Shading_Context& shading_ctx, Vect
         wh_local = GGX_sample_microfacet_normal(u, alpha);
     }
     Vector3 wh = shading_ctx.local_to_world(wh_local);
-    ASSERT(dot(wh, shading_ctx.N) >= 0.f);
+    ASSERT(dot(wh, shading_ctx.n) >= 0.f);
     return wh;
 }
 
@@ -42,7 +42,7 @@ inline float calculate_microfacet_wi_pdf(const Vector3& wo, const Vector3& wh, c
 
 BSDF::BSDF(const Shading_Context& shading_ctx)
     : shading_ctx(&shading_ctx)
-    , N(shading_ctx.N)
+    , n(shading_ctx.n)
 {
 }
 
@@ -68,8 +68,8 @@ ColorRGB Lambertian_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, floa
 }
 
 float Lambertian_BRDF::pdf(const Vector3& /*wo*/, const Vector3& wi) const {
-    ASSERT(dot(N, wi) >= 0.f);
-    return dot(N, wi) / Pi; // pdf for cosine-weighted hemisphere sampling
+    ASSERT(dot(n, wi) >= 0.f);
+    return dot(n, wi) / Pi; // pdf for cosine-weighted hemisphere sampling
 }
 
 //
@@ -96,10 +96,10 @@ ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
 
     ColorRGB F = conductor_fresnel(cos_theta_i, eta_i, eta_t, k_t);
 
-    float D = GGX_Distribution::D(wh, shading_ctx->N, alpha);
-    float G = GGX_Distribution::G(wi, wo, shading_ctx->N, alpha);
+    float D = GGX_Distribution::D(wh, shading_ctx->n, alpha);
+    float G = GGX_Distribution::G(wi, wo, shading_ctx->n, alpha);
     
-    ColorRGB f = (G * D) * F / (4.f * dot(shading_ctx->N, wo) * dot(shading_ctx->N, wi));
+    ColorRGB f = (G * D) * F / (4.f * dot(shading_ctx->n, wo) * dot(shading_ctx->n, wi));
     return f;
 }
 
@@ -109,17 +109,17 @@ ColorRGB Metal_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pd
     Vector3 wh = sample_microfacet_normal(*shading_ctx, u, wo, alpha);
     *wi = reflect(wo, wh);
 
-    if (dot(N, *wi) <= 0.f)
+    if (dot(n, *wi) <= 0.f)
         return Color_Black;
 
-    *pdf = calculate_microfacet_wi_pdf(wo, wh, N, alpha);
+    *pdf = calculate_microfacet_wi_pdf(wo, wh, n, alpha);
     return evaluate(wo, *wi);
 }
 
 float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
-    ASSERT(dot(N, wi) >= 0.f);
+    ASSERT(dot(n, wi) >= 0.f);
     Vector3 wh = (wo + wi).normalized();
-    return calculate_microfacet_wi_pdf(wo, wh, N, alpha);
+    return calculate_microfacet_wi_pdf(wo, wh, n, alpha);
 }
 
 //
@@ -145,10 +145,10 @@ ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
 
     ColorRGB F = schlick_fresnel(ColorRGB(0.04f), cos_theta_i);
 
-    float D = GGX_Distribution::D(wh, shading_ctx->N, alpha);
-    float G = GGX_Distribution::G(wi, wo, shading_ctx->N, alpha);
+    float D = GGX_Distribution::D(wh, shading_ctx->n, alpha);
+    float G = GGX_Distribution::G(wi, wo, shading_ctx->n, alpha);
 
-    ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(shading_ctx->N, wo) * dot(shading_ctx->N, wi));
+    ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(shading_ctx->n, wo) * dot(shading_ctx->n, wi));
     ColorRGB diffuse_brdf = diffuse_reflectance * Pi_Inv;
     return diffuse_brdf + specular_brdf;
 }
@@ -166,7 +166,7 @@ ColorRGB Plastic_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* 
         *wi = reflect(wo, wh);
     }
 
-    if (dot(N, *wi) <= 0.f)
+    if (dot(n, *wi) <= 0.f)
         return Color_Black;
 
     *pdf = Plastic_BRDF::pdf(wo, *wi);
@@ -174,11 +174,11 @@ ColorRGB Plastic_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* 
 }
 
 float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
-    ASSERT(dot(N, wi) >= 0.f);
-    float diffuse_pdf = dot(N, wi) / Pi;
+    ASSERT(dot(n, wi) >= 0.f);
+    float diffuse_pdf = dot(n, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, N, alpha);
+    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, n, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + spec_pdf);
     return pdf;
@@ -209,15 +209,15 @@ ColorRGB Ashikhmin_Shirley_Phong_BRDF::evaluate(const Vector3& wo, const Vector3
     ASSERT(cos_theta_i >= 0);
 
     ColorRGB F = schlick_fresnel(r0, cos_theta_i);
-    float D = GGX_Distribution::D(wh, N, alpha);
+    float D = GGX_Distribution::D(wh, n, alpha);
 
-    ColorRGB specular_brdf = F * (D / (4.f * cos_theta_i * std::max(dot(N, wo), dot(N, wi))));
+    ColorRGB specular_brdf = F * (D / (4.f * cos_theta_i * std::max(dot(n, wo), dot(n, wi))));
 
     auto pow5 = [](float v) { return (v * v) * (v * v) * v; };
 
     ColorRGB diffuse_brdf =
             (diffuse_reflectance * (ColorRGB(1.f) - r0)) *
-            (28.f / (23.f*Pi) * (1.f - pow5(1.f - 0.5f * dot(N, wi))) * (1.f - pow5(1.f - 0.5f * dot(N, wo))));
+            (28.f / (23.f*Pi) * (1.f - pow5(1.f - 0.5f * dot(n, wi))) * (1.f - pow5(1.f - 0.5f * dot(n, wo))));
 
     return diffuse_brdf + specular_brdf;
 }
@@ -235,7 +235,7 @@ ColorRGB Ashikhmin_Shirley_Phong_BRDF::sample(Vector2 u, const Vector3& wo, Vect
         *wi = reflect(wo, wh);
     }
 
-    if (dot(N, *wi) <= 0.f)
+    if (dot(n, *wi) <= 0.f)
         return Color_Black;
 
     *pdf = Ashikhmin_Shirley_Phong_BRDF::pdf(wo, *wi);
@@ -243,11 +243,11 @@ ColorRGB Ashikhmin_Shirley_Phong_BRDF::sample(Vector2 u, const Vector3& wo, Vect
 }
 
 float Ashikhmin_Shirley_Phong_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
-    ASSERT(dot(N, wi) >= 0.f);
-    float diffuse_pdf = dot(N, wi) / Pi;
+    ASSERT(dot(n, wi) >= 0.f);
+    float diffuse_pdf = dot(n, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, N, alpha);
+    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, n, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + spec_pdf);
     return pdf;

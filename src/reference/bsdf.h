@@ -15,7 +15,7 @@ struct BSDF {
     BSDF(const Shading_Context& shading_ctx);
 
     const Shading_Context* shading_ctx;
-    Vector3 N; // shading normal (extracted from shading_ctx)
+    Vector3 n; // shading normal (extracted from shading_ctx)
 
     // types of scattering modeled by this bsdf
     bool reflection_scattering = false;

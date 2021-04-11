@@ -13,26 +13,26 @@
 // Shading normal adaptation algorithm as described in:
 //  "The Iray Light Transport Simulation and Rendering System", Keller et al. 2017
 // Returns true if shading normal was modified and false otherwise.
-static bool adjust_shading_normal(const Vector3& Wo, const Vector3& Ng, Vector3* N) {
+static bool adjust_shading_normal(const Vector3& wo, const Vector3& ng, Vector3* n) {
     // check renderer convention: shading frame is oriented in such way that Wo is in the positive hemisphere
-    ASSERT(dot(Wo, Ng) >= 0.f);
+    ASSERT(dot(wo, ng) >= 0.f);
 
-    Vector3 R = reflect(Wo, *N);
+    Vector3 R = reflect(wo, *n);
 
     // If reflected direction is above the geometric surface then
     // shading normal adaptation is not needed.
-    float a = dot(R, Ng);
+    float a = dot(R, ng);
     if (a >= 0.f)
         return false;
 
     // For almost tangential Wo we have catastrophic cancellation in 'Wo + tangent' expression below.
     // For this situation we know that the result will be close to geometric normal, so return it directly.
-    if (dot(Wo, Ng) < 1e-3f) {
-        *N = Ng;
+    if (dot(wo, ng) < 1e-3f) {
+        *n = ng;
         return true;
     }
 
-    float b = dot(*N, Ng);
+    float b = dot(*n, ng);
     ASSERT(b > 0.f);
 
     // This epsilon pulls tangent vector up a bit, so it's not strictly parallel to the surface.
@@ -40,18 +40,18 @@ static bool adjust_shading_normal(const Vector3& Wo, const Vector3& Ng, Vector3*
     float epsilon = 1e-4f;
 
     float distance_to_surface_along_normal = std::abs(a)/b;
-    Vector3 tangent = R + (distance_to_surface_along_normal + epsilon) * (*N);
+    Vector3 tangent = R + (distance_to_surface_along_normal + epsilon) * (*n);
     tangent.normalize();
 
     // Check that tangent vector is either above the surface or only a little bit below it.
     // The second scenario is still possible in rare situations due to finite FP precision when we have
     // extreme orientation of the shading normal N relative to the geometric normal Ng (almost orthogonal).
     // This is not a problem per se, because tangent vector only provides characteristic orientation.
-    ASSERT(dot(tangent, Ng) > -1e-5f);
+    ASSERT(dot(tangent, ng) > -1e-5f);
 
-    Vector3 new_N = (Wo + tangent).normalized();
-    ASSERT(dot(Wo, new_N) >= 0.f);
-    *N = new_N;
+    Vector3 new_N = (wo + tangent).normalized();
+    ASSERT(dot(wo, new_N) >= 0.f);
+    *n = new_N;
     return true;
 }
 
@@ -62,13 +62,12 @@ void Shading_Context::initialize_from_intersection(
 {
     *this = Shading_Context{};
 
-    Wo = -ray.direction;
+    wo = -ray.direction;
 
     // Geometry_Type-specific initialization.
     //
     // The following fields should be initialized: P, N, Ng, UV, dPdu, dPdv, dNdu, dNdv.
     // The values should be calculated in the local coordinate system of the object.
-    Vector3 dPdu, dPdv;
     if (intersection.geometry_type == Geometry_Type::triangle_mesh) {
         init_from_triangle_mesh_intersection(intersection.triangle_intersection);
     }
@@ -79,17 +78,17 @@ void Shading_Context::initialize_from_intersection(
     // Transform geometry data to world space.
     {
         const Matrix3x4& object_to_world = intersection.scene_object->object_to_world_transform;
-        P    = transform_point (object_to_world, P);
-        N    = transform_vector(object_to_world, N);
-        Ng   = transform_vector(object_to_world, Ng);
-        dPdu = transform_vector(object_to_world, dPdu);
-        dPdv = transform_vector(object_to_world, dPdv);
+        p    = transform_point (object_to_world, p);
+        n    = transform_vector(object_to_world, n);
+        ng   = transform_vector(object_to_world, ng);
+        dpdu = transform_vector(object_to_world, dpdu);
+        dpdv = transform_vector(object_to_world, dpdv);
         dNdu = transform_vector(object_to_world, dNdu);
         dNdv = transform_vector(object_to_world, dNdv);
     }
 
     // Trying to avoid self-shadowing.
-    P = offset_ray_origin(P, Ng);
+    p = offset_ray_origin(p, ng);
 
     if (auxilary_rays)
         calculate_UV_derivates(*auxilary_rays);
@@ -97,10 +96,10 @@ void Shading_Context::initialize_from_intersection(
     // NOTE: adjustment of shading normal invalidates dNdu/dNdv. For now it's not clear to which degree
     // it could be an issue (in most cases shading normals are left unchanged). Until further evidence,
     // we assume that dNdu/dNdv is still a reasonable approximation.
-    shading_normal_adjusted = adjust_shading_normal(Wo, Ng, &N);
+    shading_normal_adjusted = adjust_shading_normal(wo, ng, &n);
 
-    tangent2 = cross(N, dPdu).normalized();
-    tangent1 = cross(tangent2, N);
+    tangent2 = cross(n, dpdu).normalized();
+    tangent1 = cross(tangent2, n);
 
     area_light = intersection.scene_object->area_light;
 
@@ -119,17 +118,17 @@ void Shading_Context::initialize_from_intersection(
 }
 
 void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Intersection& ti) {
-    P = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
+    p = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
 
     Vector3 p0, p1, p2;
     ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);
-    Ng = cross(p1 - p0, p2 - p0).normalized();
-    Ng = dot(Ng, Wo) < 0 ? -Ng : Ng;
+    ng = cross(p1 - p0, p2 - p0).normalized();
+    ng = dot(ng, wo) < 0 ? -ng : ng;
 
-    N = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
-    N = dot(N, Ng) < 0 ? -N : N;
+    n = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
+    n = dot(n, ng) < 0 ? -n : n;
 
-    UV = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
+    uv = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
 
     Vector2 uvs[3];
     ti.mesh->get_uvs(ti.triangle_index, uvs);
@@ -138,42 +137,42 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
         { uvs[2].u - uvs[0].u, uvs[2].v - uvs[0].v }
     };
 
-    // dPdu/dPdv
+    // dpdu/dpdv
     {
         Vector3 b[2] = {
             p1 - p0,
             p2 - p0
         };
-        if (!solve_linear_system_2x2(a, b, &dPdu, &dPdv)) {
-            coordinate_system_from_vector(Ng, &dPdu, &dPdv);
+        if (!solve_linear_system_2x2(a, b, &dpdu, &dpdv)) {
+            coordinate_system_from_vector(ng, &dpdu, &dpdv);
         }
     }
     // dNdu/dNdv
     {
-        Vector3 n[3];
-        ti.mesh->get_normals(ti.triangle_index, n);
+        Vector3 normals[3];
+        ti.mesh->get_normals(ti.triangle_index, normals);
         Vector3 b[2] = {
-            n[1] - n[0],
-            n[2] - n[0]
+            normals[1] - normals[0],
+            normals[2] - normals[0]
         };
         if (!solve_linear_system_2x2(a, b, &dNdu, &dNdv)) {
-            coordinate_system_from_vector(Ng, &dNdu, &dNdv);
+            coordinate_system_from_vector(ng, &dNdu, &dNdv);
         }
     }
 }
 
 void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays) {
     // Compute position derivatives with respect to screen coordinates using auxilary offset rays.
-    float plane_d = -dot(Ng, P);
-    float tx = ray_plane_intersection(auxilary_rays.ray_dx_offset, Ng, plane_d);
-    float ty = ray_plane_intersection(auxilary_rays.ray_dy_offset, Ng, plane_d);
+    float plane_d = -dot(ng, p);
+    float tx = ray_plane_intersection(auxilary_rays.ray_dx_offset, ng, plane_d);
+    float ty = ray_plane_intersection(auxilary_rays.ray_dy_offset, ng, plane_d);
 
     Vector3 px = auxilary_rays.ray_dx_offset.get_point(tx);
     Vector3 py = auxilary_rays.ray_dy_offset.get_point(ty);
-    dPdx = px - P;
-    dPdy = py - P;
+    dpdx = px - p;
+    dpdy = py - p;
 
-    // Compute UV derivatives with respect to screen coordinates (PBRT, 10.1.1).
+    // Compute uv derivatives with respect to screen coordinates (PBRT, 10.1.1).
     //
     // We need to solve these two linear systems:
     //  dPdx = dPdu * dUdx + dPdv * dVdx (3 equations)
@@ -184,7 +183,7 @@ void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays)
     // with the highest chance to be degenerate.
     int dim0 = 0, dim1 = 1;
     {
-        Vector3 a = Ng.abs();
+        Vector3 a = ng.abs();
         if (a.x > a.y && a.x > a.z) {
             dim0 = 1;
             dim1 = 2;
@@ -195,25 +194,25 @@ void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays)
         }
     }
     float a[2][2] = {
-        { dPdu[dim0], dPdv[dim0] },
-        { dPdu[dim1], dPdv[dim1] }
+        { dpdu[dim0], dpdv[dim0] },
+        { dpdu[dim1], dpdv[dim1] }
     };
     float bx[2] = {
-        dPdx[dim0],
-        dPdx[dim1]
+        dpdx[dim0],
+        dpdx[dim1]
     };
     float by[2] = {
-        dPdy[dim0],
-        dPdy[dim1]
+        dpdy[dim0],
+        dpdy[dim1]
     };
     // If equation cannot be solved then derivative stay initialized to zero.
-    solve_linear_system_2x2(a, bx, &dUVdx.u, &dUVdx.v);
-    solve_linear_system_2x2(a, by, &dUVdy.u, &dUVdy.v);
+    solve_linear_system_2x2(a, bx, &dudx, &dvdx);
+    solve_linear_system_2x2(a, by, &dudy, &dvdy);
 }
 
 float Shading_Context::compute_texture_lod(int mip_count, const Vector2& uv_scale) const {
-    Vector2 dUVdx_scaled = dUVdx * uv_scale;
-    Vector2 dUVdy_scaled = dUVdy * uv_scale;
+    Vector2 dUVdx_scaled = Vector2(dudx, dvdx) * uv_scale;
+    Vector2 dUVdy_scaled = Vector2(dudy, dvdy) * uv_scale;
 
     // To satisfy Nyquist limit the filter width should be twice as large as computed here.
     // This is achieved implicitly by using bilinear filtering to sample mip levels.
@@ -229,9 +228,9 @@ float Shading_Context::compute_texture_lod(int mip_count, const Vector2& uv_scal
 
 Vector3 Shading_Context::local_to_world(const Vector3& local_direction) const {
     return Vector3{
-        tangent1.x * local_direction.x + tangent2.x * local_direction.y + N.x * local_direction.z,
-        tangent1.y * local_direction.x + tangent2.y * local_direction.y + N.y * local_direction.z,
-        tangent1.z * local_direction.x + tangent2.z * local_direction.y + N.z * local_direction.z
+        tangent1.x * local_direction.x + tangent2.x * local_direction.y + n.x * local_direction.z,
+        tangent1.y * local_direction.x + tangent2.y * local_direction.y + n.y * local_direction.z,
+        tangent1.z * local_direction.x + tangent2.z * local_direction.y + n.z * local_direction.z
     };
 }
 
@@ -239,6 +238,6 @@ Vector3 Shading_Context::world_to_local(const Vector3& world_direction) const {
     return Vector3 { 
         dot(world_direction, tangent1),
         dot(world_direction, tangent2),
-        dot(world_direction, N)
+        dot(world_direction, n)
     };
 }

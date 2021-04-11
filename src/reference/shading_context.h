@@ -12,26 +12,28 @@ struct BSDF;
 // Contains all the necessary information to perform shading at the intersection point.
 // We keep one instance of Shading_Context per thread.
 struct Shading_Context {
-    Vector3 Wo; // outgoing direction
+    Vector3 wo; // outgoing direction
 
-    Vector3 P; // shading point position in world coordinates
-    Vector3 Ng; // geometric normal
-    Vector3 N; // shading normal
-    Vector2 UV; // surface UV parameterization
+    Vector3 p; // shading point position in world coordinates
+    Vector3 ng; // geometric normal
+    Vector3 n; // shading normal
+    Vector2 uv; // surface uv parameterization
 
-    Vector3 dPdu;
-    Vector3 dPdv;
+    Vector3 dpdu;
+    Vector3 dpdv;
     Vector3 dNdu;
     Vector3 dNdv;
 
     // The dx/dy derivatives below (position and uv) measure the change with respect to
     // an average distance between the samples (not pixels!).
     //
-    Vector3 dPdx;
-    Vector3 dPdy;
+    Vector3 dpdx;
+    Vector3 dpdy;
     // The uv derivatices are used to compute texture lod for mip-mapping.
-    Vector2 dUVdx;
-    Vector2 dUVdy;
+    float dudx = 0.f;
+    float dvdx = 0.f;
+    float dudy = 0.f;
+    float dvdy = 0.f;
 
     // Tangent vectors for shading geometry.
     // (tangent1, tangent2, N) triplet forms right-handed orthonormal coordinate system.

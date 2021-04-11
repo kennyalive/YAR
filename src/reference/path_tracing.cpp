@@ -79,12 +79,12 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
         float bsdf_pdf;
 
         Vector2 u = thread_ctx.pixel_sampler.get_next_2d_sample();
-        ColorRGB f = shading_ctx.bsdf->sample(u, shading_ctx.Wo, &wi, &bsdf_pdf);
+        ColorRGB f = shading_ctx.bsdf->sample(u, shading_ctx.wo, &wi, &bsdf_pdf);
         if (f.is_black())
             break;
 
-        path_coeff *= f * (std::abs(dot(shading_ctx.N, wi)) / bsdf_pdf);
-        current_ray = Ray(shading_ctx.P, wi);
+        path_coeff *= f * (std::abs(dot(shading_ctx.n, wi)) / bsdf_pdf);
+        current_ray = Ray(shading_ctx.p, wi);
     }
     return L;
 }
