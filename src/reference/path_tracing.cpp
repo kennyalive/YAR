@@ -83,8 +83,8 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
         if (f.is_black())
             break;
 
-        path_coeff *= f * (std::abs(dot(shading_ctx.n, wi)) / bsdf_pdf);
-        current_ray = Ray(shading_ctx.p, wi);
+        path_coeff *= f * (std::abs(dot(shading_ctx.normal, wi)) / bsdf_pdf);
+        current_ray = Ray(shading_ctx.position, wi);
     }
     return L;
 }

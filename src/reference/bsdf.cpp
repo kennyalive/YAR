@@ -22,7 +22,7 @@ inline Vector3 sample_microfacet_normal(const Shading_Context& shading_ctx, Vect
         wh_local = GGX_sample_microfacet_normal(u, alpha);
     }
     Vector3 wh = shading_ctx.local_to_world(wh_local);
-    ASSERT(dot(wh, shading_ctx.n) >= 0.f);
+    ASSERT(dot(wh, shading_ctx.normal) >= 0.f);
     return wh;
 }
 
@@ -42,7 +42,7 @@ inline float calculate_microfacet_wi_pdf(const Vector3& wo, const Vector3& wh, c
 
 BSDF::BSDF(const Shading_Context& shading_ctx)
     : shading_ctx(&shading_ctx)
-    , n(shading_ctx.n)
+    , n(shading_ctx.normal)
 {
 }
 
@@ -96,10 +96,10 @@ ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
 
     ColorRGB F = conductor_fresnel(cos_theta_i, eta_i, eta_t, k_t);
 
-    float D = GGX_Distribution::D(wh, shading_ctx->n, alpha);
-    float G = GGX_Distribution::G(wi, wo, shading_ctx->n, alpha);
+    float D = GGX_Distribution::D(wh, n, alpha);
+    float G = GGX_Distribution::G(wi, wo, n, alpha);
     
-    ColorRGB f = (G * D) * F / (4.f * dot(shading_ctx->n, wo) * dot(shading_ctx->n, wi));
+    ColorRGB f = (G * D) * F / (4.f * dot(n, wo) * dot(n, wi));
     return f;
 }
 
@@ -145,10 +145,10 @@ ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
 
     ColorRGB F = schlick_fresnel(ColorRGB(0.04f), cos_theta_i);
 
-    float D = GGX_Distribution::D(wh, shading_ctx->n, alpha);
-    float G = GGX_Distribution::G(wi, wo, shading_ctx->n, alpha);
+    float D = GGX_Distribution::D(wh, n, alpha);
+    float G = GGX_Distribution::G(wi, wo, n, alpha);
 
-    ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(shading_ctx->n, wo) * dot(shading_ctx->n, wi));
+    ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(n, wo) * dot(n, wi));
     ColorRGB diffuse_brdf = diffuse_reflectance * Pi_Inv;
     return diffuse_brdf + specular_brdf;
 }

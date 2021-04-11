@@ -14,9 +14,9 @@ struct BSDF;
 struct Shading_Context {
     Vector3 wo; // outgoing direction
 
-    Vector3 p; // shading point position in world coordinates
-    Vector3 ng; // geometric normal
-    Vector3 n; // shading normal
+    Vector3 position; // shading point position in world coordinates
+    Vector3 geometric_normal;
+    Vector3 normal; // shading normal
     Vector2 uv; // surface uv parameterization
 
     Vector3 dpdu;

@@ -78,9 +78,9 @@ void Shading_Context::initialize_from_intersection(
     // Transform geometry data to world space.
     {
         const Matrix3x4& object_to_world = intersection.scene_object->object_to_world_transform;
-        p    = transform_point (object_to_world, p);
-        n    = transform_vector(object_to_world, n);
-        ng   = transform_vector(object_to_world, ng);
+        position = transform_point (object_to_world, position);
+        normal = transform_vector(object_to_world, normal);
+        geometric_normal = transform_vector(object_to_world, geometric_normal);
         dpdu = transform_vector(object_to_world, dpdu);
         dpdv = transform_vector(object_to_world, dpdv);
         dNdu = transform_vector(object_to_world, dNdu);
@@ -88,7 +88,7 @@ void Shading_Context::initialize_from_intersection(
     }
 
     // Trying to avoid self-shadowing.
-    p = offset_ray_origin(p, ng);
+    position = offset_ray_origin(position, geometric_normal);
 
     if (auxilary_rays)
         calculate_UV_derivates(*auxilary_rays);
@@ -96,10 +96,10 @@ void Shading_Context::initialize_from_intersection(
     // NOTE: adjustment of shading normal invalidates dNdu/dNdv. For now it's not clear to which degree
     // it could be an issue (in most cases shading normals are left unchanged). Until further evidence,
     // we assume that dNdu/dNdv is still a reasonable approximation.
-    shading_normal_adjusted = adjust_shading_normal(wo, ng, &n);
+    shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &normal);
 
-    tangent2 = cross(n, dpdu).normalized();
-    tangent1 = cross(tangent2, n);
+    tangent2 = cross(normal, dpdu).normalized();
+    tangent1 = cross(tangent2, normal);
 
     area_light = intersection.scene_object->area_light;
 
@@ -118,15 +118,15 @@ void Shading_Context::initialize_from_intersection(
 }
 
 void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Intersection& ti) {
-    p = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
+    position = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
 
     Vector3 p0, p1, p2;
     ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);
-    ng = cross(p1 - p0, p2 - p0).normalized();
-    ng = dot(ng, wo) < 0 ? -ng : ng;
+    geometric_normal = cross(p1 - p0, p2 - p0).normalized();
+    geometric_normal = dot(geometric_normal, wo) < 0 ? -geometric_normal : geometric_normal;
 
-    n = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
-    n = dot(n, ng) < 0 ? -n : n;
+    normal = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
+    normal = dot(normal, geometric_normal) < 0 ? -normal : normal;
 
     uv = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
 
@@ -144,7 +144,7 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
             p2 - p0
         };
         if (!solve_linear_system_2x2(a, b, &dpdu, &dpdv)) {
-            coordinate_system_from_vector(ng, &dpdu, &dpdv);
+            coordinate_system_from_vector(geometric_normal, &dpdu, &dpdv);
         }
     }
     // dNdu/dNdv
@@ -156,21 +156,21 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
             normals[2] - normals[0]
         };
         if (!solve_linear_system_2x2(a, b, &dNdu, &dNdv)) {
-            coordinate_system_from_vector(ng, &dNdu, &dNdv);
+            coordinate_system_from_vector(geometric_normal, &dNdu, &dNdv);
         }
     }
 }
 
 void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays) {
     // Compute position derivatives with respect to screen coordinates using auxilary offset rays.
-    float plane_d = -dot(ng, p);
-    float tx = ray_plane_intersection(auxilary_rays.ray_dx_offset, ng, plane_d);
-    float ty = ray_plane_intersection(auxilary_rays.ray_dy_offset, ng, plane_d);
+    float plane_d = -dot(geometric_normal, position);
+    float tx = ray_plane_intersection(auxilary_rays.ray_dx_offset, geometric_normal, plane_d);
+    float ty = ray_plane_intersection(auxilary_rays.ray_dy_offset, geometric_normal, plane_d);
 
     Vector3 px = auxilary_rays.ray_dx_offset.get_point(tx);
     Vector3 py = auxilary_rays.ray_dy_offset.get_point(ty);
-    dpdx = px - p;
-    dpdy = py - p;
+    dpdx = px - position;
+    dpdy = py - position;
 
     // Compute uv derivatives with respect to screen coordinates (PBRT, 10.1.1).
     //
@@ -183,7 +183,7 @@ void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays)
     // with the highest chance to be degenerate.
     int dim0 = 0, dim1 = 1;
     {
-        Vector3 a = ng.abs();
+        Vector3 a = geometric_normal.abs();
         if (a.x > a.y && a.x > a.z) {
             dim0 = 1;
             dim1 = 2;
@@ -228,9 +228,9 @@ float Shading_Context::compute_texture_lod(int mip_count, const Vector2& uv_scal
 
 Vector3 Shading_Context::local_to_world(const Vector3& local_direction) const {
     return Vector3{
-        tangent1.x * local_direction.x + tangent2.x * local_direction.y + n.x * local_direction.z,
-        tangent1.y * local_direction.x + tangent2.y * local_direction.y + n.y * local_direction.z,
-        tangent1.z * local_direction.x + tangent2.z * local_direction.y + n.z * local_direction.z
+        tangent1.x * local_direction.x + tangent2.x * local_direction.y + normal.x * local_direction.z,
+        tangent1.y * local_direction.x + tangent2.y * local_direction.y + normal.y * local_direction.z,
+        tangent1.z * local_direction.x + tangent2.z * local_direction.y + normal.z * local_direction.z
     };
 }
 
@@ -238,6 +238,6 @@ Vector3 Shading_Context::world_to_local(const Vector3& world_direction) const {
     return Vector3 { 
         dot(world_direction, tangent1),
         dot(world_direction, tangent2),
-        dot(world_direction, n)
+        dot(world_direction, normal)
     };
 }
