@@ -10,8 +10,8 @@ bool solve_linear_system_2x2(float a[2][2], T b[2], T* x1, T* x2) {
     if (det == 0.f)
         return false;
     float inv_det = 1.f / det;
-    *x1 = (b[0] * a[1][1] - a[0][1] * b[1]) * inv_det;
-    *x2 = (a[0][0] * b[1] - b[0] * a[1][0]) * inv_det;
+    *x1 = ( a[1][1] * b[0] - a[0][1] * b[1]) * inv_det;
+    *x2 = (-a[1][0] * b[0] + a[0][0] * b[1]) * inv_det;
     return true;
 }
 
