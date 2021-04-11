@@ -286,8 +286,8 @@ bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const
         if (auxilary_rays) {
             Vector3 wo = shading_ctx.wo;
             Vector3 n = shading_ctx.normal;
-            Vector3 dndu = shading_ctx.dNdu;
-            Vector3 dndv = shading_ctx.dNdv;
+            Vector3 dndu = shading_ctx.dndu;
+            Vector3 dndv = shading_ctx.dndv;
             Vector3 dpdx = shading_ctx.dpdx;
             Vector3 dpdy = shading_ctx.dpdy;
             float dudx = shading_ctx.dudx;

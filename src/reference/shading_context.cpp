@@ -83,8 +83,8 @@ void Shading_Context::initialize_from_intersection(
         geometric_normal = transform_vector(object_to_world, geometric_normal);
         dpdu = transform_vector(object_to_world, dpdu);
         dpdv = transform_vector(object_to_world, dpdv);
-        dNdu = transform_vector(object_to_world, dNdu);
-        dNdv = transform_vector(object_to_world, dNdv);
+        dndu = transform_vector(object_to_world, dndu);
+        dndv = transform_vector(object_to_world, dndv);
     }
 
     // Trying to avoid self-shadowing.
@@ -93,9 +93,9 @@ void Shading_Context::initialize_from_intersection(
     if (auxilary_rays)
         calculate_UV_derivates(*auxilary_rays);
 
-    // NOTE: adjustment of shading normal invalidates dNdu/dNdv. For now it's not clear to which degree
+    // NOTE: adjustment of shading normal invalidates dndu/dndv. For now it's not clear to which degree
     // it could be an issue (in most cases shading normals are left unchanged). Until further evidence,
-    // we assume that dNdu/dNdv is still a reasonable approximation.
+    // we assume that dndu/dndv is still a reasonable approximation.
     shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &normal);
 
     tangent2 = cross(normal, dpdu).normalized();
@@ -147,7 +147,7 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
             coordinate_system_from_vector(geometric_normal, &dpdu, &dpdv);
         }
     }
-    // dNdu/dNdv
+    // dndu/dndv
     {
         Vector3 normals[3];
         ti.mesh->get_normals(ti.triangle_index, normals);
@@ -155,8 +155,8 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
             normals[1] - normals[0],
             normals[2] - normals[0]
         };
-        if (!solve_linear_system_2x2(a, b, &dNdu, &dNdv)) {
-            coordinate_system_from_vector(geometric_normal, &dNdu, &dNdv);
+        if (!solve_linear_system_2x2(a, b, &dndu, &dndv)) {
+            coordinate_system_from_vector(geometric_normal, &dndu, &dndv);
         }
     }
 }

@@ -21,8 +21,8 @@ struct Shading_Context {
 
     Vector3 dpdu;
     Vector3 dpdv;
-    Vector3 dNdu;
-    Vector3 dNdv;
+    Vector3 dndu;
+    Vector3 dndv;
 
     // The dx/dy derivatives below (position and uv) measure the change with respect to
     // an average distance between the samples (not pixels!).
