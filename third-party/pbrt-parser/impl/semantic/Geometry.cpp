@@ -309,7 +309,7 @@ namespace pbrt {
     Sphere::SP ours = std::make_shared<Sphere>(findOrCreateMaterial(shape->material));
 
     ours->transform = shape->transform.atStart;
-    ours->radius    = shape->getParam1f("radius");
+    ours->radius    = shape->getParam1f("radius", 1.f);
     extractTextures(ours,shape);
       
     return ours;
