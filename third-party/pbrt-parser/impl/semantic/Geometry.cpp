@@ -231,8 +231,10 @@ namespace pbrt {
     ours->vertex = extractVector<vec3f>(shape,"P");
     // vertex normals - param "N", 3x float each
     ours->normal = extractVector<vec3f>(shape,"N");
-    // per-vertex texture coordinates - param "uv", 2x float each
+    // per-vertex texture coordinates - param "uv" or "st", 2x float each
     ours->texcoord = extractVector<vec2f>(shape,"uv");
+    if (ours->texcoord.empty())
+        ours->texcoord = extractVector<vec2f>(shape,"st");
     // triangle vertex indices - param "indices", 3x int each
     ours->index = extractVector<vec3i>(shape,"indices");
 
