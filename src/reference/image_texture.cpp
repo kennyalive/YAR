@@ -482,6 +482,9 @@ void initalize_EWA_filter_weights(int table_size, float alpha) {
     }
 }
 
+// The theory and the algorithm for EWA filter is provided in:
+// "Fundamentals of Texture Mapping and Image Warping", thesis by Paul S. Heckbert, 1989
+// PBRT book also implements this algorithm.
 static ColorRGB do_EWA(const Image& image, Vector2 uv,
     float Ux, float Vx, float Uy, float Vy, Wrap_Mode wrap_mode)
 {
@@ -498,7 +501,9 @@ static ColorRGB do_EWA(const Image& image, Vector2 uv,
     float B = -2 * (Ux*Vx + Uy*Vy);
     float C = Ux*Ux + Uy*Uy + 1;
     float F = A*C - 0.25f * B*B;
-    ASSERT(F != 0.f);
+
+    // (A*C - 0.25*B*B) determines conic section type. For ellipse it's always positive.
+    ASSERT(F > 0.f); 
 
     float inv_F = 1.f / F;
     A *= inv_F;
@@ -512,10 +517,12 @@ static ColorRGB do_EWA(const Image& image, Vector2 uv,
 
     // Determine ellipse bounding box.
     float u_delta = 2 * std::sqrt(C * inv_det); // or std::sqrt(C * F)
+    ASSERT(u_delta < 256.f); // filtering range sanity check
     float x0 = std::ceil(uv[0] - u_delta);
     float x1 = std::floor(uv[0] + u_delta);
 
     float v_delta = 2 * std::sqrt(A * inv_det); // or std::sqrt(A * F)
+    ASSERT(v_delta < 256.f); // filtering range sanity check
     float y0 = std::ceil(uv[1] - v_delta);
     float y1 = std::floor(uv[1] + v_delta);
 
@@ -527,6 +534,7 @@ static ColorRGB do_EWA(const Image& image, Vector2 uv,
         for (float x = x0; x <= x1; x++) {
             float xx = x - uv[0];
             float r2 = A * xx*xx + B * xx*yy + C * yy*yy;
+            ASSERT(r2 >= 0.f);
             if (r2 < 1.f) {
                 int weight_index = int(r2 * EWA_filter_weights.size());
                 ASSERT(weight_index < EWA_filter_weights.size());
@@ -564,14 +572,15 @@ ColorRGB Image_Texture::sample_EWA(Vector2 uv, Vector2 UVx, Vector2 UVy,
         UVy *= scale;
     }
 
-    float lod = int(mips.size()) - 1 + std::log2(minor_length);
-    lod = std::clamp(lod, 0.f, float(mips.size() - 1));
-
+    const float lod = std::max(0.f, int(mips.size()) - 1 + std::log2(minor_length));
     float lod_floor;
     float t = std::modf(lod, &lod_floor);
 
     int level0 = int(lod_floor);
-    int level1 = std::min(level0 + 1, int(mips.size() - 1));
+    int level1 = level0 + 1;
+
+    if (level0 >= int(mips.size()) - 1)
+        return mips.back().data[0];
 
     ColorRGB mip0_sample = do_EWA(mips[level0], uv, UVx[0], UVx[1], UVy[0], UVy[1], wrap_mode);
     ColorRGB mip1_sample = do_EWA(mips[level1], uv, UVx[0], UVx[1], UVy[0], UVy[1], wrap_mode);
