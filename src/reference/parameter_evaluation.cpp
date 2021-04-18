@@ -24,7 +24,13 @@ ColorRGB evaluate_rgb_parameter(const Scene_Context& global_ctx, const Shading_C
     //return texture.sample_nearest(uv, 0, Wrap_Mode::repeat);
     //return texture.sample_bilinear(uv, 0, Wrap_Mode::repeat);
     //return texture.sample_trilinear(uv, lod, Wrap_Mode::repeat);
-    return texture.sample_EWA(uv, Vector2(shading_ctx.dudx, shading_ctx.dvdx) * uv_scale, Vector2(shading_ctx.dudy, shading_ctx.dvdy) * uv_scale, Wrap_Mode::repeat, 32.f);
+
+    float dudx = shading_ctx.dudx * param.u_scale;
+    float dvdx = shading_ctx.dvdx * param.v_scale;
+    float dudy = shading_ctx.dudy * param.u_scale;
+    float dvdy = shading_ctx.dvdy * param.v_scale;
+
+    return texture.sample_EWA(uv, Vector2(dudx, dvdx), Vector2(dudy, dvdy), Wrap_Mode::repeat, 32.f);
 }
 
 float evaluate_float_parameter(const  Scene_Context& global_ctx, const Shading_Context& shading_ctx, const Float_Parameter& param) {

@@ -35,7 +35,7 @@ public:
     ColorRGB sample_nearest(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const;
     ColorRGB sample_bilinear(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const;
     ColorRGB sample_trilinear(const Vector2& uv, float lod, Wrap_Mode wrap_mode) const;
-    ColorRGB sample_EWA(Vector2 uv, Vector2 UVx, Vector2 UVy, Wrap_Mode wrap_mode, float max_anisotropy) const;
+    ColorRGB sample_EWA(Vector2 uv, Vector2 uv_axis1, Vector2 uv_axis2, Wrap_Mode wrap_mode, float max_anisotropy) const;
 
 private:
     void upsample_base_level_to_power_of_two_resolution(bool clamp_color_values);

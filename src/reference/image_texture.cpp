@@ -485,21 +485,20 @@ void initalize_EWA_filter_weights(int table_size, float alpha) {
 // The theory and the algorithm for EWA filter is provided in:
 // "Fundamentals of Texture Mapping and Image Warping", thesis by Paul S. Heckbert, 1989
 // PBRT book also implements this algorithm.
-static ColorRGB do_EWA(const Image& image, Vector2 uv,
-    float Ux, float Vx, float Uy, float Vy, Wrap_Mode wrap_mode)
+static ColorRGB do_EWA(const Image& image, Vector2 uv, Vector2 uv_axis1, Vector2 uv_axis2, Wrap_Mode wrap_mode)
 {
     // Transition from UV space to texture space with texels placed at integer coordinates.
     uv[0] = uv[0] * image.width - 0.5f;
     uv[1] = uv[1] * image.height - 0.5f;
-    Ux *= image.width;
-    Vx *= image.height;
-    Uy *= image.width;
-    Vy *= image.height;
+    uv_axis1[0] *= image.width;
+    uv_axis1[1] *= image.height;
+    uv_axis2[0] *= image.width;
+    uv_axis2[1] *= image.height;
 
     // Compute ellipse parameters (quadratic form).
-    float A = Vx*Vx + Vy*Vy + 1;
-    float B = -2 * (Ux*Vx + Uy*Vy);
-    float C = Ux*Ux + Uy*Uy + 1;
+    float A = uv_axis1[1]*uv_axis1[1] + uv_axis2[1]*uv_axis2[1] + 1;
+    float B = -2 * (uv_axis1[0]*uv_axis1[1] + uv_axis2[0]*uv_axis2[1]);
+    float C = uv_axis1[0]*uv_axis1[0] + uv_axis2[0]*uv_axis2[0] + 1;
     float F = A*C - 0.25f * B*B;
 
     // (A*C - 0.25*B*B) determines conic section type. For ellipse it's always positive.
@@ -554,14 +553,17 @@ static ColorRGB do_EWA(const Image& image, Vector2 uv,
     return sum / weight_sum;
 }
 
-ColorRGB Image_Texture::sample_EWA(Vector2 uv, Vector2 UVx, Vector2 UVy,
-    Wrap_Mode wrap_mode, float max_anisotropy) const
+ColorRGB Image_Texture::sample_EWA(Vector2 uv, Vector2 uv_axis1, Vector2 uv_axis2, Wrap_Mode wrap_mode, float max_anisotropy) const
 {
-    if (UVx.length_squared() < UVy.length_squared())
-        std::swap(UVx, UVy);
+    float axis1_len_sq = uv_axis1.length_squared();
+    float axis2_len_sq = uv_axis2.length_squared();
+    if (axis1_len_sq < axis2_len_sq) {
+        std::swap(uv_axis1, uv_axis2);
+        std::swap(axis1_len_sq, axis2_len_sq);
+    }
 
-    float major_length = UVx.length();
-    float minor_length = UVy.length();
+    float major_length = std::sqrt(axis1_len_sq);
+    float minor_length = std::sqrt(axis2_len_sq);
 
     if (minor_length < 1e-6f)
         return sample_bilinear(uv, 0, wrap_mode);
@@ -569,7 +571,7 @@ ColorRGB Image_Texture::sample_EWA(Vector2 uv, Vector2 UVx, Vector2 UVy,
     if (minor_length * max_anisotropy < major_length) {
         float scale = major_length / (minor_length * max_anisotropy);
         minor_length *= scale;
-        UVy *= scale;
+        uv_axis2 *= scale;
     }
 
     const float lod = std::max(0.f, int(mips.size()) - 1 + std::log2(minor_length));
@@ -582,8 +584,8 @@ ColorRGB Image_Texture::sample_EWA(Vector2 uv, Vector2 UVx, Vector2 UVy,
     if (level0 >= int(mips.size()) - 1)
         return mips.back().data[0];
 
-    ColorRGB mip0_sample = do_EWA(mips[level0], uv, UVx[0], UVx[1], UVy[0], UVy[1], wrap_mode);
-    ColorRGB mip1_sample = do_EWA(mips[level1], uv, UVx[0], UVx[1], UVy[0], UVy[1], wrap_mode);
+    ColorRGB mip0_sample = do_EWA(mips[level0], uv, uv_axis1, uv_axis2, wrap_mode);
+    ColorRGB mip1_sample = do_EWA(mips[level1], uv, uv_axis1, uv_axis2, wrap_mode);
     ColorRGB final_sample = lerp(mip0_sample, mip1_sample, t);
     return final_sample;
 }
