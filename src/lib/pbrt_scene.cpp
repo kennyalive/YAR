@@ -112,6 +112,15 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         return Material_Handle{ Material_Type::mirror, int(materials.mirror.size() - 1) };
     }
 
+    if (auto glass_material = std::dynamic_pointer_cast<pbrt::GlassMaterial>(pbrt_material)) {
+        Glass_Material mtl;
+        set_constant_parameter(mtl.reflectance, ColorRGB(&glass_material->kr.x));
+        set_constant_parameter(mtl.transmittance, ColorRGB(&glass_material->kt.x));
+        set_constant_parameter(mtl.index_of_refraction, glass_material->index);
+        materials.glass.push_back(mtl);
+        return Material_Handle{ Material_Type::glass, int(materials.glass.size() - 1) };
+    }
+
     if (auto metal = std::dynamic_pointer_cast<pbrt::MetalMaterial>(pbrt_material)) {
         float roughness = pbrt_roughness_to_disney_roughness(metal->roughness, metal->remapRoughness);
         Metal_Material mtl;

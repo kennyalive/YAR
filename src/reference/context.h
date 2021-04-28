@@ -46,6 +46,13 @@ struct Thread_Context {
     Stratified_Pixel_Sampler pixel_sampler;
     Shading_Context shading_context;
 
+    // TODO: until we implement proper handling of nested dielectrics we make assumption
+    // that we don't have nested dielectrics and after we start tracing inside dielectric
+    // the only possible hit can be with the same dielectric material for exit event. Here
+    // we track current dielectric material to assert this convention and also to determine
+    // if it's enter or exit event.
+    Material_Handle current_dielectric_material;
+
     // Variance estimation.
     double variance_accumulator = 0.0;
     int64_t variance_count = 0;

@@ -9,6 +9,12 @@ struct Scene_Context;
 struct Thread_Context;
 struct BSDF;
 
+enum class Specular_Scattering_Type {
+    none,
+    reflection,
+    transmission
+};
+
 // Contains all the necessary information to perform shading at the intersection point.
 // We keep one instance of Shading_Context per thread.
 struct Shading_Context {
@@ -41,9 +47,12 @@ struct Shading_Context {
     Vector3 tangent2;
 
     Light_Handle area_light;
+
     const BSDF* bsdf = nullptr;
-    bool mirror_surface = false;
-    ColorRGB mirror_reflectance;
+    Specular_Scattering_Type specular_scattering_type = Specular_Scattering_Type::none;
+    ColorRGB specular_reflectance_coeff;
+    ColorRGB specular_transmission_coeff;
+    float specular_etaT_over_etaI = 1.f; // index of refracton, transmitted side relative to incident side
 
     // This flag is mostly for debugging purposes to mark regions where shading normal adaptation was applied.
     // The shading normal adaptation modifies shading normal N and ensures that Wo is in the positive hemisphere.

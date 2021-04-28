@@ -88,7 +88,8 @@ void Shading_Context::initialize_from_intersection(
     }
 
     // Trying to avoid self-shadowing.
-    position = offset_ray_origin(position, geometric_normal);
+    const bool transmission_event = intersection.scene_object->material.type == Material_Type::glass; // TODO: we need more general way to do this
+    position = offset_ray_origin(position, transmission_event ? -geometric_normal : geometric_normal);
 
     if (auxilary_rays)
         calculate_UV_derivates(*auxilary_rays);
@@ -107,9 +108,26 @@ void Shading_Context::initialize_from_intersection(
     if (intersection.scene_object->material != Null_Material) {
         Material_Handle mtl = intersection.scene_object->material;
         if (mtl.type == Material_Type::mirror) {
-            mirror_surface = true;
+            specular_scattering_type = Specular_Scattering_Type::reflection;
             const Mirror_Material& params = global_ctx.materials.mirror[mtl.index];
-            mirror_reflectance = evaluate_rgb_parameter(global_ctx, *this, params.reflectance);
+            specular_reflectance_coeff = evaluate_rgb_parameter(global_ctx, *this, params.reflectance);
+        }
+        else if (mtl.type == Material_Type::glass) {
+            specular_scattering_type = Specular_Scattering_Type::transmission;
+            const Glass_Material& params = global_ctx.materials.glass[mtl.index];
+            specular_reflectance_coeff = evaluate_rgb_parameter(global_ctx, *this, params.reflectance);
+            specular_transmission_coeff = evaluate_rgb_parameter(global_ctx, *this, params.transmittance);
+            float dielectric_ior = evaluate_float_parameter(global_ctx, *this, params.index_of_refraction);
+
+            if (thread_ctx.current_dielectric_material == Null_Material) { // dielectric enter event
+                thread_ctx.current_dielectric_material = mtl;
+                specular_etaT_over_etaI = dielectric_ior / 1.f;
+            }
+            else {  // dielectric exit event
+                ASSERT(thread_ctx.current_dielectric_material == mtl);
+                thread_ctx.current_dielectric_material = Null_Material;
+                specular_etaT_over_etaI = 1.f / dielectric_ior;
+            }
         }
         else {
             bsdf = create_bsdf(global_ctx, thread_ctx, *this, intersection.scene_object->material);
