@@ -414,7 +414,7 @@ namespace pbrt {
 
     in->getParam3f(&mat->kr.x,"Kr");
     in->getParam3f(&mat->kt.x,"Kt");
-    mat->index = in->getParam1f("index");
+    mat->index = in->getParam1f("index", 1.5f);
         
     return mat;
   }
