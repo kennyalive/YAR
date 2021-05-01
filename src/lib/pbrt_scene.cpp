@@ -291,7 +291,20 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
         scene->front_face_has_clockwise_winding = true;
 
     scene->view_points.push_back(view_point);
-    scene->camera_fov_y = pbrt_camera->fov;
+
+    // "fov" in pbrt project files specifies field of view of the more
+    // narrow image dimension. For "horizontal" images this represents 
+    // vertical field of view which matches our convention (fov_y) but
+    // for "vertical" images the pbrt's fov represents horizontal fov,
+    // which should be converted to our convention (fov_y).
+    if (scene->image_resolution.y > scene->image_resolution.x) {
+        float fov_x_over_2_tan = std::tan(radians(pbrt_camera->fov / 2.f));
+        float fov_y_over_2_tan = fov_x_over_2_tan * float(scene->image_resolution.y) / float(scene->image_resolution.x);
+        scene->camera_fov_y = degrees(2.f * std::atan(fov_y_over_2_tan));
+    }
+    else {
+        scene->camera_fov_y = pbrt_camera->fov;
+    }
 }
 
 static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size, Matrix3x4& transform) {
@@ -472,17 +485,17 @@ Scene load_pbrt_scene(const YAR_Project& project) {
         }
     }
 
-    // Import camera.
-    ASSERT(!pbrt_scene->cameras.empty());
-    pbrt::Camera::SP pbrt_camera = pbrt_scene->cameras[0];
-    import_pbrt_camera(pbrt_camera, &scene);
-
     // Import film.
     pbrt::Film::SP pbrt_film = pbrt_scene->film;
     if (pbrt_film) {
         scene.image_resolution.x = pbrt_film->resolution.x;
         scene.image_resolution.y = pbrt_film->resolution.y;
     }
+
+    // Import camera.
+    ASSERT(!pbrt_scene->cameras.empty());
+    pbrt::Camera::SP pbrt_camera = pbrt_scene->cameras[0];
+    import_pbrt_camera(pbrt_camera, &scene);
 
     // Import sampler.
     pbrt::Sampler::SP pbrt_sampler = pbrt_scene->sampler;
