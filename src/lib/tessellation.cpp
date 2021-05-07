@@ -142,14 +142,25 @@ Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level) {
         next_subdiv_indices.resize(0);
         position_to_index.clear();
     }
-    for (Vector3& v : vertices) v *= radius;
+
+    std::vector<Vector2> uvs(vertices.size());
+    for (int i = 0; i < (int)vertices.size(); i++) {
+        Vector3 p = vertices[i];
+        float cos_theta = std::clamp(p.z, -1.f, 1.f);
+        float v = std::clamp(std::acos(cos_theta) / Pi, 0.f, One_Minus_Epsilon);
+        float u = std::clamp((std::atan2(p.y, p.x) + Pi) / Pi2, 0.f, One_Minus_Epsilon);
+        uvs[i] = Vector2(u, v);
+    }
+
+    for (Vector3& v : vertices) {
+        v *= radius;
+    }
 
     Triangle_Mesh mesh;
     mesh.vertices = std::move(vertices);
     mesh.indices = std::move(indices);
-    mesh.uvs.resize(mesh.vertices.size());
+    mesh.uvs = std::move(uvs);
 
     calculate_normals(Normal_Calculation_Params{}, mesh);
-
     return mesh;
 }
