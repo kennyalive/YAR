@@ -245,7 +245,7 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
 }
 
 static Geometry_Handle import_pbrt_sphere(const pbrt::Sphere::SP pbrt_sphere, Matrix3x4* sphere_transform, Scene* scene) {
-    Triangle_Mesh sphere = create_sphere_mesh(pbrt_sphere->radius, 6);
+    Triangle_Mesh sphere = create_sphere_mesh(pbrt_sphere->radius, 6, true);
     scene->geometries.triangle_meshes.push_back(std::move(sphere));
     *sphere_transform = to_matrix3x4(pbrt_sphere->transform);
     return Geometry_Handle{ Geometry_Type::triangle_mesh, int(scene->geometries.triangle_meshes.size() - 1) };

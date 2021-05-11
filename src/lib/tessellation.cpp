@@ -41,7 +41,7 @@ Triangle_Mesh create_cube_mesh(float s) {
 // subdivision of icosahendron's faces into 4 triangles at each subdivision step.
 // Icosahedron's vertex coordinates and connectivity information is from:
 // https://www.geometrictools.com/Documentation/PlatonicSolids.pdf
-Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level) {
+Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level, bool texture_v_is_zero_at_bottom) {
     const float t = (1.f + std::sqrt(5.f)) / 2.f;
     const float s_inv = 1.f / std::sqrt(1.f + t*t);
 
@@ -146,9 +146,15 @@ Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level) {
     std::vector<Vector2> uvs(vertices.size());
     for (int i = 0; i < (int)vertices.size(); i++) {
         Vector3 p = vertices[i];
-        float cos_theta = std::clamp(p.z, -1.f, 1.f);
+
+        float cos_theta = std::clamp(texture_v_is_zero_at_bottom ? -p.z : p.z, -1.f, 1.f);
         float v = std::clamp(std::acos(cos_theta) / Pi, 0.f, One_Minus_Epsilon);
-        float u = std::clamp((std::atan2(p.y, p.x) + Pi) / Pi2, 0.f, One_Minus_Epsilon);
+
+        float phi = std::atan2(p.y, p.x);
+        if (phi < 0)
+            phi += Pi2;
+        float u = std::clamp(phi / Pi2, 0.f, One_Minus_Epsilon);
+
         uvs[i] = Vector2(u, v);
     }
 
