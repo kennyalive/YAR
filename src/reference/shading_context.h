@@ -52,7 +52,7 @@ struct Shading_Context {
     Specular_Scattering_Type specular_scattering_type = Specular_Scattering_Type::none;
     ColorRGB specular_reflectance_coeff;
     ColorRGB specular_transmission_coeff;
-    float specular_etaT_over_etaI = 1.f; // index of refracton, transmitted side relative to incident side
+    float specular_etaI_over_etaT = 1.f; // relative index of refracton, incident side relative to transmitted side
 
     // This flag is mostly for debugging purposes to mark regions where shading normal adaptation was applied.
     // The shading normal adaptation modifies shading normal N and ensures that Wo is in the positive hemisphere.

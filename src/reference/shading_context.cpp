@@ -99,8 +99,14 @@ void Shading_Context::initialize_from_intersection(
     // we assume that dndu/dndv is still a reasonable approximation.
     shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &normal);
 
-    tangent2 = cross(normal, dpdu).normalized();
-    tangent1 = cross(tangent2, normal);
+    if (dpdu != Vector3_Zero) {
+        tangent2 = cross(normal, dpdu).normalized();
+        tangent1 = cross(tangent2, normal);
+    }
+    else {
+        ASSERT(dpdv == Vector3_Zero); // consistency check, expect both derivatives are zero
+        coordinate_system_from_vector(normal, &tangent1, &tangent2);
+    }
 
     area_light = intersection.scene_object->area_light;
 
@@ -121,12 +127,12 @@ void Shading_Context::initialize_from_intersection(
 
             if (thread_ctx.current_dielectric_material == Null_Material) { // dielectric enter event
                 thread_ctx.current_dielectric_material = mtl;
-                specular_etaT_over_etaI = dielectric_ior / 1.f;
+                specular_etaI_over_etaT = 1.f / dielectric_ior;
             }
             else {  // dielectric exit event
                 ASSERT(thread_ctx.current_dielectric_material == mtl);
                 thread_ctx.current_dielectric_material = Null_Material;
-                specular_etaT_over_etaI = 1.f / dielectric_ior;
+                specular_etaI_over_etaT = dielectric_ior / 1.f;
             }
         }
         else {
@@ -144,7 +150,8 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
     geometric_normal = dot(geometric_normal, wo) < 0 ? -geometric_normal : geometric_normal;
 
     normal = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
-    normal = dot(normal, geometric_normal) < 0 ? -normal : normal;
+    const bool flip_shading_normal = dot(normal, geometric_normal) < 0;
+    normal = flip_shading_normal ? -normal : normal;
 
     uv = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
 
@@ -161,29 +168,32 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
             p1 - p0,
             p2 - p0
         };
-        if (!solve_linear_system_2x2(a, b, &dpdu, &dpdv)) {
-            coordinate_system_from_vector(geometric_normal, &dpdu, &dpdv);
-        }
+        // If equation cannot be solved then dpdu/dpdv stay initialized to zero.
+        solve_linear_system_2x2(a, b, &dpdu, &dpdv);
     }
     // dndu/dndv
     {
         Vector3 normals[3];
         ti.mesh->get_normals(ti.triangle_index, normals);
+        if (flip_shading_normal) {
+            normals[0] = -normals[0];
+            normals[1] = -normals[1];
+            normals[2] = -normals[2];
+        }
         Vector3 b[2] = {
             normals[1] - normals[0],
             normals[2] - normals[0]
         };
-        if (!solve_linear_system_2x2(a, b, &dndu, &dndv)) {
-            coordinate_system_from_vector(geometric_normal, &dndu, &dndv);
-        }
+        // If equation cannot be solved then dndu/dndv stay initialized to zero.
+        solve_linear_system_2x2(a, b, &dndu, &dndv);
     }
 }
 
 void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays) {
     // Compute position derivatives with respect to screen coordinates using auxilary offset rays.
-    float plane_d = -dot(geometric_normal, position);
-    float tx = ray_plane_intersection(auxilary_rays.ray_dx_offset, geometric_normal, plane_d);
-    float ty = ray_plane_intersection(auxilary_rays.ray_dy_offset, geometric_normal, plane_d);
+    float plane_d = -dot(normal, position);
+    float tx = ray_plane_intersection(auxilary_rays.ray_dx_offset, normal, plane_d);
+    float ty = ray_plane_intersection(auxilary_rays.ray_dy_offset, normal, plane_d);
 
     Vector3 px = auxilary_rays.ray_dx_offset.get_point(tx);
     Vector3 py = auxilary_rays.ray_dy_offset.get_point(ty);
@@ -201,7 +211,7 @@ void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays)
     // with the highest chance to be degenerate.
     int dim0 = 0, dim1 = 1;
     {
-        Vector3 a = geometric_normal.abs();
+        Vector3 a = normal.abs();
         if (a.x > a.y && a.x > a.z) {
             dim0 = 1;
             dim1 = 2;

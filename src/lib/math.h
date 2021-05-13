@@ -110,16 +110,17 @@ inline Vector3 reflect(const Vector3& w, const Vector3& n) {
     return (2.f * dot(w, n)) * n - w;
 }
 
-inline bool refract(const Vector3& w, const Vector3& n, float etaT_over_etaI, Vector3* w_transmitted) {
-    float cos_i = dot(w, n);
-    float sin_i_squared = std::max(0.f, 1.f - cos_i * cos_i);
+inline bool refract(const Vector3& w_incident, const Vector3& normal, float etaI_over_etaT, Vector3* w_transmitted) {
+    float cos_i = dot(w_incident, normal);
+    ASSERT(cos_i >= 0.f);
 
-    if (sin_i_squared > etaT_over_etaI * etaT_over_etaI) 
-        return false; // total internal reflection
+    float sin_t_squared = etaI_over_etaT * etaI_over_etaT * std::max(0.f, 1.f - cos_i * cos_i);
 
-    float etaI_over_etaT = 1.f / etaT_over_etaI;
-    float cos_t = std::sqrt(std::max(0.f, 1.f - sin_i_squared * etaI_over_etaT * etaI_over_etaT));
-    *w_transmitted = -etaI_over_etaT * w  + (etaI_over_etaT * cos_i - cos_t) * n;
+    if (sin_t_squared >= 1.f)
+        return false;  // total internal reflection
+
+    float cos_t = std::sqrt(1.f - sin_t_squared);
+    *w_transmitted = -etaI_over_etaT * w_incident  + (etaI_over_etaT * cos_i - cos_t) * normal;
     return true;
 }
 
