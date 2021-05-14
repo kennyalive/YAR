@@ -20,24 +20,23 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
 
     ColorRGB L;
     while (true) {
-        ColorRGB specular_attenuation;
-        if (!trace_ray(scene_ctx, thread_ctx, current_ray, bounce_count == 0 ? &auxilary_rays : nullptr, &specular_attenuation, 10)) {
+        if (!trace_ray(scene_ctx, thread_ctx, current_ray, bounce_count == 0 ? &auxilary_rays : nullptr, 10)) {
             if (bounce_count > 0) {
                 break;
             }
             if (scene_ctx.has_environment_light_sampler) {
-                return specular_attenuation * scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
+                return shading_ctx.specular_attenuation * scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
             }
             return Color_Black;
         }
 
         if (bounce_count == 0 && shading_ctx.area_light != Null_Light) {
             if (shading_ctx.area_light.type == Light_Type::diffuse_rectangular) {
-                return specular_attenuation * scene_ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
+                return shading_ctx.specular_attenuation * scene_ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
             }
             else {
                 ASSERT(shading_ctx.area_light.type == Light_Type::diffuse_sphere);
-                return specular_attenuation * scene_ctx.lights.diffuse_sphere_lights[shading_ctx.area_light.index].emitted_radiance;
+                return shading_ctx.specular_attenuation * scene_ctx.lights.diffuse_sphere_lights[shading_ctx.area_light.index].emitted_radiance;
             }
         }
         else if (shading_ctx.area_light != Null_Light) {
@@ -46,7 +45,7 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
             break;
         }
 
-        path_coeff *= specular_attenuation;
+        path_coeff *= shading_ctx.specular_attenuation;
 
         float u_light_index = thread_ctx.pixel_sampler.get_next_1d_sample();
         Vector2 u_light = thread_ctx.pixel_sampler.get_next_2d_sample();
