@@ -56,8 +56,7 @@ static bool adjust_shading_normal(const Vector3& wo, const Vector3& ng, Vector3*
 }
 
 void Shading_Context::initialize_from_intersection(
-    const Scene_Context& global_ctx,
-    Thread_Context& thread_ctx,
+    const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
     const Ray& ray, const Auxilary_Rays* auxilary_rays, const Intersection& intersection, Specular_Surface_Params* specular_surface_params)
 {
     *this = Shading_Context{};
@@ -88,7 +87,7 @@ void Shading_Context::initialize_from_intersection(
     }
 
     // Trying to avoid self-shadowing.
-    const bool transmission_event = intersection.scene_object->material.type == Material_Type::glass; // TODO: we need more general way to do this
+    const bool transmission_event = intersection.scene_object->material.type == Material_Type::perfect_refractor; // TODO: we need more general way to do this
     position = offset_ray_origin(position, transmission_event ? -geometric_normal : geometric_normal);
 
     if (auxilary_rays)
@@ -113,18 +112,16 @@ void Shading_Context::initialize_from_intersection(
     // Init scattering information.
     if (intersection.scene_object->material != Null_Material) {
         Material_Handle mtl = intersection.scene_object->material;
-        if (mtl.type == Material_Type::mirror) {
-            const Mirror_Material& params = global_ctx.materials.mirror[mtl.index];
+        if (mtl.type == Material_Type::perfect_reflector) {
+            const Perfect_Reflector_Material& params = scene_ctx.materials.perfect_reflector[mtl.index];
             specular_surface_params->type = Specular_Surface_Type::perfect_reflector;
-            specular_surface_params->reflectance_coeff = evaluate_rgb_parameter(global_ctx, *this, params.reflectance);
+            specular_surface_params->reflectance_coeff = evaluate_rgb_parameter(scene_ctx, *this, params.reflectance);
         }
-        else if (mtl.type == Material_Type::glass) {
-            const Glass_Material& params = global_ctx.materials.glass[mtl.index];
+        else if (mtl.type == Material_Type::perfect_refractor) {
+            const Perfect_Refractor_Material& params = scene_ctx.materials.perfect_refractor[mtl.index];
             specular_surface_params->type = Specular_Surface_Type::perfect_refractor;
-            specular_surface_params->reflectance_coeff = evaluate_rgb_parameter(global_ctx, *this, params.reflectance);
-            specular_surface_params->transmission_coeff = evaluate_rgb_parameter(global_ctx, *this, params.transmittance);;
 
-            float dielectric_ior = evaluate_float_parameter(global_ctx, *this, params.index_of_refraction);
+            float dielectric_ior = evaluate_float_parameter(scene_ctx, *this, params.index_of_refraction);
             if (thread_ctx.current_dielectric_material == Null_Material) { // dielectric enter event
                 thread_ctx.current_dielectric_material = mtl;
                 specular_surface_params->etaI_over_etaT = 1.f / dielectric_ior;
@@ -137,7 +134,7 @@ void Shading_Context::initialize_from_intersection(
         }
         else {
             specular_surface_params->type = Specular_Surface_Type::none;
-            bsdf = create_bsdf(global_ctx, thread_ctx, *this, intersection.scene_object->material);
+            bsdf = create_bsdf(scene_ctx, thread_ctx, *this, intersection.scene_object->material);
         }
     }
 }

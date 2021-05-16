@@ -106,19 +106,17 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
     }
 
     if (auto mirror_material = std::dynamic_pointer_cast<pbrt::MirrorMaterial>(pbrt_material)) {
-        Mirror_Material mtl;
+        Perfect_Reflector_Material mtl;
         set_constant_parameter(mtl.reflectance, ColorRGB(&mirror_material->kr.x));
-        materials.mirror.push_back(mtl);
-        return Material_Handle{ Material_Type::mirror, int(materials.mirror.size() - 1) };
+        materials.perfect_reflector.push_back(mtl);
+        return Material_Handle{ Material_Type::perfect_reflector, int(materials.perfect_reflector.size() - 1) };
     }
 
     if (auto glass_material = std::dynamic_pointer_cast<pbrt::GlassMaterial>(pbrt_material)) {
-        Glass_Material mtl;
-        set_constant_parameter(mtl.reflectance, ColorRGB(&glass_material->kr.x));
-        set_constant_parameter(mtl.transmittance, ColorRGB(&glass_material->kt.x));
+        Perfect_Refractor_Material mtl;
         set_constant_parameter(mtl.index_of_refraction, glass_material->index);
-        materials.glass.push_back(mtl);
-        return Material_Handle{ Material_Type::glass, int(materials.glass.size() - 1) };
+        materials.perfect_refractor.push_back(mtl);
+        return Material_Handle{ Material_Type::perfect_refractor, int(materials.perfect_refractor.size() - 1) };
     }
 
     if (auto metal = std::dynamic_pointer_cast<pbrt::MetalMaterial>(pbrt_material)) {

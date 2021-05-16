@@ -17,8 +17,7 @@ enum class Specular_Surface_Type {
 
 struct Specular_Surface_Params {
     Specular_Surface_Type type = Specular_Surface_Type::none;
-    ColorRGB reflectance_coeff;
-    ColorRGB transmission_coeff;
+    ColorRGB reflectance_coeff; // used only with perfect_reflector to create effect of dull mirror
     float etaI_over_etaT = 1.f; // relative index of refracton, incident side relative to transmitted side
 };
 

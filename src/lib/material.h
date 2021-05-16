@@ -6,10 +6,10 @@
 enum class Material_Type : uint32_t {
     none,
     lambertian,
+    perfect_reflector,
+    perfect_refractor,
     metal,
     plastic,
-    mirror,
-    glass,
     coated_diffuse,
 };
 
@@ -30,6 +30,14 @@ constexpr Material_Handle Null_Material = { Material_Type::none, -1 };
 
 struct Lambertian_Material {
     RGB_Parameter reflectance;
+};
+
+struct Perfect_Reflector_Material {
+    RGB_Parameter reflectance;
+};
+
+struct Perfect_Refractor_Material {
+    Float_Parameter index_of_refraction;
 };
 
 struct Metal_Material {
@@ -69,15 +77,11 @@ struct Plastic_Material {
     RGB_Parameter diffuse_reflectance; // SSS reflectance inside plastic
 };
 
-struct Mirror_Material {
-    RGB_Parameter reflectance;
-};
-
-struct Glass_Material {
-    RGB_Parameter reflectance;
-    RGB_Parameter transmittance;
-    Float_Parameter index_of_refraction;
-};
+//struct Glass_Material {
+//    RGB_Parameter reflectance;
+//    RGB_Parameter transmittance;
+//    Float_Parameter index_of_refraction;
+//};
 
 struct Coated_Diffuse_Material {
     Float_Parameter roughness; // roughness of the glossy layer
@@ -87,9 +91,9 @@ struct Coated_Diffuse_Material {
 
 struct Materials {
     std::vector<Lambertian_Material> lambertian;
+    std::vector<Perfect_Reflector_Material> perfect_reflector;
+    std::vector<Perfect_Refractor_Material> perfect_refractor;
     std::vector<Metal_Material> metal;
     std::vector<Plastic_Material> plastic;
-    std::vector<Mirror_Material> mirror;
-    std::vector<Glass_Material> glass;
     std::vector<Coated_Diffuse_Material> coated_diffuse;
 };
