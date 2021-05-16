@@ -27,8 +27,14 @@ bool KdTree<Primitive_Source>::intersect(const Ray& ray, Intersection& intersect
     return intersect_brute_force(ray, intersection);
 #else
     float t_min, t_max; // parametric range for the ray's overlap with the current node
-    if (!bounds.intersect_by_ray(ray, t_min, t_max))
+
+#if ENABLE_INVALID_FP_EXCEPTION
+    if (!bounds.intersect_by_ray_without_NaNs(ray, &t_min, &t_max))
         return false;
+#else
+    if (!bounds.intersect_by_ray(ray, &t_min, &t_max))
+        return false;
+#endif
 
     struct Traversal_Info {
         const KdNode* node;

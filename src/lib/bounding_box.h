@@ -36,24 +36,51 @@ struct Bounding_Box {
                 point[2] >= min_p[2] && point[2] <= max_p[2];
     }
 
-    bool intersect_by_ray(const Ray& ray, float& t_min, float& t_max) const {
-        t_min = 0.0f;
-        t_max = Infinity;
-
+    bool intersect_by_ray(const Ray& ray, float* t_min, float* t_max) const {
+        float t0 = 0.f, t1 = Infinity; // [t0, t1] tracks current ray segment
         for (int i = 0; i < 3; i++) {
             float inv_dir = 1.f / ray.direction[i];
-            float t0 = (min_p[i] - ray.origin[i]) * inv_dir;
-            float t1 = (max_p[i] - ray.origin[i]) * inv_dir;
-
+            float slab_t0 = (min_p[i] - ray.origin[i]) * inv_dir;
+            float slab_t1 = (max_p[i] - ray.origin[i]) * inv_dir;
             if (inv_dir < 0.f)
-                std::swap(t0, t1);
+                std::swap(slab_t0, slab_t1);
 
-            t_min = t0 > t_min ? t0 : t_min;
-            t_max = t1 < t_max ? t1 : t_max;
+            // Intersect ranges [t0, t1] and [slab_t0, slab_t1]
+            t0 = slab_t0 > t0 ? slab_t0 : t0;
+            t1 = slab_t1 < t1 ? slab_t1 : t1;
 
-            if (t_min > t_max)
+            if (t0 > t1) // check for empty segment, which means there is no intersection
                 return false;
         }
+        *t_min = t0;
+        *t_max = t1;
+        return true;
+    }
+
+    // Equivalent to intersect_by_ray() but does not produce NaNs during intermediate computations.
+    // This could be useful when ENABLE_INVALID_FP_EXCEPTION is enabled, which might trigger hardware
+    // floating point exception in intersect_by_ray() even though NaNs are handled properly there.
+    bool intersect_by_ray_without_NaNs(const Ray& ray, float* t_min, float* t_max) const {
+        float t0 = 0.f, t1 = Infinity;
+        for (int i = 0; i < 3; i++) {
+            if (ray.direction[i] != 0.f) {
+                float inv_dir = 1.f / ray.direction[i];
+                float slab_t0 = (min_p[i] - ray.origin[i]) * inv_dir;
+                float slab_t1 = (max_p[i] - ray.origin[i]) * inv_dir;
+                if (inv_dir < 0.f)
+                    std::swap(slab_t0, slab_t1);
+
+                t0 = slab_t0 > t0 ? slab_t0 : t0;
+                t1 = slab_t1 < t1 ? slab_t1 : t1;
+
+                if (t0 > t1)
+                    return false;
+            }
+            else if (ray.origin[i] < min_p[i] || ray.origin[i] > max_p[i])
+                return false;
+        }
+        *t_min = t0;
+        *t_max = t1;
         return true;
     }
 
