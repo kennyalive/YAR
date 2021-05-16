@@ -26,7 +26,7 @@ Ray Camera::generate_ray(Vector2 film_position) const {
     direction.z = z_is_up ? up : -1.f;
     direction.normalize();
 
-    Ray camera_ray = Ray(Vector3_Zero, direction);
+    Ray camera_ray = Ray{Vector3_Zero, direction};
     Ray world_ray = transform_ray(camera_to_world, camera_ray);
     return world_ray;
 }

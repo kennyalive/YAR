@@ -5,7 +5,7 @@
 
 void test_triangle_intersection()
 {
-    Ray ray(Vector3(0, 0, 0), Vector3(0, 1, 0));
+    Ray ray{Vector3(0, 0, 0), Vector3(0, 1, 0)};
 
     Vector3 p[3] = {
         Vector3(-0.5f, 0, -0.5f),

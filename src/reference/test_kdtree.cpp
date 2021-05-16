@@ -65,7 +65,7 @@ Ray Ray_Generator::generate_ray(const Vector3& last_hit, float last_hit_epsilon)
         direction.y = direction.z = 0.0;
     direction = direction.normalized();
 
-    auto ray = Ray(origin, direction);
+    auto ray = Ray{origin, direction};
     ray.origin = ray.get_point(use_last_hit ? last_hit_epsilon : 1e-3f);
     return ray;
 }

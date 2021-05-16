@@ -28,7 +28,7 @@ static ColorRGB direct_lighting_from_point_light(const Scene_Context& scene_ctx,
     if (n_dot_l <= 0.f)
         return Color_Black;
 
-    Ray light_visibility_ray(shading_ctx.position, light_dir);
+    Ray light_visibility_ray{shading_ctx.position, light_dir};
     bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, light_dist - 1e-4f);
     if (occluded)
         return Color_Black;
@@ -43,7 +43,7 @@ static ColorRGB direct_lighting_from_directional_light(const Scene_Context& scen
     if (n_dot_l <= 0.f)
         return Color_Black;
 
-    Ray light_visibility_ray(shading_ctx.position, light.direction);
+    Ray light_visibility_ray{shading_ctx.position, light.direction};
     bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
     if (occluded)
         return Color_Black;
@@ -86,7 +86,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
             ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
 
             if (!f.is_black()) {
-                Ray light_visibility_ray(shading_ctx.position, wi);
+                Ray light_visibility_ray{shading_ctx.position, wi};
                 bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample);
 
                 if (!occluded) {
@@ -114,7 +114,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
             ASSERT(bsdf_pdf > 0.f);
 
             Intersection isect;
-            Ray light_visibility_ray(shading_ctx.position, wi);
+            Ray light_visibility_ray{shading_ctx.position, wi};
             bool found_isect = scene_ctx.acceleration_structure->intersect(light_visibility_ray, isect);
 
             if (found_isect && isect.scene_object->area_light == light_handle) {
@@ -160,7 +160,7 @@ static ColorRGB direct_lighting_from_sphere_light(
             ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
 
             if (!f.is_black()) {
-                Ray light_visibility_ray(shading_ctx.position, wi);
+                Ray light_visibility_ray{shading_ctx.position, wi};
                 bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample);
 
                 if (!occluded) {
@@ -184,7 +184,7 @@ static ColorRGB direct_lighting_from_sphere_light(
 
             if (light_sampler.is_direction_inside_light_cone(wi)) {
                 Intersection isect;
-                Ray light_visibility_ray(shading_ctx.position, wi);
+                Ray light_visibility_ray{shading_ctx.position, wi};
                 bool found_isect = scene_ctx.acceleration_structure->intersect(light_visibility_ray, isect);
 
                 if (found_isect && isect.scene_object->area_light == light_handle) {
@@ -216,7 +216,7 @@ static ColorRGB direct_lighting_from_environment_light(
             ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, light_sample.Wi);
 
             if (!f.is_black()) {
-                Ray light_visibility_ray(shading_ctx.position, light_sample.Wi);
+                Ray light_visibility_ray{shading_ctx.position, light_sample.Wi};
                 bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
 
                 if (!occluded) {
@@ -239,7 +239,7 @@ static ColorRGB direct_lighting_from_environment_light(
             ColorRGB Le = scene_ctx.environment_light_sampler.get_radiance_for_direction(wi);
 
             if (!Le.is_black()) {
-                Ray light_visibility_ray(shading_ctx.position, wi);
+                Ray light_visibility_ray{shading_ctx.position, wi};
                 bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
 
                 if (!occluded) {
@@ -332,9 +332,7 @@ static bool trace_specular_bounces(const Scene_Context& scene_ctx, Thread_Contex
         max_specular_bounces--;
         const float eta = current_specular_params.etaI_over_etaT;
 
-        Ray scattered_ray;
-        scattered_ray.origin = shading_ctx.position;
-
+        Ray scattered_ray{ shading_ctx.position };
         if (current_specular_params.type == Specular_Surface_Type::perfect_reflector) {
             scattered_ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
             specularly_reflect_auxilary_rays(shading_ctx, scattered_ray, p_scattered_auxilary_rays);
