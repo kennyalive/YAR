@@ -26,7 +26,9 @@ float dielectric_fresnel(float cos_theta_i, float eta) {
     float Rs = (cos_theta_i - eta * cos_theta_t) /
                (cos_theta_i + eta * cos_theta_t);
 
-    return 0.5f * (Rp*Rp + Rs*Rs);
+    float f = 0.5f * (Rp*Rp + Rs*Rs);
+    ASSERT(f <= 1.f);
+    return f;
 }
 
 ColorRGB conductor_fresnel(float cos_theta_i, float eta_i, const ColorRGB& eta_t, const ColorRGB& k_t) {

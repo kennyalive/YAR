@@ -1,10 +1,7 @@
 #pragma once
 
 #include "lib/color.h"
-#include "lib/material.h"
 
-struct Shading_Context;
-struct Scene_Context;
 struct Vector3;
 
 // theta_i is the angle between incident direction and normal.
