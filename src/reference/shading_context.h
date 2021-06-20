@@ -25,11 +25,10 @@ struct Specular_Surface_Params {
 // We keep one instance of Shading_Context per thread.
 struct Shading_Context {
     Vector3 wo; // outgoing direction
-
     Vector3 position; // shading point position in world coordinates
-    Vector3 geometric_normal;
     Vector3 normal; // shading normal
     Vector2 uv; // surface uv parameterization
+    Vector3 geometric_normal;
 
     Vector3 dpdu;
     Vector3 dpdv;

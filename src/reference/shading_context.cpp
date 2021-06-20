@@ -86,15 +86,24 @@ void Shading_Context::initialize_from_intersection(
         dndv = transform_vector(object_to_world, dndv);
     }
 
-    // Trying to avoid self-shadowing.
-    const bool transmission_event = intersection.scene_object->material.type == Material_Type::perfect_refractor; // TODO: we need more general way to do this
-    position = offset_ray_origin(position, transmission_event ? -geometric_normal : geometric_normal);
+    // Enforce renderer convention that direction of the incident ray (wo) is in the hemisphere
+    // defined by geometric normal or shading normal.
+    if (dot(geometric_normal, wo) < 0) {
+        geometric_normal = -geometric_normal;
+    }
+    // Flip of the shading normal does not guarantee yet that dot(normal, wo) > 0 but we get
+    // this guarantee after shading normal adjustment (adjust_shading_normal).
+    if (dot(normal, geometric_normal) < 0) {
+        normal = -normal;
+        dndu = -dndu;
+        dndv = -dndv;
+    }
 
     if (auxilary_rays)
         calculate_UV_derivates(*auxilary_rays);
 
-    // NOTE: adjustment of shading normal invalidates dndu/dndv. For now it's not clear to which degree
-    // it could be an issue (in most cases shading normals are left unchanged). Until further evidence,
+    // Adjustment of shading normal invalidates dndu/dndv. For now it's not clear to which degree
+    // it could be an issue (in most cases shading normals are left unchanged). Until further evidence
     // we assume that dndu/dndv is still a reasonable approximation.
     shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &normal);
 
@@ -137,21 +146,22 @@ void Shading_Context::initialize_from_intersection(
             bsdf = create_bsdf(scene_ctx, thread_ctx, *this, intersection.scene_object->material);
         }
     }
+
+    // Adjust position to avoid self-shadowing.
+    // TODO: we also need to handle the case when non-delta bsdf allows transmission. Should we adjust
+    // position __after__ bsdf was sampled, so we know if it's a reflection or transmission event ?
+    const bool transmission_event = (specular_scattering_params->type == Specular_Scattering_Type::specular_transmission);
+    position = offset_ray_origin(position, transmission_event ? -geometric_normal : geometric_normal);
 }
 
 void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Intersection& ti) {
     position = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
+    normal = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
+    uv = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
 
     Vector3 p0, p1, p2;
     ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);
     geometric_normal = cross(p1 - p0, p2 - p0).normalized();
-    geometric_normal = dot(geometric_normal, wo) < 0 ? -geometric_normal : geometric_normal;
-
-    normal = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
-    const bool flip_shading_normal = dot(normal, geometric_normal) < 0;
-    normal = flip_shading_normal ? -normal : normal;
-
-    uv = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
 
     Vector2 uvs[3];
     ti.mesh->get_uvs(ti.triangle_index, uvs);
@@ -173,11 +183,6 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
     {
         Vector3 normals[3];
         ti.mesh->get_normals(ti.triangle_index, normals);
-        if (flip_shading_normal) {
-            normals[0] = -normals[0];
-            normals[1] = -normals[1];
-            normals[2] = -normals[2];
-        }
         Vector3 b[2] = {
             normals[1] - normals[0],
             normals[2] - normals[0]
