@@ -167,7 +167,6 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
         for (int x = sample_bounds.p0.x; x < sample_bounds.p1.x; x++) {
             thread_ctx.pixel_sampler.next_pixel();
-            thread_ctx.current_dielectric_material = Null_Material;
 
             // variance estimation
             double luminance_sum = 0.0;
@@ -175,6 +174,7 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
 
             do {
                 thread_ctx.memory_pool.reset();
+                thread_ctx.current_dielectric_material = Null_Material;
 
                 Vector2 film_pos = Vector2((float)x, (float)y) + thread_ctx.pixel_sampler.get_image_plane_sample();
 
