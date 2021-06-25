@@ -313,9 +313,9 @@ static void specularly_transmit_auxilary_rays(const Shading_Context& shading_ctx
 }
 
 static bool trace_specular_bounces(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    const Specular_Surface_Params& specular_surface_params, const Auxilary_Rays* incident_auxilary_rays, int max_specular_bounces)
+    const Specular_Scattering_Params& specular_scattering_params, const Auxilary_Rays* incident_auxilary_rays, int max_specular_bounces)
 {
-    ASSERT(specular_surface_params.type != Specular_Surface_Type::none);
+    ASSERT(specular_scattering_params.type != Specular_Scattering_Type::none);
     Shading_Context& shading_ctx = thread_ctx.shading_context;
 
     Auxilary_Rays scattered_auxilary_rays;
@@ -325,22 +325,23 @@ static bool trace_specular_bounces(const Scene_Context& scene_ctx, Thread_Contex
         p_scattered_auxilary_rays = &scattered_auxilary_rays;
     }
 
-    Specular_Surface_Params current_specular_params = specular_surface_params;
+    Specular_Scattering_Params current_specular_params = specular_scattering_params;
     ColorRGB specular_attenuation = Color_White;
 
-    while (current_specular_params.type != Specular_Surface_Type::none && max_specular_bounces > 0) {
+    while (current_specular_params.type != Specular_Scattering_Type::none && max_specular_bounces > 0) {
         max_specular_bounces--;
         const float eta = current_specular_params.etaI_over_etaT;
 
         Ray scattered_ray{ shading_ctx.position };
-        if (current_specular_params.type == Specular_Surface_Type::perfect_reflector) {
+        if (current_specular_params.type == Specular_Scattering_Type::specular_reflection) {
             scattered_ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
             specularly_reflect_auxilary_rays(shading_ctx, scattered_ray, p_scattered_auxilary_rays);
-            specular_attenuation *= current_specular_params.reflectance_coeff;
+            specular_attenuation *= current_specular_params.scattering_coeff;
         }
         else if (refract(shading_ctx.wo, shading_ctx.normal, eta, &scattered_ray.direction)) {
+            ASSERT(current_specular_params.type == Specular_Scattering_Type::specular_transmission);
             specularly_transmit_auxilary_rays(shading_ctx, scattered_ray, eta, p_scattered_auxilary_rays);
-            specular_attenuation *= eta * eta;
+            specular_attenuation *= (eta * eta) * current_specular_params.scattering_coeff;
         }
         else { // total internal reflection, nothing is transmitted
             shading_ctx.specular_attenuation = Color_Black;
@@ -357,7 +358,7 @@ static bool trace_specular_bounces(const Scene_Context& scene_ctx, Thread_Contex
     }
 
     // check if we end up on specular surface after reaching max_specular_bounces
-    if (current_specular_params.type != Specular_Surface_Type::none) {
+    if (current_specular_params.type != Specular_Scattering_Type::none) {
         shading_ctx.specular_attenuation = Color_Black;
         return false;
     }
@@ -377,13 +378,13 @@ bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
         return false;
     }
 
-    Specular_Surface_Params specular_surface_params;
-    shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, ray, auxilary_rays, isect, &specular_surface_params);
+    Specular_Scattering_Params specular_scattering_params;
+    shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, ray, auxilary_rays, isect, &specular_scattering_params);
 
-    if (specular_surface_params.type == Specular_Surface_Type::none)
+    if (specular_scattering_params.type == Specular_Scattering_Type::none)
         return true;
 
-    return trace_specular_bounces(scene_ctx, thread_ctx, specular_surface_params, auxilary_rays, max_specular_bounces);
+    return trace_specular_bounces(scene_ctx, thread_ctx, specular_scattering_params, auxilary_rays, max_specular_bounces);
 }
 
 ColorRGB estimate_direct_lighting(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,

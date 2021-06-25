@@ -11,6 +11,7 @@ enum class Material_Type : uint32_t {
     metal,
     plastic,
     coated_diffuse,
+    glass,
 };
 
 struct Material_Handle {
@@ -77,16 +78,16 @@ struct Plastic_Material {
     RGB_Parameter diffuse_reflectance; // SSS reflectance inside plastic
 };
 
-//struct Glass_Material {
-//    RGB_Parameter reflectance;
-//    RGB_Parameter transmittance;
-//    Float_Parameter index_of_refraction;
-//};
-
 struct Coated_Diffuse_Material {
     Float_Parameter roughness; // roughness of the glossy layer
     RGB_Parameter r0; // reflectance of the glossy layer at normal incident angle
     RGB_Parameter diffuse_reflectance; // reflectance of the diffuse layer
+};
+
+struct Glass_Material {
+    RGB_Parameter reflectance;
+    RGB_Parameter transmittance;
+    Float_Parameter index_of_refraction;
 };
 
 struct Materials {
@@ -96,4 +97,5 @@ struct Materials {
     std::vector<Metal_Material> metal;
     std::vector<Plastic_Material> plastic;
     std::vector<Coated_Diffuse_Material> coated_diffuse;
+    std::vector<Glass_Material> glass;
 };

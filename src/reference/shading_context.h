@@ -9,15 +9,15 @@ struct Scene_Context;
 struct Thread_Context;
 struct BSDF;
 
-enum class Specular_Surface_Type {
+enum class Specular_Scattering_Type {
     none,
-    perfect_reflector,
-    perfect_refractor
+    specular_reflection,
+    specular_transmission
 };
 
-struct Specular_Surface_Params {
-    Specular_Surface_Type type = Specular_Surface_Type::none;
-    ColorRGB reflectance_coeff; // used only with perfect_reflector to create effect of dull mirror
+struct Specular_Scattering_Params {
+    Specular_Scattering_Type type = Specular_Scattering_Type::none;
+    ColorRGB scattering_coeff = Color_White;
     float etaI_over_etaT = 1.f; // relative index of refracton, incident side relative to transmitted side
 };
 
@@ -79,7 +79,7 @@ struct Shading_Context {
     Shading_Context() {}
 
     void initialize_from_intersection(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-        const Ray& ray, const Auxilary_Rays* auxilary_rays, const Intersection& intersection, Specular_Surface_Params* specular_surface_params);
+        const Ray& ray, const Auxilary_Rays* auxilary_rays, const Intersection& intersection, Specular_Scattering_Params* specular_scattering_params);
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
 
