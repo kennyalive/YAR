@@ -53,19 +53,11 @@ struct Shading_Context {
 
     Light_Handle area_light;
 
+    // Scattering at intersection point. 'bsdf' and 'specular_scattering_params' are mutually exclusive.
+    // In case of finite bsdf scattering the 'bsdf' member is initialized and for delta scattering only
+    // 'specular_scattering_params' contains valid data.
     const BSDF* bsdf = nullptr;
-
-    // specular_attenuation defines how scattering on specular surfaces scales radiance.
-    // More details:
-    // One important design decision is that trace_ray() function guarantees that resulted
-    // shading point lies on the surface with a finite bsdf. If specific raycast ends on a
-    // specular surface then trace_ray() propagates the ray further until it reaches
-    // non-specular surface or leaves the scene. The specular_attenuation parameter tracks
-    // how bounces through specular surfaces (if any) affect radiance value. The main motivation
-    // behind this design is that it allows to keep standard definition of bsdf without the need
-    // to extend it to handle delta surfaces. All special cases related to delta surfaces
-    // migrate to ray casting routine.
-    ColorRGB specular_attenuation = Color_White;
+    Specular_Scattering_Params specular_scattering_params;
 
     // This flag is mostly for debugging purposes to mark regions where shading normal adaptation was applied.
     // The shading normal adaptation modifies shading normal N and ensures that Wo is in the positive hemisphere.
@@ -79,7 +71,7 @@ struct Shading_Context {
     Shading_Context() {}
 
     void initialize_from_intersection(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-        const Ray& ray, const Auxilary_Rays* auxilary_rays, const Intersection& intersection, Specular_Scattering_Params* specular_scattering_params);
+        const Ray& ray, const Auxilary_Rays* auxilary_rays, const Intersection& intersection);
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
 

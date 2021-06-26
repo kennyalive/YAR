@@ -312,11 +312,12 @@ static void specularly_transmit_auxilary_rays(const Shading_Context& shading_ctx
     *auxilary_rays = transmitted_auxilary_rays;
 }
 
-static bool trace_specular_bounces(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    const Specular_Scattering_Params& specular_scattering_params, const Auxilary_Rays* incident_auxilary_rays, int max_specular_bounces)
+bool trace_specular_bounces(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
+    const Auxilary_Rays* incident_auxilary_rays, int max_specular_bounces, ColorRGB* specular_bounces_contribution)
 {
-    ASSERT(specular_scattering_params.type != Specular_Scattering_Type::none);
     Shading_Context& shading_ctx = thread_ctx.shading_context;
+    Specular_Scattering_Params& specular_scattering = shading_ctx.specular_scattering_params;
+    ASSERT(specular_scattering.type != Specular_Scattering_Type::none);
 
     Auxilary_Rays scattered_auxilary_rays;
     Auxilary_Rays* p_scattered_auxilary_rays = nullptr; // either nullptr or points to scattered_auxilary_rays
@@ -325,79 +326,68 @@ static bool trace_specular_bounces(const Scene_Context& scene_ctx, Thread_Contex
         p_scattered_auxilary_rays = &scattered_auxilary_rays;
     }
 
-    Specular_Scattering_Params current_specular_params = specular_scattering_params;
-    ColorRGB specular_attenuation = Color_White;
+    *specular_bounces_contribution = Color_White;
 
-    while (current_specular_params.type != Specular_Scattering_Type::none && max_specular_bounces > 0) {
+    while (specular_scattering.type != Specular_Scattering_Type::none && max_specular_bounces > 0) {
         max_specular_bounces--;
-        const float eta = current_specular_params.etaI_over_etaT;
+        const float eta = specular_scattering.etaI_over_etaT;
 
         Ray scattered_ray{ shading_ctx.position };
-        if (current_specular_params.type == Specular_Scattering_Type::specular_reflection) {
+        if (specular_scattering.type == Specular_Scattering_Type::specular_reflection) {
             scattered_ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
             specularly_reflect_auxilary_rays(shading_ctx, scattered_ray, p_scattered_auxilary_rays);
-            specular_attenuation *= current_specular_params.scattering_coeff;
+            *specular_bounces_contribution *= specular_scattering.scattering_coeff;
         }
         else if (refract(shading_ctx.wo, shading_ctx.normal, eta, &scattered_ray.direction)) {
-            ASSERT(current_specular_params.type == Specular_Scattering_Type::specular_transmission);
+            ASSERT(specular_scattering.type == Specular_Scattering_Type::specular_transmission);
             specularly_transmit_auxilary_rays(shading_ctx, scattered_ray, eta, p_scattered_auxilary_rays);
-            specular_attenuation *= (eta * eta) * current_specular_params.scattering_coeff;
+            *specular_bounces_contribution *= (eta * eta) * specular_scattering.scattering_coeff;
         }
         else { // total internal reflection, nothing is transmitted
-            shading_ctx.specular_attenuation = Color_Black;
+            *specular_bounces_contribution = Color_Black;
             return false;
         }
 
         Intersection isect;
         if (!scene_ctx.acceleration_structure->intersect(scattered_ray, isect)) {
             shading_ctx.miss_ray = scattered_ray;
-            shading_ctx.specular_attenuation = specular_attenuation;
             return false;
         }
-        shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, scattered_ray, p_scattered_auxilary_rays, isect, &current_specular_params);
+        shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, scattered_ray, p_scattered_auxilary_rays, isect);
     }
 
     // check if we end up on specular surface after reaching max_specular_bounces
-    if (current_specular_params.type != Specular_Scattering_Type::none) {
-        shading_ctx.specular_attenuation = Color_Black;
+    if (specular_scattering.type != Specular_Scattering_Type::none) {
+        *specular_bounces_contribution = Color_Black;
         return false;
     }
-    shading_ctx.specular_attenuation = specular_attenuation;
     return true;
 }
 
-bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    const Ray& ray, const Auxilary_Rays* auxilary_rays, int max_specular_bounces)
+bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays* auxilary_rays)
 {
-    Shading_Context& shading_ctx = thread_ctx.shading_context;
-
     Intersection isect;
     if (!scene_ctx.acceleration_structure->intersect(ray, isect)) {
-        shading_ctx.miss_ray = ray;
-        shading_ctx.specular_attenuation = Color_White;
+        thread_ctx.shading_context.miss_ray = ray;
         return false;
     }
-
-    Specular_Scattering_Params specular_scattering_params;
-    shading_ctx.initialize_from_intersection(scene_ctx, thread_ctx, ray, auxilary_rays, isect, &specular_scattering_params);
-
-    if (specular_scattering_params.type == Specular_Scattering_Type::none)
-        return true;
-
-    return trace_specular_bounces(scene_ctx, thread_ctx, specular_scattering_params, auxilary_rays, max_specular_bounces);
+    thread_ctx.shading_context.initialize_from_intersection(scene_ctx, thread_ctx, ray, auxilary_rays, isect);
+    return true;
 }
 
 ColorRGB estimate_direct_lighting(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
     const Ray& ray, const Auxilary_Rays& auxilary_rays, int max_specular_bounces)
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
-
-    if (!trace_ray(scene_ctx, thread_ctx, ray, &auxilary_rays, max_specular_bounces)) {
+    if (!trace_ray(scene_ctx, thread_ctx, ray, &auxilary_rays)) {
         if (scene_ctx.has_environment_light_sampler) {
-            return shading_ctx.specular_attenuation * scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
+            return scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
         }
         return Color_Black;
     }
+
+    if (shading_ctx.specular_scattering_params.type != Specular_Scattering_Type::none)
+        return Color_Black; // TODO: check if specularly scattered direction brings radiance from area or environment light
 
     // debug visualization of samples with adjusted shading normal.
     /*if (shading_ctx.shading_normal_adjusted)
@@ -466,7 +456,7 @@ ColorRGB estimate_direct_lighting(const Scene_Context& scene_ctx, Thread_Context
             L += L2;
         }
     }
-    return shading_ctx.specular_attenuation * L;
+    return L;
 }
 
 ColorRGB estimate_direct_lighting_from_single_sample(

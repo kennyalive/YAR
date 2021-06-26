@@ -122,7 +122,7 @@ static Specular_Scattering_Params get_specular_scattering_params(const Scene_Con
 
 void Shading_Context::initialize_from_intersection(
     const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    const Ray& ray, const Auxilary_Rays* auxilary_rays, const Intersection& intersection, Specular_Scattering_Params* specular_scattering_params)
+    const Ray& ray, const Auxilary_Rays* auxilary_rays, const Intersection& intersection)
 {
     *this = Shading_Context{};
 
@@ -184,16 +184,16 @@ void Shading_Context::initialize_from_intersection(
     area_light = intersection.scene_object->area_light;
 
     if (intersection.scene_object->material != Null_Material) {
-        *specular_scattering_params = get_specular_scattering_params(scene_ctx, thread_ctx, intersection.scene_object->material);
+        specular_scattering_params = get_specular_scattering_params(scene_ctx, thread_ctx, intersection.scene_object->material);
 
-        if (specular_scattering_params->type == Specular_Scattering_Type::none)
+        if (specular_scattering_params.type == Specular_Scattering_Type::none)
             bsdf = create_bsdf(scene_ctx, thread_ctx, *this, intersection.scene_object->material);
     }
 
     // Adjust position to avoid self-shadowing.
     // TODO: we also need to handle the case when non-delta bsdf allows transmission. Should we adjust
     // position __after__ bsdf was sampled, so we know if it's a reflection or transmission event ?
-    const bool transmission_event = (specular_scattering_params->type == Specular_Scattering_Type::specular_transmission);
+    const bool transmission_event = (specular_scattering_params.type == Specular_Scattering_Type::specular_transmission);
     position = offset_ray_origin(position, transmission_event ? -geometric_normal : geometric_normal);
 }
 
