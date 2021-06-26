@@ -9,11 +9,6 @@ struct Scene_Context;
 struct Shading_Context;
 struct Thread_Context;
 
-bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays* auxilary_rays);
-
-bool trace_specular_bounces(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    const Auxilary_Rays* incident_auxilary_rays, int max_specular_bounces, ColorRGB* specular_bounces_contribution);
-
 ColorRGB estimate_direct_lighting(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
     const Ray& ray, const Auxilary_Rays& auxilary_rays, int max_specular_depth = 10);
 

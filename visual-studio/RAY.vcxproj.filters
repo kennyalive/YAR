@@ -34,6 +34,7 @@
     <ClCompile Include="..\src\reference\test_random.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\reference\specular_scattering.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -56,6 +57,7 @@
     <ClInclude Include="..\src\reference\light_sampling.h" />
     <ClInclude Include="..\src\reference\pixel_sampling.h" />
     <ClInclude Include="..\src\reference\path_tracing.h" />
+    <ClInclude Include="..\src\reference\specular_scattering.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

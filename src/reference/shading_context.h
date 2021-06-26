@@ -2,6 +2,7 @@
 
 #include "lib/light.h"
 #include "lib/vector.h"
+#include "specular_scattering.h"
 
 struct Intersection;
 struct Triangle_Intersection;
@@ -9,17 +10,8 @@ struct Scene_Context;
 struct Thread_Context;
 struct BSDF;
 
-enum class Specular_Scattering_Type {
-    none,
-    specular_reflection,
-    specular_transmission
-};
-
-struct Specular_Scattering_Params {
-    Specular_Scattering_Type type = Specular_Scattering_Type::none;
-    ColorRGB scattering_coeff = Color_White;
-    float etaI_over_etaT = 1.f; // relative index of refracton, incident side relative to transmitted side
-};
+bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
+    const Ray& ray, const Auxilary_Rays* auxilary_rays);
 
 // Contains all the necessary information to perform shading at the intersection point.
 // We keep one instance of Shading_Context per thread.
@@ -53,11 +45,11 @@ struct Shading_Context {
 
     Light_Handle area_light;
 
-    // Scattering at intersection point. 'bsdf' and 'specular_scattering_params' are mutually exclusive.
+    // Scattering at intersection point. 'bsdf' and 'specular_scattering' are mutually exclusive.
     // In case of finite bsdf scattering the 'bsdf' member is initialized and for delta scattering only
-    // 'specular_scattering_params' contains valid data.
+    // 'specular_scattering' is valid.
     const BSDF* bsdf = nullptr;
-    Specular_Scattering_Params specular_scattering_params;
+    Specular_Scattering specular_scattering;
 
     // This flag is mostly for debugging purposes to mark regions where shading normal adaptation was applied.
     // The shading normal adaptation modifies shading normal N and ensures that Wo is in the positive hemisphere.

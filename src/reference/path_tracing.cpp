@@ -24,7 +24,7 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
         const Auxilary_Rays* current_auxilary_rays = (bounce_count == 0) ? &auxilary_rays : nullptr;
 
         bool hit_found = trace_ray(scene_ctx, thread_ctx, current_ray, current_auxilary_rays);
-        if (hit_found && shading_ctx.specular_scattering_params.type != Specular_Scattering_Type::none) {
+        if (hit_found && shading_ctx.specular_scattering.type != Specular_Scattering_Type::none) {
             hit_found = trace_specular_bounces(scene_ctx, thread_ctx, current_auxilary_rays, 10, &specular_bounces_contribution);
         }
 
