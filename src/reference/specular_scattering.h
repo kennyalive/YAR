@@ -19,8 +19,7 @@ struct Specular_Scattering {
     float etaI_over_etaT = 1.f; // relative index of refracton, incident side relative to transmitted side
 };
 
-Specular_Scattering get_specular_scattering_params(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    Material_Handle material_handle);
+Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, Material_Handle material_handle);
 
-bool trace_specular_bounces(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    const Auxilary_Rays* incident_auxilary_rays, int max_specular_bounces, ColorRGB* specular_bounces_contribution);
+bool trace_specular_bounces(Thread_Context& thread_ctx, const Auxilary_Rays* incident_auxilary_rays,
+    int max_specular_bounces, ColorRGB* specular_bounces_contribution);

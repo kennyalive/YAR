@@ -9,8 +9,10 @@
 
 constexpr int bounce_count_when_to_apply_russian_roulette = 3;
 
-ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays& auxilary_rays) {
+ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays& auxilary_rays) {
+    const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
+
     const int max_bounces = scene_ctx.scene->raytracer_config.max_light_bounces;
     ASSERT(max_bounces >= 1); // at least direct lighting component
 
@@ -23,9 +25,9 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
         ColorRGB specular_bounces_contribution = Color_White;
         const Auxilary_Rays* current_auxilary_rays = (bounce_count == 0) ? &auxilary_rays : nullptr;
 
-        bool hit_found = trace_ray(scene_ctx, thread_ctx, current_ray, current_auxilary_rays);
+        bool hit_found = trace_ray(thread_ctx, current_ray, current_auxilary_rays);
         if (hit_found && shading_ctx.specular_scattering.type != Specular_Scattering_Type::none) {
-            hit_found = trace_specular_bounces(scene_ctx, thread_ctx, current_auxilary_rays, 10, &specular_bounces_contribution);
+            hit_found = trace_specular_bounces(thread_ctx, current_auxilary_rays, 10, &specular_bounces_contribution);
         }
 
         if (!hit_found) {
@@ -60,7 +62,7 @@ ColorRGB estimate_path_contribution(const Scene_Context& scene_ctx, Thread_Conte
         Vector2 u_bsdf = thread_ctx.pixel_sampler.get_next_2d_sample();
 
         // Add contribution of the current path.
-        L += path_coeff * estimate_direct_lighting_from_single_sample(scene_ctx, shading_ctx, u_light_index, u_light, u_bsdf);
+        L += path_coeff * estimate_direct_lighting_from_single_sample(thread_ctx, u_light_index, u_light, u_bsdf);
 
         bounce_count++;
         if (bounce_count == max_bounces)

@@ -44,6 +44,8 @@ struct Thread_Context {
     Memory_Pool memory_pool;
     RNG rng;
     Stratified_Pixel_Sampler pixel_sampler;
+
+    const Scene_Context* scene_context;
     Shading_Context shading_context;
 
     // TODO: until we implement proper handling of nested dielectrics we make assumption

@@ -196,9 +196,9 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
 
                 ColorRGB radiance;
                 if (scene_ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::direct_lighting)
-                    radiance = estimate_direct_lighting(scene_ctx, thread_ctx, ray, auxilary_rays);
+                    radiance = estimate_direct_lighting(thread_ctx, ray, auxilary_rays);
                 else if (scene_ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::path_tracer)
-                    radiance = estimate_path_contribution(scene_ctx, thread_ctx, ray, auxilary_rays);
+                    radiance = estimate_path_contribution(thread_ctx, ray, auxilary_rays);
 
                 ASSERT(radiance.is_finite());
                 tile.add_sample(film_pos, radiance);
@@ -315,6 +315,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     if (options.render_tile_index >= 0) {
         thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
         thread_contexts[0].pixel_sampler.init(&ctx.pixel_sampler_config, &thread_contexts[0].rng);
+        thread_contexts[0].scene_context = &ctx;
         thread_context_initialized[0] = true;
 
         render_tile(ctx, thread_contexts[0], options.render_tile_index, film);
@@ -322,6 +323,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     else if (options.thread_count == 1) {
         thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
         thread_contexts[0].pixel_sampler.init(&ctx.pixel_sampler_config, &thread_contexts[0].rng);
+        thread_contexts[0].scene_context = &ctx;
         thread_context_initialized[0] = true;
 
         for (int tile_index = 0; tile_index < film.get_tile_count(); tile_index++) {
@@ -340,6 +342,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
                     initialize_fp_state();
                     thread_contexts[threadnum].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
                     thread_contexts[threadnum].pixel_sampler.init(&ctx->pixel_sampler_config, &thread_contexts[threadnum].rng);
+                    thread_contexts[threadnum].scene_context = ctx;
                     thread_context_initialized[threadnum] = true;
                 }
                 render_tile(*ctx, thread_contexts[threadnum], tile_index, *film);

@@ -6,12 +6,8 @@
 
 struct Intersection;
 struct Triangle_Intersection;
-struct Scene_Context;
 struct Thread_Context;
 struct BSDF;
-
-bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    const Ray& ray, const Auxilary_Rays* auxilary_rays);
 
 // Contains all the necessary information to perform shading at the intersection point.
 // We keep one instance of Shading_Context per thread.
@@ -62,8 +58,8 @@ struct Shading_Context {
 
     Shading_Context() {}
 
-    void initialize_from_intersection(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-        const Ray& ray, const Auxilary_Rays* auxilary_rays, const Intersection& intersection);
+    void initialize_from_intersection(Thread_Context& thread_ctx, const Ray& ray,
+        const Auxilary_Rays* auxilary_rays, const Intersection& intersection);
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
 
@@ -80,3 +76,7 @@ private:
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti);
     void calculate_UV_derivates(const Auxilary_Rays& auxilary_rays);
 };
+
+// Trace ray against scene geometry and initializes shading context for intersection point (if any).
+// Returns true if intersection found, otherwise false.
+bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays* auxilary_rays);

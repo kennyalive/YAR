@@ -49,11 +49,11 @@ BSDF::BSDF(const Shading_Context& shading_ctx)
 //
 // Lambertian BRDF
 //
-Lambertian_BRDF::Lambertian_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Lambertian_Material& material)
-    : BSDF(shading_ctx)
+Lambertian_BRDF::Lambertian_BRDF(const Thread_Context& thread_ctx, const Lambertian_Material& material)
+    : BSDF(thread_ctx.shading_context)
 {
     reflection_scattering = true;
-    reflectance = evaluate_rgb_parameter(scene_ctx, shading_ctx, material.reflectance);
+    reflectance = evaluate_rgb_parameter(thread_ctx, material.reflectance);
 }
 
 ColorRGB Lambertian_BRDF::evaluate(const Vector3& /*wo*/, const Vector3& /*wi*/) const {
@@ -75,17 +75,17 @@ float Lambertian_BRDF::pdf(const Vector3& /*wo*/, const Vector3& wi) const {
 //
 // Metal BRDF
 //
-Metal_BRDF::Metal_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Metal_Material& material)
-    : BSDF(shading_ctx)
+Metal_BRDF::Metal_BRDF(const Thread_Context& thread_ctx, const Metal_Material& material)
+    : BSDF(thread_ctx.shading_context)
 {
     reflection_scattering = true;
 
-    float roughness = evaluate_float_parameter(scene_ctx, shading_ctx, material.roughness);
+    float roughness = evaluate_float_parameter(thread_ctx, material.roughness);
     alpha = roughness * roughness;
 
-    eta_i = evaluate_float_parameter(scene_ctx, shading_ctx, material.eta_i);
-    eta_t = evaluate_rgb_parameter(scene_ctx, shading_ctx, material.eta);
-    k_t = evaluate_rgb_parameter(scene_ctx, shading_ctx, material.k);
+    eta_i = evaluate_float_parameter(thread_ctx, material.eta_i);
+    eta_t = evaluate_rgb_parameter(thread_ctx, material.eta);
+    k_t = evaluate_rgb_parameter(thread_ctx, material.k);
 }
 
 ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
@@ -125,16 +125,16 @@ float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
 //
 // Plastic BRDF
 //
-Plastic_BRDF::Plastic_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Plastic_Material& params)
-    : BSDF(shading_ctx)
+Plastic_BRDF::Plastic_BRDF(const Thread_Context& thread_ctx, const Plastic_Material& params)
+    : BSDF(thread_ctx.shading_context)
 {
     reflection_scattering = true;
 
-    float roughness = evaluate_float_parameter(scene_ctx, shading_ctx, params.roughness);
+    float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
     alpha = roughness * roughness;
 
-    r0 = evaluate_float_parameter(scene_ctx, shading_ctx, params.r0);
-    diffuse_reflectance = evaluate_rgb_parameter(scene_ctx, shading_ctx, params.diffuse_reflectance);
+    r0 = evaluate_float_parameter(thread_ctx, params.r0);
+    diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
 }
 
 ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
@@ -190,16 +190,16 @@ float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
 // BRDF described in "An Anisotropic Phong Light Reflection Model", Michael Ashikhmin, Peter Shirley.
 // https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.18.4504&rep=rep1&type=pdf
 //
-Ashikhmin_Shirley_Phong_BRDF::Ashikhmin_Shirley_Phong_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Coated_Diffuse_Material& params)
-    : BSDF(shading_ctx)
+Ashikhmin_Shirley_Phong_BRDF::Ashikhmin_Shirley_Phong_BRDF(const Thread_Context& thread_ctx, const Coated_Diffuse_Material& params)
+    : BSDF(thread_ctx.shading_context)
 {
     reflection_scattering = true;
 
-    float roughness = evaluate_float_parameter(scene_ctx, shading_ctx, params.roughness);
+    float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
     alpha = roughness * roughness;
 
-    r0 = evaluate_rgb_parameter(scene_ctx, shading_ctx, params.r0);
-    diffuse_reflectance = evaluate_rgb_parameter(scene_ctx, shading_ctx, params.diffuse_reflectance);
+    r0 = evaluate_rgb_parameter(thread_ctx, params.r0);
+    diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
 }
 
 ColorRGB Ashikhmin_Shirley_Phong_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
@@ -253,31 +253,32 @@ float Ashikhmin_Shirley_Phong_BRDF::pdf(const Vector3& wo, const Vector3& wi) co
     return pdf;
 }
 
-const BSDF* create_bsdf(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, Material_Handle material) {
+const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
+    const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     switch (material.type) {
     case Material_Type::lambertian:
     {
         const Lambertian_Material& params = scene_ctx.materials.lambertian[material.index];
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Lambertian_BRDF>();
-        return new (bsdf_allocation) Lambertian_BRDF(scene_ctx, shading_ctx, params);
+        return new (bsdf_allocation) Lambertian_BRDF(thread_ctx, params);
     }
     case Material_Type::metal:
     {
         const Metal_Material& params = scene_ctx.materials.metal[material.index];
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Metal_BRDF>();
-        return new (bsdf_allocation) Metal_BRDF(scene_ctx, shading_ctx, params);
+        return new (bsdf_allocation) Metal_BRDF(thread_ctx, params);
     }
     case Material_Type::plastic:
     {
         const Plastic_Material& params = scene_ctx.materials.plastic[material.index];
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Plastic_BRDF>();
-        return new (bsdf_allocation) Plastic_BRDF(scene_ctx, shading_ctx, params);
+        return new (bsdf_allocation) Plastic_BRDF(thread_ctx, params);
     }
     case Material_Type::coated_diffuse:
     {
         const Coated_Diffuse_Material& params = scene_ctx.materials.coated_diffuse[material.index];
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Ashikhmin_Shirley_Phong_BRDF>();
-        return new (bsdf_allocation) Ashikhmin_Shirley_Phong_BRDF(scene_ctx, shading_ctx, params);
+        return new (bsdf_allocation) Ashikhmin_Shirley_Phong_BRDF(thread_ctx, params);
     }
     default:
     {

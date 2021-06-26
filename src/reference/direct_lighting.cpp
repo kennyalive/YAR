@@ -254,11 +254,13 @@ static ColorRGB direct_lighting_from_environment_light(
     return L;
 }
 
-ColorRGB estimate_direct_lighting(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    const Ray& ray, const Auxilary_Rays& auxilary_rays, int max_specular_bounces)
+ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays& auxilary_rays,
+    int max_specular_bounces)
 {
+    const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
-    if (!trace_ray(scene_ctx, thread_ctx, ray, &auxilary_rays)) {
+
+    if (!trace_ray(thread_ctx, ray, &auxilary_rays)) {
         if (scene_ctx.has_environment_light_sampler) {
             return scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
         }
@@ -338,10 +340,12 @@ ColorRGB estimate_direct_lighting(const Scene_Context& scene_ctx, Thread_Context
     return L;
 }
 
-ColorRGB estimate_direct_lighting_from_single_sample(
-    const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
+ColorRGB estimate_direct_lighting_from_single_sample(const Thread_Context& thread_ctx,
     float u_light_selector, Vector2 u_light, Vector2 u_bsdf)
 {
+    const Scene_Context& scene_ctx = *thread_ctx.scene_context;
+    const Shading_Context& shading_ctx = thread_ctx.shading_context;
+
     int light_index = int(u_light_selector * scene_ctx.lights.total_light_count);
     ASSERT(light_index < scene_ctx.lights.total_light_count);
 

@@ -9,18 +9,6 @@
 #include "lib/math.h"
 #include "lib/scene_object.h"
 
-bool trace_ray(const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    const Ray& ray, const Auxilary_Rays* auxilary_rays)
-{
-    Intersection isect;
-    if (!scene_ctx.acceleration_structure->intersect(ray, isect)) {
-        thread_ctx.shading_context.miss_ray = ray;
-        return false;
-    }
-    thread_ctx.shading_context.initialize_from_intersection(scene_ctx, thread_ctx, ray, auxilary_rays, isect);
-    return true;
-}
-
 // Shading normal adaptation algorithm as described in:
 //  "The Iray Light Transport Simulation and Rendering System", Keller et al. 2017
 // Returns true if shading normal was modified and false otherwise.
@@ -66,9 +54,8 @@ static bool adjust_shading_normal(const Vector3& wo, const Vector3& ng, Vector3*
     return true;
 }
 
-void Shading_Context::initialize_from_intersection(
-    const Scene_Context& scene_ctx, Thread_Context& thread_ctx,
-    const Ray& ray, const Auxilary_Rays* auxilary_rays, const Intersection& intersection)
+void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, const Ray& ray,
+    const Auxilary_Rays* auxilary_rays, const Intersection& intersection)
 {
     *this = Shading_Context{};
 
@@ -130,10 +117,10 @@ void Shading_Context::initialize_from_intersection(
     area_light = intersection.scene_object->area_light;
 
     if (intersection.scene_object->material != Null_Material) {
-        specular_scattering = get_specular_scattering_params(scene_ctx, thread_ctx, intersection.scene_object->material);
+        specular_scattering = get_specular_scattering_params(thread_ctx, intersection.scene_object->material);
 
         if (specular_scattering.type == Specular_Scattering_Type::none)
-            bsdf = create_bsdf(scene_ctx, thread_ctx, *this, intersection.scene_object->material);
+            bsdf = create_bsdf(thread_ctx, intersection.scene_object->material);
     }
 
     // Adjust position to avoid self-shadowing.
@@ -260,4 +247,15 @@ Vector3 Shading_Context::world_to_local(const Vector3& world_direction) const {
         dot(world_direction, tangent2),
         dot(world_direction, normal)
     };
+}
+
+bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays* auxilary_rays)
+{
+    Intersection isect;
+    if (!thread_ctx.scene_context->acceleration_structure->intersect(ray, isect)) {
+        thread_ctx.shading_context.miss_ray = ray;
+        return false;
+    }
+    thread_ctx.shading_context.initialize_from_intersection(thread_ctx, ray, auxilary_rays, isect);
+    return true;
 }

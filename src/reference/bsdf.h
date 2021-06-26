@@ -3,7 +3,6 @@
 #include "lib/material.h"
 #include "lib/vector.h"
 
-struct Scene_Context;
 struct Shading_Context;
 struct Thread_Context;
 
@@ -25,7 +24,7 @@ struct BSDF {
 struct Lambertian_BRDF : public BSDF {
     ColorRGB reflectance;
 
-    Lambertian_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Lambertian_Material& material);
+    Lambertian_BRDF(const Thread_Context& thread_ctx, const Lambertian_Material& material);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
     ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
@@ -37,7 +36,7 @@ struct Metal_BRDF : public BSDF {
     ColorRGB eta_t;
     ColorRGB k_t;
 
-    Metal_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Metal_Material& material);
+    Metal_BRDF(const Thread_Context& thread_ctx, const Metal_Material& material);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
     ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
@@ -48,7 +47,7 @@ struct Plastic_BRDF : public BSDF {
     float r0 = 0.f;
     ColorRGB diffuse_reflectance;
 
-    Plastic_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Plastic_Material& params);
+    Plastic_BRDF(const Thread_Context& thread_ctx, const Plastic_Material& params);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
     ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
@@ -59,10 +58,10 @@ struct Ashikhmin_Shirley_Phong_BRDF : public BSDF {
     ColorRGB r0; // reflectance of the glossy layer at normal incident angle
     ColorRGB diffuse_reflectance; // reflectance of the diffuse layer
 
-    Ashikhmin_Shirley_Phong_BRDF(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Coated_Diffuse_Material& params);
+    Ashikhmin_Shirley_Phong_BRDF(const Thread_Context& thread_ctx, const Coated_Diffuse_Material& params);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
     ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
-const BSDF* create_bsdf(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Shading_Context& shading_ctx, Material_Handle material);
+const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material);
