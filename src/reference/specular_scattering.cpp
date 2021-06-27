@@ -136,7 +136,7 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, M
 }
 
 bool trace_specular_bounces(Thread_Context& thread_ctx, const Auxilary_Rays* incident_auxilary_rays,
-    int max_specular_bounces, ColorRGB* specular_bounces_contribution)
+    int max_bounces, int* bounce_counter, ColorRGB* specular_bounces_contribution)
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     const Specular_Scattering& specular_scattering = shading_ctx.specular_scattering;
@@ -151,8 +151,8 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, const Auxilary_Rays* inc
 
     *specular_bounces_contribution = Color_White;
 
-    while (specular_scattering.type != Specular_Scattering_Type::none && max_specular_bounces > 0) {
-        max_specular_bounces--;
+    while (specular_scattering.type != Specular_Scattering_Type::none && *bounce_counter < max_bounces) {
+        (*bounce_counter)++;
         const float eta = specular_scattering.etaI_over_etaT;
 
         Ray scattered_ray{ shading_ctx.position };
@@ -174,7 +174,7 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, const Auxilary_Rays* inc
             return false;
     }
 
-    // check if we end up on specular surface after reaching max_specular_bounces
+    // check if we end up on specular surface after reaching max bounce limit
     if (specular_scattering.type != Specular_Scattering_Type::none) {
         *specular_bounces_contribution = Color_Black;
         return false;

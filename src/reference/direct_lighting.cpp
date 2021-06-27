@@ -254,8 +254,24 @@ static ColorRGB direct_lighting_from_environment_light(
     return L;
 }
 
-ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays& auxilary_rays,
-    int max_specular_bounces)
+ColorRGB get_emitted_radiance(Thread_Context& thread_ctx)
+{
+    Light_Handle light = thread_ctx.shading_context.area_light;
+
+    if (light.type == Light_Type::none)
+        return Color_Black;
+
+    if (light.type == Light_Type::diffuse_rectangular)
+        return thread_ctx.scene_context->lights.diffuse_rectangular_lights[light.index].emitted_radiance;
+
+    if (light.type == Light_Type::diffuse_sphere)
+        return thread_ctx.scene_context->lights.diffuse_sphere_lights[light.index].emitted_radiance;
+
+    ASSERT(false); // unexpected area light type
+    return Color_Black;
+}
+
+ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays& auxilary_rays)
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
@@ -277,13 +293,7 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
     ColorRGB L;
     // Intersection with area light.
     if (shading_ctx.area_light != Null_Light) {
-        if (shading_ctx.area_light.type == Light_Type::diffuse_rectangular) {
-            L = scene_ctx.lights.diffuse_rectangular_lights[shading_ctx.area_light.index].emitted_radiance;
-        }
-        else {
-            ASSERT(shading_ctx.area_light.type == Light_Type::diffuse_sphere);
-            L = scene_ctx.lights.diffuse_sphere_lights[shading_ctx.area_light.index].emitted_radiance;
-        }
+        L = get_emitted_radiance(thread_ctx);
     }
     // Intersection with finite BSDF surface.
     else {
