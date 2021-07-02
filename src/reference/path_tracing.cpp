@@ -12,9 +12,7 @@ constexpr int bounce_count_when_to_apply_russian_roulette = 3;
 ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays& auxilary_rays) {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
-
     const int max_bounces = scene_ctx.scene->raytracer_config.max_light_bounces;
-    ASSERT(max_bounces >= 1); // at least direct lighting component
 
     int bounce_count = 0;
     ColorRGB path_coeff = Color_White;
