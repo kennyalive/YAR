@@ -7,6 +7,7 @@
 #include "light_sampling.h"
 #include "sampling.h"
 #include "shading_context.h"
+#include "specular_scattering.h"
 
 #include "lib/light.h"
 #include "lib/math.h"
@@ -283,8 +284,11 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
         return Color_Black;
     }
 
-    if (shading_ctx.specular_scattering.type != Specular_Scattering_Type::none)
-        return Color_Black; // TODO: check if specularly scattered direction brings radiance from area or environment light
+    if (shading_ctx.specular_scattering.type != Specular_Scattering_Type::none) {
+        ColorRGB specular_bounces_contribution;
+        trace_specular_bounces(thread_ctx, &auxilary_rays, 1, &specular_bounces_contribution);
+        return specular_bounces_contribution * get_emitted_radiance(thread_ctx);
+    }
 
     // debug visualization of samples with adjusted shading normal.
     /*if (shading_ctx.shading_normal_adjusted)
