@@ -40,12 +40,18 @@ struct Scene_Context {
     bool has_environment_light_sampler = false;
 };
 
+struct Path_Context {
+    int bounce_count = 0; // current number of bounces
+    int perfect_specular_bounce_count = 0;
+};
+
 struct Thread_Context {
     Memory_Pool memory_pool;
     RNG rng;
     Stratified_Pixel_Sampler pixel_sampler;
 
     const Scene_Context* scene_context;
+    Path_Context path_context;
     Shading_Context shading_context;
 
     // TODO: until we implement proper handling of nested dielectrics we make assumption

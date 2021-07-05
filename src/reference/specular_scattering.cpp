@@ -135,12 +135,13 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, M
     return specular_scattering;
 }
 
-bool trace_specular_bounces(Thread_Context& thread_ctx, const Auxilary_Rays* incident_auxilary_rays,
-    int max_bounces, int* bounce_counter, ColorRGB* specular_bounces_contribution)
+bool trace_specular_bounces(Thread_Context& thread_ctx, const Auxilary_Rays* incident_auxilary_rays, int max_bounces,
+    ColorRGB* specular_bounces_contribution)
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     const Specular_Scattering& specular_scattering = shading_ctx.specular_scattering;
     ASSERT(specular_scattering.type != Specular_Scattering_Type::none);
+    Path_Context& path_ctx = thread_ctx.path_context;
 
     Auxilary_Rays scattered_auxilary_rays;
     Auxilary_Rays* p_scattered_auxilary_rays = nullptr; // either nullptr or points to scattered_auxilary_rays
@@ -151,8 +152,10 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, const Auxilary_Rays* inc
 
     *specular_bounces_contribution = Color_White;
 
-    while (specular_scattering.type != Specular_Scattering_Type::none && *bounce_counter < max_bounces) {
-        (*bounce_counter)++;
+    while (specular_scattering.type != Specular_Scattering_Type::none && path_ctx.bounce_count < max_bounces) {
+        path_ctx.bounce_count++;
+        path_ctx.perfect_specular_bounce_count++;
+
         const float eta = specular_scattering.etaI_over_etaT;
 
         Ray scattered_ray{ shading_ctx.position };

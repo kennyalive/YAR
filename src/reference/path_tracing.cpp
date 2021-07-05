@@ -12,33 +12,35 @@ constexpr int bounce_count_when_to_apply_russian_roulette = 3;
 ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays& auxilary_rays) {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
+    Path_Context& path_ctx = thread_ctx.path_context;
+
     const int max_bounces = scene_ctx.scene->raytracer_config.max_light_bounces;
 
-    int bounce_count = 0;
     ColorRGB path_coeff = Color_White;
     Ray current_ray = ray;
 
     ColorRGB L;
     while (true) {
         ColorRGB specular_bounces_contribution = Color_White;
-        const Auxilary_Rays* current_auxilary_rays = (bounce_count == 0) ? &auxilary_rays : nullptr;
+        const Auxilary_Rays* current_auxilary_rays = (path_ctx.bounce_count == 0) ? &auxilary_rays : nullptr;
+
+        bool hit_found = trace_ray(thread_ctx, current_ray, current_auxilary_rays);
 
         bool is_specular_bounce = false;
-        bool hit_found = trace_ray(thread_ctx, current_ray, current_auxilary_rays);
         if (hit_found && shading_ctx.specular_scattering.type != Specular_Scattering_Type::none) {
-            hit_found = trace_specular_bounces(thread_ctx, current_auxilary_rays, max_bounces, &bounce_count, &specular_bounces_contribution);
             is_specular_bounce = true;
+            hit_found = trace_specular_bounces(thread_ctx, current_auxilary_rays, max_bounces, &specular_bounces_contribution);
         }
 
         if (!hit_found) {
-            if ((bounce_count == 0 || is_specular_bounce) && scene_ctx.has_environment_light_sampler) {
+            if ((path_ctx.bounce_count == 0 || is_specular_bounce) && scene_ctx.has_environment_light_sampler) {
                 L += specular_bounces_contribution * scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
             }
             break;
         }
 
         if (shading_ctx.area_light != Null_Light) {
-            if (bounce_count == 0 || is_specular_bounce) {
+            if (path_ctx.bounce_count == 0 || is_specular_bounce) {
                 L += specular_bounces_contribution * get_emitted_radiance(thread_ctx);
             }
             // In current design we don't have scattering on area light sources (shading_ctx.bsdf == nullptr).
@@ -47,7 +49,7 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
         }
 
         // check if we reached max bounce limit due to bounces on specular surfaces
-        if (bounce_count == max_bounces)
+        if (path_ctx.bounce_count == max_bounces)
             break;
 
         path_coeff *= specular_bounces_contribution;
@@ -59,11 +61,11 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
         // Add contribution of the current path.
         L += path_coeff * estimate_direct_lighting_from_single_sample(thread_ctx, u_light_index, u_light, u_bsdf);
 
-        if (++bounce_count == max_bounces)
+        if (++path_ctx.bounce_count == max_bounces)
             break;
 
         // Apply russian roulette.
-        if (bounce_count >= bounce_count_when_to_apply_russian_roulette) {
+        if (path_ctx.bounce_count >= bounce_count_when_to_apply_russian_roulette) {
             // That's fine to get the next sample inside condition because condition
             // is evaluated to the same value for all threads.
             float u_termination = thread_ctx.pixel_sampler.get_next_1d_sample();

@@ -174,7 +174,8 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
 
             do {
                 thread_ctx.memory_pool.reset();
-                thread_ctx.current_dielectric_material = Null_Material;
+                thread_ctx.current_dielectric_material = Null_Material; // TODO: should be part of path context
+                thread_ctx.path_context = Path_Context{};
 
                 Vector2 film_pos = Vector2((float)x, (float)y) + thread_ctx.pixel_sampler.get_image_plane_sample();
 
