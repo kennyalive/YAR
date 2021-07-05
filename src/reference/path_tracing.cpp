@@ -21,7 +21,7 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
 
     ColorRGB L;
     while (true) {
-        ColorRGB specular_bounces_contribution = Color_White;
+        ColorRGB specular_attenuation = Color_White;
         const Auxilary_Rays* current_auxilary_rays = (path_ctx.bounce_count == 0) ? &auxilary_rays : nullptr;
 
         bool hit_found = trace_ray(thread_ctx, current_ray, current_auxilary_rays);
@@ -29,19 +29,19 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
         bool is_specular_bounce = false;
         if (hit_found && shading_ctx.specular_scattering.type != Specular_Scattering_Type::none) {
             is_specular_bounce = true;
-            hit_found = trace_specular_bounces(thread_ctx, current_auxilary_rays, max_bounces, &specular_bounces_contribution);
+            hit_found = trace_specular_bounces(thread_ctx, current_auxilary_rays, max_bounces, &specular_attenuation);
         }
 
         if (!hit_found) {
             if ((path_ctx.bounce_count == 0 || is_specular_bounce) && scene_ctx.has_environment_light_sampler) {
-                L += specular_bounces_contribution * scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
+                L += specular_attenuation * scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
             }
             break;
         }
 
         if (shading_ctx.area_light != Null_Light) {
             if (path_ctx.bounce_count == 0 || is_specular_bounce) {
-                L += specular_bounces_contribution * get_emitted_radiance(thread_ctx);
+                L += specular_attenuation * get_emitted_radiance(thread_ctx);
             }
             // In current design we don't have scattering on area light sources (shading_ctx.bsdf == nullptr).
             // Hitting area light ends path generation (subsequent segments have no effect due to zero bsdf on area light).
@@ -52,7 +52,7 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
         if (path_ctx.bounce_count == max_bounces)
             break;
 
-        path_coeff *= specular_bounces_contribution;
+        path_coeff *= specular_attenuation;
 
         float u_light_index = thread_ctx.pixel_sampler.get_next_1d_sample();
         Vector2 u_light = thread_ctx.pixel_sampler.get_next_2d_sample();

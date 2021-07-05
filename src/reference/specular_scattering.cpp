@@ -125,6 +125,8 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, M
             // coeff is computed as (1 - fresnel) * transmittance / probability => coeff = transmittance.
             specular_scattering.scattering_coeff = evaluate_rgb_parameter(thread_ctx, params.transmittance);
 
+            specular_scattering.scattering_coeff *= specular_scattering.etaI_over_etaT * specular_scattering.etaI_over_etaT;
+
             // Update current dielectric state.
             if (thread_ctx.current_dielectric_material == Null_Material)
                 thread_ctx.current_dielectric_material = material_handle;
@@ -135,8 +137,7 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, M
     return specular_scattering;
 }
 
-bool trace_specular_bounces(Thread_Context& thread_ctx, const Auxilary_Rays* incident_auxilary_rays, int max_bounces,
-    ColorRGB* specular_bounces_contribution)
+bool trace_specular_bounces(Thread_Context& thread_ctx, const Auxilary_Rays* incident_auxilary_rays, int max_bounces, ColorRGB* specular_attenuation)
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     const Specular_Scattering& specular_scattering = shading_ctx.specular_scattering;
@@ -150,36 +151,35 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, const Auxilary_Rays* inc
         p_scattered_auxilary_rays = &scattered_auxilary_rays;
     }
 
-    *specular_bounces_contribution = Color_White;
+    *specular_attenuation = Color_White;
 
     while (specular_scattering.type != Specular_Scattering_Type::none && path_ctx.bounce_count < max_bounces) {
         path_ctx.bounce_count++;
         path_ctx.perfect_specular_bounce_count++;
-
-        const float eta = specular_scattering.etaI_over_etaT;
+        *specular_attenuation *= specular_scattering.scattering_coeff;
 
         Ray scattered_ray{ shading_ctx.position };
+
         if (specular_scattering.type == Specular_Scattering_Type::specular_reflection) {
             scattered_ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
             specularly_reflect_auxilary_rays(shading_ctx, scattered_ray, p_scattered_auxilary_rays);
-            *specular_bounces_contribution *= specular_scattering.scattering_coeff;
         }
-        else if (refract(shading_ctx.wo, shading_ctx.normal, eta, &scattered_ray.direction)) {
+        else {
             ASSERT(specular_scattering.type == Specular_Scattering_Type::specular_transmission);
+            const float eta = specular_scattering.etaI_over_etaT;
+            const bool no_total_internal_reflection = refract(shading_ctx.wo, shading_ctx.normal, eta, &scattered_ray.direction);
+            ASSERT(no_total_internal_reflection); // for total internal reflection we always select reflection event and not transmission
             specularly_transmit_auxilary_rays(shading_ctx, scattered_ray, eta, p_scattered_auxilary_rays);
-            *specular_bounces_contribution *= (eta * eta) * specular_scattering.scattering_coeff;
         }
-        else { // total internal reflection, nothing is transmitted
-            *specular_bounces_contribution = Color_Black;
-            return false;
-        }
+
         if (!trace_ray(thread_ctx, scattered_ray, p_scattered_auxilary_rays))
             return false;
     }
 
     // check if we end up on specular surface after reaching max bounce limit
     if (specular_scattering.type != Specular_Scattering_Type::none) {
-        *specular_bounces_contribution = Color_Black;
+        ASSERT(path_ctx.bounce_count == max_bounces);
+        *specular_attenuation = Color_Black;
         return false;
     }
     return true;
