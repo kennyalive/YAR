@@ -10,7 +10,7 @@ struct Thread_Context;
 struct BSDF;
 
 // Contains all the necessary information to perform shading at the intersection point.
-// We keep one instance of Shading_Context per thread.
+// There is one instance of Shading_Context per thread.
 struct Shading_Context {
     Vector3 wo; // outgoing direction
     Vector3 position; // shading point position in world coordinates
@@ -23,12 +23,14 @@ struct Shading_Context {
     Vector3 dndu;
     Vector3 dndv;
 
-    // The dx/dy derivatives below (position and uv) measure the change with respect to
-    // an average distance between the samples (not pixels!).
-    //
+    // If true then dx/dy derivatives are available. Otherwise they are set to zero.
+    bool has_auxilary_rays_data = false;
+
+    // The dx/dy derivatives are defined with respect to an average distance between the samples (not pixels!).
     Vector3 dpdx;
     Vector3 dpdy;
-    // The uv derivatices are used to compute texture lod for mip-mapping.
+    Vector3 dwo_dx;
+    Vector3 dwo_dy;
     float dudx = 0.f;
     float dvdx = 0.f;
     float dudy = 0.f;
@@ -74,7 +76,7 @@ private:
     Shading_Context& operator=(const Shading_Context&) = default;
 
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti);
-    void calculate_UV_derivates(const Auxilary_Rays& auxilary_rays);
+    void calculate_UV_derivates();
 };
 
 // Trace ray against scene geometry and initializes shading context for intersection point (if any).

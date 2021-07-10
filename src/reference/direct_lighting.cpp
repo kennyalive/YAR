@@ -286,7 +286,7 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
 
     if (shading_ctx.specular_scattering.type != Specular_Scattering_Type::none) {
         ColorRGB specular_attenuation;
-        trace_specular_bounces(thread_ctx, &auxilary_rays, 1, &specular_attenuation);
+        trace_specular_bounces(thread_ctx, 1, &specular_attenuation);
         return specular_attenuation * get_emitted_radiance(thread_ctx);
     }
 

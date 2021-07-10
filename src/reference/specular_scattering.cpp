@@ -7,39 +7,29 @@
 #include "scattering.h"
 #include "shading_context.h"
 
-static void specularly_reflect_auxilary_rays(const Shading_Context& shading_ctx, const Ray& reflected_ray,
-    Auxilary_Rays* auxilary_rays)
+static Auxilary_Rays specularly_reflect_auxilary_rays(const Shading_Context& shading_ctx, const Ray& reflected_ray)
 {
-    if (!auxilary_rays)
-        return;
-
     const Vector3& wo = shading_ctx.wo;
     const Vector3& n = shading_ctx.normal;
 
     Vector3 dndx = shading_ctx.dndu * shading_ctx.dudx + shading_ctx.dndv * shading_ctx.dvdx;
-    Vector3 dwo_dx = (-auxilary_rays->ray_dx_offset.direction) - wo;
-    float d_wo_dot_n_dx = dot(dwo_dx, n) + dot(wo, dndx);
-    Vector3 dwi_dx = 2.f * (d_wo_dot_n_dx * n + dot(wo, n) * dndx) - dwo_dx;
+    float d_wo_dot_n_dx = dot(shading_ctx.dwo_dx, n) + dot(wo, dndx);
+    Vector3 dwi_dx = 2.f * (d_wo_dot_n_dx * n + dot(wo, n) * dndx) - shading_ctx.dwo_dx;
 
     Vector3 dndy = shading_ctx.dndu * shading_ctx.dudy + shading_ctx.dndv * shading_ctx.dvdy;
-    Vector3 dwo_dy = (-auxilary_rays->ray_dy_offset.direction) - wo;
-    float d_wo_dot_n_dy = dot(dwo_dy, n) + dot(wo, dndy);
-    Vector3 dwi_dy = 2.f * (d_wo_dot_n_dy * n + dot(wo, n) * dndy) - dwo_dy;
+    float d_wo_dot_n_dy = dot(shading_ctx.dwo_dy, n) + dot(wo, dndy);
+    Vector3 dwi_dy = 2.f * (d_wo_dot_n_dy * n + dot(wo, n) * dndy) - shading_ctx.dwo_dy;
 
     Auxilary_Rays reflected_auxilary_rays;
     reflected_auxilary_rays.ray_dx_offset.origin = reflected_ray.origin + shading_ctx.dpdx;
     reflected_auxilary_rays.ray_dx_offset.direction = (reflected_ray.direction + dwi_dx).normalized();
     reflected_auxilary_rays.ray_dy_offset.origin = reflected_ray.origin + shading_ctx.dpdy;
     reflected_auxilary_rays.ray_dy_offset.direction = (reflected_ray.direction + dwi_dy).normalized();
-    *auxilary_rays = reflected_auxilary_rays;
+    return reflected_auxilary_rays;
 }
 
-static void specularly_transmit_auxilary_rays(const Shading_Context& shading_ctx, const Ray& transmitted_ray,
-    float etaI_over_etaT, Auxilary_Rays* auxilary_rays)
+static Auxilary_Rays specularly_transmit_auxilary_rays(const Shading_Context& shading_ctx, const Ray& transmitted_ray, float etaI_over_etaT)
 {
-    if (!auxilary_rays)
-        return;
-
     const Vector3& wo = shading_ctx.wo;
     const Vector3& n = shading_ctx.normal;
     const float eta = etaI_over_etaT;
@@ -50,23 +40,21 @@ static void specularly_transmit_auxilary_rays(const Shading_Context& shading_ctx
     ASSERT(cos_t > 0.f);
 
     Vector3 dndx = shading_ctx.dndu * shading_ctx.dudx + shading_ctx.dndv * shading_ctx.dvdx;
-    Vector3 dwo_dx = (-auxilary_rays->ray_dx_offset.direction) - wo;
-    float d_wo_dot_n_dx = dot(dwo_dx, n) + dot(wo, dndx);
+    float d_wo_dot_n_dx = dot(shading_ctx.dwo_dx, n) + dot(wo, dndx);
     float d_cos_t_dx = eta * eta * cos_o * d_wo_dot_n_dx / cos_t;
-    Vector3 dwi_dx = -eta * dwo_dx + (eta * cos_o - cos_t) * dndx + (eta * d_wo_dot_n_dx - d_cos_t_dx) * n;
+    Vector3 dwi_dx = -eta * shading_ctx.dwo_dx + (eta * cos_o - cos_t) * dndx + (eta * d_wo_dot_n_dx - d_cos_t_dx) * n;
 
     Vector3 dndy = shading_ctx.dndu * shading_ctx.dudy + shading_ctx.dndv * shading_ctx.dvdy;
-    Vector3 dwo_dy = (-auxilary_rays->ray_dy_offset.direction) - wo;
-    float d_wo_dot_n_dy = dot(dwo_dy, n) + dot(wo, dndy);
+    float d_wo_dot_n_dy = dot(shading_ctx.dwo_dy, n) + dot(wo, dndy);
     float d_cos_t_dy = eta * eta * cos_o * d_wo_dot_n_dy / cos_t;
-    Vector3 dwi_dy = -eta * dwo_dy + (eta * cos_o - cos_t) * dndy + (eta * d_wo_dot_n_dy - d_cos_t_dy) * n;
+    Vector3 dwi_dy = -eta * shading_ctx.dwo_dy + (eta * cos_o - cos_t) * dndy + (eta * d_wo_dot_n_dy - d_cos_t_dy) * n;
 
     Auxilary_Rays transmitted_auxilary_rays;
     transmitted_auxilary_rays.ray_dx_offset.origin = transmitted_ray.origin + shading_ctx.dpdx;
     transmitted_auxilary_rays.ray_dx_offset.direction = (transmitted_ray.direction + dwi_dx).normalized();
     transmitted_auxilary_rays.ray_dy_offset.origin = transmitted_ray.origin + shading_ctx.dpdy;
     transmitted_auxilary_rays.ray_dy_offset.direction = (transmitted_ray.direction + dwi_dy).normalized();
-    *auxilary_rays = transmitted_auxilary_rays;
+    return transmitted_auxilary_rays;
 }
 
 Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, Material_Handle material_handle)
@@ -137,50 +125,44 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, M
     return specular_scattering;
 }
 
-bool trace_specular_bounces(Thread_Context& thread_ctx, const Auxilary_Rays* incident_auxilary_rays, int max_bounces, ColorRGB* specular_attenuation)
+bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRGB* specular_attenuation)
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
-    const Specular_Scattering& specular_scattering = shading_ctx.specular_scattering;
-    ASSERT(specular_scattering.type != Specular_Scattering_Type::none);
     Path_Context& path_ctx = thread_ctx.path_context;
 
-    Auxilary_Rays scattered_auxilary_rays;
-    Auxilary_Rays* p_scattered_auxilary_rays = nullptr; // either nullptr or points to scattered_auxilary_rays
-    if (incident_auxilary_rays) {
-        scattered_auxilary_rays = *incident_auxilary_rays;
-        p_scattered_auxilary_rays = &scattered_auxilary_rays;
-    }
+    const Specular_Scattering& specular_scattering = shading_ctx.specular_scattering;
+    ASSERT(specular_scattering.type != Specular_Scattering_Type::none);
 
     *specular_attenuation = Color_White;
 
     while (specular_scattering.type != Specular_Scattering_Type::none && path_ctx.bounce_count < max_bounces) {
         path_ctx.bounce_count++;
         path_ctx.perfect_specular_bounce_count++;
+
         *specular_attenuation *= specular_scattering.scattering_coeff;
 
         Ray scattered_ray{ shading_ctx.position };
+        Auxilary_Rays scattered_auxilary_rays;
 
         if (specular_scattering.type == Specular_Scattering_Type::specular_reflection) {
             scattered_ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
-            specularly_reflect_auxilary_rays(shading_ctx, scattered_ray, p_scattered_auxilary_rays);
+
+            if (shading_ctx.has_auxilary_rays_data)
+                scattered_auxilary_rays = specularly_reflect_auxilary_rays(shading_ctx, scattered_ray);
         }
         else {
             ASSERT(specular_scattering.type == Specular_Scattering_Type::specular_transmission);
             const float eta = specular_scattering.etaI_over_etaT;
-            const bool no_total_internal_reflection = refract(shading_ctx.wo, shading_ctx.normal, eta, &scattered_ray.direction);
-            ASSERT(no_total_internal_reflection); // for total internal reflection we always select reflection event and not transmission
-            specularly_transmit_auxilary_rays(shading_ctx, scattered_ray, eta, p_scattered_auxilary_rays);
+
+            const bool refracted = refract(shading_ctx.wo, shading_ctx.normal, eta, &scattered_ray.direction);
+            ASSERT(refracted); // specular_transmission event should never be selected when total internal reflection happens
+
+            if (shading_ctx.has_auxilary_rays_data)
+                scattered_auxilary_rays = specularly_transmit_auxilary_rays(shading_ctx, scattered_ray, eta);
         }
 
-        if (!trace_ray(thread_ctx, scattered_ray, p_scattered_auxilary_rays))
+        if (!trace_ray(thread_ctx, scattered_ray, shading_ctx.has_auxilary_rays_data ? &scattered_auxilary_rays : nullptr))
             return false;
-    }
-
-    // check if we end up on specular surface after reaching max bounce limit
-    if (specular_scattering.type != Specular_Scattering_Type::none) {
-        ASSERT(path_ctx.bounce_count == max_bounces);
-        *specular_attenuation = Color_Black;
-        return false;
     }
     return true;
 }

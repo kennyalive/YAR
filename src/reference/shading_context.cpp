@@ -98,7 +98,26 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
     }
 
     if (auxilary_rays)
-        calculate_UV_derivates(*auxilary_rays);
+    {
+        has_auxilary_rays_data = true;
+
+        // Position derivatives.
+        {
+            float plane_d = -dot(normal, position);
+            float tx = ray_plane_intersection(auxilary_rays->ray_dx_offset, normal, plane_d);
+            float ty = ray_plane_intersection(auxilary_rays->ray_dy_offset, normal, plane_d);
+            Vector3 px = auxilary_rays->ray_dx_offset.get_point(tx);
+            Vector3 py = auxilary_rays->ray_dy_offset.get_point(ty);
+            dpdx = px - position;
+            dpdy = py - position;
+        }
+
+        // Direction derivatives
+        dwo_dx = (-auxilary_rays->ray_dx_offset.direction) - wo;
+        dwo_dy = (-auxilary_rays->ray_dy_offset.direction) - wo;
+
+        calculate_UV_derivates();
+    }
 
     // Adjustment of shading normal invalidates dndu/dndv. For now it's not clear to which degree
     // it could be an issue (in most cases shading normals are left unchanged). Until further evidence
@@ -168,23 +187,11 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
     }
 }
 
-void Shading_Context::calculate_UV_derivates(const Auxilary_Rays& auxilary_rays) {
-    // Compute position derivatives with respect to screen coordinates using auxilary offset rays.
-    float plane_d = -dot(normal, position);
-    float tx = ray_plane_intersection(auxilary_rays.ray_dx_offset, normal, plane_d);
-    float ty = ray_plane_intersection(auxilary_rays.ray_dy_offset, normal, plane_d);
-
-    Vector3 px = auxilary_rays.ray_dx_offset.get_point(tx);
-    Vector3 py = auxilary_rays.ray_dy_offset.get_point(ty);
-    dpdx = px - position;
-    dpdy = py - position;
-
-    // Compute uv derivatives with respect to screen coordinates (PBRT, 10.1.1).
-    //
-    // We need to solve these two linear systems:
+void Shading_Context::calculate_UV_derivates() {
+    // We need to solve these two linear systems (PBRT, 10.1.1):
     //  dPdx = dPdu * dUdx + dPdv * dVdx (3 equations)
     //  dPdy = dPdu * dUdy + dPdv * dVdy (3 equations)
-
+    //
     // In a system of 3 linear equations with 2 unknown variables it's
     // possible that one equation is degenerate. Here we get rid of equation
     // with the highest chance to be degenerate.
