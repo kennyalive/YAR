@@ -33,7 +33,8 @@ Matrix3x4 rotate_z(const Matrix3x4& m, float angle);
 // premultiplies the given matrix by translation transform
 Matrix3x4 translate(const Matrix3x4& m, const Vector3& translation);
 
-Matrix3x4 uniform_scale(const Matrix3x4& m, float scale);
+Matrix3x4 uniform_scale_transform(const Matrix3x4& m, float scale);
+Matrix3x4 scale_transform(const Matrix3x4& m, const Vector3& scale);
 
 // Computes world space->eye space transform that positions the camera at point 'from'
 // and orients its direction towards the point 'to'. 'up' unit vector specifies reference up direction.
@@ -47,8 +48,8 @@ Matrix3x4 look_at_transform(Vector3 from, Vector3 to, Vector3 up);
 // space points top-down with regard to eye space vertical direction (to match Vulkan viewport).
 Matrix4x4 perspective_transform_opengl_z01(float fovy_radians, float aspect_ratio, float near, float far);
 
-// Assumes that input matrix constains only rotation, translation and uniform scale.
-Matrix3x4 get_inverted_transform(const Matrix3x4& m);
+// Assumes that input matrix constains only rotation, translation and scale (uniform or non-uniform).
+Matrix3x4 get_inverse_transform(const Matrix3x4& m);
 
 // Computes transform which when applied to mirrored geometry gives the same 
 // result as at first transforming original object with original transform and then mirroring it.

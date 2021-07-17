@@ -187,11 +187,23 @@ Matrix3x4 translate(const Matrix3x4& m, const Vector3& translation) {
     return m2;
 }
 
-Matrix3x4 uniform_scale(const Matrix3x4& m, float scale) {
+Matrix3x4 uniform_scale_transform(const Matrix3x4& m, float scale) {
     Matrix3x4 m2;
     for (int i = 0; i < 3; i++)
         for (int j = 0; j < 3; j++)
             m2.a[i][j] = m.a[i][j] * scale;
+
+    m2.a[0][3] = m.a[0][3]; 
+    m2.a[1][3] = m.a[1][3];
+    m2.a[2][3] = m.a[2][3];
+    return m2;
+}
+
+Matrix3x4 scale_transform(const Matrix3x4& m, const Vector3& scale) {
+    Matrix3x4 m2;
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+            m2.a[i][j] = m.a[i][j] * scale[i];
 
     m2.a[0][3] = m.a[0][3]; 
     m2.a[1][3] = m.a[1][3];
@@ -236,16 +248,33 @@ Matrix4x4 perspective_transform_opengl_z01(float fovy_radians, float aspect_rati
     return proj;
 }
 
-Matrix3x4 get_inverted_transform(const Matrix3x4& m) {
-    Vector3 x_axis = m.get_column(0);
-    Vector3 y_axis = m.get_column(1);
-    Vector3 z_axis = m.get_column(2);
+Matrix3x4 get_inverse_transform(const Matrix3x4& m) {
+    auto get_axis_and_inv_scale = [&m](int axis_index) {
+        Vector3 axis = m.get_column(axis_index);
+        float scale = axis.length();
+        ASSERT(scale != 0.f);
+
+        // If scale has small deviation from 1.0 then assume it's due to
+        // rounding error and in that case force scale to be exactly 1.0.
+        // The idea is to ensure that rotation components in the inverted
+        // matrix are exactly the same as in the original one (except the
+        // order) when there is no scaling.
+        scale = (std::abs(scale - 1.f) < 1e-6f) ? 1.f : scale;
+
+        float inv_scale = 1.f / scale;
+        axis *= inv_scale;
+        return std::make_pair(axis, inv_scale);
+    };
+
+    auto [x_axis, x_inv_scale] = get_axis_and_inv_scale(0);
+    auto [y_axis, y_inv_scale] = get_axis_and_inv_scale(1);
+    auto [z_axis, z_inv_scale] = get_axis_and_inv_scale(2);
     Vector3 origin = m.get_column(3);
 
     Matrix3x4 m_inv;
-    m_inv.set_row(0, Vector4(x_axis, -dot(x_axis, origin)));
-    m_inv.set_row(1, Vector4(y_axis, -dot(y_axis, origin)));
-    m_inv.set_row(2, Vector4(z_axis, -dot(z_axis, origin)));
+    m_inv.set_row(0, x_inv_scale * Vector4(x_axis, -dot(x_axis, origin)));
+    m_inv.set_row(1, y_inv_scale * Vector4(y_axis, -dot(y_axis, origin)));
+    m_inv.set_row(2, z_inv_scale * Vector4(z_axis, -dot(z_axis, origin)));
     return m_inv;
 }
 

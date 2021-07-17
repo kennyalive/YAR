@@ -323,6 +323,14 @@ struct Vector4 {
 
 constexpr Vector4 Vector4_Zero = Vector4(0.f);
 
+inline Vector4 operator*(const Vector4& v, float t) {
+    return Vector4(v.x * t, v.y * t, v.z * t, v.w * t);
+}
+
+inline Vector4 operator*(float t, const Vector4& v) {
+    return v * t;
+}
+
 namespace std {
 template<> struct hash<Vector4> {
     size_t operator()(Vector4 v) const {
