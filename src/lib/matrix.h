@@ -33,8 +33,8 @@ Matrix3x4 rotate_z(const Matrix3x4& m, float angle);
 // premultiplies the given matrix by translation transform
 Matrix3x4 translate(const Matrix3x4& m, const Vector3& translation);
 
-Matrix3x4 uniform_scale_transform(const Matrix3x4& m, float scale);
 Matrix3x4 scale_transform(const Matrix3x4& m, const Vector3& scale);
+Matrix3x4 uniform_scale_transform(const Matrix3x4& m, float scale);
 
 // Computes world space->eye space transform that positions the camera at point 'from'
 // and orients its direction towards the point 'to'. 'up' unit vector specifies reference up direction.
@@ -57,6 +57,7 @@ Matrix3x4 get_inverse_transform(const Matrix3x4& m);
 // an axis and transform is computed by this function.
 Matrix3x4 get_mirrored_transform(const Matrix3x4& m, int flip_axis);
 
+Vector3 get_scale_from_transform(const Matrix3x4& m);
 bool is_transform_changes_handedness(const Matrix3x4& m);
 
 Vector3 transform_point(const Matrix3x4& m, Vector3 p);

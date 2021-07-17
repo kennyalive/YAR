@@ -249,32 +249,18 @@ Matrix4x4 perspective_transform_opengl_z01(float fovy_radians, float aspect_rati
 }
 
 Matrix3x4 get_inverse_transform(const Matrix3x4& m) {
-    auto get_axis_and_inv_scale = [&m](int axis_index) {
-        Vector3 axis = m.get_column(axis_index);
-        float scale = axis.length();
-        ASSERT(scale != 0.f);
+    Vector3 scale = get_scale_from_transform(m);
+    Vector3 inv_scale = Vector3(1) / scale;
 
-        // If scale has small deviation from 1.0 then assume it's due to
-        // rounding error and in that case force scale to be exactly 1.0.
-        // The idea is to ensure that rotation components in the inverted
-        // matrix are exactly the same as in the original one (except the
-        // order) when there is no scaling.
-        scale = (std::abs(scale - 1.f) < 1e-6f) ? 1.f : scale;
-
-        float inv_scale = 1.f / scale;
-        axis *= inv_scale;
-        return std::make_pair(axis, inv_scale);
-    };
-
-    auto [x_axis, x_inv_scale] = get_axis_and_inv_scale(0);
-    auto [y_axis, y_inv_scale] = get_axis_and_inv_scale(1);
-    auto [z_axis, z_inv_scale] = get_axis_and_inv_scale(2);
+    Vector3 x_axis = inv_scale.x * m.get_column(0);
+    Vector3 y_axis = inv_scale.y * m.get_column(1);
+    Vector3 z_axis = inv_scale.z * m.get_column(2);
     Vector3 origin = m.get_column(3);
 
     Matrix3x4 m_inv;
-    m_inv.set_row(0, x_inv_scale * Vector4(x_axis, -dot(x_axis, origin)));
-    m_inv.set_row(1, y_inv_scale * Vector4(y_axis, -dot(y_axis, origin)));
-    m_inv.set_row(2, z_inv_scale * Vector4(z_axis, -dot(z_axis, origin)));
+    m_inv.set_row(0, inv_scale.x * Vector4(x_axis, -dot(x_axis, origin)));
+    m_inv.set_row(1, inv_scale.y * Vector4(y_axis, -dot(y_axis, origin)));
+    m_inv.set_row(2, inv_scale.z * Vector4(z_axis, -dot(z_axis, origin)));
     return m_inv;
 }
 
@@ -296,6 +282,18 @@ Matrix3x4 get_mirrored_transform(const Matrix3x4& m, int flip_axis) {
     m2.a[flip_axis][2] = -m2.a[flip_axis][2];
     m2.a[flip_axis][3] = -m2.a[flip_axis][3];
     return m2;
+}
+
+Vector3 get_scale_from_transform(const Matrix3x4& m) {
+    Vector3 scale;
+    for (int i = 0; i < 3; i++) {
+        float axis_length = m.get_column(i).length();
+        ASSERT(axis_length != 0.f);
+        // If scale has small deviation from 1.0 then assume it's due to
+        // rounding error and in that case force scale to be exactly 1.0.
+        scale[i] = (std::abs(axis_length - 1.f) < 1e-6f) ? 1.f : axis_length;
+    }
+    return scale;
 }
 
 bool is_transform_changes_handedness(const Matrix3x4& m) {
@@ -339,4 +337,3 @@ Bounding_Box transform_bounding_box(const Matrix3x4& m, const Bounding_Box& boun
     bounds2.add_point(transform_point(m, Vector3(bounds.max_p.x, bounds.max_p.y, bounds.max_p.z)));
     return bounds2;
 }
-

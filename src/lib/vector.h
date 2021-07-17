@@ -135,6 +135,10 @@ inline Vector3 operator*(float t, const Vector3& v) {
     return v * t;
 }
 
+inline Vector3 operator/(const Vector3& a, const Vector3& b) {
+    return Vector3(a.x / b.x, a.y / b.y, a.z / b.z);
+}
+
 inline bool operator<(const Vector3& v1, const Vector3& v2) {
     return v1[0] < v2[0] && v1[1] < v2[1] && v1[2] < v2[2];
 }
