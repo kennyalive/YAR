@@ -9,7 +9,7 @@
 
 Scene load_obj_scene(const YAR_Project& project) {
     Triangle_Mesh_Load_Params mesh_load_params;
-    mesh_load_params.transform = uniform_scale(Matrix3x4::identity, project.world_scale);
+    mesh_load_params.transform = uniform_scale_transform(Matrix3x4::identity, project.world_scale);
     mesh_load_params.normal_calculation_params.use_crease_angle = project.mesh_use_crease_angle;
     mesh_load_params.normal_calculation_params.crease_angle = project.mesh_crease_angle;
     mesh_load_params.invert_winding_order = project.mesh_invert_winding_order;
@@ -59,7 +59,7 @@ Scene load_obj_scene(const YAR_Project& project) {
                 scene_object.geometry = { Geometry_Type::triangle_mesh, i };
                 scene_object.material = material;
                 scene_object.object_to_world_transform = instance.transform;
-                scene_object.world_to_object_transform = get_inverted_transform(instance.transform);
+                scene_object.world_to_object_transform = get_inverse_transform(instance.transform);
             }
         }
         else {

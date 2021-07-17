@@ -443,7 +443,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                 scene_object.material = imported_shape.material;
                 scene_object.area_light = area_light;
                 scene_object.object_to_world_transform = to_matrix3x4(instance->xfm) * shape_transform;
-                scene_object.world_to_object_transform = get_inverted_transform(scene_object.object_to_world_transform);
+                scene_object.world_to_object_transform = get_inverse_transform(scene_object.object_to_world_transform);
                 scene.objects.push_back(scene_object);
 
                 // Material and area light are mutually exclusive properties and one of them must be defined.
@@ -472,7 +472,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                 Environment_Light& light = scene.lights.environment_light;
 
                 light.light_to_world = to_matrix3x4(instance->xfm) * to_matrix3x4(infinite_light->transform);
-                light.world_to_light = get_inverted_transform(light.light_to_world);
+                light.world_to_light = get_inverse_transform(light.light_to_world);
                 light.scale = ColorRGB(&infinite_light->scale.x) * ColorRGB(&infinite_light->L.x);
 
                 scene.texture_names.push_back(infinite_light->mapName);
