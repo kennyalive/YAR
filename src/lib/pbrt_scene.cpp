@@ -541,7 +541,5 @@ Scene load_pbrt_scene(const YAR_Project& project) {
         scene.raytracer_config.pixel_filter_radius = pbrt_pixel_filter->radius;
         scene.raytracer_config.pixel_filter_alpha = pbrt_pixel_filter->alpha;
     }
-
-    scene.lights.append(project.lights);
     return scene;
 }

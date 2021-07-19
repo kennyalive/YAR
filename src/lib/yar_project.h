@@ -42,11 +42,12 @@ struct YAR_Project {
     bool mesh_use_crease_angle = false;
     float mesh_crease_angle = 0.f;
 
-    // Lights defined in yar project file. The other source of lights is the
-    // scene itself, for example, pbrt scene usually defines the lights. The
-    // lights from yar project are merged with the native scene's lights in
-    // the final Scene object.
-    Lights lights;
+    // The lights defined in yar project file. Another source of lights are the lights
+    // defined in specific scene formats, for example, pbrt scene. The lights from the
+    // yar project are merged with the scene's native lights in the final Scene object.
+    std::vector<Point_Light> point_lights;
+    std::vector<Directional_Light> directional_lights;
+    std::vector<Diffuse_Rectangular_Light> diffuse_rectangular_lights;
 
     std::vector<YAR_Instance> instances;
     std::vector<std::string> ignore_geometry_names;

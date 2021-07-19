@@ -285,7 +285,7 @@ struct Parser {
         else
             check(false, "unknown spectrum_shape [%s]", spectrum_shape.c_str());
 
-        project.lights.point_lights.emplace_back(std::move(light));
+        project.point_lights.emplace_back(std::move(light));
     }
 
     void parse_directional_light(int num_fields) {
@@ -302,7 +302,7 @@ struct Parser {
             else
                 check(false, "unknown directional light attribute [%.*s]", (int)get_current_token_string().size(), get_current_token_string().data());
         }
-        project.lights.directional_lights.emplace_back(std::move(light));
+        project.directional_lights.emplace_back(std::move(light));
     }
 
     void parse_diffuse_rectangular_light(int num_fields) {
@@ -331,7 +331,7 @@ struct Parser {
         Vector3 xyz = s.emission_spectrum_to_XYZ();
         light.emitted_radiance = XYZ_to_sRGB(xyz);
 
-        project.lights.diffuse_rectangular_lights.emplace_back(std::move(light));
+        project.diffuse_rectangular_lights.emplace_back(std::move(light));
     }
 
     void parse_instance_object() {

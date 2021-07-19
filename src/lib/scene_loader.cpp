@@ -33,16 +33,22 @@ static YAR_Project create_yar_project(const std::string& input_file) {
     return project;
 }
 
-static void finalize_scene(Scene& scene) {
-    for (auto [i, light] : enumerate(scene.lights.diffuse_rectangular_lights)) {
+static void add_light_sources_from_yar_project(Scene& scene, const YAR_Project& project) {
+    scene.lights.point_lights.insert(scene.lights.point_lights.end(),
+        project.point_lights.begin(), project.point_lights.end());
+
+    scene.lights.directional_lights.insert(scene.lights.directional_lights.end(),
+        project.directional_lights.begin(), project.directional_lights.end());
+
+    for (const Diffuse_Rectangular_Light& light : project.diffuse_rectangular_lights) {
+        scene.lights.diffuse_rectangular_lights.push_back(light);
         scene.geometries.triangle_meshes.emplace_back(light.get_geometry());
-        
+
         Scene_Object scene_object;
-        scene_object.area_light = {Light_Type::diffuse_rectangular, (int)i};
+        scene_object.area_light = {Light_Type::diffuse_rectangular, (int)scene.lights.diffuse_rectangular_lights.size()-1};
         scene_object.geometry = {Geometry_Type::triangle_mesh, (int)scene.geometries.triangle_meshes.size()-1};
         scene_object.object_to_world_transform = Matrix3x4::identity;
         scene_object.world_to_object_transform = Matrix3x4::identity;
-
         scene.objects.push_back(scene_object);
     }
 
@@ -53,7 +59,6 @@ static void finalize_scene(Scene& scene) {
         light.irradiance = ColorRGB(5, 5, 5);
         scene.lights.directional_lights.push_back(light);
     }
-
     scene.lights.update_total_light_count();
 }
 
@@ -73,6 +78,8 @@ Scene load_scene(const std::string& input_file) {
         ASSERT(project.scene_type == Scene_Type::obj);
         scene = load_obj_scene(project);
     }
+
+    add_light_sources_from_yar_project(scene, project);
 
     scene.type = project.scene_type;
     scene.path = project.scene_path.string();

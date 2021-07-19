@@ -75,7 +75,5 @@ Scene load_obj_scene(const YAR_Project& project) {
     if (add_default_material) {
         scene.materials.lambertian.push_back({true, Color_White, -1});
     }
-
-    scene.lights = project.lights;
     return scene;
 }

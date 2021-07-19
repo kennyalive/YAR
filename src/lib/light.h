@@ -87,7 +87,6 @@ struct Lights {
     Environment_Light environment_light;
     bool has_environment_light = false;
 
-    void append(const Lights& lights);
     bool has_lights() const;
     void update_total_light_count();
 
