@@ -104,6 +104,12 @@ struct Vector3 {
         *this /= length();
     }
 
+    void normalize(float* unnormalized_length) {
+        float k = length();
+        *this /= k;
+        *unnormalized_length = k;
+    }
+
     bool is_normalized(float epsilon = 1e-3f) const {
         return std::abs(length() - 1.f) < epsilon;
     }

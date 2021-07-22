@@ -60,6 +60,7 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
     *this = Shading_Context{};
 
     wo = -ray.direction;
+    ASSERT(wo.is_normalized());
 
     // Geometry_Type-specific initialization.
     //
@@ -76,12 +77,25 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
     {
         const Matrix3x4& object_to_world = intersection.scene_object->object_to_world_transform;
         position = transform_point (object_to_world, position);
-        normal = transform_vector(object_to_world, normal);
-        geometric_normal = transform_vector(object_to_world, geometric_normal);
+
+        normal = transform_vector(object_to_world, normal * intersection.scene_object->inv_scale_squared);
+        float length_of_scaled_normal;
+        normal.normalize(&length_of_scaled_normal);
+
+        geometric_normal = transform_vector(object_to_world, geometric_normal * intersection.scene_object->inv_scale_squared);
+        geometric_normal.normalize();
+
         dpdu = transform_vector(object_to_world, dpdu);
         dpdv = transform_vector(object_to_world, dpdv);
-        dndu = transform_vector(object_to_world, dndu);
-        dndv = transform_vector(object_to_world, dndv);
+
+        dndu = transform_vector(object_to_world, dndu * intersection.scene_object->inv_scale_squared);
+        dndv = transform_vector(object_to_world, dndv * intersection.scene_object->inv_scale_squared);
+        // If normal had non-unit length after object_to_world transform due to scaling then in
+        // addition to normal normalization we also have to scale normal derivatives by the same
+        // magnitude to ensure they represent the same change in normal direction.
+        float inv_length_of_scaled_normal = 1 / length_of_scaled_normal;
+        dndu *= inv_length_of_scaled_normal;
+        dndv *= inv_length_of_scaled_normal;
     }
 
     // Enforce renderer convention that direction of the incident ray (wo) is in the hemisphere

@@ -62,5 +62,10 @@ bool is_transform_changes_handedness(const Matrix3x4& m);
 
 Vector3 transform_point(const Matrix3x4& m, Vector3 p);
 Vector3 transform_vector(const Matrix3x4& m, Vector3 v);
+
+// This function does not try to normalize transformed ray direction if matrix contains scale transform.
+// By using unnormalized direction when computing intersections in object space we still get distances in
+// world space (and that's what we need).
 Ray transform_ray(const Matrix3x4& m, const Ray& ray);
+
 Bounding_Box transform_bounding_box(const Matrix3x4& m, const Bounding_Box& bounds);

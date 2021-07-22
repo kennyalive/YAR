@@ -51,6 +51,13 @@ static void add_light_sources_from_yar_project(Scene& scene, const YAR_Project& 
         scene_object.world_to_object_transform = Matrix3x4::identity;
         scene.objects.push_back(scene_object);
     }
+}
+
+static void finalize_scene(Scene& scene) {
+    for (Scene_Object& scene_object : scene.objects) {
+        Vector3 scale =  get_scale_from_transform(scene_object.object_to_world_transform);
+        scene_object.inv_scale_squared = Vector3(1) / (scale * scale);
+    }
 
     // Add default light if no other light is specified.
     if (!scene.lights.has_lights()) {

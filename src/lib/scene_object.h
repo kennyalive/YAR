@@ -9,6 +9,14 @@ struct Scene_Object {
     Geometry_Handle geometry;
     Material_Handle material;
     Light_Handle area_light;
+
+    // Supported tranforms: translation, rotation, scale (both uniform and non-uniform).
+    // Other transform types (e.g. shear) are not supported.
     Matrix3x4 object_to_world_transform;
     Matrix3x4 world_to_object_transform;
+
+    // Traditionally normal is tranformed by: Normal_Xform = transpose(inverse(Object_Xform)).
+    // For Object_Xform with only rotation and scale in 3x3 submatrix the above can be re-written
+    // in this form: Normal_Xform = Object_Xform * Inverse_Scale_Xform^2.
+    Vector3 inv_scale_squared = Vector3(1);
 };
