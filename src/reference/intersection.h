@@ -30,7 +30,7 @@ struct Intersection {
     float t = Infinity;
 
     // Type of the intersected geometry.
-    Geometry_Type geometry_type = Geometry_Type::none;
+    Geometry_Type geometry_type = Geometry_Type::null_geometry;
 
     // Scene_Object associated with the intersected geometry.
     // It is null for Geometry_KdTree and it is non-null for Scene_KdTree.

@@ -5,16 +5,17 @@
 #include "lib/vector.h"
 
 enum class Light_Type : uint32_t {
-    none,
     point, // delta light
     directional, // delta light
     diffuse_rectangular,
     diffuse_sphere,
-    environment_map
+    environment_map,
+    count,
+    null_light = std::numeric_limits<uint32_t>::max()
 };
 
 struct Light_Handle {
-    Light_Type type = Light_Type::none;
+    Light_Type type = Light_Type::null_light;
     int index = -1;
 
     bool operator==(Light_Handle h) const {
@@ -26,7 +27,8 @@ struct Light_Handle {
 };
 
 static_assert(sizeof(Light_Handle) == 8);
-constexpr Light_Handle Null_Light = { Light_Type::none, -1 };
+constexpr Light_Handle Null_Light = { Light_Type::null_light, -1 };
+constexpr int Light_Type_Count = static_cast<int>(Light_Type::count);
 
 struct Point_Light {
     Vector3 position;

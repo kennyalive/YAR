@@ -259,7 +259,7 @@ ColorRGB get_emitted_radiance(Thread_Context& thread_ctx)
 {
     Light_Handle light = thread_ctx.shading_context.area_light;
 
-    if (light.type == Light_Type::none)
+    if (light == Null_Light)
         return Color_Black;
 
     if (light.type == Light_Type::diffuse_rectangular)

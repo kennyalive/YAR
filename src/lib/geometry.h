@@ -3,12 +3,13 @@
 #include "triangle_mesh.h"
 
 enum class Geometry_Type : uint32_t {
-    none,
-    triangle_mesh
+    triangle_mesh,
+    count,
+    null_geometry = std::numeric_limits<uint32_t>::max()
 };
 
 struct Geometry_Handle {
-    Geometry_Type type = Geometry_Type::none;
+    Geometry_Type type = Geometry_Type::null_geometry;
     int index = -1;
 
     bool operator==(const Geometry_Handle& other) const {
@@ -24,4 +25,5 @@ struct Geometries {
 };
 
 static_assert(sizeof(Geometry_Handle) == 8);
-constexpr Geometry_Handle Null_Geometry = {Geometry_Type::none, -1};
+constexpr Geometry_Handle Null_Geometry = {Geometry_Type::null_geometry, -1};
+constexpr int Geometry_Type_Count = static_cast<int>(Geometry_Type::count);

@@ -4,7 +4,6 @@
 #include "parameter.h"
 
 enum class Material_Type : uint32_t {
-    none,
     lambertian,
     perfect_reflector,
     perfect_refractor,
@@ -12,10 +11,12 @@ enum class Material_Type : uint32_t {
     plastic,
     coated_diffuse,
     glass,
+    count,
+    null_material = std::numeric_limits<uint32_t>::max()
 };
 
 struct Material_Handle {
-    Material_Type type = Material_Type::none;
+    Material_Type type = Material_Type::null_material;
     int index = -1;
 
     bool operator==(const Material_Handle& other) const {
@@ -27,7 +28,8 @@ struct Material_Handle {
 };
 
 static_assert(sizeof(Material_Handle) == 8);
-constexpr Material_Handle Null_Material = { Material_Type::none, -1 };
+constexpr Material_Handle Null_Material = { Material_Type::null_material, -1 };
+constexpr int Material_Type_Count = static_cast<int>(Material_Type::count);
 
 struct Lambertian_Material {
     RGB_Parameter reflectance;
