@@ -12,6 +12,8 @@ struct KdTree_Build_Params {
     bool split_clipping = true;
 };
 
-Geometry_KdTree build_geometry_kdtree(const Geometries* geometries, Geometry_Handle geometry, const KdTree_Build_Params& build_params = KdTree_Build_Params());
-Scene_KdTree build_scene_kdtree(const Scene* scene, std::vector<Geometry_KdTree>&& kdtrees, const KdTree_Build_Params& build_params = KdTree_Build_Params());
+Geometry_KdTree build_geometry_kdtree(const Geometries* geometries, Geometry_Handle geometry,
+    const KdTree_Build_Params& build_params = KdTree_Build_Params());
 
+Scene_KdTree build_scene_kdtree(const Scene* scene, std::vector<int>&& geometry_type_offsets, std::vector<Geometry_KdTree>&& kdtrees,
+    const KdTree_Build_Params& build_params = KdTree_Build_Params());

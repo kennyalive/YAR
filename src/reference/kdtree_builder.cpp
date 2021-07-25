@@ -81,9 +81,10 @@ Geometry_KdTree build_geometry_kdtree(const Geometries* geometries, Geometry_Han
     return builder.build();
 }
 
-Scene_KdTree build_scene_kdtree(const Scene* scene, std::vector<Geometry_KdTree>&& kdtrees, const KdTree_Build_Params& build_params) {
+Scene_KdTree build_scene_kdtree(const Scene* scene, std::vector<int>&& geometry_type_offsets, std::vector<Geometry_KdTree>&& kdtrees, const KdTree_Build_Params& build_params) {
     Scene_Primitive_Source primitive_source;
     primitive_source.scene = scene;
+    primitive_source.geometry_type_offsets = std::move(geometry_type_offsets);
     primitive_source.geometry_kdtrees = std::move(kdtrees);
     KdTree_Builder<Scene_Primitive_Source> builder(std::move(primitive_source), build_params);
     return builder.build();

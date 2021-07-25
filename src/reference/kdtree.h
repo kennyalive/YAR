@@ -193,8 +193,8 @@ struct Geometry_Primitive_Source {
 };
 
 struct Scene_Primitive_Source {
-    const Scene* scene;
     const Scene* scene = nullptr;
+    std::vector<int> geometry_type_offsets;
     std::vector<Geometry_KdTree> geometry_kdtrees;
 
     int get_primitive_count()  const {
@@ -203,8 +203,9 @@ struct Scene_Primitive_Source {
 
     Bounding_Box get_primitive_bounds(int primitive_index) const {
         ASSERT(primitive_index >= 0 && primitive_index < scene->objects.size());
-        int geometry_index = scene->objects[primitive_index].geometry.index;
-        Bounding_Box local_bounds = geometry_kdtrees[geometry_index].get_bounds();
+        Geometry_Handle geometry = scene->objects[primitive_index].geometry;
+        int offset = geometry_type_offsets[static_cast<int>(geometry.type)];
+        Bounding_Box local_bounds = geometry_kdtrees[offset + geometry.index].get_bounds();
         Bounding_Box world_bounds = transform_bounding_box(scene->objects[primitive_index].object_to_world_transform, local_bounds);
         return world_bounds;
     }
