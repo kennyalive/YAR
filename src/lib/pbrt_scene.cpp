@@ -10,6 +10,16 @@
 #include "pbrtParser/Scene.h"
 #include "pbrt-parser/impl/syntactic/Scene.h"
 
+namespace {
+struct Shape {
+    Geometry_Handle geometry;
+    Light_Handle area_light;
+    Matrix3x4 transform = Matrix3x4::identity;
+    // TODO: remove this field after we separate material from shape in pbrt parser
+    Material_Handle material;
+};
+}
+
 static Matrix3x4 to_matrix3x4(const pbrt::affine3f& pbrt_transform) {
     const pbrt::math::vec3f& pos = pbrt_transform.p;
     const pbrt::math::mat3f& rot = pbrt_transform.l;
@@ -41,6 +51,55 @@ static float pbrt_roughness_to_disney_roughness(float pbrt_roughness, bool remap
     }
     float roughness = std::sqrt(alpha);
     return roughness;
+}
+
+static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size, Matrix3x4& transform) {
+    if (mesh.vertices.size() != 4 || mesh.indices.size() != 6)
+        return false;
+
+    Vector3 p[3] = {
+        mesh.vertices[mesh.indices[0]],
+        mesh.vertices[mesh.indices[1]],
+        mesh.vertices[mesh.indices[2]]
+    };
+    Vector3 v[3] = {
+        p[1] - p[0],
+        p[2] - p[1],
+        p[0] - p[2]
+    };
+    Vector3 d[3] = {
+        v[0].normalized(),
+        v[1].normalized(),
+        v[2].normalized()
+    };
+
+    int k = 0;
+    for (; k < 3; k++) {
+        if (std::abs(dot(d[k], d[(k+1)%3])) < 1e-4f) {
+            break;
+        }
+    }
+    if (k == 3)
+        return false;
+
+    Vector3 mid_point = (mesh.vertices[0] + mesh.vertices[1] + mesh.vertices[2] + mesh.vertices[3]) * 0.25f;
+    Vector3 test_point = (p[k] + p[(k+2)%3]) * 0.5f;
+
+    if ((mid_point - test_point).length() > 1e-4f)
+        return false;
+
+    Vector3 x_axis = d[k];
+    Vector3 y_axis = d[(k+1)%3];
+    Vector3 z_axis = cross(x_axis, y_axis);
+
+    size.x = v[k].length();
+    size.y = v[(k+1)%3].length();
+
+    transform.set_column(0, x_axis);
+    transform.set_column(1, y_axis);
+    transform.set_column(2, z_axis);
+    transform.set_column(3, mid_point);
+    return true;
 }
 
 static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_texture, Scene* scene) {
@@ -255,6 +314,99 @@ static Geometry_Handle import_pbrt_sphere(const pbrt::Sphere::SP pbrt_sphere, Ma
     return Geometry_Handle{ Geometry_Type::triangle_mesh, int(scene->geometries.triangle_meshes.size() - 1) };
 }
 
+static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& instance_transform, Scene* scene) {
+    Shape shape;
+    if (pbrt::TriangleMesh::SP pbrt_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(pbrt_shape))
+    {
+        shape.geometry = import_pbrt_triangle_mesh(pbrt_mesh, scene);
+        if (shape.geometry == Null_Geometry)
+            return Shape{};
+
+        if (pbrt_shape->areaLight != nullptr) {
+            if (auto pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(pbrt_shape->areaLight))
+            {
+                Vector2 rect_size;
+                Matrix3x4 rect_transform;
+                const Triangle_Mesh& mesh = scene->geometries.triangle_meshes[shape.geometry.index];
+                if (check_if_mesh_is_rectangle(mesh, rect_size, rect_transform)) {
+                    if (pbrt_shape->reverseOrientation) {
+                        rect_transform.set_column(0, -rect_transform.get_column(0));
+                        rect_transform.set_column(2, -rect_transform.get_column(2));
+                    }
+                    Diffuse_Rectangular_Light light;
+                    light.light_to_world_transform = rect_transform;
+                    light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
+                    light.size = rect_size;
+                    light.sample_count = pbrt_diffuse_area_light_rgb->nSamples;
+                    scene->lights.diffuse_rectangular_lights.push_back(light);
+                    shape.area_light = {Light_Type::diffuse_rectangular, (int)scene->lights.diffuse_rectangular_lights.size() - 1};
+                }
+                else
+                    error("triangle mesh light sources are not supported yet");
+            }
+            else
+                error("unsupported area light type");
+        }
+    }
+
+    if (pbrt::Sphere::SP pbrt_sphere = std::dynamic_pointer_cast<pbrt::Sphere>(pbrt_shape))
+    {
+        shape.geometry = import_pbrt_sphere(pbrt_sphere, &shape.transform, scene);
+
+        if (pbrt_shape->areaLight != nullptr) {
+            if (auto pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(pbrt_shape->areaLight))
+            {
+                Diffuse_Sphere_Light light;
+                light.position = (instance_transform * shape.transform).get_column(3);
+                light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
+                light.radius = pbrt_sphere->radius;
+                light.sample_count = pbrt_diffuse_area_light_rgb->nSamples;
+                scene->lights.diffuse_sphere_lights.push_back(light);
+                shape.area_light = {Light_Type::diffuse_sphere, (int)scene->lights.diffuse_sphere_lights.size() - 1};
+            }
+            else
+                error("unsupported area light type");
+        }
+    }
+
+    if (shape.geometry == Null_Geometry)
+        error("unsupported pbrt shape type");
+
+    // The covention that area lights only emit light and do not exhibit relfection properties.
+    // Here we parse material only if the shape does not have associated area light.
+    if (pbrt_shape->areaLight == nullptr)
+        shape.material = import_pbrt_material(pbrt_shape->material, scene);
+
+    return shape;
+}
+
+static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const Matrix3x4& instance_transfrom, Scene* scene) {
+    auto distant_light = std::dynamic_pointer_cast<pbrt::DistantLightSource>(pbrt_light);
+    if (distant_light)
+    {
+        Vector3 light_vec = Vector3(&distant_light->from.x) - Vector3(&distant_light->to.x);
+        light_vec = transform_vector(instance_transfrom, light_vec);
+
+        Directional_Light light;
+        light.direction = light_vec.normalized();
+        light.irradiance = ColorRGB(&distant_light->L.x) * ColorRGB(&distant_light->scale.x);
+        scene->lights.directional_lights.push_back(light);
+    }
+
+    auto infinite_light = std::dynamic_pointer_cast<pbrt::InfiniteLightSource>(pbrt_light);
+    if (infinite_light) {
+        scene->texture_names.push_back(infinite_light->mapName);
+
+        Environment_Light& light = scene->lights.environment_light;
+        light.light_to_world = instance_transfrom * to_matrix3x4(infinite_light->transform);
+        light.world_to_light = get_inverse_transform(light.light_to_world);
+        light.scale = ColorRGB(&infinite_light->scale.x) * ColorRGB(&infinite_light->L.x);
+        light.environment_map_index = (int)scene->texture_names.size() - 1;
+        light.sample_count = infinite_light->nSamples;
+        scene->lights.has_environment_light = true;
+    }
+}
+
 static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
     const pbrt::math::vec3f& pos = pbrt_camera->frame.p;
     const pbrt::math::mat3f& rot = pbrt_camera->frame.l;
@@ -311,55 +463,6 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
     }
 }
 
-static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size, Matrix3x4& transform) {
-    if (mesh.vertices.size() != 4 || mesh.indices.size() != 6)
-        return false;
-
-    Vector3 p[3] = {
-        mesh.vertices[mesh.indices[0]],
-        mesh.vertices[mesh.indices[1]],
-        mesh.vertices[mesh.indices[2]]
-    };
-    Vector3 v[3] = {
-        p[1] - p[0],
-        p[2] - p[1],
-        p[0] - p[2]
-    };
-    Vector3 d[3] = {
-        v[0].normalized(),
-        v[1].normalized(),
-        v[2].normalized()
-    };
-
-    int k = 0;
-    for (; k < 3; k++) {
-        if (std::abs(dot(d[k], d[(k+1)%3])) < 1e-4f) {
-            break;
-        }
-    }
-    if (k == 3)
-        return false;
-
-    Vector3 mid_point = (mesh.vertices[0] + mesh.vertices[1] + mesh.vertices[2] + mesh.vertices[3]) * 0.25f;
-    Vector3 test_point = (p[k] + p[(k+2)%3]) * 0.5f;
-
-    if ((mid_point - test_point).length() > 1e-4f)
-        return false;
-
-    Vector3 x_axis = d[k];
-    Vector3 y_axis = d[(k+1)%3];
-    Vector3 z_axis = cross(x_axis, y_axis);
-
-    size.x = v[k].length();
-    size.y = v[(k+1)%3].length();
-
-    transform.set_column(0, x_axis);
-    transform.set_column(1, y_axis);
-    transform.set_column(2, z_axis);
-    transform.set_column(3, mid_point);
-    return true;
-}
-
 //
 // PBRT scene main loading routine.
 //
@@ -367,102 +470,39 @@ Scene load_pbrt_scene(const YAR_Project& project) {
     pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(project.scene_path.string());
     pbrt_scene->makeSingleLevel();
 
-    struct Shape {
-        Geometry_Handle geometry;
-        Material_Handle material;
-    };
-    std::unordered_map<pbrt::Shape::SP, Shape> shape_cache;
+    // TODO: re-work pbrt-parser to decouple material from shape to be able to use
+    // the same shape with different materials. In current design shape data is
+    // duplicated for each new material. pbrt-parser have to introduce primitive
+    // abstraction that combines shape and material.
 
     Scene scene;
 
+    std::unordered_map<pbrt::Shape::SP, Shape> shape_cache;
     for (pbrt::Instance::SP instance : pbrt_scene->world->instances) {
-        ASSERT(instance->object->instances.empty()); // we flattened instance hierarchy
+        ASSERT(instance->object->instances.empty()); // enforced by makeSingleLevel
+        Matrix3x4 instance_transform = to_matrix3x4(instance->xfm);
 
         // Import pbrt shapes.
         for (pbrt::Shape::SP pbrt_shape : instance->object->shapes) {
-            auto shape_it = shape_cache.find(pbrt_shape);
-
-            // pbrt shape was already imported but it does not produce valid geometry (e.g. all triangles are degenerate)
-            if (shape_it != shape_cache.end() && shape_it->second.geometry == Null_Geometry)
-                continue;
-
             Shape shape;
-            Matrix3x4 shape_transform = Matrix3x4::identity;
-            Light_Handle area_light;
-
-            if (shape_it != shape_cache.end()) {
-                shape = shape_it->second;
+            if (auto it = shape_cache.find(pbrt_shape); it != shape_cache.end()) {
+                shape = it->second;
             }
             else {
-                pbrt::TriangleMesh::SP pbrt_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(pbrt_shape);
-                if (pbrt_mesh != nullptr) {
-                    shape.geometry = import_pbrt_triangle_mesh(pbrt_mesh, &scene);
-                    if (shape.geometry == Null_Geometry) {
-                        shape_cache.insert({pbrt_shape, Shape{}});
-                        continue;
-                    }
-
-                    if (pbrt_shape->areaLight != nullptr) {
-                        pbrt::DiffuseAreaLightRGB::SP pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(pbrt_shape->areaLight);
-                        if (pbrt_diffuse_area_light_rgb) {
-                            Vector2 rect_size;
-                            Matrix3x4 rect_transform;
-                            const Triangle_Mesh& mesh = scene.geometries.triangle_meshes[shape.geometry.index];
-                            if (check_if_mesh_is_rectangle(mesh, rect_size, rect_transform)) {
-                                if (pbrt_shape->reverseOrientation) {
-                                    rect_transform.set_column(0, -rect_transform.get_column(0));
-                                    rect_transform.set_column(2, -rect_transform.get_column(2));
-                                }
-                                Diffuse_Rectangular_Light light;
-                                light.light_to_world_transform = rect_transform;
-                                light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
-                                light.size = rect_size;
-                                light.sample_count = pbrt_diffuse_area_light_rgb->nSamples;
-                                scene.lights.diffuse_rectangular_lights.push_back(light);
-                                area_light = {Light_Type::diffuse_rectangular, (int)scene.lights.diffuse_rectangular_lights.size() - 1};
-                            }
-                            else {
-                                error("triangle mesh light sources are not supported yet");
-                            }
-                        }
-                    }
-                }
-
-                pbrt::Sphere::SP pbrt_sphere = std::dynamic_pointer_cast<pbrt::Sphere>(pbrt_shape);
-                if (pbrt_sphere != nullptr) {
-                    shape.geometry = import_pbrt_sphere(pbrt_sphere, &shape_transform, &scene);
-
-                    if (pbrt_shape->areaLight != nullptr) {
-                        pbrt::DiffuseAreaLightRGB::SP pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(pbrt_shape->areaLight);
-                        if (pbrt_diffuse_area_light_rgb) {
-                            Diffuse_Sphere_Light light;
-                            light.position = (to_matrix3x4(instance->xfm) * shape_transform).get_column(3);
-                            light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
-                            light.radius = pbrt_sphere->radius;
-                            light.sample_count = pbrt_diffuse_area_light_rgb->nSamples;
-                            scene.lights.diffuse_sphere_lights.push_back(light);
-                            area_light = {Light_Type::diffuse_sphere, (int)scene.lights.diffuse_sphere_lights.size() - 1};
-                        }
-                    }
-                }
-
-                if (shape.geometry == Null_Geometry)
-                    error("Unsupported pbrt shape type");
-
-                // The covention that area lights only emit light and do not exhibit relfection properties.
-                // Here we parse material only if the shape does not have associated area light.
-                if (pbrt_shape->areaLight == nullptr)
-                    shape.material = import_pbrt_material(pbrt_shape->material, &scene);
-
+                shape = import_pbrt_shape(pbrt_shape, instance_transform, &scene);
                 shape_cache.insert({pbrt_shape, shape});
             }
+
+            // pbrt shape might not produce a valid geometry (e.g. all triangles are degenerate)
+            if (shape.geometry == Null_Geometry)
+                continue;
 
             if (shape.geometry.type == Geometry_Type::triangle_mesh) {
                 Scene_Object scene_object;
                 scene_object.geometry = shape.geometry;
                 scene_object.material = shape.material;
-                scene_object.area_light = area_light;
-                scene_object.object_to_world_transform = to_matrix3x4(instance->xfm) * shape_transform;
+                scene_object.area_light = shape.area_light;
+                scene_object.object_to_world_transform = instance_transform * shape.transform;
                 scene_object.world_to_object_transform = get_inverse_transform(scene_object.object_to_world_transform);
                 scene.objects.push_back(scene_object);
 
@@ -473,35 +513,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
 
         // Import pbrt non-area lights.
         for (pbrt::LightSource::SP light : instance->object->lightSources) {
-            auto distant_light = std::dynamic_pointer_cast<pbrt::DistantLightSource>(light);
-            if (distant_light)
-            {
-                Directional_Light light;
-
-                Vector3 light_vec = Vector3(&distant_light->from.x) - Vector3(&distant_light->to.x);
-                light_vec = transform_vector(to_matrix3x4(instance->xfm), light_vec);
-                light.direction = light_vec.normalized();
-
-                light.irradiance = ColorRGB(&distant_light->L.x) * ColorRGB(&distant_light->scale.x);
-
-                scene.lights.directional_lights.push_back(light);
-            }
-
-            auto infinite_light = std::dynamic_pointer_cast<pbrt::InfiniteLightSource>(light);
-            if (infinite_light) {
-                Environment_Light& light = scene.lights.environment_light;
-
-                light.light_to_world = to_matrix3x4(instance->xfm) * to_matrix3x4(infinite_light->transform);
-                light.world_to_light = get_inverse_transform(light.light_to_world);
-                light.scale = ColorRGB(&infinite_light->scale.x) * ColorRGB(&infinite_light->L.x);
-
-                scene.texture_names.push_back(infinite_light->mapName);
-                light.environment_map_index = (int)scene.texture_names.size() - 1;
-
-                light.sample_count = infinite_light->nSamples;
-
-                scene.lights.has_environment_light = true;
-            }
+            import_pbrt_non_area_light(light, instance_transform, &scene);
         }
     }
 
