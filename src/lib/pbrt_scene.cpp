@@ -235,6 +235,10 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
             mesh.uvs[i] = Vector2_Zero;
     }
 
+    mesh.remove_degenerate_triangles();
+    if (mesh.indices.empty())
+        return Null_Geometry;
+
     if (!has_normals) {
         Normal_Calculation_Params normal_params;
         calculate_normals(normal_params, mesh);
@@ -363,11 +367,11 @@ Scene load_pbrt_scene(const YAR_Project& project) {
     pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(project.scene_path.string());
     pbrt_scene->makeSingleLevel();
 
-    struct Imported_Shape {
+    struct Shape {
         Geometry_Handle geometry;
         Material_Handle material;
     };
-    std::unordered_map<pbrt::Shape::SP, Imported_Shape> already_imported_shapes;
+    std::unordered_map<pbrt::Shape::SP, Shape> shape_cache;
 
     Scene scene;
 
@@ -375,24 +379,37 @@ Scene load_pbrt_scene(const YAR_Project& project) {
         ASSERT(instance->object->instances.empty()); // we flattened instance hierarchy
 
         // Import pbrt shapes.
-        for (pbrt::Shape::SP shape : instance->object->shapes) {
-            Imported_Shape& imported_shape = already_imported_shapes[shape];
+        for (pbrt::Shape::SP pbrt_shape : instance->object->shapes) {
+            auto shape_it = shape_cache.find(pbrt_shape);
 
+            // pbrt shape was already imported but it does not produce valid geometry (e.g. all triangles are degenerate)
+            if (shape_it != shape_cache.end() && shape_it->second.geometry == Null_Geometry)
+                continue;
+
+            Shape shape;
             Matrix3x4 shape_transform = Matrix3x4::identity;
             Light_Handle area_light;
 
-            if (imported_shape.geometry == Null_Geometry) {
-                pbrt::TriangleMesh::SP pbrt_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(shape);
+            if (shape_it != shape_cache.end()) {
+                shape = shape_it->second;
+            }
+            else {
+                pbrt::TriangleMesh::SP pbrt_mesh = std::dynamic_pointer_cast<pbrt::TriangleMesh>(pbrt_shape);
                 if (pbrt_mesh != nullptr) {
-                    imported_shape.geometry = import_pbrt_triangle_mesh(pbrt_mesh, &scene);
-                    if (shape->areaLight != nullptr) {
-                        pbrt::DiffuseAreaLightRGB::SP pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(shape->areaLight);
+                    shape.geometry = import_pbrt_triangle_mesh(pbrt_mesh, &scene);
+                    if (shape.geometry == Null_Geometry) {
+                        shape_cache.insert({pbrt_shape, Shape{}});
+                        continue;
+                    }
+
+                    if (pbrt_shape->areaLight != nullptr) {
+                        pbrt::DiffuseAreaLightRGB::SP pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(pbrt_shape->areaLight);
                         if (pbrt_diffuse_area_light_rgb) {
                             Vector2 rect_size;
                             Matrix3x4 rect_transform;
-                            const Triangle_Mesh& mesh = scene.geometries.triangle_meshes[imported_shape.geometry.index];
+                            const Triangle_Mesh& mesh = scene.geometries.triangle_meshes[shape.geometry.index];
                             if (check_if_mesh_is_rectangle(mesh, rect_size, rect_transform)) {
-                                if (shape->reverseOrientation) {
+                                if (pbrt_shape->reverseOrientation) {
                                     rect_transform.set_column(0, -rect_transform.get_column(0));
                                     rect_transform.set_column(2, -rect_transform.get_column(2));
                                 }
@@ -411,11 +428,12 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                     }
                 }
 
-                pbrt::Sphere::SP pbrt_sphere = std::dynamic_pointer_cast<pbrt::Sphere>(shape);
+                pbrt::Sphere::SP pbrt_sphere = std::dynamic_pointer_cast<pbrt::Sphere>(pbrt_shape);
                 if (pbrt_sphere != nullptr) {
-                    imported_shape.geometry = import_pbrt_sphere(pbrt_sphere, &shape_transform, &scene);
-                    if (shape->areaLight != nullptr) {
-                        pbrt::DiffuseAreaLightRGB::SP pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(shape->areaLight);
+                    shape.geometry = import_pbrt_sphere(pbrt_sphere, &shape_transform, &scene);
+
+                    if (pbrt_shape->areaLight != nullptr) {
+                        pbrt::DiffuseAreaLightRGB::SP pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(pbrt_shape->areaLight);
                         if (pbrt_diffuse_area_light_rgb) {
                             Diffuse_Sphere_Light light;
                             light.position = (to_matrix3x4(instance->xfm) * shape_transform).get_column(3);
@@ -428,19 +446,21 @@ Scene load_pbrt_scene(const YAR_Project& project) {
                     }
                 }
 
-                if (imported_shape.geometry == Null_Geometry)
+                if (shape.geometry == Null_Geometry)
                     error("Unsupported pbrt shape type");
 
                 // The covention that area lights only emit light and do not exhibit relfection properties.
                 // Here we parse material only if the shape does not have associated area light.
-                if (shape->areaLight == nullptr)
-                    imported_shape.material = import_pbrt_material(shape->material, &scene);
+                if (pbrt_shape->areaLight == nullptr)
+                    shape.material = import_pbrt_material(pbrt_shape->material, &scene);
+
+                shape_cache.insert({pbrt_shape, shape});
             }
 
-            if (imported_shape.geometry.type == Geometry_Type::triangle_mesh) {
+            if (shape.geometry.type == Geometry_Type::triangle_mesh) {
                 Scene_Object scene_object;
-                scene_object.geometry = imported_shape.geometry;
-                scene_object.material = imported_shape.material;
+                scene_object.geometry = shape.geometry;
+                scene_object.material = shape.material;
                 scene_object.area_light = area_light;
                 scene_object.object_to_world_transform = to_matrix3x4(instance->xfm) * shape_transform;
                 scene_object.world_to_object_transform = get_inverse_transform(scene_object.object_to_world_transform);

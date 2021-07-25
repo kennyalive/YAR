@@ -2,6 +2,45 @@
 #include "lib/common.h"
 #include "triangle_mesh.h"
 
+void Triangle_Mesh::remove_degenerate_triangles() {
+    std::vector<int32_t> good_triangle_indices;
+    bool mesh_has_degenerate_triangles = false;
+
+    for (int i = 0; i < (int)indices.size(); i+= 3) {
+        int i0 = indices[i + 0];
+        int i1 = indices[i + 1];
+        int i2 = indices[i + 2];
+        Vector3 a = vertices[i0];
+        Vector3 b = vertices[i1];
+        Vector3 c = vertices[i2];
+
+        // Check only one case of degenerate triangle where at least two vertices have exactly the same position.
+        bool degenerate_triangle = (a == b) || (a == c) || (b == c);
+
+        // NOTE: so far it's not clear if it's a good idea to remove arbitrary degenerate
+        // triangles (vertices lie on the same) in this routine. Due to FP finite precision
+        // we might lose a guarantee of watertightness when we remove a triangle which is
+        // degenerate according to some precision threshold. The better aproach might be to
+        // handle such cases in other parts of the system.
+
+        if (degenerate_triangle) {
+            if (!mesh_has_degenerate_triangles) {
+                good_triangle_indices.reserve(indices.size());
+                good_triangle_indices.assign(indices.begin(), indices.begin() + i); // copy triangles before the first degenerate one
+                mesh_has_degenerate_triangles = true;
+            }
+            continue;
+        }
+        if (mesh_has_degenerate_triangles) {
+            good_triangle_indices.push_back(i0);
+            good_triangle_indices.push_back(i1);
+            good_triangle_indices.push_back(i2);
+        }
+    }
+    if (mesh_has_degenerate_triangles)
+        indices.swap(good_triangle_indices);
+}
+
 void Triangle_Mesh::print_info() const {
     size_t mesh_size =
         vertices.size() * sizeof(Vector3) +

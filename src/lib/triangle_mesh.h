@@ -79,6 +79,7 @@ struct Triangle_Mesh {
         return bounds;
     }
 
+    void remove_degenerate_triangles();
     void print_info() const;
 };
 
