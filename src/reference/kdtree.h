@@ -148,7 +148,7 @@ private:
 Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle geometry);
 
 struct Geometry_Primitive_Source {
-    const Geometries* geometries;
+    const Geometries* geometries = nullptr;
     Geometry_Handle geometry;
 
     Geometry_Primitive_Source() {}
@@ -194,6 +194,7 @@ struct Geometry_Primitive_Source {
 
 struct Scene_Primitive_Source {
     const Scene* scene;
+    const Scene* scene = nullptr;
     std::vector<Geometry_KdTree> geometry_kdtrees;
 
     int get_primitive_count()  const {

@@ -225,15 +225,17 @@ KdTree_Stats KdTree<Primitive_Source>::calculate_stats() const
     }
     stats.not_empty_leaf_stats.depth_standard_deviation = float(std::sqrt(accum / not_empty_leaf_count));
 
-    int64_t empty_leaf_depth_accumulated = std::accumulate(empty_leaf_depth_values.cbegin(), empty_leaf_depth_values.cend(), int64_t(0));
-    stats.empty_leaf_stats.average_depth = float(double(empty_leaf_depth_accumulated) / stats.empty_leaf_count);
+    if (stats.empty_leaf_count > 0) {
+        int64_t empty_leaf_depth_accumulated = std::accumulate(empty_leaf_depth_values.cbegin(), empty_leaf_depth_values.cend(), int64_t(0));
+        stats.empty_leaf_stats.average_depth = float(double(empty_leaf_depth_accumulated) / stats.empty_leaf_count);
 
-    accum = 0.0f;
-    for (auto depth : empty_leaf_depth_values) {
-        auto diff = depth - stats.empty_leaf_stats.average_depth;
-        accum += diff * diff;
+        accum = 0.0f;
+        for (auto depth : empty_leaf_depth_values) {
+            auto diff = depth - stats.empty_leaf_stats.average_depth;
+            accum += diff * diff;
+        }
+        stats.empty_leaf_stats.depth_standard_deviation = float(std::sqrt(accum / stats.empty_leaf_count));
     }
-    stats.empty_leaf_stats.depth_standard_deviation = float(std::sqrt(accum / stats.empty_leaf_count));
 
     return stats;
 }
