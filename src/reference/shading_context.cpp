@@ -118,12 +118,18 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
         // Position derivatives.
         {
             float plane_d = -dot(normal, position);
+
             float tx = ray_plane_intersection(auxilary_rays->ray_dx_offset, normal, plane_d);
+            if (tx != Infinity) {
+                Vector3 px = auxilary_rays->ray_dx_offset.get_point(tx);
+                dpdx = px - position;
+            }
+
             float ty = ray_plane_intersection(auxilary_rays->ray_dy_offset, normal, plane_d);
-            Vector3 px = auxilary_rays->ray_dx_offset.get_point(tx);
-            Vector3 py = auxilary_rays->ray_dy_offset.get_point(ty);
-            dpdx = px - position;
-            dpdy = py - position;
+            if (ty != Infinity) {
+                Vector3 py = auxilary_rays->ray_dy_offset.get_point(ty);
+                dpdy = py - position;
+            }
         }
 
         // Direction derivatives
