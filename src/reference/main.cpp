@@ -13,6 +13,7 @@ enum Options {
     OPT_RENDER_REGION_Y,
     OPT_RENDER_REGION_W,
     OPT_RENDER_REGION_H,
+    OPT_CROP_IMAGE_BY_RENDER_REGION,
     OPT_RENDER_TILE,
 };
 
@@ -25,6 +26,7 @@ static const getopt_option_t option_list[] =
     { "y", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_REGION_Y, "render region top-left corner y coordinate", "y"},
     { "w", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_REGION_W, "render region width", "width"},
     { "h", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_REGION_H, "render region height", "height"},
+    { "crop", 0, GETOPT_OPTION_TYPE_NO_ARG, 0, OPT_CROP_IMAGE_BY_RENDER_REGION, "crop image by render region rectangle" },
     { "tile", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_TILE, "render single tile with the given index", "tile index"},
     GETOPT_OPTIONS_END
 };
@@ -93,6 +95,9 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_RENDER_REGION_H) {
             render_region_size.y = atoi(ctx.current_opt_arg);
+        }
+        else if (opt == OPT_CROP_IMAGE_BY_RENDER_REGION) {
+            options.crop_image_by_render_region = true;
         }
         else if (opt == OPT_RENDER_TILE) {
             render_tile_index = atoi(ctx.current_opt_arg);

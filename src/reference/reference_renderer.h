@@ -5,6 +5,7 @@
 struct Renderer_Options {
     int thread_count = 0;
     Bounds2i render_region;
+    bool crop_image_by_render_region = false;
     int render_tile_index = -1;
 };
 

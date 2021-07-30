@@ -99,7 +99,7 @@ static Scene_KdTree load_scene_kdtree(const Scene& scene) {
     std::vector<Geometry_KdTree> kdtrees;
     kdtrees.reserve(scene.geometries.triangle_meshes.size());
 
-    geometry_type_offsets[static_cast<int>(Geometry_Type::triangle_mesh)] = kdtrees.size();
+    geometry_type_offsets[static_cast<int>(Geometry_Type::triangle_mesh)] = (int)kdtrees.size();
     for (int i = 0; i < (int)scene.geometries.triangle_meshes.size(); i++) {
         fs::path kdtree_file = kdtree_cache_directory / (std::to_string(i) + ".kdtree");
         Geometry_KdTree kdtree = load_geometry_kdtree(kdtree_file.string(), &scene.geometries, {Geometry_Type::triangle_mesh, i});
@@ -159,8 +159,6 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
 }
 
 static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, int tile_index, Film& film) {
-    thread_ctx.rng.init(0, (uint64_t)tile_index);
-
     Bounds2i sample_bounds;
     Bounds2i pixel_bounds;
     film.get_tile_bounds(tile_index, sample_bounds, pixel_bounds);
@@ -169,8 +167,13 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
 
     double tile_variance_accumulator = 0.0;
 
+    ASSERT((sample_bounds.p1 <= Vector2i{0xffff + 1, 0xffff + 1}));
+    ASSERT((sample_bounds.size() <= Vector2i{0xffff, 0xffff}));
+
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
         for (int x = sample_bounds.p0.x; x < sample_bounds.p1.x; x++) {
+            uint32_t stream_id = ((uint32_t)x & 0xffffu) | ((uint32_t)y << 16);
+            thread_ctx.rng.init(0, stream_id);
             thread_ctx.pixel_sampler.next_pixel();
 
             // variance estimation
@@ -271,8 +274,6 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         error("Unknown filter type");
     }
 
-    Film film(render_region, film_filter);
-
     Scene_Context ctx;
     ctx.scene = &scene;
     ctx.camera = &camera;
@@ -314,6 +315,8 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     }
 
     printf("Project loaded in %d ms\n", int(elapsed_milliseconds(t_load)));
+
+    Film film(render_region, film_filter);
 
     // Render image
     Timestamp t;
@@ -373,8 +376,6 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         task_scheduler.WaitforAllAndShutdown();
     }
 
-    std::vector<ColorRGB> image = film.get_image();
-
     int time = int(elapsed_milliseconds(t));
     printf("Image rendered in %d ms\n", time);
 
@@ -391,5 +392,30 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         printf("Variance estimate %.6f, stddev %.6f\n", variance_estimate, std::sqrt(variance_estimate));
     }
 
-    write_exr_image("image.exr",  image.data(), render_region.size().x, render_region.size().y);
+    // Create output image.
+    std::vector<ColorRGB> image = film.get_image();
+    Vector2i image_size = render_region.size();
+
+    bool adjust_render_region_to_full_res_image = (render_region != Bounds2i{{0, 0}, scene.image_resolution}) && !options.crop_image_by_render_region;
+
+    if (adjust_render_region_to_full_res_image) {
+        const ColorRGB* src_pixel = image.data();
+        int src_width = render_region.size().x;
+        int src_height = render_region.size().y;
+
+        std::vector<ColorRGB> full_res_image(scene.image_resolution.x * scene.image_resolution.y);
+        int dst_pixel_offset = render_region.p0.y * scene.image_resolution.x +  render_region.p0.x;
+
+        for (int y = 0; y < src_height; y++) {
+            for (int x = 0; x < src_width; x++) {
+                full_res_image[dst_pixel_offset + x] = *src_pixel++;
+            }
+            dst_pixel_offset += scene.image_resolution.x;
+        }
+
+        image.swap(full_res_image);
+        image_size = scene.image_resolution;
+    }
+
+    write_exr_image("image.exr",  image.data(), image_size.x, image_size.y);
 }
