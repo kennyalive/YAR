@@ -173,6 +173,7 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
         for (int x = sample_bounds.p0.x; x < sample_bounds.p1.x; x++) {
             uint32_t stream_id = ((uint32_t)x & 0xffffu) | ((uint32_t)y << 16);
+            stream_id += (uint32_t)thread_ctx.renderer_options->rng_seed_offset;
             thread_ctx.rng.init(0, stream_id);
             thread_ctx.pixel_sampler.next_pixel();
 
@@ -324,6 +325,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     if (options.render_tile_index >= 0) {
         thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
         thread_contexts[0].pixel_sampler.init(&ctx.pixel_sampler_config, &thread_contexts[0].rng);
+        thread_contexts[0].renderer_options = &options;
         thread_contexts[0].scene_context = &ctx;
         thread_context_initialized[0] = true;
 
@@ -332,6 +334,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     else if (options.thread_count == 1) {
         thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
         thread_contexts[0].pixel_sampler.init(&ctx.pixel_sampler_config, &thread_contexts[0].rng);
+        thread_contexts[0].renderer_options = &options;
         thread_contexts[0].scene_context = &ctx;
         thread_context_initialized[0] = true;
 
@@ -341,6 +344,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     }
     else {
         struct Render_Tile_Task : public enki::ITaskSet {
+            const Renderer_Options* options;
             Scene_Context* ctx;
             int tile_index;
             Film* film;
@@ -351,6 +355,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
                     initialize_fp_state();
                     thread_contexts[threadnum].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
                     thread_contexts[threadnum].pixel_sampler.init(&ctx->pixel_sampler_config, &thread_contexts[threadnum].rng);
+                    thread_contexts[threadnum].renderer_options = options;
                     thread_contexts[threadnum].scene_context = ctx;
                     thread_context_initialized[threadnum] = true;
                 }
@@ -367,6 +372,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         std::vector<Render_Tile_Task> tasks(film.get_tile_count());
         for(int tile_index = 0; tile_index < film.get_tile_count(); tile_index++) {
             Render_Tile_Task task{};
+            task.options  = &options;
             task.ctx = &ctx;
             task.tile_index = tile_index;
             task.film = &film;

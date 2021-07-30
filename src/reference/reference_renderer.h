@@ -7,6 +7,7 @@ struct Renderer_Options {
     Bounds2i render_region;
     bool crop_image_by_render_region = false;
     int render_tile_index = -1;
+    int rng_seed_offset = 0;
 };
 
 void render_reference_image(const std::string& input_file, const Renderer_Options& options);

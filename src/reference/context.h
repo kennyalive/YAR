@@ -13,6 +13,7 @@
 class Camera;
 class Image_Texture;
 struct Scene;
+struct Renderer_Options;
 
 struct MIS_Array_Info {
     int light_array_id = -1;
@@ -50,7 +51,8 @@ struct Thread_Context {
     RNG rng;
     Stratified_Pixel_Sampler pixel_sampler;
 
-    const Scene_Context* scene_context;
+    const Renderer_Options* renderer_options = nullptr;
+    const Scene_Context* scene_context = nullptr;
     Path_Context path_context;
     Shading_Context shading_context;
 

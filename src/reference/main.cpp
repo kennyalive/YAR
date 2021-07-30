@@ -15,6 +15,7 @@ enum Options {
     OPT_RENDER_REGION_H,
     OPT_CROP_IMAGE_BY_RENDER_REGION,
     OPT_RENDER_TILE,
+    OPT_RNG_SEED_OFFSET,
 };
 
 static const getopt_option_t option_list[] =
@@ -28,6 +29,7 @@ static const getopt_option_t option_list[] =
     { "h", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_REGION_H, "render region height", "height"},
     { "crop", 0, GETOPT_OPTION_TYPE_NO_ARG, 0, OPT_CROP_IMAGE_BY_RENDER_REGION, "crop image by render region rectangle" },
     { "tile", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_TILE, "render single tile with the given index", "tile index"},
+    { "seedoffset", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RNG_SEED_OFFSET, "this value is added to per-pixel RNG seed", 0},
     GETOPT_OPTIONS_END
 };
 
@@ -101,6 +103,9 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_RENDER_TILE) {
             render_tile_index = atoi(ctx.current_opt_arg);
+        }
+        else if (opt == OPT_RNG_SEED_OFFSET) {
+            options.rng_seed_offset = atoi(ctx.current_opt_arg);
         }
         else {
            ASSERT(!"unknown option");
