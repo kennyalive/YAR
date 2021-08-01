@@ -36,19 +36,26 @@ Light_Sample Environment_Light_Sampler::sample(Vector2 u) const {
     float theta = uv[1] * Pi;
 
     float sin_theta = std::sin(theta);
-
-    // pdf transformation from uv to solid angle measure
     float pdf = transform_pdf_uv_to_solid_angle_measure(pdf_uv, sin_theta);
 
     Vector3 wi = { sin_theta * std::cos(phi), sin_theta * std::sin(phi), std::cos(theta) };
     wi = transform_vector(light->light_to_world, wi);
 
-    ColorRGB Le = environment_map->sample_bilinear(uv, 0, Wrap_Mode::clamp) * light->scale;
+    // Do not filter environment map to ensure that sampled radiance values match pdf distribution map.
+    // When doing filtering it's possible to get high variance (fireflies) when large radiance value
+    // is smeared onto the low pdf region.
+    ColorRGB Le = environment_map->sample_nearest(uv, 0, Wrap_Mode::clamp) * light->scale;
 
     return Light_Sample{ wi, Le, pdf };
 }
 
-ColorRGB Environment_Light_Sampler::get_radiance_for_direction(const Vector3& world_direction) const {
+ColorRGB Environment_Light_Sampler::get_unfiltered_radiance_for_direction(const Vector3& world_direction) const {
+    Vector3 env_map_direction = transform_vector(light->world_to_light, world_direction);
+    Vector2 uv = get_uv_from_direction(env_map_direction);
+    return environment_map->sample_nearest(uv, 0, Wrap_Mode::clamp) * light->scale;
+}
+
+ColorRGB Environment_Light_Sampler::get_filtered_radiance_for_direction(const Vector3& world_direction) const {
     Vector3 env_map_direction = transform_vector(light->world_to_light, world_direction);
     Vector2 uv = get_uv_from_direction(env_map_direction);
     return environment_map->sample_bilinear(uv, 0, Wrap_Mode::clamp) * light->scale;

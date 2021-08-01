@@ -237,7 +237,10 @@ static ColorRGB direct_lighting_from_environment_light(
 
         if (!f.is_black()) {
             ASSERT(bsdf_pdf > 0.f);
-            ColorRGB Le = scene_ctx.environment_light_sampler.get_radiance_for_direction(wi);
+            // Do not filter environment map to ensure that sampled radiance values match pdf distribution map.
+            // When doing filtering it's possible to get high variance (fireflies) when large radiance value
+            // is smeared onto the low pdf region.
+            ColorRGB Le = scene_ctx.environment_light_sampler.get_unfiltered_radiance_for_direction(wi);
 
             if (!Le.is_black()) {
                 Ray light_visibility_ray{shading_ctx.position, wi};
@@ -279,7 +282,7 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
 
     if (!trace_ray(thread_ctx, ray, &auxilary_rays)) {
         if (scene_ctx.has_environment_light_sampler) {
-            return scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
+            return scene_ctx.environment_light_sampler.get_filtered_radiance_for_direction(shading_ctx.miss_ray.direction);
         }
         return Color_Black;
     }

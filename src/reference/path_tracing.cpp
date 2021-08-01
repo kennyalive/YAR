@@ -33,7 +33,7 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
             if (hit_found)
                 L += path_coeff * get_emitted_radiance(thread_ctx);
             else if (scene_ctx.has_environment_light_sampler)
-                L += path_coeff * scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
+                L += path_coeff * scene_ctx.environment_light_sampler.get_filtered_radiance_for_direction(shading_ctx.miss_ray.direction);
 
             // check if we reached max bounce limit due to bounces on specular surfaces
             if (path_ctx.bounce_count == max_bounces)
@@ -45,7 +45,7 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
             if (hit_found)
                 L += get_emitted_radiance(thread_ctx);
             else if (scene_ctx.has_environment_light_sampler)
-                L += scene_ctx.environment_light_sampler.get_radiance_for_direction(shading_ctx.miss_ray.direction);
+                L += scene_ctx.environment_light_sampler.get_filtered_radiance_for_direction(shading_ctx.miss_ray.direction);
         }
 
         // About area light check: in current design we don't have scattering on area light

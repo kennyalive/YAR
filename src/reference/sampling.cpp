@@ -176,20 +176,11 @@ void Distribution_2D::initialize_from_latitude_longitude_radiance_map(const Imag
 
     for (int y = 0; y < image.height; y++) {
         float sin_theta = std::sin((y + 0.5f) / image.height * Pi);
-
-        // We compute (u, v) texture coordinates for positions in the middle between texels
-        // (the texels are positioned at half-integer grid), thus blurring four neighbors.
-        // The full explanation can be found in pbrt 3 book, section 14.2.4 Infinite Area Lights:
-        // http://www.pbr-book.org/3ed-2018/Light_Transport_I_Surface_Reflection/Sampling_Light_Sources.html#InfiniteAreaLights
-        // The idea is that for black texels that have non-black neighbors we have to ensure that
-        // resulting pdf is not zero for corresponding region.
-        float v = float(y) / image.height;
+        float v = (y + 0.5f) / image.height;
 
         for (int x = 0; x < image.width; x++, p++) {
-            float u = float(x) / image.width;
-
-            ColorRGB radiance = env_map.sample_bilinear({u, v}, 0, Wrap_Mode::clamp);
-
+            float u = (x + 0.5f) / image.width;
+            ColorRGB radiance = env_map.sample_nearest({u, v}, 0, Wrap_Mode::clamp);
             // Modify luminance-based pdf by multiplying by sin_theta to take into
             // account that sphere slices have area that is proportional to sin_theta.
             // Without this we will oversample when we move towards poles (still the result
