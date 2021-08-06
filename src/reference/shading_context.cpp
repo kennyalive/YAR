@@ -120,13 +120,13 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
             float plane_d = -dot(normal, position);
 
             float tx = ray_plane_intersection(auxilary_rays->ray_dx_offset, normal, plane_d);
-            if (tx != Infinity) {
+            if (std::abs(tx) != Infinity) {
                 Vector3 px = auxilary_rays->ray_dx_offset.get_point(tx);
                 dpdx = px - position;
             }
 
             float ty = ray_plane_intersection(auxilary_rays->ray_dy_offset, normal, plane_d);
-            if (ty != Infinity) {
+            if (std::abs(ty) != Infinity) {
                 Vector3 py = auxilary_rays->ray_dy_offset.get_point(ty);
                 dpdy = py - position;
             }
