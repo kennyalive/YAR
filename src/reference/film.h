@@ -36,6 +36,7 @@ struct Film {
 
     std::mutex pixels_mutex;
     std::vector<Film_Pixel> pixels;
+    int finished_tile_count = 0;
 
     Film(Bounds2i render_region, Film_Filter filter);
     int get_tile_count() const { return tile_grid_size.x * tile_grid_size.y; }
