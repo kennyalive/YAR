@@ -415,31 +415,39 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
     {
         view_point.set_column(3, Vector3(&pos.x));
 
-        // Assuming left-handed coordinate system (pbrt convention), the pbrt-parser library
-        // does the following setup of the camera orientation vectors:
-        // rot.vx - right vector
-        // rot.vy - up vector
-        // rot.vz - forward vector
+        // Camera orientation in pbrt's left-handed coordinate system.
         Vector3 right = Vector3(&rot.vx.x);
         Vector3 up = Vector3(&rot.vy.x);
         Vector3 forward = Vector3(&rot.vz.x);
 
         scene->z_is_up = std::abs(up.z) > std::abs(up.y);
 
-        view_point.set_column(0, right);
+        // Setup camera in right-handed coordinate system according to conventions from "camera.h".
+        //
+        // This type of code might be non-trivial to understand just by eyeballing it. One way to
+        // validate how right/up/forward directions from left-handed CS can be used to construct
+        // camera basis in right-handed CS is to draw left-handed coordinate system with a reference
+        // object and then check how right/up/forward vectors should be used in right-handed CS to
+        // get the same view with the only exception that it will be flipped horizontally
+        // (due to different handedness).
+        //
+        // We don't setup camera in a way that ensures that final image is not flipped horizontally
+        // comparing to pbrt output - that's expected behavior that different CS handedness produces
+        // mirrored image. It worth to note that it's possible to construct camera basis that
+        // will mirror the image (so it will match pbrt) but that's quite confusing during development
+        // because of unintuitive relationship between object coordinates and its image plane positioning.
+        //
+        // If there is a need to have the same output as pbrt then there is a --flip command line
+        // option. Another solution is to flip the image by external tool.
         if (scene->z_is_up) {
+            view_point.set_column(0, -right);
+            view_point.set_column(1, forward);
             view_point.set_column(2, up);
-            Vector3 y_axis = -forward;
-            // By inverting y_axis we effectively generate rays in the opposite direction
-            // along y axis so the result matches PBRT output which uses LH convention.
-            view_point.set_column(1, -y_axis);
         }
         else { // y_is_up
+            view_point.set_column(0, -right);
             view_point.set_column(1, up);
-            Vector3 z_axis = forward;
-            // By inverting z_axis we effectively generate rays in the opposite direction
-            // along z axis so the result matches PBRT output which uses LH convention.
-            view_point.set_column(2, -z_axis);
+            view_point.set_column(2, -forward);
         }
     }
 
