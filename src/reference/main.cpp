@@ -16,6 +16,7 @@ enum Options {
     OPT_CROP_IMAGE_BY_RENDER_REGION,
     OPT_RENDER_TILE,
     OPT_RNG_SEED_OFFSET,
+    OPT_FLIP_HORIZONTALLY,
 };
 
 static const getopt_option_t option_list[] =
@@ -28,8 +29,9 @@ static const getopt_option_t option_list[] =
     { "w", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_REGION_W, "render region width", "width"},
     { "h", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_REGION_H, "render region height", "height"},
     { "crop", 0, GETOPT_OPTION_TYPE_NO_ARG, 0, OPT_CROP_IMAGE_BY_RENDER_REGION, "crop image by render region rectangle" },
-    { "tile", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_TILE, "render single tile with the given index", "tile index"},
-    { "seedoffset", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RNG_SEED_OFFSET, "this value is added to per-pixel RNG seed", 0},
+    { "tile", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_TILE, "render single tile with the given index", "tile_index"},
+    { "seedoffset", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RNG_SEED_OFFSET, "this value is added to per-pixel RNG seed", "integer_number"},
+    { "flip", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_FLIP_HORIZONTALLY, "flip image horizontally" },
     GETOPT_OPTIONS_END
 };
 
@@ -106,6 +108,9 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_RNG_SEED_OFFSET) {
             options.rng_seed_offset = atoi(ctx.current_opt_arg);
+        }
+        else if (opt == OPT_FLIP_HORIZONTALLY) {
+            options.flip_image_horizontally = true;
         }
         else {
            ASSERT(!"unknown option");

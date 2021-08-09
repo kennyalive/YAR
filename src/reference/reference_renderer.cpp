@@ -423,5 +423,17 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         image_size = scene.image_resolution;
     }
 
+    if (options.flip_image_horizontally) {
+        ColorRGB* row = image.data();
+        for (int y = 0; y < image_size.y; y++) {
+            ColorRGB* here = row;
+            ColorRGB* there = row + image_size.x - 1;
+            while (here < there) {
+                std::swap(*here++, *there--);
+            }
+            row += image_size.x;
+        }
+    }
+
     write_exr_image("image.exr",  image.data(), image_size.x, image_size.y);
 }
