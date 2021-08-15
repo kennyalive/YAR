@@ -35,6 +35,9 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="..\src\reference\specular_scattering.cpp" />
+    <ClCompile Include="..\src\reference\test_watertightness.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
