@@ -80,14 +80,16 @@ double get_base_cpu_frequency_ghz() {
     Timestamp t;
     while (elapsed_milliseconds(t) < 1000) {}
     auto rdtsc_end = __rdtsc();
-
     double frequency = ((rdtsc_end - rdtsc_start) / 1'000'000) / 1000.0;
     return frequency;
 }
 
 double get_cpu_frequency_ghz() {
-    //return get_base_cpu_frequency_ghz();
-    return 4.5;
+#ifdef CPU_FREQ_GHZ
+    return CPU_FREQ_GHZ;
+#else
+    return get_base_cpu_frequency_ghz();
+#endif
 }
 
 int64_t elapsed_milliseconds(Timestamp timestamp) {

@@ -22,9 +22,6 @@
     <ClCompile Include="..\src\reference\test_kdtree.cpp">
       <Filter>tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\reference\test_triangle_intersection.cpp">
-      <Filter>tests</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\reference\test_sampling.cpp">
       <Filter>tests</Filter>
     </ClCompile>
@@ -36,6 +33,9 @@
     </ClCompile>
     <ClCompile Include="..\src\reference\specular_scattering.cpp" />
     <ClCompile Include="..\src\reference\test_watertightness.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\reference\benchmark_triangle_intersection.cpp">
       <Filter>tests</Filter>
     </ClCompile>
   </ItemGroup>
