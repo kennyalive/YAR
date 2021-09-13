@@ -9,14 +9,14 @@
 // Möller-Trumbore triangle intersection algorithm.
 // https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
 //
-float intersect_triangle_moller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2) {
+float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2)
+{
     Vector3 edge1 = p1 - p0;
     Vector3 edge2 = p2 - p0;
 
     Vector3 p = cross(ray.direction, edge2);
     float divisor = dot(edge1, p);
 
-    // todo: do we need to check against epsilon for better numeric stability?
     if (divisor == 0.0)
         return Infinity;
 
@@ -42,6 +42,70 @@ float intersect_triangle_moller_trumbore(const Ray& ray, const Vector3& p0, cons
     return distance;
 }
 
+//
+// Sven Woop, Carsten Benthin, and Ingo Wald, Watertight Ray/Triangle Intersection, 
+// Journal of Computer Graphics Techniques (JCGT), vol. 2, no. 1, 65-82, 2013
+// http://jcgt.org/published/0002/01/05/
+//
+float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float t_max, float& b1, float& b2)
+{
+    const int kx_lookup[3] = {1, 2, 0};
+    const int ky_lookup[3] = {2, 0, 1};
+    const int kz = ray.direction.abs().max_dimension();
+    const int kx = kx_lookup[kz];
+    const int ky = ky_lookup[kz];
+
+    Vector3 direction = ray.direction.permutation(kx, ky, kz);
+    float sx = -direction.x / direction.z;
+    float sy = -direction.y / direction.z;
+    float sz = 1.f / direction.z;
+
+    const Vector3 a = (p0 - ray.origin).permutation(kx, ky, kz);
+    const Vector3 b = (p1 - ray.origin).permutation(kx, ky, kz);
+    const Vector3 c = (p2 - ray.origin).permutation(kx, ky, kz);
+
+    float ax = a.x + sx * a.z;
+    float ay = a.y + sy * a.z;
+    float bx = b.x + sx * b.z;
+    float by = b.y + sy * b.z;
+    float cx = c.x + sx * c.z;
+    float cy = c.y + sy * c.z;
+
+    float u = bx*cy - cx*by;
+    float v = cx*ay - ax*cy;
+    float w = ax*by - bx*ay;
+
+    if (u == 0.f || v == 0.f || w == 0.f) {
+        u = float(double(bx)*double(cy) - double(cx)*double(by));
+        v = float(double(cx)*double(ay) - double(ax)*double(cy));
+        w = float(double(ax)*double(by) - double(bx)*double(ay));
+    }
+
+    if ((u < 0 || v < 0 || w < 0) && (u > 0 || v > 0 || w > 0))
+        return Infinity;
+
+    float det = u + v + w;
+    if (det == 0.f)
+        return Infinity;
+
+    float az = sz * a.z;
+    float bz = sz * b.z;
+    float cz = sz * c.z;
+
+    float t_scaled = u*az + v*bz + w*cz;
+    if (det < 0 && (t_scaled > 0 || t_scaled < det * t_max))
+        return Infinity;
+    if (det > 0 && (t_scaled < 0 || t_scaled > det * t_max))
+        return Infinity;
+
+    float inv_det = 1.f / det;
+    b1 = v * inv_det;
+    b2 = w * inv_det;
+    float t = inv_det * t_scaled;
+    ASSERT(t >= 0 && b1 >= 0 && b2 >= 0);
+    return t;
+}
+
 void intersect_geometric_primitive(const Ray& ray,
     const Geometries* geometries, Geometry_Handle geometry, int primitive_index,
     Intersection& intersection)
@@ -52,7 +116,7 @@ void intersect_geometric_primitive(const Ray& ray,
         mesh->get_triangle(primitive_index, p0, p1, p2);
 
         float b1, b2;
-        float t = intersect_triangle_moller_trumbore(ray, p0, p1, p2, b1, b2);
+        float t = intersect_triangle_möller_trumbore(ray, p0, p1, p2, b1, b2);
 
         if (t < intersection.t) {
             intersection.t = t;

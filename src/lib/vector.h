@@ -117,6 +117,14 @@ struct Vector3 {
     Vector3 abs() const {
         return Vector3(std::abs(x), std::abs(y), std::abs(z));
     }
+
+    int max_dimension() const {
+        return (x > y) ? (x > z ? 0 : 2) : (y > z ? 1 : 2);
+    }
+
+    Vector3 permutation(int kx, int ky, int kz) const {
+        return Vector3{(&x)[kx], (&x)[ky], (&x)[kz]};
+    }
 };
 
 constexpr Vector3 Vector3_Zero = Vector3(0.f);

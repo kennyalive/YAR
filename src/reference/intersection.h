@@ -6,7 +6,8 @@ struct Intersection;
 struct Ray;
 struct Scene_Object;
 
-float intersect_triangle_moller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2);
+float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2);
+float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float t_max, float& b1, float& b2);
 
 // Intersection test between a ray and a geometric primitive (i.e. a triangle).
 // The ray's parametric range is restricted to the half-open interval [0, t_max),
