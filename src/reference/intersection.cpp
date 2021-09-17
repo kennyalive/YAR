@@ -116,7 +116,7 @@ void intersect_geometric_primitive(const Ray& ray,
         mesh->get_triangle(primitive_index, p0, p1, p2);
 
         float b1, b2;
-        float t = intersect_triangle_möller_trumbore(ray, p0, p1, p2, b1, b2);
+        float t = intersect_triangle_watertight(ray, p0, p1, p2, b1, b2);
 
         if (t < intersection.t) {
             intersection.t = t;
