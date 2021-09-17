@@ -13,12 +13,10 @@ void benchmark_triangle_intersection()
     const int N = 50'000'000;
     const double cpu_freq_ghz = get_cpu_frequency_ghz();
 
-    printf("-----\n");
+    printf("-------------\n");
     printf("Benchmark: triangle_intersection\n");
     printf("Benchmark measures time to shoot %.1fM rays against a triangle\n", N / 1e6f);
     printf("Benchmark assumes CPU frequency is %.2f GHz\n", cpu_freq_ghz);
-    printf("-----\n");
-
     printf("Möller-Trumbore algorithm:\n");
     {
         Timestamp t;

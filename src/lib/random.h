@@ -7,6 +7,11 @@
 struct RNG {
     pcg32_random_t pcg_state;
 
+    RNG()
+    {
+        init(0, 0);
+    }
+
     void init(uint64_t init_state, uint64_t stream_id) {
         pcg32_srandom_r(&pcg_state, init_state, stream_id);
     }

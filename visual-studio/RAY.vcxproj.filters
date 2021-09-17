@@ -38,6 +38,9 @@
     <ClCompile Include="..\src\reference\benchmark_triangle_intersection.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\reference\test_triangle_intersection.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />

@@ -4,6 +4,8 @@
 #include "kdtree_builder.h"
 
 void test_watertightness() {
+    printf("-------------\n");
+    printf("Test: test_watertightness\n");
     printf("Testing watertightness properties of triangle intersection algorithm (Möller–Trumbore)...\n");
 
     float radius = 0.5f;

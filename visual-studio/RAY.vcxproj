@@ -118,6 +118,7 @@
     <ClCompile Include="..\src\reference\test_random.cpp" />
     <ClCompile Include="..\src\reference\test_sampling.cpp" />
     <ClCompile Include="..\src\reference\benchmark_triangle_intersection.cpp" />
+    <ClCompile Include="..\src\reference\test_triangle_intersection.cpp" />
     <ClCompile Include="..\src\reference\test_watertightness.cpp" />
     <ClCompile Include="..\src\std.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
