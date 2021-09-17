@@ -37,7 +37,7 @@ void test_triangle_intersection()
         // Watertight algorithm.
         {
             float isect_b1, isect_b2;
-            float t = intersect_triangle_watertight(ray, p0, p1, p2, Infinity, isect_b1, isect_b2);
+            float t = intersect_triangle_watertight(ray, p0, p1, p2, isect_b1, isect_b2);
             if (t != Infinity) {
                 Vector3 isect_p = (1.f - isect_b1 - isect_b2)*p0 + isect_b1*p1 + isect_b2*p2;
                 Vector3 isect_p2 = ray.origin + t * ray.direction;

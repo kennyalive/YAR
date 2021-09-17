@@ -41,10 +41,10 @@ void benchmark_triangle_intersection()
         Timestamp t;
         float b1, b2;
         for (int i = 0; i < N/4; i++) {
-            intersect_triangle_watertight(ray, p0, p1, p2, Infinity, b1, b2);
-            intersect_triangle_watertight(ray, p0, p1, p2, Infinity, b1, b2);
-            intersect_triangle_watertight(ray, p0, p1, p2, Infinity, b1, b2);
-            intersect_triangle_watertight(ray, p0, p1, p2, Infinity, b1, b2);
+            intersect_triangle_watertight(ray, p0, p1, p2, b1, b2);
+            intersect_triangle_watertight(ray, p0, p1, p2, b1, b2);
+            intersect_triangle_watertight(ray, p0, p1, p2, b1, b2);
+            intersect_triangle_watertight(ray, p0, p1, p2, b1, b2);
         }
         int64_t ns = elapsed_nanoseconds(t);
 

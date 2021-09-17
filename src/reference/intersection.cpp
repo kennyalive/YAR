@@ -47,7 +47,7 @@ float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, cons
 // Journal of Computer Graphics Techniques (JCGT), vol. 2, no. 1, 65-82, 2013
 // http://jcgt.org/published/0002/01/05/
 //
-float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float t_max, float& b1, float& b2)
+float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2)
 {
     const int kx_lookup[3] = {1, 2, 0};
     const int ky_lookup[3] = {2, 0, 1};
@@ -93,9 +93,9 @@ float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vec
     float cz = sz * c.z;
 
     float t_scaled = u*az + v*bz + w*cz;
-    if (det < 0 && (t_scaled > 0 || t_scaled < det * t_max))
+    if (det < 0 && t_scaled > 0)
         return Infinity;
-    if (det > 0 && (t_scaled < 0 || t_scaled > det * t_max))
+    if (det > 0 && t_scaled < 0)
         return Infinity;
 
     float inv_det = 1.f / det;
