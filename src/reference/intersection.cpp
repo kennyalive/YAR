@@ -49,11 +49,9 @@ float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, cons
 //
 float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2)
 {
-    const int kx_lookup[3] = {1, 2, 0};
-    const int ky_lookup[3] = {2, 0, 1};
     const int kz = ray.direction.abs().max_dimension();
-    const int kx = kx_lookup[kz];
-    const int ky = ky_lookup[kz];
+    const int kx = (kz == 2 ? 0 : kz + 1);
+    const int ky = (kz == 0 ? 2 : kz - 1);
 
     Vector3 direction = ray.direction.permutation(kx, ky, kz);
     float sx = -direction.x / direction.z;
