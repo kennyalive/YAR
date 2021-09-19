@@ -6,8 +6,8 @@ struct Intersection;
 struct Ray;
 struct Scene_Object;
 
-float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2);
-float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2);
+float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, Vector3* barycentrics);
+float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, Vector3* barycentrics);
 
 // Intersection test between a ray and a geometric primitive (i.e. a triangle).
 // The ray's parametric range is restricted to the half-open interval [0, t_max),
@@ -20,10 +20,9 @@ void intersect_geometric_primitive(
     Intersection& intersection);
 
 struct Triangle_Intersection {
-    float b1;
-    float b2;
-    const Triangle_Mesh* mesh;
-    int triangle_index;
+    const Triangle_Mesh* mesh = nullptr;
+    Vector3 barycentrics;
+    int triangle_index = -1;
 };
 
 struct Intersection {
@@ -37,7 +36,5 @@ struct Intersection {
     // It is null for Geometry_KdTree and it is non-null for Scene_KdTree.
     const Scene_Object* scene_object = nullptr;
 
-    union {
-        Triangle_Intersection triangle_intersection;
-    };
+    Triangle_Intersection triangle_intersection;
 };

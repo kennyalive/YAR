@@ -20,12 +20,12 @@ void benchmark_triangle_intersection()
     printf("Möller-Trumbore algorithm:\n");
     {
         Timestamp t;
-        float b1, b2;
+        Vector3 b;
         for (int i = 0; i < N/4; i++) {
-            intersect_triangle_möller_trumbore(ray, p0, p1, p2, b1, b2);
-            intersect_triangle_möller_trumbore(ray, p0, p1, p2, b1, b2);
-            intersect_triangle_möller_trumbore(ray, p0, p1, p2, b1, b2);
-            intersect_triangle_möller_trumbore(ray, p0, p1, p2, b1, b2);
+            intersect_triangle_möller_trumbore(ray, p0, p1, p2, &b);
+            intersect_triangle_möller_trumbore(ray, p0, p1, p2, &b);
+            intersect_triangle_möller_trumbore(ray, p0, p1, p2, &b);
+            intersect_triangle_möller_trumbore(ray, p0, p1, p2, &b);
         }
         int64_t ns = elapsed_nanoseconds(t);
 
@@ -39,12 +39,12 @@ void benchmark_triangle_intersection()
     printf("Watertight algorithm:\n");
     {
         Timestamp t;
-        float b1, b2;
+        Vector3 b;
         for (int i = 0; i < N/4; i++) {
-            intersect_triangle_watertight(ray, p0, p1, p2, b1, b2);
-            intersect_triangle_watertight(ray, p0, p1, p2, b1, b2);
-            intersect_triangle_watertight(ray, p0, p1, p2, b1, b2);
-            intersect_triangle_watertight(ray, p0, p1, p2, b1, b2);
+            intersect_triangle_watertight(ray, p0, p1, p2, &b);
+            intersect_triangle_watertight(ray, p0, p1, p2, &b);
+            intersect_triangle_watertight(ray, p0, p1, p2, &b);
+            intersect_triangle_watertight(ray, p0, p1, p2, &b);
         }
         int64_t ns = elapsed_nanoseconds(t);
 

@@ -9,7 +9,7 @@
 // Möller-Trumbore triangle intersection algorithm.
 // https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
 //
-float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2)
+float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, Vector3* barycentrics)
 {
     Vector3 edge1 = p1 - p0;
     Vector3 edge2 = p2 - p0;
@@ -21,17 +21,18 @@ float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, cons
         return Infinity;
 
     const float inv_divisor = 1.0f / divisor;
+    Vector3 b;
 
     // compute barycentric coordinate b1
     Vector3 t = ray.origin - p0;
-    b1 = inv_divisor * dot(t, p);
-    if (b1 < 0.0 || b1 > 1.0)
+    b[1] = inv_divisor * dot(t, p);
+    if (b[1] < 0.0 || b[1] > 1.0)
         return Infinity;
 
     // compute barycentric coordnate b2
     Vector3 q = cross(t, edge1);
-    b2 = inv_divisor * dot(ray.direction, q);
-    if (b2 < 0.0 || b1 + b2 > 1.0)
+    b[2] = inv_divisor * dot(ray.direction, q);
+    if (b[2] < 0.0 || b[1] + b[2] > 1.0)
         return Infinity;
 
     // compute distance from ray origin to intersection point
@@ -39,6 +40,8 @@ float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, cons
     if (distance < 0.0)
         return Infinity;
 
+    b[0] = 1.f - (b[1] + b[2]);
+    *barycentrics = b;
     return distance;
 }
 
@@ -47,7 +50,7 @@ float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, cons
 // Journal of Computer Graphics Techniques (JCGT), vol. 2, no. 1, 65-82, 2013
 // http://jcgt.org/published/0002/01/05/
 //
-float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, float& b1, float& b2)
+float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, Vector3* barycentrics)
 {
     const int kz = ray.direction.abs().max_dimension();
     const int kx = (kz == 2 ? 0 : kz + 1);
@@ -107,10 +110,11 @@ float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vec
     }
 
     float inv_det = 1.f / det;
-    b1 = v * inv_det;
-    b2 = w * inv_det;
+    barycentrics->x = u * inv_det;
+    barycentrics->y = v * inv_det;
+    barycentrics->z = w * inv_det;
     float t = inv_det * t_scaled;
-    ASSERT(t >= 0 && b1 >= 0 && b2 >= 0);
+    ASSERT(t >= 0);
     return t;
 }
 
@@ -123,14 +127,13 @@ void intersect_geometric_primitive(const Ray& ray,
         Vector3 p0, p1, p2;
         mesh->get_triangle(primitive_index, p0, p1, p2);
 
-        float b1, b2;
-        float t = intersect_triangle_watertight(ray, p0, p1, p2, b1, b2);
+        Vector3 b;
+        float t = intersect_triangle_watertight(ray, p0, p1, p2, &b);
 
         if (t < intersection.t) {
             intersection.t = t;
             intersection.geometry_type = geometry.type;
-            intersection.triangle_intersection.b1 = b1;
-            intersection.triangle_intersection.b2 = b2;
+            intersection.triangle_intersection.barycentrics = b;
             intersection.triangle_intersection.mesh = mesh;
             intersection.triangle_intersection.triangle_index = primitive_index;
         }

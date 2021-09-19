@@ -25,28 +25,28 @@ struct Triangle_Mesh {
         p2 = vertices[pi[2]];
     }
 
-    Vector3 get_position(int triangle_index, float b1, float b2) const {
+    Vector3 get_position(int triangle_index, const Vector3& barycentrics) const {
         const int* pi = &indices[triangle_index * 3];
         Vector3 p0 = vertices[pi[0]];
         Vector3 p1 = vertices[pi[1]];
         Vector3 p2 = vertices[pi[2]];
-        return (1.f - b1 - b2)*p0 + b1*p1 + b2*p2;
+        return barycentrics[0]*p0 + barycentrics[1]*p1 + barycentrics[2]*p2;
     }
 
-    Vector3 get_normal(int triangle_index, float b1, float b2) const {
+    Vector3 get_normal(int triangle_index, const Vector3& barycentrics) const {
         const int* pi = &indices[triangle_index * 3];
         Vector3 n0 = normals[pi[0]];
         Vector3 n1 = normals[pi[1]];
         Vector3 n2 = normals[pi[2]];
-        return ((1.f - b1 - b2)*n0 + b1 * n1 + b2 * n2).normalized();
+        return (barycentrics[0]*n0 + barycentrics[1]*n1 + barycentrics[2]*n2).normalized();
     }
     
-    Vector2 get_uv(int triangle_index, float b1, float b2) const {
+    Vector2 get_uv(int triangle_index, const Vector3& barycentrics) const {
         const int* pi = &indices[triangle_index * 3];
         Vector2 uv0 = uvs[pi[0]];
         Vector2 uv1 = uvs[pi[1]];
         Vector2 uv2 = uvs[pi[2]];
-        return (1.f - b1 - b2)*uv0 + b1*uv1 + b2*uv2;
+        return barycentrics[0]*uv0 + barycentrics[1]*uv1 + barycentrics[2]*uv2;
     }
 
     void get_uvs(int triangle_index, Vector2 uv[3]) const {

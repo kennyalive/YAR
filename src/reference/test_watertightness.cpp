@@ -6,7 +6,7 @@
 void test_watertightness() {
     printf("-------------\n");
     printf("Test: test_watertightness\n");
-    printf("Testing watertightness properties of triangle intersection algorithm (Möller–Trumbore)...\n");
+    printf("Testing intersect_triangle_watertight() for watertightness...\n");
 
     float radius = 0.5f;
     Geometries geometries;

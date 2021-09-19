@@ -170,9 +170,9 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
 }
 
 void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Intersection& ti) {
-    position = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
-    normal = ti.mesh->get_normal(ti.triangle_index, ti.b1, ti.b2);
-    uv = ti.mesh->get_uv(ti.triangle_index, ti.b1, ti.b2);
+    position = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
+    normal = ti.mesh->get_normal(ti.triangle_index, ti.barycentrics);
+    uv = ti.mesh->get_uv(ti.triangle_index, ti.barycentrics);
 
     Vector3 p0, p1, p2;
     ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);

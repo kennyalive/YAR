@@ -36,10 +36,10 @@ void test_triangle_intersection()
 
         // Watertight algorithm.
         {
-            float isect_b1, isect_b2;
-            float t = intersect_triangle_watertight(ray, p0, p1, p2, isect_b1, isect_b2);
+            Vector3 b;
+            float t = intersect_triangle_watertight(ray, p0, p1, p2, &b);
             if (t != Infinity) {
-                Vector3 isect_p = (1.f - isect_b1 - isect_b2)*p0 + isect_b1*p1 + isect_b2*p2;
+                Vector3 isect_p = b[0]*p0 + b[1]*p1 + b[2]*p2;
                 Vector3 isect_p2 = ray.origin + t * ray.direction;
                 float delta = (isect_p - isect_p2).length();
                 fail_count_watertight += (delta > 1e-3f); // 1mm precision for ~1m sized triangles
@@ -47,10 +47,10 @@ void test_triangle_intersection()
         }
         // Möller-trumbore algorithm.
         {
-            float isect_b1, isect_b2;
-            float t = intersect_triangle_möller_trumbore(ray, p0, p1, p2, isect_b1, isect_b2);
+            Vector3 b;
+            float t = intersect_triangle_möller_trumbore(ray, p0, p1, p2, &b);
             if (t != Infinity) {
-                Vector3 isect_p = (1.f - isect_b1 - isect_b2)*p0 + isect_b1*p1 + isect_b2*p2;
+                Vector3 isect_p = b[0]*p0 + b[1]*p1 + b[2]*p2;
                 Vector3 isect_p2 = ray.origin + t * ray.direction;
                 float delta = (isect_p - isect_p2).length();
                 fail_count_möller_trumbore += (delta > 1e-3f); // 1mm precision for ~1m sized triangles

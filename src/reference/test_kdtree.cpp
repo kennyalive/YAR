@@ -96,7 +96,7 @@ static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
 
         if (hit_found) {
             const Triangle_Intersection& ti = isect.triangle_intersection;
-            Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
+            Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
 
             Vector3 p0, p1, p2;
             ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);
@@ -172,7 +172,7 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
 
         if (kdtree_intersection.t != Infinity) {
             const Triangle_Intersection& ti = kdtree_intersection.triangle_intersection;
-            Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
+            Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
 
             Vector3 p0, p1, p2;
             ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);

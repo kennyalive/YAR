@@ -121,7 +121,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
             if (found_isect && isect.scene_object->area_light == light_handle) {
                 ASSERT(isect.geometry_type == Geometry_Type::triangle_mesh);
                 const Triangle_Intersection& ti = isect.triangle_intersection;
-                Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.b1, ti.b2);
+                Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
                 float d = (p - shading_ctx.position).length();
 
                 // We already checked that the light is oriented towards the surface
