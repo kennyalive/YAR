@@ -61,39 +61,39 @@ float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vec
     float sy = -direction.y / direction.z;
     float sz = 1.f / direction.z;
 
-    const Vector3 a = (p0 - ray.origin).permutation(kx, ky, kz);
-    const Vector3 b = (p1 - ray.origin).permutation(kx, ky, kz);
-    const Vector3 c = (p2 - ray.origin).permutation(kx, ky, kz);
+    const Vector3 p0t = (p0 - ray.origin).permutation(kx, ky, kz);
+    const Vector3 p1t = (p1 - ray.origin).permutation(kx, ky, kz);
+    const Vector3 p2t = (p2 - ray.origin).permutation(kx, ky, kz);
 
-    float ax = a.x + sx * a.z;
-    float ay = a.y + sy * a.z;
-    float bx = b.x + sx * b.z;
-    float by = b.y + sy * b.z;
-    float cx = c.x + sx * c.z;
-    float cy = c.y + sy * c.z;
+    float x0 = p0t.x + sx * p0t.z;
+    float y0 = p0t.y + sy * p0t.z;
+    float x1 = p1t.x + sx * p1t.z;
+    float y1 = p1t.y + sy * p1t.z;
+    float x2 = p2t.x + sx * p2t.z;
+    float y2 = p2t.y + sy * p2t.z;
 
-    float u = bx*cy - cx*by;
-    float v = cx*ay - ax*cy;
-    float w = ax*by - bx*ay;
+    float e0 = x1*y2 - y1*x2;
+    float e1 = x2*y0 - y2*x0;
+    float e2 = x0*y1 - y0*x1;
 
-    if (u == 0.f || v == 0.f || w == 0.f) {
-        u = float(double(bx)*double(cy) - double(cx)*double(by));
-        v = float(double(cx)*double(ay) - double(ax)*double(cy));
-        w = float(double(ax)*double(by) - double(bx)*double(ay));
+    if (e0 == 0.f || e1 == 0.f || e2 == 0.f) {
+        e0 = float(double(x1)*double(y2) - double(y1)*double(x2));
+        e1 = float(double(x2)*double(y0) - double(y2)*double(x0));
+        e2 = float(double(x0)*double(y1) - double(y0)*double(x1));
     }
 
-    if ((u < 0 || v < 0 || w < 0) && (u > 0 || v > 0 || w > 0))
+    if ((e0 < 0 || e1 < 0 || e2 < 0) && (e0 > 0 || e1 > 0 || e2 > 0))
         return Infinity;
 
-    float det = u + v + w;
+    float det = e0 + e1 + e2;
     if (det == 0.f)
         return Infinity;
 
-    float az = sz * a.z;
-    float bz = sz * b.z;
-    float cz = sz * c.z;
+    float z0 = sz * p0t.z;
+    float z1 = sz * p1t.z;
+    float z2 = sz * p2t.z;
 
-    float t_scaled = u*az + v*bz + w*cz;
+    float t_scaled = e0*z0 + e1*z1 + e2*z2;
 
     // This following code is more efficient version of this snippet:
     //    if (det < 0 && t_scaled > 0 || det > 0 && t_scaled < 0) return Infinity;
@@ -110,11 +110,12 @@ float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vec
     }
 
     float inv_det = 1.f / det;
-    barycentrics->x = u * inv_det;
-    barycentrics->y = v * inv_det;
-    barycentrics->z = w * inv_det;
     float t = inv_det * t_scaled;
     ASSERT(t >= 0);
+
+    barycentrics->x = e0 * inv_det;
+    barycentrics->y = e1 * inv_det;
+    barycentrics->z = e2 * inv_det;
     return t;
 }
 
