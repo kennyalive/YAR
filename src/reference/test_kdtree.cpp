@@ -19,7 +19,7 @@ namespace {
 class Ray_Generator {
 public:
     Ray_Generator(const Bounding_Box& mesh_bounds);
-    Ray generate_ray(const Vector3& last_hit, float last_hit_epsilon);
+    Ray generate_ray(const Vector3& last_hit_position, const Vector3& last_hit_normal);
 
 private:
     RNG rng;
@@ -28,46 +28,50 @@ private:
 } // namesapce
 
 Ray_Generator::Ray_Generator(const Bounding_Box& mesh_bounds) {
-    rng.init(0, 0);
-
-    auto diagonal = mesh_bounds.max_p - mesh_bounds.min_p;
+    Vector3 diagonal = mesh_bounds.max_p - mesh_bounds.min_p;
     float delta = 2.0f * diagonal.length();
-
-    auto p_min = mesh_bounds.min_p - Vector3(delta);
-    auto p_max = mesh_bounds.max_p + Vector3(delta);
+    Vector3 p_min = mesh_bounds.min_p - Vector3(delta);
+    Vector3 p_max = mesh_bounds.max_p + Vector3(delta);
     ray_bounds = Bounding_Box(p_min, p_max);
 }
 
-Ray Ray_Generator::generate_ray(const Vector3& last_hit, float last_hit_epsilon) {
-    auto random_from_range = [this](float a, float b) {
-        return a + (b - a) * rng.get_float();
-    };
-
-    // Ray origin.
+Ray Ray_Generator::generate_ray(const Vector3& last_hit_position, const Vector3& last_hit_normal) {
     Vector3 origin;
-    origin.x = random_from_range(ray_bounds.min_p.x, ray_bounds.max_p.x);
-    origin.y = random_from_range(ray_bounds.min_p.y, ray_bounds.max_p.y);
-    origin.z = random_from_range(ray_bounds.min_p.z, ray_bounds.max_p.z);
-
+    Vector3 direction;
     const bool use_last_hit = rng.get_float() < 0.25f;
-    if (use_last_hit)
-        origin = last_hit;
 
-    // Ray direction.
-    auto direction = sample_sphere_uniform(rng.get_vector2());
-    auto len = direction.length();
+    if (use_last_hit) {
+        origin = last_hit_position;
+        direction = sample_hemisphere_uniform(rng.get_vector2());
+        Vector3 axis_a, axis_b;
+        coordinate_system_from_vector(last_hit_normal, &axis_a, &axis_b);
+        Matrix3x4 m = Matrix3x4::identity;
+        m.set_column(0, axis_a);
+        m.set_column(1, axis_b);
+        m.set_column(2, last_hit_normal);
+        direction = transform_vector(m, direction);
+    }
+    else {
+        auto random_from_range = [this](float a, float b) {
+            return a + (b - a) * rng.get_float();
+        };
+        origin.x = random_from_range(ray_bounds.min_p.x, ray_bounds.max_p.x);
+        origin.y = random_from_range(ray_bounds.min_p.y, ray_bounds.max_p.y);
+        origin.z = random_from_range(ray_bounds.min_p.z, ray_bounds.max_p.z);
 
-    if (rng.get_float() < 1.0f / 32.0f && direction.z != 0.0)
-        direction.x = direction.y = 0.0;
-    else if (rng.get_float() < 1.0f / 32.0f && direction.y != 0.0)
-        direction.x = direction.z = 0.0;
-    else if (rng.get_float() < 1.0f / 32.0f && direction.x != 0.0)
-        direction.y = direction.z = 0.0;
-    direction = direction.normalized();
-
-    auto ray = Ray{origin, direction};
-    ray.origin = ray.get_point(use_last_hit ? last_hit_epsilon : 1e-3f);
-    return ray;
+        direction = sample_sphere_uniform(rng.get_vector2());
+        if (rng.get_float() < 1.0f / 32.0f && direction.z != 0.0) {
+            direction.x = direction.y = 0.0;
+        }
+        else if (rng.get_float() < 1.0f / 32.0f && direction.y != 0.0) {
+            direction.x = direction.z = 0.0;
+        }
+        else if (rng.get_float() < 1.0f / 32.0f && direction.x != 0.0) {
+            direction.y = direction.z = 0.0;
+        }
+        direction = direction.normalized();
+    }
+    return Ray{origin, direction};
 }
 
 const int benchmark_ray_count = 1'000'000;
@@ -76,23 +80,19 @@ static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
     const bool debug_rays = false;
     const int debug_ray_count = 4;
 
-    Timestamp tx;
-
-    auto bounds = kdtree.get_bounds();
-
-    Vector3 last_hit = (bounds.min_p + bounds.max_p) * 0.5f;
-    float last_hit_epsilon = 0.0;
-    auto ray_generator = Ray_Generator(bounds);
+    Bounding_Box bounds = kdtree.get_bounds();
+    Vector3 last_hit_position = (bounds.min_p + bounds.max_p) * 0.5f;
+    Vector3 last_hit_normal = Vector3(1, 0, 0);
+    Ray_Generator ray_generator(bounds);
 
     int64_t time_ns = 0;
-
     for (int i = 0; i < benchmark_ray_count; i++) {
-        const Ray ray = ray_generator.generate_ray(last_hit, last_hit_epsilon);
+        const Ray ray = ray_generator.generate_ray(last_hit_position, last_hit_normal);
 
-        Timestamp t2;
+        Timestamp t;
         Intersection isect;
         bool hit_found = kdtree.intersect(ray, isect);
-        time_ns += elapsed_nanoseconds(t2);
+        time_ns += elapsed_nanoseconds(t);
 
         if (hit_found) {
             const Triangle_Intersection& ti = isect.triangle_intersection;
@@ -104,14 +104,15 @@ static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
             ng = dot(ng, -ray.direction) < 0 ? -ng : ng;
             p = offset_ray_origin(p, ng);
 
-            last_hit = p;
-            last_hit_epsilon = isect.t * 1e-3f;
+            last_hit_position = p;
+            last_hit_normal = ng;
         }
 
         if (debug_rays && i < debug_ray_count) {
             if (hit_found)
                 printf("%d: found: %s, last_hit: %.14f %.14f %.14f\n", i,
-                    hit_found ? "true" : "false", last_hit.x, last_hit.y, last_hit.z);
+                    hit_found ? "true" : "false",
+                    last_hit_position.x, last_hit_position.y, last_hit_position.z);
             else
                 printf("%d: found: %s\n", i, hit_found ? "true" : "false");
         }
@@ -121,8 +122,6 @@ static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
     double nanoseconds_per_raycast = time_ns / double(benchmark_ray_count);
     int clocks = static_cast<int>(nanoseconds_per_raycast * cpu_ghz);
     printf("Single raycast time: %.2f nanoseconds, %d clocks\n", nanoseconds_per_raycast, clocks);
-
-    //return static_cast<int>(elapsed_milliseconds(t));
     return (int)(time_ns / 1'000'000);
 }
 
@@ -132,13 +131,12 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
 
     printf("Running triangle mesh kdtree validation... ");
     auto bounds = kdtree.get_bounds();
-    Vector3 last_hit = (bounds.min_p + bounds.max_p) * 0.5f;
-    float last_hit_epsilon = 0.0f;
-
-    auto ray_generator = Ray_Generator(bounds);
+    Vector3 last_hit_position = (bounds.min_p + bounds.max_p) * 0.5f;
+    Vector3 last_hit_normal = Vector3(1, 0, 0);
+    Ray_Generator ray_generator(bounds);
 
     for (int i = 0; i < ray_count; i++) {
-        const Ray ray = ray_generator.generate_ray(last_hit, last_hit_epsilon);
+        const Ray ray = ray_generator.generate_ray(last_hit_position, last_hit_normal);
 
         Intersection kdtree_intersection;
         kdtree.intersect(ray, kdtree_intersection);
@@ -180,11 +178,10 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
             ng = dot(ng, -ray.direction) < 0 ? -ng : ng;
             p = offset_ray_origin(p, ng);
 
-            last_hit = p;
-            last_hit_epsilon = kdtree_intersection.t * 1e-3f;
+            last_hit_position = p;
+            last_hit_normal = ng;
         }
     }
-
     printf("DONE\n");
 }
 
