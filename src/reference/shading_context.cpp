@@ -280,6 +280,7 @@ bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays* 
 {
     Intersection isect;
     if (!thread_ctx.scene_context->acceleration_structure->intersect(ray, isect)) {
+        thread_ctx.shading_context = Shading_Context{};
         thread_ctx.shading_context.miss_ray = ray;
         return false;
     }

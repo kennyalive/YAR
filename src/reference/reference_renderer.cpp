@@ -176,6 +176,7 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
             stream_id += (uint32_t)thread_ctx.renderer_options->rng_seed_offset;
             thread_ctx.rng.init(0, stream_id);
             thread_ctx.pixel_sampler.next_pixel();
+            thread_ctx.shading_context = Shading_Context{};
 
             // variance estimation
             double luminance_sum = 0.0;

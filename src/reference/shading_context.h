@@ -71,10 +71,6 @@ struct Shading_Context {
     Vector3 world_to_local(const Vector3& world_direction) const;
 
 private:
-    // Copying is forbiden because we allow caching of shading context references (BSDF does this).
-    // We still keep private default assignment for internal usage (convenient initialization with default values).
-    Shading_Context& operator=(const Shading_Context&) = default;
-
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti);
     void calculate_UV_derivates();
 };
