@@ -93,7 +93,9 @@ struct Vector3 {
     }
 
     float length_squared() const {
-        return x*x + y*y + z*z;
+        float sq_length = x*x + y*y + z*z;
+        ASSERT(sq_length != std::numeric_limits<float>::infinity());
+        return sq_length;
     }
 
     Vector3 normalized() const {
