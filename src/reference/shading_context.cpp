@@ -136,7 +136,25 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
         dwo_dx = (-auxilary_rays->ray_dx_offset.direction) - wo;
         dwo_dy = (-auxilary_rays->ray_dy_offset.direction) - wo;
 
+        // dudx/dvdx/dudy/dvdy
         calculate_UV_derivates();
+
+        // When differential rays are tracked for a sequence of specular bounces they are becoming
+        // progressively worse approximation for a pixel footprint and so the derived values.
+        // Here's a sanity check that disables differential rays functionality for implausible values.
+        //
+        // NOTE: this code is mostly designed to prevent unstable numerical calculations (which triggers asserts)
+        // but is not a mean to disable bad differential rays early enough.
+        // Raytracer_Config::max_differential_ray_specular_bounces should be used instead.
+        if (std::abs(dudx) > 1e9f ||
+            std::abs(dvdx) > 1e9f ||
+            std::abs(dudy) > 1e9f ||
+            std::abs(dvdy) > 1e9f)
+        {
+            has_auxilary_rays_data = false;
+            dpdx = dpdy = dwo_dx = dwo_dy = Vector3{};
+            dudx = dvdx = dudy = dvdy = 0.f;
+        }
     }
 
     // Adjustment of shading normal invalidates dndu/dndv. For now it's not clear to which degree

@@ -133,11 +133,19 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
     const Specular_Scattering& specular_scattering = shading_ctx.specular_scattering;
     ASSERT(specular_scattering.type != Specular_Scattering_Type::none);
 
+    const int max_differential_ray_specular_bounces = thread_ctx.scene_context->scene->raytracer_config.max_differential_ray_specular_bounces;
+    int differential_ray_bounce_count = 0;
+
     *specular_attenuation = Color_White;
 
     while (specular_scattering.type != Specular_Scattering_Type::none && path_ctx.bounce_count < max_bounces) {
         path_ctx.bounce_count++;
         path_ctx.perfect_specular_bounce_count++;
+
+        differential_ray_bounce_count++;
+        const bool compute_differential_rays =
+            shading_ctx.has_auxilary_rays_data &&
+            differential_ray_bounce_count <= max_differential_ray_specular_bounces;
 
         *specular_attenuation *= specular_scattering.scattering_coeff;
 
@@ -147,7 +155,7 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
         if (specular_scattering.type == Specular_Scattering_Type::specular_reflection) {
             scattered_ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
 
-            if (shading_ctx.has_auxilary_rays_data)
+            if (compute_differential_rays)
                 scattered_auxilary_rays = specularly_reflect_auxilary_rays(shading_ctx, scattered_ray);
         }
         else {
@@ -157,7 +165,7 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
             const bool refracted = refract(shading_ctx.wo, shading_ctx.normal, eta, &scattered_ray.direction);
             ASSERT(refracted); // specular_transmission event should never be selected when total internal reflection happens
 
-            if (shading_ctx.has_auxilary_rays_data)
+            if (compute_differential_rays)
                 scattered_auxilary_rays = specularly_transmit_auxilary_rays(shading_ctx, scattered_ray, eta);
         }
 

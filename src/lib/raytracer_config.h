@@ -7,7 +7,7 @@ struct Raytracer_Config {
     };
     Rendering_Algorithm rendering_algorithm = Rendering_Algorithm::path_tracer;
 
-    // This constant limits how many times the light can bounce off of the surfaces.
+    // This constant limits how many times the light can bounce off the surfaces.
     // It is used in the algorithms that try to solve rendering equation and also in
     // direct lighting to limit the path length when specular surfaces are present.
     //
@@ -29,4 +29,10 @@ struct Raytracer_Config {
 
     int x_pixel_sample_count = 1;
     int y_pixel_sample_count = 1;
+
+    // This constant defines when to stop computing differential rays when bouncing off
+    // perfect specular surfaces multiple times. Differential rays approximation gets
+    // increasingly less precise with each bounce and at some point it ceases to be
+    // a useful representation of the pixel footprint.
+    int max_differential_ray_specular_bounces = 4;
 };
