@@ -163,7 +163,8 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
     Bounds2i pixel_bounds;
     film.get_tile_bounds(tile_index, sample_bounds, pixel_bounds);
 
-    Film_Tile tile(pixel_bounds, film.filter);
+    const float max_rgb_component_value = scene_ctx.scene->raytracer_config.max_rgb_component_value_of_film_sample;
+    Film_Tile tile(pixel_bounds, film.filter, max_rgb_component_value);
 
     double tile_variance_accumulator = 0.0;
 

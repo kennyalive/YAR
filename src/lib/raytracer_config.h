@@ -1,5 +1,7 @@
 #pragma once
 
+#include "math.h" // Infinity constant
+
 struct Raytracer_Config {
     enum class Rendering_Algorithm {
         direct_lighting,
@@ -18,6 +20,12 @@ struct Raytracer_Config {
     // 3 - second bound of indirect lighting
     int max_light_bounces = 32;
 
+    // This constant defines when to stop computing differential rays when bouncing off
+    // perfect specular surfaces multiple times. Differential rays approximation gets
+    // increasingly less precise with each bounce and at some point it ceases to be
+    // a useful representation of the pixel footprint.
+    int max_differential_ray_specular_bounces = 4;
+
     enum class Pixel_Filter_Type {
         box,
         gaussian,
@@ -30,9 +38,5 @@ struct Raytracer_Config {
     int x_pixel_sample_count = 1;
     int y_pixel_sample_count = 1;
 
-    // This constant defines when to stop computing differential rays when bouncing off
-    // perfect specular surfaces multiple times. Differential rays approximation gets
-    // increasingly less precise with each bounce and at some point it ceases to be
-    // a useful representation of the pixel footprint.
-    int max_differential_ray_specular_bounces = 4;
+    float max_rgb_component_value_of_film_sample = Infinity;
 };

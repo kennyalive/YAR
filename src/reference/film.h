@@ -2,6 +2,7 @@
 
 #include "lib/color.h"
 #include "lib/geometry.h"
+#include "lib/math.h" // Infinity constant
 #include "lib/vector.h"
 
 #include <functional>
@@ -21,9 +22,10 @@ struct Film_Pixel {
 struct Film_Tile {
     Bounds2i pixel_bounds;
     Film_Filter filter;
+    float max_rgb_component_value = Infinity;
     std::vector<Film_Pixel> pixels;
 
-    Film_Tile(Bounds2i pixel_bounds, Film_Filter filter);
+    Film_Tile(Bounds2i pixel_bounds, Film_Filter filter, float max_rgb_component_value);
     void add_sample(Vector2 film_pos, ColorRGB color);
 };
 
