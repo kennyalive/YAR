@@ -9,7 +9,7 @@
 
 constexpr int bounce_count_when_to_apply_russian_roulette = 3;
 
-ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays& auxilary_rays) {
+ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays& differential_rays) {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     Path_Context& path_ctx = thread_ctx.path_context;
@@ -21,8 +21,8 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
 
     ColorRGB L;
     while (true) {
-        const Auxilary_Rays* p_auxilary_rays = (path_ctx.bounce_count == 0) ? &auxilary_rays : nullptr;
-        bool hit_found = trace_ray(thread_ctx, current_ray, p_auxilary_rays);
+        const Differential_Rays* p_differential_rays = (path_ctx.bounce_count == 0) ? &differential_rays : nullptr;
+        bool hit_found = trace_ray(thread_ctx, current_ray, p_differential_rays);
 
         // If we hit perfect specular surface then keep bouncing until we reach finite bsdf or exit the scene.
         if (shading_ctx.specular_scattering.type != Specular_Scattering_Type::none) {

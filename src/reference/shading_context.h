@@ -24,8 +24,7 @@ struct Shading_Context {
     Vector3 dndv;
 
     // If true then dx/dy derivatives are available. Otherwise they are set to zero.
-    bool has_auxilary_rays_data = false;
-
+    bool has_dxdy_derivatives = false;
     // The dx/dy derivatives are defined with respect to an average distance between the samples (not pixels!).
     Vector3 dpdx;
     Vector3 dpdy;
@@ -61,7 +60,7 @@ struct Shading_Context {
     Shading_Context() {}
 
     void initialize_from_intersection(Thread_Context& thread_ctx, const Ray& ray,
-        const Auxilary_Rays* auxilary_rays, const Intersection& intersection);
+        const Differential_Rays* differential_rays, const Intersection& intersection);
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
 
@@ -77,4 +76,4 @@ private:
 
 // Trace ray against scene geometry and initializes shading context for intersection point (if any).
 // Returns true if intersection found, otherwise false.
-bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays* auxilary_rays);
+bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays* differential_rays);

@@ -192,25 +192,25 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
 
                 Ray ray = scene_ctx.camera->generate_ray(film_pos);
 
-                Auxilary_Rays auxilary_rays;
-                auxilary_rays.ray_dx_offset = scene_ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
-                auxilary_rays.ray_dy_offset = scene_ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
-                // The above auxilary rays are generated with one pixel offset which means they estimate footprint
+                Differential_Rays differential_rays;
+                differential_rays.dx_ray = scene_ctx.camera->generate_ray(Vector2(film_pos.x + 1.f, film_pos.y));
+                differential_rays.dy_ray = scene_ctx.camera->generate_ray(Vector2(film_pos.x, film_pos.y + 1.f));
+                // The above differential rays are generated with one pixel offset which means they estimate footprint
                 // of the entire pixel. When we have many samples per pixel then we need to estimate footprint
                 // that corresponds to a single sample (more precisely the area of influence of the sample).
                 {
                     float scale = 1.f / std::sqrt((float)scene_ctx.pixel_sampler_config.get_samples_per_pixel());
-                    auxilary_rays.ray_dx_offset.direction = ray.direction + (auxilary_rays.ray_dx_offset.direction - ray.direction) * scale;
-                    auxilary_rays.ray_dx_offset.direction.normalize();
-                    auxilary_rays.ray_dy_offset.direction = ray.direction + (auxilary_rays.ray_dy_offset.direction - ray.direction) * scale;
-                    auxilary_rays.ray_dy_offset.direction.normalize();
+                    differential_rays.dx_ray.direction = ray.direction + (differential_rays.dx_ray.direction - ray.direction) * scale;
+                    differential_rays.dx_ray.direction.normalize();
+                    differential_rays.dy_ray.direction = ray.direction + (differential_rays.dy_ray.direction - ray.direction) * scale;
+                    differential_rays.dy_ray.direction.normalize();
                 }
 
                 ColorRGB radiance;
                 if (scene_ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::direct_lighting)
-                    radiance = estimate_direct_lighting(thread_ctx, ray, auxilary_rays);
+                    radiance = estimate_direct_lighting(thread_ctx, ray, differential_rays);
                 else if (scene_ctx.scene->raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::path_tracer)
-                    radiance = estimate_path_contribution(thread_ctx, ray, auxilary_rays);
+                    radiance = estimate_path_contribution(thread_ctx, ray, differential_rays);
 
                 ASSERT(radiance.is_finite());
                 tile.add_sample(film_pos, radiance);

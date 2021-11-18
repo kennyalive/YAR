@@ -3,7 +3,7 @@
 #include "lib/color.h"
 #include "lib/material.h"
 
-struct Auxilary_Rays;
+struct Differential_Rays;
 struct Thread_Context;
 
 enum class Specular_Scattering_Type {

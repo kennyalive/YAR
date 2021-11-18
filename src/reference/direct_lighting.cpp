@@ -275,12 +275,12 @@ ColorRGB get_emitted_radiance(Thread_Context& thread_ctx)
     return Color_Black;
 }
 
-ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays& auxilary_rays)
+ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays& differential_rays)
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
 
-    if (!trace_ray(thread_ctx, ray, &auxilary_rays)) {
+    if (!trace_ray(thread_ctx, ray, &differential_rays)) {
         if (scene_ctx.has_environment_light_sampler) {
             return scene_ctx.environment_light_sampler.get_filtered_radiance_for_direction(shading_ctx.miss_ray.direction);
         }

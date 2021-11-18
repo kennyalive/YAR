@@ -7,7 +7,7 @@
 #include "scattering.h"
 #include "shading_context.h"
 
-static Auxilary_Rays specularly_reflect_auxilary_rays(const Shading_Context& shading_ctx, const Ray& reflected_ray)
+static Differential_Rays specularly_reflect_auxilary_rays(const Shading_Context& shading_ctx, const Ray& reflected_ray)
 {
     const Vector3& wo = shading_ctx.wo;
     const Vector3& n = shading_ctx.normal;
@@ -20,15 +20,15 @@ static Auxilary_Rays specularly_reflect_auxilary_rays(const Shading_Context& sha
     float d_wo_dot_n_dy = dot(shading_ctx.dwo_dy, n) + dot(wo, dndy);
     Vector3 dwi_dy = 2.f * (d_wo_dot_n_dy * n + dot(wo, n) * dndy) - shading_ctx.dwo_dy;
 
-    Auxilary_Rays reflected_auxilary_rays;
-    reflected_auxilary_rays.ray_dx_offset.origin = reflected_ray.origin + shading_ctx.dpdx;
-    reflected_auxilary_rays.ray_dx_offset.direction = (reflected_ray.direction + dwi_dx).normalized();
-    reflected_auxilary_rays.ray_dy_offset.origin = reflected_ray.origin + shading_ctx.dpdy;
-    reflected_auxilary_rays.ray_dy_offset.direction = (reflected_ray.direction + dwi_dy).normalized();
+    Differential_Rays reflected_auxilary_rays;
+    reflected_auxilary_rays.dx_ray.origin = reflected_ray.origin + shading_ctx.dpdx;
+    reflected_auxilary_rays.dx_ray.direction = (reflected_ray.direction + dwi_dx).normalized();
+    reflected_auxilary_rays.dy_ray.origin = reflected_ray.origin + shading_ctx.dpdy;
+    reflected_auxilary_rays.dy_ray.direction = (reflected_ray.direction + dwi_dy).normalized();
     return reflected_auxilary_rays;
 }
 
-static Auxilary_Rays specularly_transmit_auxilary_rays(const Shading_Context& shading_ctx, const Ray& transmitted_ray, float etaI_over_etaT)
+static Differential_Rays specularly_transmit_auxilary_rays(const Shading_Context& shading_ctx, const Ray& transmitted_ray, float etaI_over_etaT)
 {
     const Vector3& wo = shading_ctx.wo;
     const Vector3& n = shading_ctx.normal;
@@ -49,11 +49,11 @@ static Auxilary_Rays specularly_transmit_auxilary_rays(const Shading_Context& sh
     float d_cos_t_dy = eta * eta * cos_o * d_wo_dot_n_dy / cos_t;
     Vector3 dwi_dy = -eta * shading_ctx.dwo_dy + (eta * cos_o - cos_t) * dndy + (eta * d_wo_dot_n_dy - d_cos_t_dy) * n;
 
-    Auxilary_Rays transmitted_auxilary_rays;
-    transmitted_auxilary_rays.ray_dx_offset.origin = transmitted_ray.origin + shading_ctx.dpdx;
-    transmitted_auxilary_rays.ray_dx_offset.direction = (transmitted_ray.direction + dwi_dx).normalized();
-    transmitted_auxilary_rays.ray_dy_offset.origin = transmitted_ray.origin + shading_ctx.dpdy;
-    transmitted_auxilary_rays.ray_dy_offset.direction = (transmitted_ray.direction + dwi_dy).normalized();
+    Differential_Rays transmitted_auxilary_rays;
+    transmitted_auxilary_rays.dx_ray.origin = transmitted_ray.origin + shading_ctx.dpdx;
+    transmitted_auxilary_rays.dx_ray.direction = (transmitted_ray.direction + dwi_dx).normalized();
+    transmitted_auxilary_rays.dy_ray.origin = transmitted_ray.origin + shading_ctx.dpdy;
+    transmitted_auxilary_rays.dy_ray.direction = (transmitted_ray.direction + dwi_dy).normalized();
     return transmitted_auxilary_rays;
 }
 
@@ -144,13 +144,13 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
 
         differential_ray_bounce_count++;
         const bool compute_differential_rays =
-            shading_ctx.has_auxilary_rays_data &&
+            shading_ctx.has_dxdy_derivatives &&
             differential_ray_bounce_count <= max_differential_ray_specular_bounces;
 
         *specular_attenuation *= specular_scattering.scattering_coeff;
 
         Ray scattered_ray{ shading_ctx.position };
-        Auxilary_Rays scattered_auxilary_rays;
+        Differential_Rays scattered_auxilary_rays;
 
         if (specular_scattering.type == Specular_Scattering_Type::specular_reflection) {
             scattered_ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
@@ -169,7 +169,7 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
                 scattered_auxilary_rays = specularly_transmit_auxilary_rays(shading_ctx, scattered_ray, eta);
         }
 
-        if (!trace_ray(thread_ctx, scattered_ray, shading_ctx.has_auxilary_rays_data ? &scattered_auxilary_rays : nullptr))
+        if (!trace_ray(thread_ctx, scattered_ray, shading_ctx.has_dxdy_derivatives ? &scattered_auxilary_rays : nullptr))
             return false;
     }
     return true;

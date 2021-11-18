@@ -55,7 +55,7 @@ static bool adjust_shading_normal(const Vector3& wo, const Vector3& ng, Vector3*
 }
 
 void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, const Ray& ray,
-    const Auxilary_Rays* auxilary_rays, const Intersection& intersection)
+    const Differential_Rays* differential_rays, const Intersection& intersection)
 {
     *this = Shading_Context{};
 
@@ -111,30 +111,30 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
         dndv = -dndv;
     }
 
-    if (auxilary_rays)
+    if (differential_rays)
     {
-        has_auxilary_rays_data = true;
+        has_dxdy_derivatives = true;
 
         // Position derivatives.
         {
             float plane_d = -dot(normal, position);
 
-            float tx = ray_plane_intersection(auxilary_rays->ray_dx_offset, normal, plane_d);
+            float tx = ray_plane_intersection(differential_rays->dx_ray, normal, plane_d);
             if (std::abs(tx) != Infinity) {
-                Vector3 px = auxilary_rays->ray_dx_offset.get_point(tx);
+                Vector3 px = differential_rays->dx_ray.get_point(tx);
                 dpdx = px - position;
             }
 
-            float ty = ray_plane_intersection(auxilary_rays->ray_dy_offset, normal, plane_d);
+            float ty = ray_plane_intersection(differential_rays->dy_ray, normal, plane_d);
             if (std::abs(ty) != Infinity) {
-                Vector3 py = auxilary_rays->ray_dy_offset.get_point(ty);
+                Vector3 py = differential_rays->dy_ray.get_point(ty);
                 dpdy = py - position;
             }
         }
 
         // Direction derivatives
-        dwo_dx = (-auxilary_rays->ray_dx_offset.direction) - wo;
-        dwo_dy = (-auxilary_rays->ray_dy_offset.direction) - wo;
+        dwo_dx = (-differential_rays->dx_ray.direction) - wo;
+        dwo_dy = (-differential_rays->dy_ray.direction) - wo;
 
         // dudx/dvdx/dudy/dvdy
         calculate_UV_derivates();
@@ -151,7 +151,7 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
             std::abs(dudy) > 1e9f ||
             std::abs(dvdy) > 1e9f)
         {
-            has_auxilary_rays_data = false;
+            has_dxdy_derivatives = false;
             dpdx = dpdy = dwo_dx = dwo_dy = Vector3{};
             dudx = dvdx = dudy = dvdy = 0.f;
         }
@@ -295,6 +295,7 @@ Vector3 Shading_Context::world_to_local(const Vector3& world_direction) const {
 }
 
 bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays* auxilary_rays)
+bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays* differential_rays)
 {
     Intersection isect;
     if (!thread_ctx.scene_context->acceleration_structure->intersect(ray, isect)) {
@@ -302,6 +303,6 @@ bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays* 
         thread_ctx.shading_context.miss_ray = ray;
         return false;
     }
-    thread_ctx.shading_context.initialize_from_intersection(thread_ctx, ray, auxilary_rays, isect);
+    thread_ctx.shading_context.initialize_from_intersection(thread_ctx, ray, differential_rays, isect);
     return true;
 }
