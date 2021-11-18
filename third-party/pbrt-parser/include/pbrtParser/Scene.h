@@ -1110,6 +1110,8 @@ namespace pbrt {
     /*! some files do specify the desired filename to be written
       to. may be empty if not set */
     std::string        fileName;
+
+    float maxComponentValue = std::numeric_limits<float>::infinity();
   };
 
   struct Sampler : public Entity {

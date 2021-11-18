@@ -574,6 +574,7 @@ namespace pbrt {
   {
     binary.write(resolution);
     binary.write(fileName);
+    binary.write(maxComponentValue);
     return TYPE_FILM;
   }
   
@@ -582,6 +583,7 @@ namespace pbrt {
   {
     binary.read(resolution);
     binary.read(fileName);
+    binary.read(maxComponentValue);
   }
 
   int Sampler::writeTo(BinaryWriter &binary) {

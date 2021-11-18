@@ -32,6 +32,9 @@ namespace pbrt {
       resolution.x = pbrt->film->findParam<int>("xresolution")->get(0);
       resolution.y = pbrt->film->findParam<int>("yresolution")->get(0);
       ours->film = std::make_shared<Film>(resolution,fileName);
+
+      if (pbrt->film->hasParam1f("maxsampleluminance"))
+          ours->film->maxComponentValue = pbrt->film->getParam1f("maxsampleluminance");
     } else {
       std::cout << "warning: could not determine film resolution from pbrt scene" << std::endl;
     }
