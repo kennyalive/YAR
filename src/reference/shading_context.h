@@ -69,6 +69,9 @@ struct Shading_Context {
     Vector3 local_to_world(const Vector3& local_direction) const;
     Vector3 world_to_local(const Vector3& world_direction) const;
 
+    Differential_Rays compute_differential_rays_for_specular_reflection(const Ray& reflected_ray) const;
+    Differential_Rays compute_differential_rays_for_specular_transmission(const Ray& transmitted_ray, float etaI_over_etaT) const;
+
 private:
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti);
     void calculate_UV_derivates();

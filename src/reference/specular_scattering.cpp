@@ -7,56 +7,6 @@
 #include "scattering.h"
 #include "shading_context.h"
 
-static Differential_Rays specularly_reflect_auxilary_rays(const Shading_Context& shading_ctx, const Ray& reflected_ray)
-{
-    const Vector3& wo = shading_ctx.wo;
-    const Vector3& n = shading_ctx.normal;
-
-    Vector3 dndx = shading_ctx.dndu * shading_ctx.dudx + shading_ctx.dndv * shading_ctx.dvdx;
-    float d_wo_dot_n_dx = dot(shading_ctx.dwo_dx, n) + dot(wo, dndx);
-    Vector3 dwi_dx = 2.f * (d_wo_dot_n_dx * n + dot(wo, n) * dndx) - shading_ctx.dwo_dx;
-
-    Vector3 dndy = shading_ctx.dndu * shading_ctx.dudy + shading_ctx.dndv * shading_ctx.dvdy;
-    float d_wo_dot_n_dy = dot(shading_ctx.dwo_dy, n) + dot(wo, dndy);
-    Vector3 dwi_dy = 2.f * (d_wo_dot_n_dy * n + dot(wo, n) * dndy) - shading_ctx.dwo_dy;
-
-    Differential_Rays reflected_auxilary_rays;
-    reflected_auxilary_rays.dx_ray.origin = reflected_ray.origin + shading_ctx.dpdx;
-    reflected_auxilary_rays.dx_ray.direction = (reflected_ray.direction + dwi_dx).normalized();
-    reflected_auxilary_rays.dy_ray.origin = reflected_ray.origin + shading_ctx.dpdy;
-    reflected_auxilary_rays.dy_ray.direction = (reflected_ray.direction + dwi_dy).normalized();
-    return reflected_auxilary_rays;
-}
-
-static Differential_Rays specularly_transmit_auxilary_rays(const Shading_Context& shading_ctx, const Ray& transmitted_ray, float etaI_over_etaT)
-{
-    const Vector3& wo = shading_ctx.wo;
-    const Vector3& n = shading_ctx.normal;
-    const float eta = etaI_over_etaT;
-
-    float cos_o = dot(wo, n);
-    ASSERT(cos_o > 0.f);
-    float cos_t = -dot(transmitted_ray.direction, n);
-    ASSERT(cos_t > 0.f);
-
-    Vector3 dndx = shading_ctx.dndu * shading_ctx.dudx + shading_ctx.dndv * shading_ctx.dvdx;
-    float d_wo_dot_n_dx = dot(shading_ctx.dwo_dx, n) + dot(wo, dndx);
-    float d_cos_t_dx = eta * eta * cos_o * d_wo_dot_n_dx / cos_t;
-    Vector3 dwi_dx = -eta * shading_ctx.dwo_dx + (eta * cos_o - cos_t) * dndx + (eta * d_wo_dot_n_dx - d_cos_t_dx) * n;
-
-    Vector3 dndy = shading_ctx.dndu * shading_ctx.dudy + shading_ctx.dndv * shading_ctx.dvdy;
-    float d_wo_dot_n_dy = dot(shading_ctx.dwo_dy, n) + dot(wo, dndy);
-    float d_cos_t_dy = eta * eta * cos_o * d_wo_dot_n_dy / cos_t;
-    Vector3 dwi_dy = -eta * shading_ctx.dwo_dy + (eta * cos_o - cos_t) * dndy + (eta * d_wo_dot_n_dy - d_cos_t_dy) * n;
-
-    Differential_Rays transmitted_auxilary_rays;
-    transmitted_auxilary_rays.dx_ray.origin = transmitted_ray.origin + shading_ctx.dpdx;
-    transmitted_auxilary_rays.dx_ray.direction = (transmitted_ray.direction + dwi_dx).normalized();
-    transmitted_auxilary_rays.dy_ray.origin = transmitted_ray.origin + shading_ctx.dpdy;
-    transmitted_auxilary_rays.dy_ray.direction = (transmitted_ray.direction + dwi_dy).normalized();
-    return transmitted_auxilary_rays;
-}
-
 Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, Material_Handle material_handle)
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
@@ -133,43 +83,37 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
     const Specular_Scattering& specular_scattering = shading_ctx.specular_scattering;
     ASSERT(specular_scattering.type != Specular_Scattering_Type::none);
 
-    const int max_differential_ray_specular_bounces = thread_ctx.scene_context->scene->raytracer_config.max_differential_ray_specular_bounces;
-    int differential_ray_bounce_count = 0;
+    const int max_differential_ray_bounces =
+        thread_ctx.scene_context->scene->raytracer_config.max_differential_ray_specular_bounces;
 
     *specular_attenuation = Color_White;
-
     while (specular_scattering.type != Specular_Scattering_Type::none && path_ctx.bounce_count < max_bounces) {
         path_ctx.bounce_count++;
         path_ctx.perfect_specular_bounce_count++;
-
-        differential_ray_bounce_count++;
-        const bool compute_differential_rays =
-            shading_ctx.has_dxdy_derivatives &&
-            differential_ray_bounce_count <= max_differential_ray_specular_bounces;
-
         *specular_attenuation *= specular_scattering.scattering_coeff;
 
-        Ray scattered_ray{ shading_ctx.position };
-        Differential_Rays scattered_auxilary_rays;
+        const bool compute_differential_rays =
+            shading_ctx.has_dxdy_derivatives &&
+            path_ctx.bounce_count <= max_differential_ray_bounces;
+
+        Ray ray{ shading_ctx.position }; // specularly reflected or transmitted ray
+        Differential_Rays differential_rays;
 
         if (specular_scattering.type == Specular_Scattering_Type::specular_reflection) {
-            scattered_ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
-
+            ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
             if (compute_differential_rays)
-                scattered_auxilary_rays = specularly_reflect_auxilary_rays(shading_ctx, scattered_ray);
+                differential_rays = shading_ctx.compute_differential_rays_for_specular_reflection(ray);
         }
         else {
             ASSERT(specular_scattering.type == Specular_Scattering_Type::specular_transmission);
             const float eta = specular_scattering.etaI_over_etaT;
-
-            const bool refracted = refract(shading_ctx.wo, shading_ctx.normal, eta, &scattered_ray.direction);
+            const bool refracted = refract(shading_ctx.wo, shading_ctx.normal, eta, &ray.direction);
             ASSERT(refracted); // specular_transmission event should never be selected when total internal reflection happens
-
             if (compute_differential_rays)
-                scattered_auxilary_rays = specularly_transmit_auxilary_rays(shading_ctx, scattered_ray, eta);
+                differential_rays = shading_ctx.compute_differential_rays_for_specular_transmission(ray, eta);
         }
 
-        if (!trace_ray(thread_ctx, scattered_ray, shading_ctx.has_dxdy_derivatives ? &scattered_auxilary_rays : nullptr))
+        if (!trace_ray(thread_ctx, ray, compute_differential_rays ? &differential_rays : nullptr))
             return false;
     }
     return true;

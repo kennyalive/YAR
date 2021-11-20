@@ -294,7 +294,52 @@ Vector3 Shading_Context::world_to_local(const Vector3& world_direction) const {
     };
 }
 
-bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Auxilary_Rays* auxilary_rays)
+Differential_Rays Shading_Context::compute_differential_rays_for_specular_reflection(const Ray& reflected_ray) const
+{
+    const float dot_wo_n = dot(wo, normal);
+
+    Ray dx_ray { reflected_ray.origin + dpdx };
+    Vector3 dndx = dndu * dudx + dndv * dvdx;
+    float d_wo_dot_n_dx = dot(dwo_dx, normal) + dot(wo, dndx);
+    Vector3 dwi_dx = 2.f * (d_wo_dot_n_dx * normal + dot_wo_n * dndx) - dwo_dx;
+    dx_ray.direction = (reflected_ray.direction + dwi_dx).normalized();
+
+    Ray dy_ray { reflected_ray.origin + dpdy };
+    Vector3 dndy = dndu * dudy + dndv * dvdy;
+    float d_wo_dot_n_dy = dot(dwo_dy, normal) + dot(wo, dndy);
+    Vector3 dwi_dy = 2.f * (d_wo_dot_n_dy * normal + dot_wo_n * dndy) - dwo_dy;
+    dy_ray.direction = (reflected_ray.direction + dwi_dy).normalized();
+
+    return Differential_Rays { dx_ray, dy_ray };
+}
+
+Differential_Rays Shading_Context::compute_differential_rays_for_specular_transmission(const Ray& transmitted_ray, float etaI_over_etaT) const
+{
+    const float eta = etaI_over_etaT;
+    float cos_o = dot(wo, normal);
+    ASSERT(cos_o > 0.f);
+    float cos_t = -dot(transmitted_ray.direction, normal);
+    ASSERT(cos_t > 0.f);
+    float k1 = eta * eta * cos_o / cos_t;
+    float k2 = eta * cos_o - cos_t;
+
+    Ray dx_ray { transmitted_ray.origin + dpdx };
+    Vector3 dndx = dndu * dudx + dndv * dvdx;
+    float d_wo_dot_n_dx = dot(dwo_dx, normal) + dot(wo, dndx);
+    float d_cos_t_dx = k1 * d_wo_dot_n_dx;
+    Vector3 dwi_dx = -eta * dwo_dx + k2 * dndx + (eta * d_wo_dot_n_dx - d_cos_t_dx) * normal;
+    dx_ray.direction = (transmitted_ray.direction + dwi_dx).normalized();
+
+    Ray dy_ray { transmitted_ray.origin + dpdy };
+    Vector3 dndy = dndu * dudy + dndv * dvdy;
+    float d_wo_dot_n_dy = dot(dwo_dy, normal) + dot(wo, dndy);
+    float d_cos_t_dy = k1 * d_wo_dot_n_dy;
+    Vector3 dwi_dy = -eta * dwo_dy + k2 * dndy + (eta * d_wo_dot_n_dy - d_cos_t_dy) * normal;
+    dy_ray.direction = (transmitted_ray.direction + dwi_dy).normalized();
+
+    return Differential_Rays { dx_ray, dy_ray };
+}
+
 bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays* differential_rays)
 {
     Intersection isect;
