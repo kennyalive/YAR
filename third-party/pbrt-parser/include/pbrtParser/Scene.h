@@ -810,6 +810,7 @@ namespace pbrt {
     std::mutex         mutex;
     bool  haveComputedBounds { false };
     box3f bounds;
+    std::string fileName; // source geometry file name, if any
   };
 
   /*! a plain qaud mesh, where every quad is a pair of two

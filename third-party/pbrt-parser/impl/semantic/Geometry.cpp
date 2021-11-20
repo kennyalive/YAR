@@ -211,6 +211,7 @@ namespace pbrt {
     const std::string fileName
       = pbrtScene->makeGlobalFileName(shape->getParamString("filename"));
     TriangleMesh::SP ours = std::make_shared<TriangleMesh>(findOrCreateMaterial(shape->material));
+    ours->fileName = fileName;
     ply::parse(fileName,ours->vertex,ours->normal,ours->texcoord,ours->index);
 
     affine3f xfm = shape->transform.atStart;
