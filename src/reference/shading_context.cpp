@@ -24,9 +24,10 @@ static bool adjust_shading_normal(const Vector3& wo, const Vector3& ng, Vector3*
     if (a >= 0.f)
         return false;
 
-    // For almost tangential Wo we have catastrophic cancellation in 'Wo + tangent' expression below.
-    // For this situation we know that the result will be close to geometric normal, so return it directly.
-    if (dot(wo, ng) < 1e-3f) {
+    // For almost tangential 'wo' we have catastrophic cancellation in 'wo + tangent' expression below.
+    // For this configuration we know that the result will be close to geometric normal, so return it directly.
+    const float cos_threshold = 0.0017453f; // cos(89.9 degrees)
+    if (dot(wo, ng) < cos_threshold) {
         *n = ng;
         return true;
     }
