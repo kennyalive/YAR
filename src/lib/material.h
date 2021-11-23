@@ -33,10 +33,12 @@ constexpr int Material_Type_Count = static_cast<int>(Material_Type::count);
 
 struct Lambertian_Material {
     RGB_Parameter reflectance;
+    bool operator==(const Lambertian_Material&) const = default;
 };
 
 struct Perfect_Reflector_Material {
     RGB_Parameter reflectance;
+    bool operator==(const Perfect_Reflector_Material&) const = default;
 };
 
 struct Perfect_Refractor_Material {
@@ -72,24 +74,28 @@ struct Metal_Material {
     RGB_Parameter eta;
     RGB_Parameter k;
     Float_Parameter eta_i; // IOR of the dielectric that contacts the metal
+    bool operator==(const Metal_Material&) const = default;
 };
 
 struct Plastic_Material {
     Float_Parameter roughness;
     Float_Parameter r0; // reflectance at normal incident angle
     RGB_Parameter diffuse_reflectance; // SSS reflectance inside plastic
+    bool operator==(const Plastic_Material&) const = default;
 };
 
 struct Coated_Diffuse_Material {
     Float_Parameter roughness; // roughness of the glossy layer
     RGB_Parameter r0; // reflectance of the glossy layer at normal incident angle
     RGB_Parameter diffuse_reflectance; // reflectance of the diffuse layer
+    bool operator==(const Coated_Diffuse_Material&) const = default;
 };
 
 struct Glass_Material {
     RGB_Parameter reflectance;
     RGB_Parameter transmittance;
     Float_Parameter index_of_refraction;
+    bool operator==(const Glass_Material&) const = default;
 };
 
 struct Materials {

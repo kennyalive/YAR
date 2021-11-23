@@ -19,6 +19,8 @@ struct ColorRGB {
     explicit ColorRGB(float v) : r(v), g(v), b(v) {}
     explicit ColorRGB(const float* v) : r(v[0]), g(v[1]), b(v[2]) {}
 
+    bool operator==(const ColorRGB&) const = default;
+
     float operator[](int index) const {
         ASSERT(index >= 0 && index < 3);
         return (&r)[index];

@@ -14,9 +14,12 @@ struct Parameter {
 
     float u_scale = 1.f;
     float v_scale = 1.f;
+
+    bool operator==(const Parameter&) const = default;
 };
 
 struct RGB_Parameter : Parameter<ColorRGB> {
+    bool operator==(const RGB_Parameter&) const = default;
 };
 
 struct Float_Parameter : Parameter<float> {

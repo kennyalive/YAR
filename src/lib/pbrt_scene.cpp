@@ -149,6 +149,45 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
     return param;
 }
 
+template <Material_Type material_type, typename Material>
+Material_Handle add_material(Materials& materials, const Material& material)
+{
+    std::vector<Material>* materials_of_given_type = nullptr;
+    if constexpr (material_type == Material_Type::lambertian) {
+        materials_of_given_type = &materials.lambertian;
+    }
+    else if constexpr (material_type == Material_Type::perfect_reflector) {
+        materials_of_given_type = &materials.perfect_reflector;
+    }
+    else if constexpr (material_type == Material_Type::perfect_refractor) {
+        materials_of_given_type = &materials.perfect_refractor;
+    }
+    else if constexpr (material_type == Material_Type::metal) {
+        materials_of_given_type = &materials.metal;
+    }
+    else if constexpr (material_type == Material_Type::plastic) {
+        materials_of_given_type = &materials.plastic;
+    }
+    else if constexpr (material_type == Material_Type::coated_diffuse) {
+        materials_of_given_type = &materials.coated_diffuse;
+    }
+    else if constexpr (material_type == Material_Type::glass) {
+        materials_of_given_type = &materials.glass;
+    }
+    else {
+        static_assert(false, "add_material: Unexpected Material_Type value");
+    }
+
+    // Check if we already have this material registered. If yes, then return the existing handle.
+    for (size_t i = 0; i < materials_of_given_type->size(); i++) {
+        if ((*materials_of_given_type)[i] == material)
+            return Material_Handle{ material_type, (int)i };
+    }
+    // Add new material.
+    materials_of_given_type->push_back(material);
+    return Material_Handle{ material_type, (int)materials_of_given_type->size() - 1 };
+}
+
 static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_material, Scene* scene) {
     Materials& materials = scene->materials;
 
@@ -160,15 +199,13 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         else 
             set_constant_parameter(mtl.reflectance, ColorRGB(&matte->kd.x));
 
-        materials.lambertian.push_back(mtl);
-        return Material_Handle{ Material_Type::lambertian, int(materials.lambertian.size() - 1) };
+        return add_material<Material_Type::lambertian>(materials, mtl);
     }
 
     if (auto mirror_material = std::dynamic_pointer_cast<pbrt::MirrorMaterial>(pbrt_material)) {
         Perfect_Reflector_Material mtl;
         set_constant_parameter(mtl.reflectance, ColorRGB(&mirror_material->kr.x));
-        materials.perfect_reflector.push_back(mtl);
-        return Material_Handle{ Material_Type::perfect_reflector, int(materials.perfect_reflector.size() - 1) };
+        return add_material<Material_Type::perfect_reflector>(materials, mtl);
     }
 
     if (auto glass_material = std::dynamic_pointer_cast<pbrt::GlassMaterial>(pbrt_material)) {
@@ -176,8 +213,7 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         set_constant_parameter(mtl.reflectance, ColorRGB(&glass_material->kr.x));
         set_constant_parameter(mtl.transmittance, ColorRGB(&glass_material->kt.x));
         set_constant_parameter(mtl.index_of_refraction, glass_material->index);
-        materials.glass.push_back(mtl);
-        return Material_Handle{ Material_Type::glass, int(materials.glass.size() - 1) };
+        return add_material<Material_Type::glass>(materials, mtl);
     }
 
     if (auto metal = std::dynamic_pointer_cast<pbrt::MetalMaterial>(pbrt_material)) {
@@ -205,8 +241,7 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         else {
             set_constant_parameter(mtl.k, ColorRGB(&metal->k.x));
         }
-        materials.metal.push_back(mtl);
-        return Material_Handle{ Material_Type::metal, int(materials.metal.size() - 1) };
+        return add_material<Material_Type::metal>(materials, mtl);
     }
 
     if (auto plastic = std::dynamic_pointer_cast<pbrt::PlasticMaterial>(pbrt_material)) {
@@ -230,8 +265,7 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         else 
             set_constant_parameter(mtl.diffuse_reflectance, ColorRGB(&plastic->kd.x));
 
-        materials.plastic.push_back(mtl);
-        return Material_Handle{ Material_Type::plastic, int(materials.plastic.size() - 1) };
+        return add_material<Material_Type::plastic>(materials, mtl);
     }
 
     if (auto coated_diffuse = std::dynamic_pointer_cast<pbrt::SubstrateMaterial>(pbrt_material)) {
@@ -255,15 +289,13 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         else
             set_constant_parameter(mtl.diffuse_reflectance, ColorRGB(&coated_diffuse->kd.x));
 
-        materials.coated_diffuse.push_back(mtl);
-        return Material_Handle{ Material_Type::coated_diffuse, int(materials.coated_diffuse.size() - 1) };
+        return add_material<Material_Type::coated_diffuse>(materials, mtl);
     }
 
     // Default material.
     Lambertian_Material mtl;
     set_constant_parameter(mtl.reflectance, ColorRGB{ 0.5f, 0.5f, 0.5f });
-    materials.lambertian.push_back(mtl);
-    return Material_Handle{ Material_Type::lambertian, int(materials.lambertian.size() - 1) };
+    return add_material<Material_Type::lambertian>(materials, mtl);
 }
 
 static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pbrt_mesh, Scene* scene) {
