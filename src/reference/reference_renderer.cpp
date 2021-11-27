@@ -170,6 +170,7 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
 
     ASSERT((sample_bounds.p1 <= Vector2i{0xffff + 1, 0xffff + 1}));
     ASSERT((sample_bounds.size() <= Vector2i{0xffff, 0xffff}));
+    uint64_t debug_counter = 0; // can be used in conditional breakpoint to get to problematic pixel+sample
 
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
         for (int x = sample_bounds.p0.x; x < sample_bounds.p1.x; x++) {
@@ -218,6 +219,7 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
                 float luminance = radiance.luminance();
                 luminance_sum += luminance;
                 luminance_sq_sum += luminance * luminance;
+                debug_counter++;
             } while (thread_ctx.pixel_sampler.next_sample_vector());
 
             if (thread_ctx.pixel_sampler.config->get_samples_per_pixel() > 1) {
