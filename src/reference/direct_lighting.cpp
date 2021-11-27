@@ -73,7 +73,6 @@ static ColorRGB direct_lighting_from_rectangular_light(
     {
         Vector3 local_light_point = Vector3{ light.size * (u_light - Vector2(0.5f)), 0.0f };
         Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
-        light_point = offset_ray_origin(light_point, light_n);
 
         const Vector3 light_vec = (light_point - shading_ctx.position);
         float distance_to_sample = light_vec.length();
@@ -88,12 +87,10 @@ static ColorRGB direct_lighting_from_rectangular_light(
 
             if (!f.is_black()) {
                 Ray light_visibility_ray{shading_ctx.position, wi};
-                bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample);
+                bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample * (1.f - 1e-5f));
 
                 if (!occluded) {
-                    // We already checked that the light is oriented towards the surface
-                    // but for specific point we still can get different result due fp finite precision.
-                    ASSERT(dot(light_n, -wi) > -1e-4f);
+                    ASSERT(dot(light_n, -wi) > -1e-5f); // might be a bit below zero due to fp rounding errors
                     float light_n_dot_wi = std::max(0.f, dot(light_n, -wi));
 
                     float light_pdf = (distance_to_sample * distance_to_sample) / (light.size.x * light.size.y * light_n_dot_wi);
