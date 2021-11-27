@@ -99,13 +99,23 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
         dndv *= inv_length_of_scaled_normal;
     }
 
-    // Enforce renderer convention that direction of the incident ray (wo) is in the hemisphere
-    // defined by geometric normal or shading normal.
+    // Check rare case when shading normal is orthogonal to geometric normal.
+    // This can happen with small triangles where computation of geometric normal
+    // suffers from catastrophic cancellation. Use shading normal as geometric
+    // normal in this scenario.
+    if (dot(normal, geometric_normal) == 0.f) {
+        geometric_normal = normal;
+    }
+
+    // Enforce renderer convention that direction of the incident ray (wo) is in
+    // the hemisphere of the geometric normal.
+    // Additionally adjust_shading_normal() below also ensures that 'wo' is in the
+    // hemisphere of the shading normal.
     if (dot(geometric_normal, wo) < 0) {
         geometric_normal = -geometric_normal;
     }
-    // Flip of the shading normal does not guarantee yet that dot(normal, wo) > 0 but we get
-    // this guarantee after shading normal adjustment (adjust_shading_normal).
+
+    // Ensure that shading normal is in the hemisphere of the geometric normal.
     if (dot(normal, geometric_normal) < 0) {
         normal = -normal;
         dndu = -dndu;
