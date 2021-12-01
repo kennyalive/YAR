@@ -24,11 +24,14 @@ void generate_stratified_sequence_2d(RNG& rng, int nx, int ny, Vector2* result);
 //
 // u - uniformly distributed random variable from [0, 1).
 //
-// The optional 'pdf' return value is a pdf of the selected sample with respect to the length measure.
-// If pdf is returned it is guaranteed to be greater than zero.
+// 'pdf' output parameter is a pdf of the drawn sample sample with respect to the length measure.
+// It is guaranteed to be greater than zero.
+// 
+// 'interval_length' output parameter is an index of the CDF interval (between 0 and n-1) into
+// which 'u' variable is mapped.
 //
-// The function generates samples from [0, 1) distributed according to provided CDF.
-float sample_from_CDF(float u, const float* cdf, int n, float interval_length /* 1/n */, float* pdf = nullptr);
+// The function returns a sample from [0, 1) distributed according to the provided CDF.
+float sample_from_CDF(float u, const float* cdf, int n, float interval_length /* 1/n */, float* pdf, int* interval_index);
 
 // Distribution_2D represents PDF (probability density function) defined over [0..1]^2.
 // The PDF function is proportional to the initialization values.
@@ -39,11 +42,13 @@ public:
     void initialize_from_latitude_longitude_radiance_map(const Image_Texture& env_map);
 
     // Draws a sample from the distribution.
-    // The sample are from the closed-open region [0..1)^2
-    // The optional 'pdf' return value is a pdf of the drawn sample with respect to the solid angle measure.
-    // If pdf is returned it is guaranteed to be greater than zero.
-    // u - 2 uniformly distributed random variables from [0..1)
-    Vector2 sample(Vector2 u, float *pdf_uv = nullptr) const;
+    // The sample is from the closed-open region [0..1)^2
+    // 
+    // u - two uniformly distributed random variables from [0..1).
+    // 
+    // 'pdf' output parameter is a pdf of the drawn sample with respect to the solid angle measure.
+    // It is guaranteed to be greater than zero.
+    Vector2 sample(Vector2 u, float *pdf_uvr) const;
 
     // For the given sample returns its probability density value.
     // The pdf is calculated with respect to [0..1]^2 UV measure, it

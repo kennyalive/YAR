@@ -79,7 +79,7 @@ void generate_stratified_sequence_2d(RNG& rng, int nx, int ny, Vector2* result) 
     }
 }
 
-float sample_from_CDF(float u, const float* cdf, int n, float interval_length /* 1/n */, float* pdf) {
+float sample_from_CDF(float u, const float* cdf, int n, float interval_length /* 1/n */, float* pdf, int* interval_index) {
     ASSERT(u >= 0.f && u < 1.f);
     ASSERT(n >= 1);
     ASSERT(cdf[n-1] == 1.f);
@@ -113,10 +113,10 @@ float sample_from_CDF(float u, const float* cdf, int n, float interval_length /*
         */
     }
 
-    if (pdf) {
-        *pdf = (cdf_b - cdf_a) * n;
-        ASSERT(*pdf > 0.f);
-    }
+    *pdf = (cdf_b - cdf_a) * n;
+    ASSERT(*pdf > 0.f);
+
+    *interval_index = k;
 
     float x = (float(k) + (u - cdf_a) / (cdf_b - cdf_a)) * interval_length;
     return std::min(x, One_Minus_Epsilon);
@@ -131,6 +131,7 @@ void Distribution_2D::initialize(const float* values, int nx, int ny) {
     // Compute sum of values from each row and the sum of all values.
     std::vector<float> row_sums(ny);
     float total_sum = 0.f;
+    int last_row_with_non_zero_sum = -1;
 
     for (int y = 0; y < ny; y++) {
         float row_sum = 0.f;
@@ -139,14 +140,19 @@ void Distribution_2D::initialize(const float* values, int nx, int ny) {
         }
         row_sums[y] = row_sum;
         total_sum += row_sum;
+        if (row_sum != 0.f)
+            last_row_with_non_zero_sum = y;
     }
+    ASSERT(last_row_with_non_zero_sum != -1); // should we handle entirely black distribution?
 
     // Compute CDF for marginal pdf(y).
     marginal_CDF_y.resize(ny);
-    for (int y = 0; y < ny - 1; y++) {
+    for (int y = 0; y < last_row_with_non_zero_sum; y++) {
         marginal_CDF_y[y] = (y == 0 ? 0.f : marginal_CDF_y[y - 1]) + row_sums[y] / total_sum;
     }
-    marginal_CDF_y[ny - 1] = 1.f;
+    for (int y = last_row_with_non_zero_sum; y < ny; y++) {
+        marginal_CDF_y[y] = 1.f;
+    }
 
     // Compute CDFs for conditional pdf(x|y).
     CDFs_x.resize(nx*ny);
@@ -195,20 +201,18 @@ void Distribution_2D::initialize_from_latitude_longitude_radiance_map(const Imag
 Vector2 Distribution_2D::sample(Vector2 u, float* pdf_uv) const {
     ASSERT(u >= Vector2(0.f) && u < Vector2(1.f));
 
-    float pdf_y; 
-    float ky = sample_from_CDF(u[0], marginal_CDF_y.data(), int(marginal_CDF_y.size()), y_interval_length, &pdf_y);
+    float pdf_y;
+    int y;
+    float ky = sample_from_CDF(u[0], marginal_CDF_y.data(), int(marginal_CDF_y.size()), y_interval_length, &pdf_y, &y);
     ASSERT(pdf_y > 0.f);
-
-    float y = ky * ny;
-    ASSERT(y < float(ny));
+    ASSERT(y < ny);
 
     float pdf_x_given_y;
-    float kx = sample_from_CDF(u[1], &CDFs_x[int(y) * nx], nx, x_interval_length, &pdf_x_given_y);
+    int temp_x;
+    float kx = sample_from_CDF(u[1], &CDFs_x[y * nx], nx, x_interval_length, &pdf_x_given_y, &temp_x);
     ASSERT(pdf_x_given_y > 0.f);
 
-    if (pdf_uv) {
-        *pdf_uv = pdf_y * pdf_x_given_y;
-    }
+    *pdf_uv = pdf_y * pdf_x_given_y;
     return {kx, ky};
 }
 

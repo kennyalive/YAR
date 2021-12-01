@@ -238,7 +238,9 @@ void test_uniform_cdf_sampling() {
     const int Sample_Count = 100000;
 
     for (int i = 0; i < Sample_Count; i++) {
-        float s = sample_from_CDF(rng.get_float(), cdf.data(), int(cdf.size()), interval_length);
+        float temp_pdf;
+        int temp_index;
+        float s = sample_from_CDF(rng.get_float(), cdf.data(), int(cdf.size()), interval_length, &temp_pdf, &temp_index);
         ASSERT(s >= 0.f && s < 1.f);
         int bucket_index = int(s * buckets.size());
         ASSERT(bucket_index < (int)buckets.size());
@@ -288,7 +290,9 @@ void test_non_uniform_cdf_sampling() {
     const int Sample_Count = 1'000'000;
 
     for (int i = 0; i < Sample_Count; i++) {
-        float s = sample_from_CDF(rng.get_float(), cdf.data(), int(cdf.size()), interval_length);
+        float temp_pdf;
+        int temp_index;
+        float s = sample_from_CDF(rng.get_float(), cdf.data(), int(cdf.size()), interval_length, &temp_pdf, &temp_index);
         ASSERT(s >= 0.f && s < 1.f);
         int bucket_index = int(s * buckets.size());
         ASSERT(bucket_index < (int)buckets.size());
@@ -328,7 +332,8 @@ void test_uniform_2d_distribution_sampling() {
 
     for (int i = 0; i < Sample_Count; i++) {
         Vector2 u = rng.get_vector2();
-        Vector2 s = sampler.sample(u);
+        float temp_pdf;
+        Vector2 s = sampler.sample(u, &temp_pdf);
 
         int x = int(s[0] * nx);
         ASSERT(x < nx);
@@ -374,7 +379,8 @@ void test_non_uniform_2d_distribution_sampling() {
 
     for (int i = 0; i < Sample_Count; i++) {
         Vector2 u = rng.get_vector2();
-        Vector2 s = sampler.sample(u);
+        float temp_pdf;
+        Vector2 s = sampler.sample(u, &temp_pdf);
 
         int x = int(s[0] * nx);
         ASSERT(x < nx);
