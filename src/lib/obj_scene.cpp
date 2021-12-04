@@ -4,6 +4,7 @@
 #include "colorimetry.h"
 #include "obj_loader.h"
 #include "scene.h"
+#include "scene_loader.h"
 #include "spectrum.h"
 #include "yar_project.h"
 
@@ -25,8 +26,7 @@ Scene load_obj_scene(const YAR_Project& project) {
         }
         else {
             scene.materials.lambertian[i].reflectance.is_constant = false;
-            scene.texture_names.push_back(obj_material.diffuse_texture);
-            scene.materials.lambertian[i].reflectance.texture_index = (int)scene.texture_names.size()-1;
+            scene.materials.lambertian[i].reflectance.texture_index = add_scene_texture(obj_material.diffuse_texture, &scene);
         }
     }
 

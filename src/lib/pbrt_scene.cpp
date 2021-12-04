@@ -4,6 +4,7 @@
 #include "colorimetry.h"
 #include "spectrum.h"
 #include "scene.h"
+#include "scene_loader.h"
 #include "tessellation.h"
 #include "yar_project.h"
 
@@ -108,9 +109,9 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
     if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture);
         image_texture != nullptr)
     {
-        scene->texture_names.push_back(image_texture->fileName);
+        int texture_index = add_scene_texture(image_texture->fileName, scene);
+        set_texture_parameter(param, texture_index);
 
-        set_texture_parameter(param, (int)scene->texture_names.size() - 1);
         param.u_scale = image_texture->uscale;
         param.v_scale = image_texture->vscale;
     }
@@ -131,9 +132,9 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
     if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture);
         image_texture != nullptr)
     {
-        scene->texture_names.push_back(image_texture->fileName);
+        int texture_index = add_scene_texture(image_texture->fileName, scene);
+        set_texture_parameter(param, texture_index);
 
-        set_texture_parameter(param, (int)scene->texture_names.size() - 1);
         param.u_scale = image_texture->uscale;
         param.v_scale = image_texture->vscale;
     }
@@ -335,6 +336,14 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
         calculate_normals(normal_params, mesh);
     }
 
+    if (auto alpha_texture_it = pbrt_mesh->textures.find("alpha");
+        alpha_texture_it != pbrt_mesh->textures.end())
+    {
+        auto alpha_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(alpha_texture_it->second);
+        if (alpha_texture)
+            mesh.alpha_texture_index = add_scene_texture(alpha_texture->fileName, scene);
+    }
+
     scene->geometries.triangle_meshes.emplace_back(mesh);
     return Geometry_Handle{ Geometry_Type::triangle_mesh, (int)scene->geometries.triangle_meshes.size() - 1 };
 }
@@ -427,13 +436,11 @@ static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const M
 
     auto infinite_light = std::dynamic_pointer_cast<pbrt::InfiniteLightSource>(pbrt_light);
     if (infinite_light) {
-        scene->texture_names.push_back(infinite_light->mapName);
-
         Environment_Light& light = scene->lights.environment_light;
         light.light_to_world = instance_transfrom * to_matrix3x4(infinite_light->transform);
         light.world_to_light = get_inverse_transform(light.light_to_world);
         light.scale = ColorRGB(&infinite_light->scale.x) * ColorRGB(&infinite_light->L.x);
-        light.environment_map_index = (int)scene->texture_names.size() - 1;
+        light.environment_map_index = add_scene_texture(infinite_light->mapName, scene);
         light.sample_count = infinite_light->nSamples;
         scene->lights.has_environment_light = true;
     }

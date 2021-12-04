@@ -8,6 +8,7 @@ struct Triangle_Mesh {
     std::vector<Vector3> normals;
     std::vector<Vector2> uvs;
     std::vector<int32_t> indices;
+    int alpha_texture_index = -1;
 
     int get_triangle_count() const {
         ASSERT(indices.size() % 3 == 0);

@@ -121,3 +121,12 @@ Scene load_scene(const std::string& input_file) {
     finalize_scene(scene);
     return scene;
 }
+
+int add_scene_texture(const std::string& texture_file_name, Scene* scene) {
+    for (int i = 0; i < (int)scene->texture_names.size(); i++) {
+        if (scene->texture_names[i] == texture_file_name)
+            return i;
+    }
+    scene->texture_names.push_back(texture_file_name);
+    return (int)scene->texture_names.size() - 1;
+}
