@@ -76,14 +76,13 @@ Ray Ray_Generator::generate_ray(const Vector3& last_hit_position, const Vector3&
 
 const int benchmark_ray_count = 1'000'000;
 
-static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
+static int benchmark_geometry_kdtree(const KdTree& kdtree) {
     const bool debug_rays = false;
     const int debug_ray_count = 4;
 
-    Bounding_Box bounds = kdtree.get_bounds();
-    Vector3 last_hit_position = (bounds.min_p + bounds.max_p) * 0.5f;
+    Vector3 last_hit_position = (kdtree.bounds.min_p + kdtree.bounds.max_p) * 0.5f;
     Vector3 last_hit_normal = Vector3(1, 0, 0);
-    Ray_Generator ray_generator(bounds);
+    Ray_Generator ray_generator(kdtree.bounds);
 
     int64_t time_ns = 0;
     for (int i = 0; i < benchmark_ray_count; i++) {
@@ -125,15 +124,14 @@ static int benchmark_geometry_kdtree(const Geometry_KdTree& kdtree) {
     return (int)(time_ns / 1'000'000);
 }
 
-static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray_count) {
-    const Geometry_Primitive_Source& primitive_source = kdtree.get_primitive_source();
-    ASSERT(primitive_source.geometry.type == Geometry_Type::triangle_mesh);
+static void validate_triangle_mesh_kdtree(const KdTree& kdtree, int ray_count) {
+    ASSERT(kdtree.intersector == &intersect_triangle_mesh_kdtree_leaf_primitive);
+    const Triangle_Mesh& mesh = *static_cast<const Triangle_Mesh*>(kdtree.geometry_data);
 
     printf("Running triangle mesh kdtree validation... ");
-    auto bounds = kdtree.get_bounds();
-    Vector3 last_hit_position = (bounds.min_p + bounds.max_p) * 0.5f;
+    Vector3 last_hit_position = (kdtree.bounds.min_p + kdtree.bounds.max_p) * 0.5f;
     Vector3 last_hit_normal = Vector3(1, 0, 0);
-    Ray_Generator ray_generator(bounds);
+    Ray_Generator ray_generator(kdtree.bounds);
 
     for (int i = 0; i < ray_count; i++) {
         const Ray ray = ray_generator.generate_ray(last_hit_position, last_hit_normal);
@@ -143,9 +141,9 @@ static void validate_triangle_mesh_kdtree(const Geometry_KdTree& kdtree, int ray
 
         Intersection brute_force_intersection;
         int hit_k = -1; // for debugging
-        for (int k = 0; k < primitive_source.get_primitive_count(); k++) {
+        for (int k = 0; k < mesh.get_triangle_count(); k++) {
             float ray_tmax = brute_force_intersection.t;
-            intersect_geometric_primitive(ray, primitive_source.geometries, primitive_source.geometry, k, brute_force_intersection);
+            kdtree.intersector(ray, kdtree.geometry_data, k, brute_force_intersection);
             if (brute_force_intersection.t < ray_tmax) {
                 hit_k = k;
             }
@@ -193,22 +191,24 @@ struct Triangle_Mesh_Info {
 };
 }
 
-static void test_triangle_mesh(const Triangle_Mesh_Info& triangle_mesh_info) {
-    Geometries geometries;
+static void test_triangle_mesh(const Triangle_Mesh_Info& triangle_mesh_info)
+{
+    Triangle_Mesh mesh;
+
     if (!triangle_mesh_info.file_name.empty()) {
         Obj_Data obj_data = load_obj(triangle_mesh_info.file_name);
         ASSERT(!obj_data.meshes.empty());
-        geometries.triangle_meshes.push_back(std::move(obj_data.meshes[0].mesh));
+        mesh = std::move(obj_data.meshes[0].mesh);
     }
     else {
         ASSERT(triangle_mesh_info.custom_mesh != nullptr);
-        geometries.triangle_meshes.push_back(*triangle_mesh_info.custom_mesh);
+        mesh = *triangle_mesh_info.custom_mesh;
     }
 
     Timestamp t;
     KdTree_Build_Params params;
     //params.split_clipping = false;
-    Geometry_KdTree triangle_mesh_kdtree = build_geometry_kdtree(&geometries, {Geometry_Type::triangle_mesh, 0}, params);
+    KdTree triangle_mesh_kdtree = build_triangle_mesh_kdtree(&mesh, params);
     printf("kdtree build time = %.2fs\n\n", elapsed_milliseconds(t) / 1000.f);
     triangle_mesh_kdtree.calculate_stats().print();
 

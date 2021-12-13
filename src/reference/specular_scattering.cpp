@@ -7,6 +7,8 @@
 #include "scattering.h"
 #include "shading_context.h"
 
+#include "lib/scene.h"
+
 Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, Material_Handle material_handle)
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;

@@ -118,28 +118,3 @@ float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vec
     barycentrics->z = e2 * inv_det;
     return t;
 }
-
-void intersect_geometric_primitive(const Ray& ray,
-    const Geometries* geometries, Geometry_Handle geometry, int primitive_index,
-    Intersection& intersection)
-{
-    if (geometry.type == Geometry_Type::triangle_mesh) {
-        const Triangle_Mesh* mesh = &geometries->triangle_meshes[geometry.index];
-        Vector3 p0, p1, p2;
-        mesh->get_triangle(primitive_index, p0, p1, p2);
-
-        Vector3 b;
-        float t = intersect_triangle_watertight(ray, p0, p1, p2, &b);
-
-        if (t < intersection.t) {
-            intersection.t = t;
-            intersection.geometry_type = geometry.type;
-            intersection.triangle_intersection.barycentrics = b;
-            intersection.triangle_intersection.mesh = mesh;
-            intersection.triangle_intersection.triangle_index = primitive_index;
-        }
-    }
-    else {
-        ASSERT(false);
-    }
-}

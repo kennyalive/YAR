@@ -1,7 +1,10 @@
 #include "std.h"
 #include "lib/common.h"
-#include "lib/tessellation.h"
+
+#include "intersection.h"
 #include "kdtree_builder.h"
+
+#include "lib/tessellation.h"
 
 void test_watertightness() {
     printf("-------------\n");
@@ -9,17 +12,15 @@ void test_watertightness() {
     printf("Testing intersect_triangle_watertight() for watertightness...\n");
 
     float radius = 0.5f;
-    Geometries geometries;
-    {
-        Triangle_Mesh mesh = create_sphere_mesh(radius, 6, false);
-        geometries.triangle_meshes.push_back(std::move(mesh));
-    }
-    Geometry_KdTree kdtree = build_geometry_kdtree(&geometries, {Geometry_Type::triangle_mesh, 0});
+    Triangle_Mesh mesh = create_sphere_mesh(radius, 6, false);
+
+    KdTree_Build_Params kdtree_build_params;
+    KdTree kdtree = build_triangle_mesh_kdtree(&mesh, kdtree_build_params);
 
     const int ray_count = 100'000'000;
     {
         printf("Shooting %d rays against sphere of radius %.2f cm\n", ray_count, radius * 100);
-        float average_triangle_area = 4 * Pi * radius * radius / geometries.triangle_meshes[0].get_triangle_count();
+        float average_triangle_area = 4 * Pi * radius * radius / mesh.get_triangle_count();
         float triangle_characteristic_size = std::sqrt(average_triangle_area * 4.f / std::sqrt(3.f));
         printf("Sphere's triangle characteristic size %.3f mm\n", triangle_characteristic_size * 1000);
     }

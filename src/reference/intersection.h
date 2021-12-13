@@ -2,22 +2,11 @@
 
 #include "lib/geometry.h"
 
-struct Intersection;
 struct Ray;
 struct Scene_Object;
 
 float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, Vector3* barycentrics);
 float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, Vector3* barycentrics);
-
-// Intersection test between a ray and a geometric primitive (i.e. a triangle).
-// The ray's parametric range is restricted to the half-open interval [0, t_max),
-// where t_max is defined by the initial value of Intersection::t.
-// If intersection is found then Intersection::t gets overwritten with a distance
-// to the intersection point, otherwise Intersection::t is unchanged.
-void intersect_geometric_primitive(
-    const Ray& ray,
-    const Geometries* geometries, Geometry_Handle geometry, int primitive_index,
-    Intersection& intersection);
 
 struct Triangle_Intersection {
     const Triangle_Mesh* mesh = nullptr;

@@ -4,6 +4,7 @@
 
 #include "bsdf.h"
 #include "context.h"
+#include "intersection.h"
 #include "light_sampling.h"
 #include "sampling.h"
 #include "shading_context.h"
@@ -11,6 +12,7 @@
 
 #include "lib/light.h"
 #include "lib/math.h"
+#include "lib/scene_object.h"
 
 inline float mis_power_heuristic(float pdf1, float pdf2) {
     if (pdf1 == Infinity) {

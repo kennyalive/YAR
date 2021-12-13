@@ -1,44 +1,12 @@
 #pragma once
 
-#include "intersection.h"
 #include "lib/bounding_box.h"
-#include "lib/common.h"
-#include "lib/matrix.h"
-#include "lib/ray.h"
-#include "lib/scene_object.h"
-#include "lib/scene.h"
-#include "lib/triangle_mesh.h"
-#include "lib/vector.h"
+#include "lib/geometry.h"
 
-template <typename Primitive_Source> class KdTree;
-
-struct Geometry_Primitive_Source;
-using Geometry_KdTree = KdTree<Geometry_Primitive_Source>;
-
-struct Scene_Primitive_Source;
-using Scene_KdTree = KdTree<Scene_Primitive_Source>;
-
-// Contains data collected by KdTree::calculate_stats() function.
-struct KdTree_Stats {
-    int64_t nodes_size = 0;
-    int64_t primitive_indices_size = 0;
-
-    int node_count = 0;
-    int leaf_count = 0;
-    int empty_leaf_count = 0;
-    int single_primitive_leaf_count = 0;
-    int perfect_depth = 0;
-
-    struct Leaf_Stats {
-        float average_depth = 0.0f;
-        float depth_standard_deviation = 0.0f;
-        float average_primitive_count = 0.0f;
-    };
-    Leaf_Stats not_empty_leaf_stats;
-    Leaf_Stats empty_leaf_stats; // empty_leaf_stats.average_primitive_count == 0
-
-    void print();
-};
+struct Intersection;
+struct KdTree;
+struct Ray;
+struct Scene_Object;
 
 // 8 byte kd-tree node.
 // KdTree is a linear array of nodes + an array of primitive indices referenced by the nodes.
@@ -105,125 +73,82 @@ struct KdNode {
     }
 };
 
-// KdTree acceleration structure.
-// Template parameter specifies the object that provides primitives to build kdtree from.
-template <typename Primitive_Source>
-class KdTree {
-public:
-    KdTree() = default;
-    KdTree(KdTree&& other) = default;
-    KdTree& operator=(KdTree&& other) = default;
+struct KdTree_Stats {
+    int64_t nodes_size = 0;
+    int64_t primitive_indices_size = 0;
 
-    bool intersect(const Ray& ray, Intersection& intersection) const;
-    bool intersect_any(const Ray& ray, float tmax) const;
+    int node_count = 0;
+    int leaf_count = 0;
+    int empty_leaf_count = 0;
+    int single_primitive_leaf_count = 0;
+    int perfect_depth = 0;
 
-    const Primitive_Source& get_primitive_source() const { return primitive_source; }
-    const Bounding_Box& get_bounds() const { return bounds; }
+    struct Leaf_Stats {
+        float average_depth = 0.0f;
+        float depth_standard_deviation = 0.0f;
+        float average_primitive_count = 0.0f;
+    };
+    Leaf_Stats not_empty_leaf_stats;
+    Leaf_Stats empty_leaf_stats; // empty_leaf_stats.average_primitive_count == 0
+
+    void print();
+};
+
+// Data used by top level (entire scene) kdtree.
+struct Scene_KdTree_Data {
+    // The objects in the scene. Each object has associated geometry kdtree.
+    const std::vector<Scene_Object>* scene_objects = nullptr;
+
+    // KdTrees for all geometries in the scene.
+    // Multiple scene objects can use the same kdtree due to instancing.
+    const std::vector<KdTree>* kdtrees = nullptr;
+
+    // Offsets in 'kdtrees' array for trees associated with specific geometry type.
+    std::array<int, Geometry_Type_Count> geometry_type_offsets;
+};
+
+struct KdTree {
+    static KdTree load(const std::string& file_name);
+    void save(const std::string& file_name) const;
+
+    // Sets reference to geometry data. Should be called after kdtree is loaded from the file.
+    // These functions return false when the hash computed from geometry data differs from KdTree::geometry_data_hash.
+    bool set_geometry_data(const Triangle_Mesh* mesh);
+    bool set_geometry_data(const Scene_KdTree_Data* scene_kdtree_data);
+
+    static uint64_t compute_triangle_mesh_hash(const Triangle_Mesh& mesh);
+    static uint64_t compute_scene_kdtree_data_hash(const Scene_KdTree_Data& data);
+
     KdTree_Stats calculate_stats() const;
     std::vector<int32_t> calculate_path_to_node(int32_t node_index) const;
-    void save_to_file(const std::string& file_name) const;
 
-private:
-    void intersect_leaf(const Ray& ray, KdNode leaf, Intersection& intersection) const;
+    static constexpr int max_traversal_depth = 40;
+    bool intersect(const Ray& ray, Intersection& intersection) const;
+    bool intersect_any(const Ray& ray, float tmax) const;
+    
+    Bounding_Box bounds; // kdtree spatial bounds
 
-    // Brute force intersection routine for debugging/testing purposes.
-    bool intersect_brute_force(const Ray& ray, Intersection& intersection) const;
+    // Hash of the geometry data this kdtree was originally created from.
+    // It is used to invalidate cached kdtree when geometry changes.
+    uint64_t geometry_data_hash = 0;
 
-private:
-    KdTree(std::vector<KdNode>&& nodes, std::vector<int32_t>&& primitive_indices, Primitive_Source&& primitive_source);
-
-    template <typename Primitive_Source> friend class KdTree_Builder;
-    friend struct Scene_Primitive_Source;
-    friend Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle geometry);
-
-    enum { max_traversal_depth = 64 };
-
-private:
     std::vector<KdNode> nodes;
     std::vector<int> primitive_indices;
-    Primitive_Source primitive_source;
-    Bounding_Box bounds;
-};
 
-Geometry_KdTree load_geometry_kdtree(const std::string& file_name, const Geometries* geometries, Geometry_Handle geometry);
+    // Reference to geometry data for which this kdtree is built.
+    //
+    // For triangle mesh kdtree it's a Triangle_Mesh object.
+    // The leaves contain references to seperate triangles.
+    //
+    // For scene kdtree it's a Scene_KdTree_Data object.  
+    // The leaves contain references to scene objects.
+    const void* geometry_data = nullptr;
 
-struct Geometry_Primitive_Source {
-    const Geometries* geometries = nullptr;
-    Geometry_Handle geometry;
-
-    Geometry_Primitive_Source() {}
-    Geometry_Primitive_Source(const Geometries* geometries, Geometry_Handle geometry)
-        : geometries(geometries)
-        , geometry(geometry) 
-    {}
-
-    int get_primitive_count() const {
-        if (geometry.type == Geometry_Type::triangle_mesh) {
-            return geometries->triangle_meshes[geometry.index].get_triangle_count();
-        }
-        else {
-            ASSERT(false);
-            return 0;
-        }
-    }
-
-    Bounding_Box get_primitive_bounds(int primitive_index) const {
-        if (geometry.type == Geometry_Type::triangle_mesh) {
-            return geometries->triangle_meshes[geometry.index].get_triangle_bounds(primitive_index);
-        }
-        else {
-            ASSERT(false);
-            return Bounding_Box{};
-        }
-    }
-
-    Bounding_Box calculate_bounds() const {
-        if (geometry.type == Geometry_Type::triangle_mesh) {
-            return geometries->triangle_meshes[geometry.index].get_bounds();
-        }
-        else {
-            ASSERT(false);
-            return Bounding_Box{};
-        }
-    }
-
-    void intersect_primitive(const Ray& ray, int primitive_index, Intersection& intersection) const {
-        intersect_geometric_primitive(ray, geometries, geometry, primitive_index, intersection);
-    }
-};
-
-struct Scene_Primitive_Source {
-    const Scene* scene = nullptr;
-    std::vector<int> geometry_type_offsets;
-    std::vector<Geometry_KdTree> geometry_kdtrees;
-
-    int get_primitive_count()  const {
-        return (int)scene->objects.size();
-    }
-
-    Bounding_Box get_primitive_bounds(int primitive_index) const {
-        ASSERT(primitive_index >= 0 && primitive_index < scene->objects.size());
-        Geometry_Handle geometry = scene->objects[primitive_index].geometry;
-        int offset = geometry_type_offsets[static_cast<int>(geometry.type)];
-        Bounding_Box local_bounds = geometry_kdtrees[offset + geometry.index].get_bounds();
-        Bounding_Box world_bounds = transform_bounding_box(scene->objects[primitive_index].object_to_world_transform, local_bounds);
-        return world_bounds;
-    }
-
-    Bounding_Box calculate_bounds() const {
-        Bounding_Box bounds;
-        for (int i = 0; i < (int)scene->objects.size(); i++)
-            bounds = Bounding_Box::compute_union(bounds, get_primitive_bounds(i));
-        return bounds;
-    }
-
-    void intersect_primitive(const Ray& ray, int primitive_index, Intersection& intersection) const {
-        ASSERT(primitive_index >= 0 && primitive_index < scene->objects.size());
-        const Scene_Object* scene_object = &scene->objects[primitive_index];
-        Ray ray_in_object_space = transform_ray(scene_object->world_to_object_transform, ray);
-
-        if (geometry_kdtrees[scene_object->geometry.index].intersect(ray_in_object_space, intersection)) {
-            intersection.scene_object = scene_object;
-        }
-    }
+    // Performs intersection test between a ray and a primitive from kdtree leaf.
+    // 
+    // The ray's parametric range is from the half-open interval [0, t_max), where
+    // t_max is the initial value of Intersection::t. If intersection is found then
+    // Intersection::t gets overwritten with a distance to the intersection point,
+    // otherwise Intersection::t is unchanged.
+    void (*intersector)(const Ray& ray, const void* geometry_data, int primitive_index, Intersection& intersection) = nullptr;
 };

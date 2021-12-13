@@ -7,6 +7,8 @@
 #include "direct_lighting.h"
 #include "shading_context.h"
 
+#include "lib/scene.h"
+
 constexpr int bounce_count_when_to_apply_russian_roulette = 3;
 
 ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays& differential_rays) {

@@ -28,8 +28,8 @@ struct Array2D_Registry {
 
 struct Scene_Context {
     const Scene* scene = nullptr;
-    const Camera* camera;
-    const Scene_KdTree* acceleration_structure;
+    const Camera* camera = nullptr;
+    const KdTree* acceleration_structure = nullptr;
     Materials materials;
     std::vector<Image_Texture> textures;
     Stratified_Pixel_Sampler_Configuration pixel_sampler_config;

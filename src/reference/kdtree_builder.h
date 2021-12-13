@@ -2,6 +2,8 @@
 
 #include "kdtree.h"
 
+struct Triangle_Mesh;
+
 struct KdTree_Build_Params {
     float intersection_cost = 80;
     float traversal_cost = 1;
@@ -12,8 +14,9 @@ struct KdTree_Build_Params {
     bool split_clipping = true;
 };
 
-Geometry_KdTree build_geometry_kdtree(const Geometries* geometries, Geometry_Handle geometry,
-    const KdTree_Build_Params& build_params = KdTree_Build_Params());
+// Builds kdtree for a triangle mesh.
+KdTree build_triangle_mesh_kdtree(const Triangle_Mesh* mesh, const KdTree_Build_Params& params);
 
-Scene_KdTree build_scene_kdtree(const Scene* scene, std::vector<int>&& geometry_type_offsets, std::vector<Geometry_KdTree>&& kdtrees,
-    const KdTree_Build_Params& build_params = KdTree_Build_Params());
+// Builds kdtree that represents the entire scene.
+// The leaf nodes contain references to kdtrees associated with scene geometry.
+KdTree build_scene_kdtree(const Scene_KdTree_Data* scene_kdtree_data, const KdTree_Build_Params& params);
