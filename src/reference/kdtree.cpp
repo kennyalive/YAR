@@ -385,22 +385,22 @@ std::vector<uint32_t> KdTree::calculate_path_to_node(uint32_t node_index) const
 void KdTree_Stats::print()
 {
     printf("[memory consumption]\n");
-    printf("\tnodes_size = %zdK\n", nodes_size / 1024);
-    printf("\tprimitive_indices_size = %zdK\n", primitive_indices_size / 1024);
+    printf("   nodes_size = %zdK\n", nodes_size / 1024);
+    printf("   primitive_indices_size = %zdK\n", primitive_indices_size / 1024);
 
     printf("[general]\n");
-    printf("\tnode_count = %d\n", node_count);
-    printf("\tleaf_count = %d\n", leaf_count);
-    printf("\tempty_leaf_count = %d\n", empty_leaf_count);
-    printf("\tsingle_primitive_leaf_count = %d\n", single_primitive_leaf_count);
-    printf("\tperfect_depth = %d\n", perfect_depth);
+    printf("   node_count = %d\n", node_count);
+    printf("   leaf_count = %d\n", leaf_count);
+    printf("   empty_leaf_count = %d\n", empty_leaf_count);
+    printf("   single_primitive_leaf_count = %d\n", single_primitive_leaf_count);
+    printf("   perfect_depth = %d\n", perfect_depth);
 
     printf("[non-empty leaves]\n");
-    printf("\taverage_depth = %.2f\n", not_empty_leaf_stats.average_depth);
-    printf("\tdepth_standard_deviation = %.2f\n", not_empty_leaf_stats.depth_standard_deviation);
-    printf("\taverage_primitive_count = %.2f\n", not_empty_leaf_stats.average_primitive_count);
+    printf("   average_depth = %.2f\n", not_empty_leaf_stats.average_depth);
+    printf("   depth_standard_deviation = %.2f\n", not_empty_leaf_stats.depth_standard_deviation);
+    printf("   average_primitive_count = %.2f\n", not_empty_leaf_stats.average_primitive_count);
 
     printf("[empty leaves]\n");
-    printf("\taverage_depth = %.2f\n", empty_leaf_stats.average_depth);
-    printf("\tdepth_standard_deviation = %.2f\n", empty_leaf_stats.depth_standard_deviation);
+    printf("   average_depth = %.2f\n", empty_leaf_stats.average_depth);
+    printf("   depth_standard_deviation = %.2f\n", empty_leaf_stats.depth_standard_deviation);
 }

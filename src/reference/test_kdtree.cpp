@@ -25,6 +25,13 @@ private:
     RNG rng;
     Bounding_Box ray_bounds;
 };
+
+struct Operation_Info {
+    std::string mesh_file_name;
+    Triangle_Mesh* custom_mesh = nullptr;
+    std::string custom_mesh_name;
+    int validation_ray_count = 0;
+};
 } // namesapce
 
 Ray_Generator::Ray_Generator(const Bounding_Box& mesh_bounds) {
@@ -76,13 +83,15 @@ Ray Ray_Generator::generate_ray(const Vector3& last_hit_position, const Vector3&
 
 const int benchmark_ray_count = 1'000'000;
 
-static int benchmark_geometry_kdtree(const KdTree& kdtree) {
+static void benchmark_geometry_kdtree(const KdTree& kdtree, const Operation_Info&) {
     const bool debug_rays = false;
     const int debug_ray_count = 4;
 
     Vector3 last_hit_position = (kdtree.bounds.min_p + kdtree.bounds.max_p) * 0.5f;
     Vector3 last_hit_normal = Vector3(1, 0, 0);
     Ray_Generator ray_generator(kdtree.bounds);
+
+    printf("\nshooting rays (kdtree)...\n");
 
     int64_t time_ns = 0;
     for (int i = 0; i < benchmark_ray_count; i++) {
@@ -121,10 +130,11 @@ static int benchmark_geometry_kdtree(const KdTree& kdtree) {
     double nanoseconds_per_raycast = time_ns / double(benchmark_ray_count);
     int clocks = static_cast<int>(nanoseconds_per_raycast * cpu_ghz);
     printf("Single raycast time: %.2f nanoseconds, %d clocks\n", nanoseconds_per_raycast, clocks);
-    return (int)(time_ns / 1'000'000);
+    double mrays_per_sec = (benchmark_ray_count / 1e6f) / (time_ns / 1e9f);
+    printf("raycast performance: %.2f MRays/sec\n", mrays_per_sec);
 }
 
-static void validate_triangle_mesh_kdtree(const KdTree& kdtree, int ray_count) {
+static void validate_triangle_mesh_kdtree(const KdTree& kdtree, const Operation_Info& info) {
     const Triangle_Mesh& mesh = *static_cast<const Triangle_Mesh*>(kdtree.geometry_data);
 
     printf("Running triangle mesh kdtree validation... ");
@@ -132,7 +142,7 @@ static void validate_triangle_mesh_kdtree(const KdTree& kdtree, int ray_count) {
     Vector3 last_hit_normal = Vector3(1, 0, 0);
     Ray_Generator ray_generator(kdtree.bounds);
 
-    for (int i = 0; i < ray_count; i++) {
+    for (int i = 0; i < info.validation_ray_count; i++) {
         const Ray ray = ray_generator.generate_ray(last_hit_position, last_hit_normal);
 
         Intersection kdtree_intersection;
@@ -157,7 +167,7 @@ static void validate_triangle_mesh_kdtree(const KdTree& kdtree, int ray_count) {
                 "actual T %.16g [%a]\n"
                 "ray origin: (%a, %a, %a)\n"
                 "ray direction: (%a, %a, %a)\n",
-                i, float(i) / float(ray_count),
+                i, float(i) / float(info.validation_ray_count),
                 kdtree_intersection.t, kdtree_intersection.t,
                 brute_force_intersection.t, brute_force_intersection.t,
                 o.x, o.y, o.z, d.x, d.y, d.z
@@ -182,44 +192,7 @@ static void validate_triangle_mesh_kdtree(const KdTree& kdtree, int ray_count) {
     printf("DONE\n");
 }
 
-namespace {
-struct Triangle_Mesh_Info {
-    std::string file_name;
-    int validation_ray_count = 0;
-    Triangle_Mesh* custom_mesh = nullptr;
-};
-}
-
-static void test_triangle_mesh(const Triangle_Mesh_Info& triangle_mesh_info)
-{
-    Triangle_Mesh mesh;
-
-    if (!triangle_mesh_info.file_name.empty()) {
-        Obj_Data obj_data = load_obj(triangle_mesh_info.file_name);
-        ASSERT(!obj_data.meshes.empty());
-        mesh = std::move(obj_data.meshes[0].mesh);
-    }
-    else {
-        ASSERT(triangle_mesh_info.custom_mesh != nullptr);
-        mesh = *triangle_mesh_info.custom_mesh;
-    }
-
-    Timestamp t;
-    KdTree_Build_Params params;
-    //params.split_clipping = false;
-    KdTree triangle_mesh_kdtree = build_triangle_mesh_kdtree(&mesh, params);
-    printf("kdtree build time = %.2fs\n\n", elapsed_milliseconds(t) / 1000.f);
-    triangle_mesh_kdtree.calculate_stats().print();
-
-    printf("\nshooting rays (kdtree)...\n");
-    int time_msec = benchmark_geometry_kdtree(triangle_mesh_kdtree);
-    double speed = (benchmark_ray_count / 1000000.0) / (time_msec / 1000.0);
-    printf("raycast performance [%-6s]: %.2f MRays/sec\n", triangle_mesh_info.file_name.c_str(), speed);
-
-    validate_triangle_mesh_kdtree(triangle_mesh_kdtree, triangle_mesh_info.validation_ray_count);
-}
-
-std::vector<Triangle_Mesh> create_custom_meshes() {
+static std::vector<Triangle_Mesh> create_custom_meshes() {
     std::vector<Triangle_Mesh> meshes;
     // mesh 0
     {
@@ -245,24 +218,51 @@ std::vector<Triangle_Mesh> create_custom_meshes() {
     return meshes;
 }
 
-void test_kdtree() {
-#ifdef _WIN32
-    _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-    _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
-#endif
-
+static void process_kdrees(std::function<void (const KdTree&, const Operation_Info&)> kdtree_handler, bool print_kdtree_stats)
+{
     std::vector<Triangle_Mesh> custom_meshes = create_custom_meshes();
 
-    std::vector<Triangle_Mesh_Info> triangle_mesh_infos {
-        { "", 100'000, &custom_meshes[0]},
-        { "../data/test-files/teapot.obj", 100'000 },
-        { "../data/test-files/bunny.obj", 10'000 },
-        { "../data/test-files/dragon.obj", 5'000 },
+    std::vector<Operation_Info> infos{
+        {"", &custom_meshes[0], "<mesh to test FP bug fix in clip_bounds function>", 100'000},
+        {"../data/test-files/teapot.obj", nullptr, "", 100'000},
+        {"../data/test-files/bunny.obj", nullptr, "", 10'000},
+        {"../data/test-files/dragon.obj", nullptr, "", 5'000},
     };
 
-    for (const Triangle_Mesh_Info& info : triangle_mesh_infos) {
+    for (const Operation_Info& info : infos) {
         printf("---------------------\n");
-        printf("Triangle mesh: %s\n", info.file_name.c_str());
-        test_triangle_mesh(info);
+        printf("Triangle mesh: %s\n", info.mesh_file_name.c_str());
+
+        Triangle_Mesh mesh;
+        if (!info.mesh_file_name.empty()) {
+            Obj_Data obj_data = load_obj(info.mesh_file_name);
+            ASSERT(!obj_data.meshes.empty());
+            mesh = std::move(obj_data.meshes[0].mesh);
+        }
+        else {
+            ASSERT(info.custom_mesh != nullptr);
+            mesh = *info.custom_mesh;
+        }
+
+        Timestamp t;
+        KdTree_Build_Params params;
+        KdTree triangle_mesh_kdtree = build_triangle_mesh_kdtree(&mesh, params);
+        printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
+
+        if (print_kdtree_stats) {
+            printf("KdTree stats:\n");
+            triangle_mesh_kdtree.calculate_stats().print();
+        }
+        kdtree_handler(triangle_mesh_kdtree, info);
     }
- }
+}
+
+void test_kdtree()
+{
+    process_kdrees(&validate_triangle_mesh_kdtree, false);
+}
+
+void benchmark_kdtree()
+{
+    process_kdrees(&benchmark_geometry_kdtree, true);
+}

@@ -7,6 +7,7 @@ void test_triangle_intersection();
 void test_watertightness();
 void test_kdtree();
 void benchmark_triangle_intersection();
+void benchmark_kdtree();
 
 void run_tests() {
     test_random();
@@ -15,4 +16,5 @@ void run_tests() {
     test_watertightness();
     test_kdtree();
     benchmark_triangle_intersection();
+    benchmark_kdtree();
 }
