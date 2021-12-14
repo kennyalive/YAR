@@ -14,74 +14,78 @@ struct KdNode {
     uint32_t word0;
     uint32_t word1;
 
-    enum : int32_t { max_node_count = 0x40000000 }; // max ~ 1 billion nodes
-    enum : uint32_t { leaf_node_flags = 3 };
+    // 30 most significant bits of word0 of interior node is the above child node index.
+    static constexpr uint32_t max_node_count = 0x40000000; // max ~1 billion nodes.
 
-    void init_interior_node(int axis, int32_t above_child, float split) {
+    // 2 least significant bits of word0. If both are set (3) it's a leaf node,
+    // otherwise it's an axis index [0..2] for interior node
+    static constexpr uint32_t leaf_or_axis_mask = 3;
+
+    void init_interior_node(int axis, uint32_t above_child, float split) {
         // 0 - x axis, 1 - y axis, 2 - z axis
         ASSERT(axis >= 0 && axis < 3);
         ASSERT(above_child < max_node_count);
 
-        word0 = axis | (static_cast<uint32_t>(above_child) << 2);
-        word1 = *reinterpret_cast<uint32_t*>(&split);
+        word0 = uint32_t(axis) | (above_child << 2);
+        word1 = std::bit_cast<uint32_t>(split);
     }
 
     void init_empty_leaf() {
-        word0 = leaf_node_flags; // word0 == 3
+        word0 = leaf_or_axis_mask; // word0 == 3
         word1 = 0; // not used for empty leaf, just sets default value
     }
 
-    void init_leaf_with_single_primitive(int32_t primitive_index) {
-        word0 = leaf_node_flags | (1 << 2); // word0 == 7
-        word1 = static_cast<uint32_t>(primitive_index);
+    void init_leaf_with_single_primitive(uint32_t primitive_index) {
+        word0 = leaf_or_axis_mask | (1 << 2); // word0 == 7
+        word1 = primitive_index;
     }
 
-    void init_leaf_with_multiple_primitives(int32_t primitive_count, int32_t primitive_indices_offset) {
+    void init_leaf_with_multiple_primitives(uint32_t primitive_count, uint32_t primitive_indices_offset) {
         ASSERT(primitive_count > 1);
         // word0 == 11, 15, 19, ... (for primitive_count = 2, 3, 4, ...)
-        word0 = leaf_node_flags | (static_cast<uint32_t>(primitive_count) << 2);
-        word1 = static_cast<uint32_t>(primitive_indices_offset);
+        word0 = leaf_or_axis_mask | (primitive_count << 2);
+        word1 = primitive_indices_offset;
     }
 
     bool is_leaf() const {
-        return (word0 & leaf_node_flags) == leaf_node_flags;
+        return (word0 & leaf_or_axis_mask) == leaf_or_axis_mask;
     }
 
-    int32_t get_primitive_count() const {
+    uint32_t get_primitive_count() const {
         ASSERT(is_leaf());
-        return static_cast<int32_t>(word0 >> 2);
+        return word0 >> 2;
     }
 
-    int32_t get_index() const {
+    uint32_t get_index() const {
         ASSERT(is_leaf());
-        return static_cast<int32_t>(word1);
+        return word1;
     }
 
     int get_split_axis() const {
         ASSERT(!is_leaf());
-        return static_cast<int>(word0 & leaf_node_flags);
+        return int(word0 & leaf_or_axis_mask);
     }
 
     float get_split_position() const {
         ASSERT(!is_leaf());
-        return *reinterpret_cast<const float*>(&word1);
+        return std::bit_cast<float>(word1);
     }
 
-    int32_t get_above_child() const {
+    uint32_t get_above_child() const {
         ASSERT(!is_leaf());
-        return static_cast<int32_t>(word0 >> 2);
+        return word0 >> 2;
     }
 };
 
 struct KdTree_Stats {
-    int64_t nodes_size = 0;
-    int64_t primitive_indices_size = 0;
+    uint64_t nodes_size = 0;
+    uint64_t primitive_indices_size = 0;
 
-    int node_count = 0;
-    int leaf_count = 0;
-    int empty_leaf_count = 0;
-    int single_primitive_leaf_count = 0;
-    int perfect_depth = 0;
+    uint32_t node_count = 0;
+    uint32_t leaf_count = 0;
+    uint32_t empty_leaf_count = 0;
+    uint32_t single_primitive_leaf_count = 0;
+    uint32_t perfect_depth = 0;
 
     struct Leaf_Stats {
         float average_depth = 0.0f;
@@ -120,7 +124,7 @@ struct KdTree {
     static uint64_t compute_scene_kdtree_data_hash(const Scene_KdTree_Data& data);
 
     KdTree_Stats calculate_stats() const;
-    std::vector<int32_t> calculate_path_to_node(int32_t node_index) const;
+    std::vector<uint32_t> calculate_path_to_node(uint32_t node_index) const;
 
     static constexpr int max_traversal_depth = 40;
     bool intersect(const Ray& ray, Intersection& intersection) const;
@@ -133,7 +137,7 @@ struct KdTree {
     uint64_t geometry_data_hash = 0;
 
     std::vector<KdNode> nodes;
-    std::vector<int> primitive_indices;
+    std::vector<uint32_t> primitive_indices;
 
     // Reference to geometry data for which this kdtree is built.
     //
@@ -150,5 +154,5 @@ struct KdTree {
     // t_max is the initial value of Intersection::t. If intersection is found then
     // Intersection::t gets overwritten with a distance to the intersection point,
     // otherwise Intersection::t is unchanged.
-    void (*intersector)(const Ray& ray, const void* geometry_data, int primitive_index, Intersection& intersection) = nullptr;
+    void (*intersector)(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection) = nullptr;
 };

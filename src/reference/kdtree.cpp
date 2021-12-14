@@ -6,7 +6,7 @@
 
 #include "lib/scene_object.h"
 
-static void intersect_triangle_mesh_kdtree_leaf_primitive(const Ray& ray, const void* geometry_data, int primitive_index, Intersection& intersection)
+static void intersect_triangle_mesh_kdtree_leaf_primitive(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
 {
     const Triangle_Mesh* mesh = static_cast<const Triangle_Mesh*>(geometry_data);
     Vector3 p0, p1, p2;
@@ -24,7 +24,7 @@ static void intersect_triangle_mesh_kdtree_leaf_primitive(const Ray& ray, const 
     }
 }
 
-static void intersect_scene_kdtree_leaf_primitive(const Ray& ray, const void* geometry_data, int primitive_index, Intersection& intersection)
+static void intersect_scene_kdtree_leaf_primitive(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
 {
     const Scene_KdTree_Data* data = static_cast<const Scene_KdTree_Data*>(geometry_data);
 
@@ -57,14 +57,14 @@ KdTree KdTree::load(const std::string& file_name)
     file.read(reinterpret_cast<char*>(&kdtree.geometry_data_hash), sizeof(uint64_t));
 
     // nodes
-    int32_t node_count = 0;
+    uint32_t node_count = 0;
     file.read(reinterpret_cast<char*>(&node_count), 4);
     kdtree.nodes.resize(node_count);
     size_t nodes_byte_count = node_count * sizeof(KdNode);
     file.read(reinterpret_cast<char*>(kdtree.nodes.data()), nodes_byte_count);
 
     // primitive indices
-    int32_t index_count = 0;
+    uint32_t index_count = 0;
     file.read(reinterpret_cast<char*>(&index_count), 4);
     kdtree.primitive_indices.resize(index_count);
     size_t indices_byte_count = index_count * 4;
@@ -89,14 +89,14 @@ void KdTree::save(const std::string& file_name) const
     file.write(reinterpret_cast<const char*>(&geometry_data_hash), sizeof(uint64_t));
 
     // nodes
-    int32_t node_count = static_cast<int32_t>(nodes.size());
-    file.write(reinterpret_cast<const char*>(&node_count), sizeof(int32_t));
+    uint32_t node_count = (uint32_t)nodes.size();
+    file.write(reinterpret_cast<const char*>(&node_count), sizeof(uint32_t));
     size_t nodes_byte_count = node_count * sizeof(KdNode);
     file.write(reinterpret_cast<const char*>(nodes.data()), nodes_byte_count);
 
     // primitive indices
-    int32_t index_count = static_cast<int32_t>(primitive_indices.size());
-    file.write(reinterpret_cast<const char*>(&index_count), sizeof(int32_t));
+    uint32_t index_count = (uint32_t)primitive_indices.size();
+    file.write(reinterpret_cast<const char*>(&index_count), sizeof(uint32_t));
     size_t indices_byte_count = index_count * 4;
     file.write(reinterpret_cast<const char*>(primitive_indices.data()), indices_byte_count);
 
@@ -142,14 +142,14 @@ uint64_t KdTree::compute_scene_kdtree_data_hash(const Scene_KdTree_Data& data)
 
 bool KdTree::intersect(const Ray& ray, Intersection& intersection) const {
 #ifdef BRUTE_FORCE_INTERSECTION
-    int primitive_count = 0;
+    uint32_t primitive_count = 0;
     if (intersector == &intersect_triangle_mesh_kdtree_leaf_primitive)
         primitive_count = static_cast<const Triangle_Mesh*>(geometry_data)->get_triangle_count();
     else
-        primitive_count = (int)static_cast<const Scene_KdTree_Data*>(geometry_data)->scene_objects->size();
+        primitive_count = (uint32_t)static_cast<const Scene_KdTree_Data*>(geometry_data)->scene_objects->size();
 
     float tmax = intersection.t;
-    for (int i = 0; i < primitive_count; i++) {
+    for (uint32_t i = 0; i < primitive_count; i++) {
         intersector(ray, geometry_data, i, intersection);
     }
     return intersection.t < tmax;
@@ -245,8 +245,8 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const {
                 intersector(ray, geometry_data, node->get_index(), intersection);
             }
             else {
-                for (int32_t i = 0; i < node->get_primitive_count(); i++) {
-                    int32_t primitive_index = primitive_indices[node->get_index() + i];
+                for (uint32_t i = 0; i < node->get_primitive_count(); i++) {
+                    uint32_t primitive_index = primitive_indices[node->get_index() + i];
                     intersector(ray, geometry_data, primitive_index, intersection);
                 }
             }
@@ -280,7 +280,7 @@ KdTree_Stats KdTree::calculate_stats() const
 
     stats.nodes_size = nodes.size() * sizeof(KdNode);
     stats.primitive_indices_size = primitive_indices.size() * sizeof(primitive_indices[0]);
-    stats.node_count = static_cast<int32_t>(nodes.size());
+    stats.node_count = (uint32_t)nodes.size();
 
     int64_t primitive_per_leaf_accumulated = 0;
 
@@ -298,7 +298,7 @@ KdTree_Stats KdTree::calculate_stats() const
 
     auto not_empty_leaf_count = stats.leaf_count - stats.empty_leaf_count;
 
-    stats.perfect_depth = static_cast<int>(std::ceil(std::log2(stats.leaf_count)));
+    stats.perfect_depth = static_cast<uint32_t>(std::ceil(std::log2(stats.leaf_count)));
     stats.not_empty_leaf_stats.average_primitive_count = float(double(primitive_per_leaf_accumulated) / not_empty_leaf_count);
 
     // Compute depth of each leaf node.
@@ -306,14 +306,14 @@ KdTree_Stats KdTree::calculate_stats() const
     std::vector<uint8_t> empty_leaf_depth_values;
 
     struct Depth_Info {
-        int32_t node_index = -1;
-        uint8_t depth = -1;
+        uint32_t node_index = 0;
+        uint8_t depth = 0;
     };
     std::vector<Depth_Info> depth_info{ Depth_Info{0, 0} };
 
     size_t i = 0;
     while (i < depth_info.size()) {
-        int32_t node_index = depth_info[i].node_index;
+        uint32_t node_index = depth_info[i].node_index;
         uint8_t depth = depth_info[i].depth;
 
         if (nodes[node_index].is_leaf()) {
@@ -323,10 +323,10 @@ KdTree_Stats KdTree::calculate_stats() const
                 empty_leaf_depth_values.push_back(depth);
         }
         else {
-            int32_t below_child_index = node_index + 1;
+            uint32_t below_child_index = node_index + 1;
             depth_info.push_back({ below_child_index, uint8_t(depth + 1) });
 
-            int32_t above_child_index = nodes[node_index].get_above_child();
+            uint32_t above_child_index = nodes[node_index].get_above_child();
             depth_info.push_back({ above_child_index, uint8_t(depth + 1) });
         }
         i++;
@@ -357,23 +357,22 @@ KdTree_Stats KdTree::calculate_stats() const
     return stats;
 }
 
-std::vector<int32_t> KdTree::calculate_path_to_node(int32_t node_index) const
+std::vector<uint32_t> KdTree::calculate_path_to_node(uint32_t node_index) const
 {
     ASSERT(node_index >= 0 && node_index < nodes.size());
 
-    std::map<int32_t, int32_t> parent_map;
+    std::map<uint32_t, uint32_t> parent_map;
 
-    for (int32_t i = 0; i < int32_t(nodes.size()); i++) {
-        auto node = nodes[i];
-        if (!node.is_leaf()) {
-            int32_t below_child = i + 1;
-            int32_t above_child = node.get_above_child();
+    for (uint32_t i = 0; i < uint32_t(nodes.size()); i++) {
+        if (!nodes[i].is_leaf()) {
+            uint32_t below_child = i + 1;
+            uint32_t above_child = nodes[i].get_above_child();
             parent_map[below_child] = i;
             parent_map[above_child] = i;
         }
     }
 
-    std::vector<int32_t> path { node_index };
+    std::vector<uint32_t> path { node_index };
     auto it = parent_map.find(node_index);
     while (it != parent_map.cend()) {
         path.push_back(it->second);
