@@ -125,7 +125,6 @@ static int benchmark_geometry_kdtree(const KdTree& kdtree) {
 }
 
 static void validate_triangle_mesh_kdtree(const KdTree& kdtree, int ray_count) {
-    ASSERT(kdtree.intersector == &intersect_triangle_mesh_kdtree_leaf_primitive);
     const Triangle_Mesh& mesh = *static_cast<const Triangle_Mesh*>(kdtree.geometry_data);
 
     printf("Running triangle mesh kdtree validation... ");
