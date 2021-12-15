@@ -2,6 +2,7 @@
 #include "lib/common.h"
 #include "kdtree.h"
 
+#include "image_texture.h"
 #include "intersection.h"
 
 #include "lib/scene_object.h"
@@ -16,6 +17,13 @@ static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* ge
     float t = intersect_triangle_watertight(ray, p0, p1, p2, &b);
 
     if (t < intersection.t) {
+        // Do alpha test.
+        if (data->alpha_texture != nullptr) {
+            Vector2 uv = data->mesh->get_uv(primitive_index, b);
+            ColorRGB alpha = data->alpha_texture->sample_bilinear(uv, 0, Wrap_Mode::repeat);
+            if (alpha.r == 0.f)
+                return; // skip this triangle
+        }
         intersection.t = t;
         intersection.geometry_type = Geometry_Type::triangle_mesh;
         intersection.triangle_intersection.barycentrics = b;

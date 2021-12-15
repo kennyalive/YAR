@@ -7,6 +7,7 @@ struct Intersection;
 struct KdTree;
 struct Ray;
 struct Scene_Object;
+class Image_Texture;
 
 // 8 byte kd-tree node.
 // KdTree is a linear array of nodes + an array of primitive indices referenced by the nodes.
@@ -100,6 +101,7 @@ struct KdTree_Stats {
 
 struct Triangle_Mesh_Geometry_Data {
     const Triangle_Mesh* mesh = nullptr;
+    const Image_Texture* alpha_texture = nullptr;
 };
 
 // Data used by top level (entire scene) kdtree.

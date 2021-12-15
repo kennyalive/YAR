@@ -318,6 +318,11 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
             ctx.textures.push_back(std::move(texture));
         }
     }
+    for (size_t i = 0; i < scene.geometries.triangle_meshes.size(); i++) {
+        if (scene.geometries.triangle_meshes[i].alpha_texture_index >= 0) {
+            triangle_mesh_geometry_datas[i].alpha_texture = &ctx.textures[scene.geometries.triangle_meshes[i].alpha_texture_index];
+        }
+    }
 
     // Init environment map sampling.
     {
