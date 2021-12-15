@@ -244,9 +244,12 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
             mesh = *info.custom_mesh;
         }
 
+        Triangle_Mesh_Geometry_Data geometry_data;
+        geometry_data.mesh = &mesh;
+
         Timestamp t;
         KdTree_Build_Params params;
-        KdTree triangle_mesh_kdtree = build_triangle_mesh_kdtree(&mesh, params);
+        KdTree triangle_mesh_kdtree = build_triangle_mesh_kdtree(&geometry_data, params);
         printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
 
         if (print_kdtree_stats) {

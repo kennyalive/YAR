@@ -6,11 +6,11 @@
 
 #include "lib/scene_object.h"
 
-static void intersect_triangle_mesh_kdtree_leaf_primitive(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
+static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
 {
-    const Triangle_Mesh* mesh = static_cast<const Triangle_Mesh*>(geometry_data);
+    auto data = static_cast<const Triangle_Mesh_Geometry_Data*>(geometry_data);
     Vector3 p0, p1, p2;
-    mesh->get_triangle(primitive_index, p0, p1, p2);
+    data->mesh->get_triangle(primitive_index, p0, p1, p2);
 
     Vector3 b;
     float t = intersect_triangle_watertight(ray, p0, p1, p2, &b);
@@ -19,14 +19,14 @@ static void intersect_triangle_mesh_kdtree_leaf_primitive(const Ray& ray, const 
         intersection.t = t;
         intersection.geometry_type = Geometry_Type::triangle_mesh;
         intersection.triangle_intersection.barycentrics = b;
-        intersection.triangle_intersection.mesh = mesh;
+        intersection.triangle_intersection.mesh = data->mesh;
         intersection.triangle_intersection.triangle_index = primitive_index;
     }
 }
 
-static void intersect_scene_kdtree_leaf_primitive(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
+static void intersect_scene_geometry_data(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
 {
-    const Scene_KdTree_Data* data = static_cast<const Scene_KdTree_Data*>(geometry_data);
+    auto data = static_cast<const Scene_Geometry_Data*>(geometry_data);
 
     ASSERT(primitive_index >= 0 && primitive_index < data->scene_objects->size());
     const Scene_Object* scene_object = &(*data->scene_objects)[primitive_index];
@@ -104,25 +104,25 @@ void KdTree::save(const std::string& file_name) const
         error("KdTree::save: failed to write kdtree data: %s", file_name.c_str());
 }
 
-bool KdTree::set_geometry_data(const Triangle_Mesh* mesh)
+bool KdTree::set_geometry_data(const Triangle_Mesh_Geometry_Data* triangle_mesh_geometry_data)
 {
-    uint64_t mesh_hash = compute_triangle_mesh_hash(*mesh);
+    uint64_t mesh_hash = compute_triangle_mesh_hash(*triangle_mesh_geometry_data->mesh);
     if (geometry_data_hash != mesh_hash)
         return false;
 
-    geometry_data = mesh;
-    intersector = &intersect_triangle_mesh_kdtree_leaf_primitive;
+    geometry_data = triangle_mesh_geometry_data;
+    intersector = &intersect_triangle_mesh_geometry_data;
     return true;
 }
 
-bool KdTree::set_geometry_data(const Scene_KdTree_Data* scene_kdtree_data)
+bool KdTree::set_geometry_data(const Scene_Geometry_Data* scene_geometry_data)
 {
-    uint64_t scene_kdtree_data_hash = compute_scene_kdtree_data_hash(*scene_kdtree_data);
+    uint64_t scene_kdtree_data_hash = compute_scene_kdtree_data_hash(*scene_geometry_data);
     if (geometry_data_hash != scene_kdtree_data_hash)
         return false;
 
-    geometry_data = scene_kdtree_data;
-    intersector = &intersect_scene_kdtree_leaf_primitive;
+    geometry_data = scene_geometry_data;
+    intersector = &intersect_scene_geometry_data;
     return true;
 }
 
@@ -132,7 +132,7 @@ uint64_t KdTree::compute_triangle_mesh_hash(const Triangle_Mesh& mesh)
     return 0;
 }
 
-uint64_t KdTree::compute_scene_kdtree_data_hash(const Scene_KdTree_Data& data)
+uint64_t KdTree::compute_scene_kdtree_data_hash(const Scene_Geometry_Data& scene_geometry_data)
 {
     // TODO: implement me
     return 0;
@@ -145,7 +145,7 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
 #ifdef BRUTE_FORCE_INTERSECTION
     uint32_t primitive_count = 0;
     if (intersector == &intersect_triangle_mesh_kdtree_leaf_primitive)
-        primitive_count = static_cast<const Triangle_Mesh*>(geometry_data)->get_triangle_count();
+        primitive_count = static_cast<const Triangle_Mesh_Geometry_Data*>(geometry_data)->mesh->get_triangle_count();
     else
         primitive_count = (uint32_t)static_cast<const Scene_KdTree_Data*>(geometry_data)->scene_objects->size();
 
@@ -300,7 +300,7 @@ KdTree_Stats KdTree::calculate_stats() const
 
     auto not_empty_leaf_count = stats.leaf_count - stats.empty_leaf_count;
 
-    stats.perfect_depth = static_cast<uint32_t>(std::ceil(std::log2(stats.leaf_count)));
+    stats.perfect_depth = (uint32_t)std::ceil(std::log2(stats.leaf_count));
     stats.not_empty_leaf_stats.average_primitive_count = float(double(primitive_per_leaf_accumulated) / not_empty_leaf_count);
 
     // Compute depth of each leaf node.

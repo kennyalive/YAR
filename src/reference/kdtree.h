@@ -98,8 +98,12 @@ struct KdTree_Stats {
     void print();
 };
 
+struct Triangle_Mesh_Geometry_Data {
+    const Triangle_Mesh* mesh = nullptr;
+};
+
 // Data used by top level (entire scene) kdtree.
-struct Scene_KdTree_Data {
+struct Scene_Geometry_Data {
     // The objects in the scene. Each object has associated geometry kdtree.
     const std::vector<Scene_Object>* scene_objects = nullptr;
 
@@ -117,11 +121,11 @@ struct KdTree {
 
     // Sets reference to geometry data. Should be called after kdtree is loaded from the file.
     // These functions return false when the hash computed from geometry data differs from KdTree::geometry_data_hash.
-    bool set_geometry_data(const Triangle_Mesh* mesh);
-    bool set_geometry_data(const Scene_KdTree_Data* scene_kdtree_data);
+    bool set_geometry_data(const Triangle_Mesh_Geometry_Data* triangle_mesh_geometry_data);
+    bool set_geometry_data(const Scene_Geometry_Data* scene_geometry_data);
 
     static uint64_t compute_triangle_mesh_hash(const Triangle_Mesh& mesh);
-    static uint64_t compute_scene_kdtree_data_hash(const Scene_KdTree_Data& data);
+    static uint64_t compute_scene_kdtree_data_hash(const Scene_Geometry_Data& scene_geometry_data);
 
     KdTree_Stats calculate_stats() const;
     std::vector<uint32_t> calculate_path_to_node(uint32_t node_index) const;
@@ -140,12 +144,8 @@ struct KdTree {
     std::vector<uint32_t> primitive_indices;
 
     // Reference to geometry data for which this kdtree is built.
-    //
-    // For triangle mesh kdtree it's a Triangle_Mesh object.
-    // The leaves contain references to seperate triangles.
-    //
-    // For scene kdtree it's a Scene_KdTree_Data object.  
-    // The leaves contain references to scene objects.
+    // For triangle mesh kdtree it points to Triangle_Mesh_Geometry_Data object.
+    // For scene kdtree it points to Scene_Geometry_Data object.  
     const void* geometry_data = nullptr;
 
     // Performs intersection test between a ray and a primitive from kdtree leaf.

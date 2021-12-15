@@ -74,7 +74,8 @@ static std::string get_project_unique_name(const std::string& scene_path) {
     return oss.str();
 }
 
-static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, std::array<int, Geometry_Type_Count>* geometry_type_offsets)
+static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::vector<Triangle_Mesh_Geometry_Data>& geometry_datas,
+    std::array<int, Geometry_Type_Count>* geometry_type_offsets)
 {
     fs::path kdtree_cache_directory = get_data_directory() / "kdtree-cache" / get_project_unique_name(scene.path);
 
@@ -87,8 +88,8 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, std::array<
             error("Failed to create kdtree cache directory: %s\n", kdtree_cache_directory.string().c_str());
 
         KdTree_Build_Params kdtree_build_params;
-        for (int i = 0; i < (int)scene.geometries.triangle_meshes.size(); i++) {
-            KdTree kdtree = build_triangle_mesh_kdtree(&scene.geometries.triangle_meshes[i], kdtree_build_params);
+        for (size_t i = 0; i < geometry_datas.size(); i++) {
+            KdTree kdtree = build_triangle_mesh_kdtree(&geometry_datas[i], kdtree_build_params);
             fs::path kdtree_file = kdtree_cache_directory / (std::to_string(i) + ".kdtree");
             kdtree.save(kdtree_file.string());
         }
@@ -103,10 +104,10 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, std::array<
     geometry_type_offsets->fill(0);
     (*geometry_type_offsets)[static_cast<int>(Geometry_Type::triangle_mesh)] = (int)kdtrees.size();
 
-    for (int i = 0; i < (int)scene.geometries.triangle_meshes.size(); i++) {
+    for (size_t i = 0; i < geometry_datas.size(); i++) {
         fs::path kdtree_file = kdtree_cache_directory / (std::to_string(i) + ".kdtree");
         KdTree kdtree = KdTree::load(kdtree_file.string());
-        kdtree.set_geometry_data(&scene.geometries.triangle_meshes[i]);
+        kdtree.set_geometry_data(&geometry_datas[i]);
         kdtrees.push_back(std::move(kdtree));
     }
     printf("done\n");
@@ -244,18 +245,23 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     Timestamp t_load;
     Scene scene = load_scene(input_file);
 
-    std::array<int, Geometry_Type_Count> geometry_type_offsets;
-    std::vector<KdTree> geometry_kdtrees = load_geometry_kdtrees(scene, &geometry_type_offsets);
+    std::vector<Triangle_Mesh_Geometry_Data> triangle_mesh_geometry_datas(scene.geometries.triangle_meshes.size());
+    for (size_t i = 0; i < scene.geometries.triangle_meshes.size(); i++) {
+        triangle_mesh_geometry_datas[i].mesh = &scene.geometries.triangle_meshes[i];
+    }
 
-    Scene_KdTree_Data scene_kdtree_data;
-    scene_kdtree_data.scene_objects = &scene.objects;
-    scene_kdtree_data.kdtrees = &geometry_kdtrees;
-    scene_kdtree_data.geometry_type_offsets = geometry_type_offsets;
+    std::array<int, Geometry_Type_Count> geometry_type_offsets;
+    std::vector<KdTree> geometry_kdtrees = load_geometry_kdtrees(scene, triangle_mesh_geometry_datas, &geometry_type_offsets);
+
+    Scene_Geometry_Data scene_geometry_data;
+    scene_geometry_data.scene_objects = &scene.objects;
+    scene_geometry_data.kdtrees = &geometry_kdtrees;
+    scene_geometry_data.geometry_type_offsets = geometry_type_offsets;
 
     Timestamp t_scene_kdtree;
     printf("Building scene kdtree: ");
     KdTree_Build_Params kdtree_build_params;
-    KdTree scene_kdtree = build_scene_kdtree(&scene_kdtree_data, kdtree_build_params);
+    KdTree scene_kdtree = build_scene_kdtree(&scene_geometry_data, kdtree_build_params);
     printf("%.2fs\n", elapsed_milliseconds(t_scene_kdtree) / 1e3f);
 
     Camera camera(scene.view_points[0], Vector2(scene.image_resolution), scene.camera_fov_y, scene.z_is_up);

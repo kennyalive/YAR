@@ -204,7 +204,7 @@ KdTree_Builder::KdTree_Builder(
 
     // Maximum theoretical size is [total_primitive_count*(build_params.max_depth + 1)] elements.
     // Algorithm starts with the following initial size and resizes later if necessary.
-    primitive_buffer.resize(static_cast<size_t>(total_primitive_count * 2.5));
+    primitive_buffer.resize(size_t(total_primitive_count * 2.5));
 
     primitive_buffer2.resize(total_primitive_count);
 }
@@ -278,7 +278,7 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, uint32_t primit
     bounds0.max_p[split.axis] = split_position;
     build_node(bounds0, 0, n0, depth - 1, above_primitives_offset + n1);
 
-    uint32_t above_child = static_cast<uint32_t>(nodes.size());
+    uint32_t above_child = (uint32_t)nodes.size();
     nodes[this_node_index].init_interior_node(split.axis, above_child, split_position);
 
     Bounding_Box bounds1 = node_bounds;
@@ -338,8 +338,8 @@ Split KdTree_Builder::select_split(const Bounding_Box& node_bounds, const Primit
         // initialize edges
         for (uint32_t i = 0; i < primitive_count; i++) {
             const Bounding_Box& bounds = primitives[i].bounds;
-            edges[axis][2 * i + 0] = { bounds.min_p[axis], static_cast<uint32_t>(i) };
-            edges[axis][2 * i + 1] = { bounds.max_p[axis], static_cast<uint32_t>(i) | Edge::edge_end_flag };
+            edges[axis][2 * i + 0] = { bounds.min_p[axis], (uint32_t)i };
+            edges[axis][2 * i + 1] = { bounds.max_p[axis], (uint32_t)i | Edge::edge_end_flag };
 
             if (bounds.min_p[axis] == bounds.max_p[axis]) {
                 edges[axis][2 * i + 0].primitive_and_flags |= Edge::primitive_perpendicular_to_axis_flag;
@@ -422,8 +422,9 @@ Split KdTree_Builder::select_split_for_axis(const Bounding_Box& node_bounds, uin
     return best_split;
 }
 
-KdTree build_triangle_mesh_kdtree(const Triangle_Mesh* mesh, const KdTree_Build_Params& params)
+KdTree build_triangle_mesh_kdtree(const Triangle_Mesh_Geometry_Data* triangle_mesh_geometry_data, const KdTree_Build_Params& params)
 {
+    const Triangle_Mesh* mesh = triangle_mesh_geometry_data->mesh;
     auto get_primitive_bounds = [mesh](uint32_t index) {
         return mesh->get_triangle_bounds(index);
     };
@@ -436,29 +437,29 @@ KdTree build_triangle_mesh_kdtree(const Triangle_Mesh* mesh, const KdTree_Build_
     tree.geometry_data_hash = KdTree::compute_triangle_mesh_hash(*mesh);
     tree.nodes = std::move(builder.nodes);
     tree.primitive_indices = std::move(builder.primitive_indices);
-    tree.set_geometry_data(mesh);
+    tree.set_geometry_data(triangle_mesh_geometry_data);
     return tree;
 }
 
-KdTree build_scene_kdtree(const Scene_KdTree_Data* scene_kdtree_data, const KdTree_Build_Params& params)
+KdTree build_scene_kdtree(const Scene_Geometry_Data* scene_geometry_data, const KdTree_Build_Params& params)
 {
-    auto get_primitive_bounds = [scene_kdtree_data](uint32_t index) {
-        const Scene_Object& object = (*scene_kdtree_data->scene_objects)[index];
-        int offset = scene_kdtree_data->geometry_type_offsets[static_cast<int>(object.geometry.type)];
+    auto get_primitive_bounds = [scene_geometry_data](uint32_t index) {
+        const Scene_Object& object = (*scene_geometry_data->scene_objects)[index];
+        int offset = scene_geometry_data->geometry_type_offsets[static_cast<int>(object.geometry.type)];
         int kdtree_index = offset + object.geometry.index;
-        Bounding_Box local_bounds = (*scene_kdtree_data->kdtrees)[kdtree_index].bounds;
+        Bounding_Box local_bounds = (*scene_geometry_data->kdtrees)[kdtree_index].bounds;
         Bounding_Box world_bounds = transform_bounding_box(object.object_to_world_transform, local_bounds);
         return world_bounds;
     };
 
-    KdTree_Builder builder(params, (uint32_t)scene_kdtree_data->scene_objects->size(), get_primitive_bounds, nullptr);
+    KdTree_Builder builder(params, (uint32_t)scene_geometry_data->scene_objects->size(), get_primitive_bounds, nullptr);
     builder.build();
 
     KdTree tree;
     tree.bounds = builder.total_bounds;
-    tree.geometry_data_hash = KdTree::compute_scene_kdtree_data_hash(*scene_kdtree_data);
+    tree.geometry_data_hash = KdTree::compute_scene_kdtree_data_hash(*scene_geometry_data);
     tree.nodes = std::move(builder.nodes);
     tree.primitive_indices = std::move(builder.primitive_indices);
-    tree.set_geometry_data(scene_kdtree_data);
+    tree.set_geometry_data(scene_geometry_data);
     return tree;
 }

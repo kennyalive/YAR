@@ -14,8 +14,11 @@ void test_watertightness() {
     float radius = 0.5f;
     Triangle_Mesh mesh = create_sphere_mesh(radius, 6, false);
 
+    Triangle_Mesh_Geometry_Data geometry_data;
+    geometry_data.mesh = &mesh;
+
     KdTree_Build_Params kdtree_build_params;
-    KdTree kdtree = build_triangle_mesh_kdtree(&mesh, kdtree_build_params);
+    KdTree kdtree = build_triangle_mesh_kdtree(&geometry_data, kdtree_build_params);
 
     const int ray_count = 100'000'000;
     {
