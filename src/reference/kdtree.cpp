@@ -140,7 +140,8 @@ uint64_t KdTree::compute_scene_kdtree_data_hash(const Scene_KdTree_Data& data)
 
 //#define BRUTE_FORCE_INTERSECTION
 
-bool KdTree::intersect(const Ray& ray, Intersection& intersection) const {
+bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
+{
 #ifdef BRUTE_FORCE_INTERSECTION
     uint32_t primitive_count = 0;
     if (intersector == &intersect_triangle_mesh_kdtree_leaf_primitive)
@@ -177,8 +178,8 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const {
 
     while (intersection.t > t_min) {
         if (!node->is_leaf()) {
-            int axis = node->get_split_axis();
-            float distance_to_split_plane = node->get_split_position() - ray.origin[axis];
+            const int axis = node->get_split_axis();
+            const float distance_to_split_plane = node->get_split_position() - ray.origin[axis];
 
             const KdNode* below_child = node + 1;
             const KdNode* above_child = &nodes[node->get_above_child()];
@@ -269,7 +270,8 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const {
 #endif // !BRUTE_FORCE_INTERSECTION
 }
 
-bool KdTree::intersect_any(const Ray& ray, float tmax) const {
+bool KdTree::intersect_any(const Ray& ray, float tmax) const
+{
     Intersection intersection{ tmax };
     return intersect(ray, intersection);
 }
