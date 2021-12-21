@@ -135,7 +135,7 @@ static void benchmark_geometry_kdtree(const KdTree& kdtree, const Operation_Info
 }
 
 static void validate_triangle_mesh_kdtree(const KdTree& kdtree, const Operation_Info& info) {
-    const Triangle_Mesh& mesh = *static_cast<const Triangle_Mesh*>(kdtree.geometry_data);
+    const Triangle_Mesh& mesh = *static_cast<const Triangle_Mesh_Geometry_Data*>(kdtree.geometry_data)->mesh;
 
     printf("Running triangle mesh kdtree validation... ");
     Vector3 last_hit_position = (kdtree.bounds.min_p + kdtree.bounds.max_p) * 0.5f;
