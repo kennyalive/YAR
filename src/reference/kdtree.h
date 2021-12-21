@@ -92,9 +92,10 @@ struct KdTree_Stats {
         float average_depth = 0.0f;
         float depth_standard_deviation = 0.0f;
         float average_primitive_count = 0.0f;
+        float primitive_count_standard_deviation = 0.f;
     };
     Leaf_Stats not_empty_leaf_stats;
-    Leaf_Stats empty_leaf_stats; // empty_leaf_stats.average_primitive_count == 0
+    Leaf_Stats empty_leaf_stats;
 
     void print();
 };

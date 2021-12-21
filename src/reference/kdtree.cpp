@@ -311,6 +311,18 @@ KdTree_Stats KdTree::calculate_stats() const
     stats.perfect_depth = (uint32_t)std::ceil(std::log2(stats.leaf_count));
     stats.not_empty_leaf_stats.average_primitive_count = float(double(primitive_per_leaf_accumulated) / not_empty_leaf_count);
 
+    // Not-empty leaf primitive count standard deviation
+    {
+        double accum = 0;
+        for (KdNode node : nodes) {
+            if (node.is_leaf() && node.get_primitive_count() > 0) {
+                float diff = (float)node.get_primitive_count() - stats.not_empty_leaf_stats.average_primitive_count;
+                accum += diff * diff;
+            }
+        }
+        stats.not_empty_leaf_stats.primitive_count_standard_deviation = (float)std::sqrt(accum / not_empty_leaf_count);
+    }
+
     // Compute depth of each leaf node.
     std::vector<uint8_t> not_empty_leaf_depth_values;
     std::vector<uint8_t> empty_leaf_depth_values;
@@ -409,6 +421,7 @@ void KdTree_Stats::print()
     printf("   average_depth = %.2f\n", not_empty_leaf_stats.average_depth);
     printf("   depth_standard_deviation = %.2f\n", not_empty_leaf_stats.depth_standard_deviation);
     printf("   average_primitive_count = %.2f\n", not_empty_leaf_stats.average_primitive_count);
+    printf("   primitive_count_standard_deviation = %.2f\n", not_empty_leaf_stats.primitive_count_standard_deviation);
 
     printf("[empty leaves]\n");
     printf("   average_depth = %.2f\n", empty_leaf_stats.average_depth);
