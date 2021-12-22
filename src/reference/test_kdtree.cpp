@@ -91,7 +91,7 @@ static void benchmark_geometry_kdtree(const KdTree& kdtree, const Operation_Info
     Vector3 last_hit_normal = Vector3(1, 0, 0);
     Ray_Generator ray_generator(kdtree.bounds);
 
-    printf("\nshooting rays (kdtree)...\n");
+    printf("shooting %.2gM rays against kdtree...\n", benchmark_ray_count / 1e6);
 
     int64_t time_ns = 0;
     for (int i = 0; i < benchmark_ray_count; i++) {
@@ -129,7 +129,7 @@ static void benchmark_geometry_kdtree(const KdTree& kdtree, const Operation_Info
     double cpu_ghz = get_base_cpu_frequency_ghz();
     double nanoseconds_per_raycast = time_ns / double(benchmark_ray_count);
     int clocks = static_cast<int>(nanoseconds_per_raycast * cpu_ghz);
-    printf("Single raycast time: %.2f nanoseconds, %d clocks\n", nanoseconds_per_raycast, clocks);
+    printf("single raycast time: %.2f nanoseconds, %d clocks\n", nanoseconds_per_raycast, clocks);
     double mrays_per_sec = (benchmark_ray_count / 1e6f) / (time_ns / 1e9f);
     printf("raycast performance: %.2f MRays/sec\n", mrays_per_sec);
 }
@@ -231,7 +231,9 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
 
     for (const Operation_Info& info : infos) {
         printf("---------------------\n");
-        printf("Triangle mesh: %s\n", info.mesh_file_name.c_str());
+        printf("Triangle mesh: %s\n", info.custom_mesh_name.empty()
+            ? info.mesh_file_name.c_str()
+            : info.custom_mesh_name.c_str());
 
         Triangle_Mesh mesh;
         if (!info.mesh_file_name.empty()) {
@@ -255,6 +257,7 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
         if (print_kdtree_stats) {
             printf("KdTree stats:\n");
             triangle_mesh_kdtree.calculate_stats().print();
+            printf("\n");
         }
         kdtree_handler(triangle_mesh_kdtree, info);
     }
