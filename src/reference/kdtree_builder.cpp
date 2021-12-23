@@ -425,6 +425,8 @@ Split KdTree_Builder::select_split_for_axis(const Bounding_Box& node_bounds, uin
         num_below += group_end - middle_edge;
         i = group_end;
     }
+    ASSERT(num_below == primitive_count);
+    ASSERT(num_above == 0);
     return best_split;
 }
 
