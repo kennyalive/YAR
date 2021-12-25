@@ -16,8 +16,7 @@ struct KdTree_Build_Params {
     // TODO: re-test the effect of this parameter later (after we improve kdtree performance in other areas).
     bool split_along_the_longest_axis = false;
 
-    int leaf_primitive_limit = 2; // the actual amout of leaf primitives can be larger
-    bool split_clipping = true;
+    int leaf_primitive_limit = 2; // the actual amount of leaf primitives can be larger
 };
 
 // Builds kdtree for a triangle mesh.

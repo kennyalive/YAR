@@ -241,13 +241,10 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, uint32_t primit
             uint32_t index = edge.get_primitive_index();
             Primitive_Info primitive_info = primitive_buffer2[index];
 
-            if (build_params.split_clipping) {
-                if (primitive_info.bounds.max_p[split.axis] > split_position) {
-                    if (mesh)
-                        clip_bounds(*mesh, primitive_info.primitive, split_position, split.axis, true, primitive_info.bounds);
-                }
+            if (primitive_info.bounds.max_p[split.axis] > split_position) {
+                if (mesh)
+                    clip_bounds(*mesh, primitive_info.primitive, split_position, split.axis, true, primitive_info.bounds);
             }
-
             primitive_buffer[n0++] = primitive_info;
         }
     }
@@ -259,13 +256,10 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, uint32_t primit
             uint32_t index = edge.get_primitive_index();
             Primitive_Info primitive_info = primitive_buffer2[index];
 
-            if (build_params.split_clipping) {
-                if (primitive_info.bounds.min_p[split.axis] < split_position) {
-                    if (mesh)
-                        clip_bounds(*mesh, primitive_info.primitive, split_position, split.axis, false, primitive_info.bounds);
-                }
+            if (primitive_info.bounds.min_p[split.axis] < split_position) {
+                if (mesh)
+                    clip_bounds(*mesh, primitive_info.primitive, split_position, split.axis, false, primitive_info.bounds);
             }
-
             primitive_buffer[above_primitives_offset + n1++] = primitive_info;
         }
     }
