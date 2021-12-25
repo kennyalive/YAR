@@ -20,7 +20,7 @@ static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* ge
 
     // When few primitives overlap at intersection point then select a primitive
     // with a smaller index to have deterministic behavior with regard to using
-    // different version of the kdtree which can list primitives in a different order.
+    // different kdtree version which can list primitives in a different order.
     const bool primitive_overlap_resolve = (t == intersection.t && primitive_index < intersection.triangle_intersection.triangle_index);
 
     if (found_closer_intersection || primitive_overlap_resolve) {
