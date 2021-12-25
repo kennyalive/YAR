@@ -16,7 +16,14 @@ static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* ge
     Vector3 b;
     float t = intersect_triangle_watertight(ray, p0, p1, p2, &b);
 
-    if (t < intersection.t) {
+    const bool found_closer_intersection = t < intersection.t;
+
+    // When few primitives overlap at intersection point then select a primitive
+    // with a smaller index to have deterministic behavior with regard to using
+    // different version of the kdtree which can list primitives in a different order.
+    const bool primitive_overlap_resolve = (t == intersection.t && primitive_index < intersection.triangle_intersection.triangle_index);
+
+    if (found_closer_intersection || primitive_overlap_resolve) {
         // Do alpha test.
         if (data->alpha_texture != nullptr) {
             Vector2 uv = data->mesh->get_uv(primitive_index, b);
