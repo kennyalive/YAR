@@ -9,13 +9,6 @@ struct KdTree_Build_Params {
     float traversal_cost = 1;
     float empty_bonus = 0.3f;
     int max_depth = -1;
-
-    // NOTE: The tests are inconclusive if this parameter (when it's on) provides performance
-    // improvements on average. For some scenes it's slower and for some scenes it's faster,
-    // typical performance improvement/degradation is 5-10% in both directions.
-    // TODO: re-test the effect of this parameter later (after we improve kdtree performance in other areas).
-    bool split_along_the_longest_axis = false;
-
     int leaf_primitive_limit = 2; // the actual amount of leaf primitives can be larger
 };
 

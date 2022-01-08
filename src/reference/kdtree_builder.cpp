@@ -308,35 +308,11 @@ void KdTree_Builder::create_leaf(const Primitive_Info* primitives, uint32_t prim
 
 int KdTree_Builder::select_split(const Bounding_Box& node_bounds, const Primitive_Info* primitives, uint32_t primitive_count, uint32_t* split_edge)
 {
-    // Determine axes iteration order.
-    int axes[3];
-    if (build_params.split_along_the_longest_axis) {
-        Vector3 diag = node_bounds.max_p - node_bounds.min_p;
-        if (diag.x >= diag.y && diag.x >= diag.z) {
-            axes[0] = 0;
-            axes[1] = diag.y >= diag.z ? 1 : 2;
-        }
-        else if (diag.y >= diag.x && diag.y >= diag.z) {
-            axes[0] = 1;
-            axes[1] = diag.x >= diag.z ? 0 : 2;
-        }
-        else {
-            axes[0] = 2;
-            axes[1] = diag.x >= diag.y ? 0 : 1;
-        }
-        axes[2] = 3 - axes[0] - axes[1]; // since 0 + 1 + 2 == 3
-    }
-    else {
-        axes[0] = 0;
-        axes[1] = 1;
-        axes[2] = 2;
-    }
-
     float best_cost = Infinity;
     int best_axis = -1;
     uint32_t best_edge;
 
-    for (int axis : axes) {
+    for (int axis : {0, 1, 2}) {
         // initialize edges
         for (uint32_t i = 0; i < primitive_count; i++) {
             const Bounding_Box& bounds = primitives[i].bounds;
@@ -348,29 +324,21 @@ int KdTree_Builder::select_split(const Bounding_Box& node_bounds, const Primitiv
                 edges[axis][2 * i + 1].primitive_and_flags |= Edge::primitive_perpendicular_to_axis_flag;
             }
         }
-
         std::stable_sort(edges[axis].data(), edges[axis].data() + 2 * primitive_count, Edge::less);
 
         // select split position
         uint32_t edge;
         float cost = select_split_for_axis(node_bounds, primitive_count, axis, &edge);
-        if (cost != Infinity) {
-            if (build_params.split_along_the_longest_axis) {
-                *split_edge = edge;
-                return axis;
-            }
-            if (cost < best_cost) {
-                best_cost = cost;
-                best_axis = axis;
-                best_edge = edge;
-            }
+        if (cost < best_cost) {
+            best_cost = cost;
+            best_axis = axis;
+            best_edge = edge;
         }
     }
 
-    if (best_axis == -1) {
-        return -1;
+    if (best_axis != -1) {
+        *split_edge = best_edge;
     }
-    *split_edge = best_edge;
     return best_axis;
 }
 
