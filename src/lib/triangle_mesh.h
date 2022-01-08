@@ -19,14 +19,14 @@ struct Triangle_Mesh {
         return static_cast<int>(vertices.size());
     }
 
-    void get_triangle(int triangle_index, Vector3& p0, Vector3& p1, Vector3& p2) const {
+    void get_triangle(uint32_t triangle_index, Vector3& p0, Vector3& p1, Vector3& p2) const {
         const int* pi = &indices[triangle_index * 3];
         p0 = vertices[pi[0]];
         p1 = vertices[pi[1]];
         p2 = vertices[pi[2]];
     }
 
-    Vector3 get_position(int triangle_index, const Vector3& barycentrics) const {
+    Vector3 get_position(uint32_t triangle_index, const Vector3& barycentrics) const {
         const int* pi = &indices[triangle_index * 3];
         Vector3 p0 = vertices[pi[0]];
         Vector3 p1 = vertices[pi[1]];
@@ -34,7 +34,7 @@ struct Triangle_Mesh {
         return barycentrics[0]*p0 + barycentrics[1]*p1 + barycentrics[2]*p2;
     }
 
-    Vector3 get_normal(int triangle_index, const Vector3& barycentrics) const {
+    Vector3 get_normal(uint32_t triangle_index, const Vector3& barycentrics) const {
         const int* pi = &indices[triangle_index * 3];
         Vector3 n0 = normals[pi[0]];
         Vector3 n1 = normals[pi[1]];
@@ -42,7 +42,7 @@ struct Triangle_Mesh {
         return (barycentrics[0]*n0 + barycentrics[1]*n1 + barycentrics[2]*n2).normalized();
     }
     
-    Vector2 get_uv(int triangle_index, const Vector3& barycentrics) const {
+    Vector2 get_uv(uint32_t triangle_index, const Vector3& barycentrics) const {
         const int* pi = &indices[triangle_index * 3];
         Vector2 uv0 = uvs[pi[0]];
         Vector2 uv1 = uvs[pi[1]];
@@ -50,21 +50,21 @@ struct Triangle_Mesh {
         return barycentrics[0]*uv0 + barycentrics[1]*uv1 + barycentrics[2]*uv2;
     }
 
-    void get_uvs(int triangle_index, Vector2 uv[3]) const {
+    void get_uvs(uint32_t triangle_index, Vector2 uv[3]) const {
         const int* pi = &indices[triangle_index * 3];
         uv[0] = uvs[pi[0]];
         uv[1] = uvs[pi[1]];
         uv[2] = uvs[pi[2]];
     }
 
-    void get_normals(int triangle_index, Vector3 n[3]) const {
+    void get_normals(uint32_t triangle_index, Vector3 n[3]) const {
         const int* pi = &indices[triangle_index * 3];
         n[0] = normals[pi[0]];
         n[1] = normals[pi[1]];
         n[2] = normals[pi[2]];
     }
 
-    Bounding_Box get_triangle_bounds(int triangle_index) const {
+    Bounding_Box get_triangle_bounds(uint32_t triangle_index) const {
         const int* pi = &indices[triangle_index * 3];
         auto bounds = Bounding_Box(vertices[pi[0]]);
         bounds.add_point(vertices[pi[1]]);

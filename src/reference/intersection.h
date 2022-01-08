@@ -11,7 +11,7 @@ float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vec
 struct Triangle_Intersection {
     const Triangle_Mesh* mesh = nullptr;
     Vector3 barycentrics;
-    int triangle_index = -1;
+    uint32_t triangle_index = (uint32_t)-1;
 };
 
 struct Intersection {
