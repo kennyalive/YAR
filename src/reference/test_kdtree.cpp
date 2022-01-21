@@ -131,7 +131,7 @@ static void benchmark_geometry_kdtree(const KdTree& kdtree, const Operation_Info
     int clocks = static_cast<int>(nanoseconds_per_raycast * cpu_ghz);
     printf("single raycast time: %.2f nanoseconds, %d clocks\n", nanoseconds_per_raycast, clocks);
     double mrays_per_sec = (benchmark_ray_count / 1e6f) / (time_ns / 1e9f);
-    printf("raycast performance: %.2f MRays/sec\n", mrays_per_sec);
+    printf("raycast performance: %.2f MRays/sec\n\n", mrays_per_sec);
 }
 
 static void validate_triangle_mesh_kdtree(const KdTree& kdtree, const Operation_Info& info) {
@@ -230,10 +230,11 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
     };
 
     for (const Operation_Info& info : infos) {
-        printf("---------------------\n");
-        printf("Triangle mesh: %s\n", info.custom_mesh_name.empty()
+        printf("================================================================\n");
+        printf("Ray casting triangle mesh: %s\n", info.custom_mesh_name.empty()
             ? info.mesh_file_name.c_str()
             : info.custom_mesh_name.c_str());
+        printf("================================================================\n");
 
         Triangle_Mesh mesh;
         if (!info.mesh_file_name.empty()) {
@@ -245,6 +246,7 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
             ASSERT(info.custom_mesh != nullptr);
             mesh = *info.custom_mesh;
         }
+        printf("triangle count = %d\n", mesh.get_triangle_count());
 
         Triangle_Mesh_Geometry_Data geometry_data;
         geometry_data.mesh = &mesh;
@@ -255,9 +257,8 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
         printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
 
         if (print_kdtree_stats) {
-            printf("KdTree stats:\n");
-            triangle_mesh_kdtree.calculate_stats().print();
             printf("\n");
+            triangle_mesh_kdtree.calculate_stats().print();
         }
         kdtree_handler(triangle_mesh_kdtree, info);
     }

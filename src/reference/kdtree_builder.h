@@ -2,8 +2,6 @@
 
 #include "kdtree.h"
 
-struct Triangle_Mesh;
-
 struct KdTree_Build_Params {
     float intersection_cost = 80;
     float traversal_cost = 1;

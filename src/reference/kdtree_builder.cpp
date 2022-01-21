@@ -286,7 +286,7 @@ void KdTree_Builder::create_leaf(const Primitive_Info* primitives, uint32_t prim
 {
     KdNode node;
     if (primitive_count == 0) {
-        node.init_empty_leaf();
+        node.init_empty_node();
     }
     else if (primitive_count == 1) {
         node.init_leaf_with_single_primitive(primitives[0].primitive);

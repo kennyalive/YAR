@@ -31,9 +31,9 @@ struct KdNode {
         word1 = std::bit_cast<uint32_t>(split);
     }
 
-    void init_empty_leaf() {
+    void init_empty_node() { // leaf without primitives
         word0 = leaf_or_axis_mask; // word0 == 3
-        word1 = 0; // not used for empty leaf, just sets default value
+        word1 = 0; // not used for empty node, just sets default value
     }
 
     void init_leaf_with_single_primitive(uint32_t primitive_index) {
@@ -80,22 +80,20 @@ struct KdNode {
 
 struct KdTree_Stats {
     uint64_t nodes_size = 0;
-    uint64_t primitive_indices_size = 0;
-
+    uint64_t indices_size = 0;
     uint32_t node_count = 0;
+    uint32_t empty_node_count = 0;
     uint32_t leaf_count = 0;
-    uint32_t empty_leaf_count = 0;
-    uint32_t single_primitive_leaf_count = 0;
-    uint32_t perfect_depth = 0;
+    int max_depth_limit = 0;
+    
+    uint32_t leaves_with_normal_primitive_count[16] = {}; // 1-16 primitives per node
+    uint32_t leaves_with_large_primitive_count = 0; //17-32
+    uint32_t leaves_with_huge_primitive_count = 0; // > 32
 
-    struct Leaf_Stats {
-        float average_depth = 0.0f;
-        float depth_standard_deviation = 0.0f;
-        float average_primitive_count = 0.0f;
-        float primitive_count_standard_deviation = 0.f;
-    };
-    Leaf_Stats not_empty_leaf_stats;
-    Leaf_Stats empty_leaf_stats;
+    float leaf_depth_mean = 0.f;
+    float leaf_depth_std_dev = 0.f;
+    float leaf_primitive_count_mean = 0.f;
+    uint32_t leaf_at_max_depth_count = 0;
 
     void print();
 };
