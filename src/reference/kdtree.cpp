@@ -333,10 +333,11 @@ KdTree_Stats KdTree::calculate_stats() const
             }
         }
     }
-    stats.leaf_primitive_count_mean = float(double(primitive_per_leaf_accumulated) / stats.leaf_count);
+    stats.leaf_primitives_mean = float(double(primitive_per_leaf_accumulated) / stats.leaf_count);
 
     // Compute depth of each leaf node.
     std::vector<uint8_t> leaf_depth_values;
+    uint64_t max_depth_primitive_count_accumulated = 0;
     {
         struct Depth_Info {
             uint32_t node_index = 0;
@@ -349,8 +350,10 @@ KdTree_Stats KdTree::calculate_stats() const
 
             if (depth == stats.max_depth_limit) {
                 ASSERT(nodes[node_index].is_leaf());
-                if (nodes[node_index].get_primitive_count() > 0)
-                    stats.leaf_at_max_depth_count++;
+                if (nodes[node_index].get_primitive_count() > 0) {
+                    stats.max_depth_leaf_count++;
+                    max_depth_primitive_count_accumulated += nodes[node_index].get_primitive_count();
+                }
             }
 
             if (nodes[node_index].is_leaf()) {
@@ -366,6 +369,8 @@ KdTree_Stats KdTree::calculate_stats() const
             }
         }
     }
+    if (stats.max_depth_leaf_count > 0)
+        stats.max_depth_leaf_primitives_mean = float(double(max_depth_primitive_count_accumulated) / stats.max_depth_leaf_count);
 
     // Leaf depth mean/stddev.
     uint64_t leaf_depth_accumulated = std::accumulate(leaf_depth_values.cbegin(), leaf_depth_values.cend(), uint64_t(0));
@@ -414,7 +419,7 @@ void KdTree_Stats::print()
     float empty_nodes_percentage = get_percentage(empty_node_count, node_count);
     float interior_nodes_percentage = std::max(0.f, 100.f - leaf_nodes_percentage - empty_nodes_percentage);
 
-    float leaves_at_max_depth_percentage = get_percentage(leaf_at_max_depth_count, leaf_count);
+    float max_depth_leaves_percentage = get_percentage(max_depth_leaf_count, leaf_count);
     float leaves_one_primitive_percentage = get_percentage(leaves_with_normal_primitive_count[0], leaf_count);
     float large_leaves_percentage = get_percentage(leaves_with_large_primitive_count, leaf_count);
     float huge_leaves_percentage = get_percentage(leaves_with_huge_primitive_count, leaf_count);
@@ -440,11 +445,12 @@ void KdTree_Stats::print()
     printf("empty node count                %u\n", empty_node_count);
     printf("node type ratios                interior %.2f%%, leaves %.2f%%, empty %.2f%%\n",
         interior_nodes_percentage, leaf_nodes_percentage, empty_nodes_percentage);
-    printf("max depth limit                 %u\n", max_depth_limit);
-    printf("leaves at max depth             %u (%.2f%%)\n", leaf_at_max_depth_count, leaves_at_max_depth_percentage);
     printf("leaf depth mean                 %.2f\n", leaf_depth_mean);
     printf("leaf depth std dev              %.2f\n", leaf_depth_std_dev);
-    printf("leaf primitive count mean       %.2f\n", leaf_primitive_count_mean);
+    printf("leaf primitives mean            %.2f\n", leaf_primitives_mean);
+    printf("max depth limit                 %u\n", max_depth_limit);
+    printf("max depth leaf count            %u (%.2f%%)\n", max_depth_leaf_count, max_depth_leaves_percentage);
+    printf("max depth leaf primitives mean  %.2f\n", max_depth_leaf_primitives_mean);
     printf("leaves with 1 primitive         %.2f%%\n", leaves_one_primitive_percentage);
     printf("leaves with 1-4 primitives      %.2f%%\n", leaves_1_4_percentage);
     printf("leaves with 5-8 primitives      %.2f%%\n", leaves_5_8_percentage);
