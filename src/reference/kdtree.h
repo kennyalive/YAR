@@ -78,28 +78,6 @@ struct KdNode {
     }
 };
 
-struct KdTree_Stats {
-    uint64_t nodes_size = 0;
-    uint64_t indices_size = 0;
-    uint32_t node_count = 0;
-    uint32_t empty_node_count = 0;
-    uint32_t leaf_count = 0;
-
-    uint32_t leaves_with_normal_primitive_count[16] = {}; // 1-16 primitives per node
-    uint32_t leaves_with_large_primitive_count = 0; //17-32
-    uint32_t leaves_with_huge_primitive_count = 0; // > 32
-
-    float leaf_depth_mean = 0.f;
-    float leaf_depth_std_dev = 0.f;
-    float leaf_primitives_mean = 0.f;
-
-    int max_depth_limit = 0;
-    uint32_t max_depth_leaf_count = 0;
-    float max_depth_leaf_primitives_mean = 0;
-
-    void print();
-};
-
 struct Triangle_Mesh_Geometry_Data {
     const Triangle_Mesh* mesh = nullptr;
     const Image_Texture* alpha_texture = nullptr;
@@ -127,11 +105,10 @@ struct KdTree {
     bool set_geometry_data(const Triangle_Mesh_Geometry_Data* triangle_mesh_geometry_data);
     bool set_geometry_data(const Scene_Geometry_Data* scene_geometry_data);
 
+    uint32_t get_primitive_count() const;
+
     static uint64_t compute_triangle_mesh_hash(const Triangle_Mesh& mesh);
     static uint64_t compute_scene_kdtree_data_hash(const Scene_Geometry_Data& scene_geometry_data);
-
-    KdTree_Stats calculate_stats() const;
-    std::vector<uint32_t> calculate_path_to_node(uint32_t node_index) const;
 
     static constexpr int max_traversal_depth = 40;
     bool intersect(const Ray& ray, Intersection& intersection) const;

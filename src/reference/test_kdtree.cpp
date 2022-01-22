@@ -9,6 +9,7 @@
 #include "intersection.h"
 #include "kdtree.h"
 #include "kdtree_builder.h"
+#include "kdtree_stats.h"
 #include "sampling.h"
 
 #ifdef _WIN32
@@ -258,7 +259,7 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
 
         if (print_kdtree_stats) {
             printf("\n");
-            triangle_mesh_kdtree.calculate_stats().print();
+            kdtree_calculate_stats(triangle_mesh_kdtree).print();
         }
         kdtree_handler(triangle_mesh_kdtree, info);
     }

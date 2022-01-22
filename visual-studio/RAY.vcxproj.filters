@@ -41,6 +41,7 @@
     <ClCompile Include="..\src\reference\test_triangle_intersection.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\reference\kdtree_stats.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -64,6 +65,7 @@
     <ClInclude Include="..\src\reference\pixel_sampling.h" />
     <ClInclude Include="..\src\reference\path_tracing.h" />
     <ClInclude Include="..\src\reference\specular_scattering.h" />
+    <ClInclude Include="..\src\reference\kdtree_stats.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">
