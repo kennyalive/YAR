@@ -27,6 +27,7 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
             else {
                 primitive_per_leaf_accumulated += pc;
                 stats.leaf_count++;
+                stats.leaf_primitives_max = std::max(stats.leaf_primitives_max, pc);
                 if (pc <= 16)
                     stats.leaves_with_normal_primitive_count[pc - 1]++;
                 else if (pc <= 32)
@@ -152,6 +153,7 @@ void KdTree_Stats::print()
     printf("leaf depth mean                 %.2f\n", leaf_depth_mean);
     printf("leaf depth std dev              %.2f\n", leaf_depth_std_dev);
     printf("leaf primitives mean            %.2f\n", leaf_primitives_mean);
+    printf("leaf primitives max             %u\n", leaf_primitives_max);
     printf("max depth limit                 %u\n", max_depth_limit);
     printf("max depth leaf count            %u (%.2f%%)\n", max_depth_leaf_count, max_depth_leaves_percentage);
     printf("max depth leaf primitives mean  %.2f\n", max_depth_leaf_primitives_mean);

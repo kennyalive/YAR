@@ -14,6 +14,7 @@ struct KdTree_Stats {
     float leaf_depth_mean = 0.f;
     float leaf_depth_std_dev = 0.f;
     float leaf_primitives_mean = 0.f;
+    uint32_t leaf_primitives_max = 0;
 
     int max_depth_limit = 0;
     uint32_t max_depth_leaf_count = 0;
