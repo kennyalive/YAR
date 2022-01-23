@@ -77,7 +77,7 @@
       <Outputs>$(ProjectDir)..\data\spirv\%(Filename).spv</Outputs>
     </CustomBuild>
     <CustomBuild>
-      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl;$(ProjectDir)..\src\shaders\geometry.glsl;$(ProjectDir)..\src\shaders\material.glsl</AdditionalInputs>
+      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl;$(ProjectDir)..\src\shaders\geometry.glsl;$(ProjectDir)..\src\shaders\base_resources.glsl;$(ProjectDir)..\src\shaders\light_resources.glsl;$(ProjectDir)..\src\shaders\material_resources.glsl;$(ProjectDir)..\src\shaders\compute_bsdf.glsl;$(ProjectDir)..\src\shaders\direct_lighting.glsl;$(ProjectDir)..\src\shaders\shading_context.glsl</AdditionalInputs>
     </CustomBuild>
     <CustomBuild>
       <LinkObjects>false</LinkObjects>
@@ -115,7 +115,7 @@
       <Outputs>$(ProjectDir)..\data\spirv\%(Filename).spv</Outputs>
     </CustomBuild>
     <CustomBuild>
-      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl;$(ProjectDir)..\src\shaders\geometry.glsl;$(ProjectDir)..\src\shaders\material.glsl</AdditionalInputs>
+      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl;$(ProjectDir)..\src\shaders\geometry.glsl;$(ProjectDir)..\src\shaders\base_resources.glsl;$(ProjectDir)..\src\shaders\light_resources.glsl;$(ProjectDir)..\src\shaders\material_resources.glsl;$(ProjectDir)..\src\shaders\compute_bsdf.glsl;$(ProjectDir)..\src\shaders\direct_lighting.glsl;$(ProjectDir)..\src\shaders\shading_context.glsl</AdditionalInputs>
     </CustomBuild>
     <CustomBuild>
       <LinkObjects>false</LinkObjects>
