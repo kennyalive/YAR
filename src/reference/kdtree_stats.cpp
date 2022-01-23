@@ -10,11 +10,7 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
     stats.nodes_size = kdtree.nodes.size() * sizeof(KdNode);
     stats.indices_size = kdtree.primitive_indices.size() * sizeof(uint32_t);
     stats.node_count = (uint32_t)kdtree.nodes.size();
-
-    // Compute max depth (code should match computations from kdtree_builder).
-    uint32_t primitive_count = kdtree.get_primitive_count();
-    stats.max_depth_limit = std::lround(8.0 + 1.3 * std::floor(std::log2(primitive_count)));
-    stats.max_depth_limit = std::min(stats.max_depth_limit, KdTree::max_traversal_depth);
+    stats.max_depth_limit = KdTree::get_max_depth_limit(kdtree.get_primitive_count());
 
     // Collect leaf count, primitives per leaf.
     uint64_t primitive_per_leaf_accumulated = 0;
@@ -109,6 +105,68 @@ std::vector<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32
     }
     std::reverse(path.begin(), path.end());
     return path;
+}
+
+static std::vector<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree, uint32_t node_index,
+    std::unordered_map<uint32_t, uint32_t>& node_index_to_primitive_count)
+{
+    std::vector<uint32_t> subtree_primitive_indices;
+
+    const KdNode node = kdtree.nodes[node_index];
+    if (node.is_leaf()) {
+        const uint32_t pc = node.get_primitive_count();
+        subtree_primitive_indices.resize(pc);
+        node_index_to_primitive_count[node_index] = pc;
+        if (pc == 1) {
+            subtree_primitive_indices[0] = node.get_index();
+        }
+        else {
+            for (uint32_t k = 0; k < pc; k++)
+                subtree_primitive_indices[k] = kdtree.primitive_indices[node.get_index() + k];
+        }
+    }
+    else {
+        uint32_t below_node = node_index + 1;
+        auto below_primitive_indices = get_subtree_primitive_indices(kdtree, below_node, node_index_to_primitive_count);
+
+        uint32_t above_node = node.get_above_child();
+        auto above_primitive_indices = get_subtree_primitive_indices(kdtree, above_node, node_index_to_primitive_count);
+
+        std::set_union(below_primitive_indices.begin(), below_primitive_indices.end(),
+            above_primitive_indices.begin(), above_primitive_indices.end(), std::back_inserter(subtree_primitive_indices));
+
+        node_index_to_primitive_count[node_index] = (uint32_t)subtree_primitive_indices.size();
+    }
+    ASSERT(std::is_sorted(subtree_primitive_indices.begin(), subtree_primitive_indices.end()));
+    ASSERT(std::adjacent_find(subtree_primitive_indices.begin(), subtree_primitive_indices.end()) == subtree_primitive_indices.end());
+    return subtree_primitive_indices;
+}
+
+static void print_primitive_subdivisions_for_subtree(const KdTree& kdtree, const std::string& current_path, uint32_t node_index,
+    const std::unordered_map<uint32_t, uint32_t>& node_index_to_primitive_count)
+{
+    auto it = node_index_to_primitive_count.find(node_index);
+    ASSERT(it != node_index_to_primitive_count.end());
+    uint32_t primitive_count = it->second;
+    std::string path = current_path + (current_path.empty() ? "" : " ") + std::to_string(primitive_count);
+    KdNode node = kdtree.nodes[node_index];
+    if (node.is_leaf()) {
+        int depth = (int)std::count(path.begin(), path.end(), ' ');
+        bool is_max_depth = (depth == KdTree::get_max_depth_limit(kdtree.get_primitive_count()));
+        printf("[%c%-2d] %s\n", is_max_depth ? '*' : ' ', depth, path.c_str());
+        return;
+    }
+    uint32_t below_child = node_index + 1;
+    uint32_t above_child = node.get_above_child();
+    print_primitive_subdivisions_for_subtree(kdtree, path, below_child, node_index_to_primitive_count);
+    print_primitive_subdivisions_for_subtree(kdtree, path, above_child, node_index_to_primitive_count);
+}
+
+void kdtree_print_primitive_subdivisions_from_root_to_leaves(const KdTree& kdtree)
+{
+    std::unordered_map<uint32_t, uint32_t> node_index_to_primitive_count;
+    get_subtree_primitive_indices(kdtree, 0, node_index_to_primitive_count);
+    print_primitive_subdivisions_for_subtree(kdtree, "", 0, node_index_to_primitive_count);
 }
 
 void KdTree_Stats::print()

@@ -189,9 +189,8 @@ KdTree_Builder::KdTree_Builder(
 
     max_depth = build_params.max_depth;
     if (max_depth <= 0) {
-        max_depth = std::lround(8.0 + 1.3 * std::floor(std::log2(total_primitive_count)));
+        max_depth = KdTree::get_max_depth_limit(total_primitive_count);
     }
-    max_depth = std::min(max_depth, KdTree::max_traversal_depth);
 
     primitive_buffer.reserve(total_primitive_count);
     for (uint32_t i = 0; i < total_primitive_count; i++) {
@@ -250,6 +249,7 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, uint32_t primit
             primitive_buffer[n0++] = primitive_info;
         }
     }
+    ASSERT(n0 <= primitive_count);
 
     uint32_t n1 = 0;
     for (uint32_t i = split_edge + 1; i < 2 * primitive_count; i++) {
@@ -265,6 +265,7 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, uint32_t primit
             primitive_buffer[above_primitives_offset + n1++] = primitive_info;
         }
     }
+    ASSERT(n1 <= primitive_count);
 
     // add interior node and recursively create children nodes
     uint32_t this_node_index = (uint32_t)nodes.size();

@@ -107,10 +107,10 @@ struct KdTree {
 
     uint32_t get_primitive_count() const;
 
+    static int get_max_depth_limit(uint32_t primitive_count);
     static uint64_t compute_triangle_mesh_hash(const Triangle_Mesh& mesh);
     static uint64_t compute_scene_kdtree_data_hash(const Scene_Geometry_Data& scene_geometry_data);
 
-    static constexpr int max_traversal_depth = 40;
     bool intersect(const Ray& ray, Intersection& intersection) const;
     bool intersect_any(const Ray& ray, float tmax) const;
     
