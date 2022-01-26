@@ -356,7 +356,7 @@ float KdTree_Builder::select_split_for_axis(const Bounding_Box& node_bounds, uin
 
     const uint32_t num_edges = 2 * primitive_count;
 
-    float best_cost = build_params.intersection_cost * primitive_count;
+    float best_cost = (float)primitive_count;
     uint32_t best_edge = (uint32_t)-1;
 
     uint32_t num_below = 0;
@@ -387,7 +387,7 @@ float KdTree_Builder::select_split_for_axis(const Bounding_Box& node_bounds, uin
 
             float empty_bonus = (num_below == 0 || num_above == 0) ? build_params.empty_bonus : 0.0f;
             float intersection_count_expected_value = p_below * num_below + p_above * num_above;
-            float cost = build_params.traversal_cost + (1.f - empty_bonus) * build_params.intersection_cost * intersection_count_expected_value;
+            float cost = (1.f - empty_bonus) * intersection_count_expected_value;
 
             if (cost < best_cost) {
                 best_edge = (middle_edge == group_end) ? middle_edge - 1 : middle_edge;

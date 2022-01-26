@@ -3,8 +3,6 @@
 #include "kdtree.h"
 
 struct KdTree_Build_Params {
-    float intersection_cost = 80;
-    float traversal_cost = 1;
     float empty_bonus = 0.3f;
     int max_depth = -1;
     int leaf_primitive_limit = 2; // the actual amount of leaf primitives can be larger
