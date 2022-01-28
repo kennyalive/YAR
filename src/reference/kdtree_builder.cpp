@@ -5,6 +5,8 @@
 #include "lib/scene_object.h"
 #include "lib/triangle_mesh.h"
 
+constexpr float empty_node_bonus = 0.3f;
+
 // Splits the bounding box and selects either left or right part based on the provided boolean flag.
 // The selected part is additionally clipped to be as tight as possible taking into account triangle geometry.
 // 
@@ -385,9 +387,9 @@ float KdTree_Builder::select_split_for_axis(const Bounding_Box& node_bounds, uin
             float p_below = below_area * inv_total_area;
             float p_above = above_area * inv_total_area;
 
-            float empty_bonus = (num_below == 0 || num_above == 0) ? build_params.empty_bonus : 0.0f;
+            float empty_bonus_value = (num_below == 0 || num_above == 0) ? empty_node_bonus : 0.0f;
             float intersection_count_expected_value = p_below * num_below + p_above * num_above;
-            float cost = (1.f - empty_bonus) * intersection_count_expected_value;
+            float cost = (1.f - empty_bonus_value) * intersection_count_expected_value;
 
             if (cost < best_cost) {
                 best_edge = (middle_edge == group_end) ? middle_edge - 1 : middle_edge;
