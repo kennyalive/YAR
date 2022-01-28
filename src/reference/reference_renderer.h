@@ -16,6 +16,7 @@ struct Renderer_Options {
     // Can be used to match output of the renderer that uses left-handed coordinate system.
     bool flip_image_horizontally = false;
 
+    bool force_rebuild_kdtree_cache = false;
 };
 
 void render_reference_image(const std::string& input_file, const Renderer_Options& options);

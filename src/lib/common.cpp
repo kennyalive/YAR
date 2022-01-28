@@ -36,6 +36,11 @@ bool fs_create_directories(const fs::path& path) {
     return fs::create_directories(path, ec);
 }
 
+bool fs_delete_directory(const fs::path& path) {
+    std::error_code ec;
+    return fs::remove_all(path) != static_cast<std::uintmax_t>(-1);
+}
+
 fs::path get_data_directory() {
     return g_data_dir;
 }

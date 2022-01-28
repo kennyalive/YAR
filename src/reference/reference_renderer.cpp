@@ -75,12 +75,20 @@ static std::string get_project_unique_name(const std::string& scene_path) {
 }
 
 static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::vector<Triangle_Mesh_Geometry_Data>& geometry_datas,
-    std::array<int, Geometry_Type_Count>* geometry_type_offsets)
+    std::array<int, Geometry_Type_Count>* geometry_type_offsets, bool force_rebuild_cache)
 {
     fs::path kdtree_cache_directory = get_data_directory() / "kdtree-cache" / get_project_unique_name(scene.path);
+    bool cache_exists = fs_exists(kdtree_cache_directory);
 
-    // If kdtrees are not cached then build a cache.
-    if (!fs_exists(kdtree_cache_directory)) {
+    // Check --force-rebuild-kdtree-cache command line option.
+    if (cache_exists && force_rebuild_cache) {
+        if (!fs_delete_directory(kdtree_cache_directory))
+            error("Failed to delete kdtree cache (%s) when handling --force-update-kdtree-cache command", kdtree_cache_directory.c_str());
+        cache_exists = false;
+    }
+
+    // Create kdtree cache if necessary.
+    if (!cache_exists) {
         Timestamp t;
         printf("Kdtree cache is not found. Building kdtree cache: ");
 
@@ -251,7 +259,8 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     }
 
     std::array<int, Geometry_Type_Count> geometry_type_offsets;
-    std::vector<KdTree> geometry_kdtrees = load_geometry_kdtrees(scene, triangle_mesh_geometry_datas, &geometry_type_offsets);
+    std::vector<KdTree> geometry_kdtrees = load_geometry_kdtrees(scene, triangle_mesh_geometry_datas,
+        &geometry_type_offsets, options.force_rebuild_kdtree_cache);
 
     Scene_Geometry_Data scene_geometry_data;
     scene_geometry_data.scene_objects = &scene.objects;

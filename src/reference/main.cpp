@@ -17,6 +17,7 @@ enum Options {
     OPT_RENDER_TILE,
     OPT_RNG_SEED_OFFSET,
     OPT_FLIP_HORIZONTALLY,
+    OPT_FORCE_REBUILD_KDTREE_CACHE,
 };
 
 static const getopt_option_t option_list[] =
@@ -32,6 +33,10 @@ static const getopt_option_t option_list[] =
     { "tile", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_TILE, "render single tile with the given index", "tile_index"},
     { "seedoffset", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RNG_SEED_OFFSET, "this value is added to per-pixel RNG seed", "integer_number"},
     { "flip", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_FLIP_HORIZONTALLY, "flip image horizontally" },
+
+    { "force-rebuild-kdtree-cache", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_FORCE_REBUILD_KDTREE_CACHE,
+        "forces rebuild of kdtree cache for current scene"},
+
     GETOPT_OPTIONS_END
 };
 
@@ -111,6 +116,9 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_FLIP_HORIZONTALLY) {
             options.flip_image_horizontally = true;
+        }
+        else if (opt == OPT_FORCE_REBUILD_KDTREE_CACHE) {
+            options.force_rebuild_kdtree_cache = true;
         }
         else {
            ASSERT(!"unknown option");

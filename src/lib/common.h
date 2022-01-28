@@ -11,6 +11,7 @@ void error(const char* format, ...);
 namespace fs = std::filesystem;
 bool fs_exists(const fs::path& path);
 bool fs_create_directories(const fs::path& path); 
+bool fs_delete_directory(const fs::path & path);
 
 // The place where program's resources are located (spirv binaries) and also
 // the program can write to this location if necessary (kdtree cache.
