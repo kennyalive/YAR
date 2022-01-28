@@ -3,7 +3,6 @@
 #include "kdtree.h"
 
 struct KdTree_Build_Params {
-    int max_depth = -1;
     int leaf_primitive_limit = 2; // the actual amount of leaf primitives can be larger
 };
 

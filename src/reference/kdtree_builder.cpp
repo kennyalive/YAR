@@ -158,10 +158,10 @@ struct KdTree_Builder {
     float select_split_for_axis(const Bounding_Box& node_bounds, uint32_t primitive_count, int axis, uint32_t* split_edge) const;
 
     const KdTree_Build_Params build_params;
-    int max_depth = 0;
-    uint32_t total_primitive_count = 0;
+    const uint32_t total_primitive_count = 0;
     Bounding_Box total_bounds;
     const Triangle_Mesh* mesh = nullptr; // not null if we build kdtree for triangle mesh
+    const int max_depth = 0;
 
     // Intermediate storage
     std::vector<Edge> edges[3]; // edges for each axis
@@ -182,16 +182,12 @@ KdTree_Builder::KdTree_Builder(
     : build_params(params)
     , total_primitive_count(total_primitive_count)
     , mesh(mesh)
+    , max_depth(KdTree::get_max_depth_limit(total_primitive_count))
 {
     // Edge::primitive_and_flags reserves 2 bits for flags and 30 bits are left for primitive index.
     static constexpr uint32_t max_primitive_count = 0x3fffffff; //  max ~ 1 billion primitives
     if (total_primitive_count > max_primitive_count) {
         error("exceeded the maximum number of primitives: " + std::to_string(max_primitive_count));
-    }
-
-    max_depth = build_params.max_depth;
-    if (max_depth <= 0) {
-        max_depth = KdTree::get_max_depth_limit(total_primitive_count);
     }
 
     primitive_buffer.reserve(total_primitive_count);
