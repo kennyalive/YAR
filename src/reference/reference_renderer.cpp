@@ -95,9 +95,8 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
         if (!fs_create_directories(kdtree_cache_directory))
             error("Failed to create kdtree cache directory: %s\n", kdtree_cache_directory.string().c_str());
 
-        KdTree_Build_Params kdtree_build_params;
         for (size_t i = 0; i < geometry_datas.size(); i++) {
-            KdTree kdtree = build_triangle_mesh_kdtree(&geometry_datas[i], kdtree_build_params);
+            KdTree kdtree = build_triangle_mesh_kdtree(&geometry_datas[i]);
             fs::path kdtree_file = kdtree_cache_directory / (std::to_string(i) + ".kdtree");
             kdtree.save(kdtree_file.string());
         }
@@ -269,8 +268,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
 
     Timestamp t_scene_kdtree;
     printf("Building scene kdtree: ");
-    KdTree_Build_Params kdtree_build_params;
-    KdTree scene_kdtree = build_scene_kdtree(&scene_geometry_data, kdtree_build_params);
+    KdTree scene_kdtree = build_scene_kdtree(&scene_geometry_data);
     printf("%.2fs\n", elapsed_milliseconds(t_scene_kdtree) / 1e3f);
 
     Camera camera(scene.view_points[0], Vector2(scene.image_resolution), scene.camera_fov_y, scene.z_is_up);

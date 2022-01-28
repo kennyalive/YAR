@@ -17,8 +17,7 @@ void test_watertightness() {
     Triangle_Mesh_Geometry_Data geometry_data;
     geometry_data.mesh = &mesh;
 
-    KdTree_Build_Params kdtree_build_params;
-    KdTree kdtree = build_triangle_mesh_kdtree(&geometry_data, kdtree_build_params);
+    KdTree kdtree = build_triangle_mesh_kdtree(&geometry_data);
 
     const int ray_count = 100'000'000;
     {
