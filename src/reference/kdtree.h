@@ -106,6 +106,7 @@ struct KdTree {
     bool set_geometry_data(const Scene_Geometry_Data* scene_geometry_data);
 
     uint32_t get_primitive_count() const;
+    uint64_t get_allocated_memory_size() const;
 
     static int get_max_depth_limit(uint32_t primitive_count);
     static uint64_t compute_triangle_mesh_hash(const Triangle_Mesh& mesh);

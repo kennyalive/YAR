@@ -151,6 +151,11 @@ uint32_t KdTree::get_primitive_count() const
         return (uint32_t)static_cast<const Scene_Geometry_Data*>(geometry_data)->scene_objects->size();
 }
 
+uint64_t KdTree::get_allocated_memory_size() const
+{
+    return (uint64_t)(nodes.size() * sizeof(KdNode) + primitive_indices.size() * sizeof(uint32_t));
+}
+
 int KdTree::get_max_depth_limit(uint32_t primitive_count)
 {
     int depth = std::lround(8.0 + 1.3 * std::floor(std::log2(primitive_count)));

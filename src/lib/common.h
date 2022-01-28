@@ -144,6 +144,10 @@ inline uint32_t most_significant_bit_index(uint32_t k) {
 #endif
 }
 
+inline float to_MB(uint64_t bytes) {
+    return float(double(bytes) / (1024.0 * 1024.0));
+}
+
 // These functions control per-thread state.
 void enable_invalid_fp_exception();
 void initialize_fp_state();
