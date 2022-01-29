@@ -251,34 +251,10 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
                 }
             }
             else { // special case, distance_to_split_plane == 0.0
-                if (ray.direction[axis] > 0.0) {
-                    if (t_min > 0.0)
-                        node = above_child;
-                    else { // t_min == 0.0
-                        ASSERT(traversal_stack_size < max_traversal_depth);
-                        traversal_stack[traversal_stack_size++] = {above_child, 0.0, t_max};
-                        // check single point [0.0, 0.0]
-                        node = below_child;
-                        t_max = 0.0;
-                    }
-                }
-                else if (ray.direction[axis] < 0.0) {
-                    if (t_min > 0.0)
-                        node = below_child;
-                    else { // t_min == 0.0
-                        ASSERT(traversal_stack_size < max_traversal_depth);
-                        traversal_stack[traversal_stack_size++] = {below_child, 0.0, t_max};
-                        // check single point [0.0, 0.0]
-                        node = above_child;
-                        t_max = 0.0;
-                    }
-                }
-                else { // ray.direction[axis] == 0.0
-                    // for both nodes check [t_min, t_max] range
-                    ASSERT(traversal_stack_size < max_traversal_depth);
-                    traversal_stack[traversal_stack_size++] = {above_child, t_min, t_max};
+                if (ray.direction[axis] > 0.0)
+                    node = above_child;
+                else
                     node = below_child;
-                }
             }
         }
         else { // leaf node
@@ -295,11 +271,7 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
             if (traversal_stack_size == 0)
                 break;
 
-            // Almost correct implementation is just: --traversal_stack_size.
-            // We need to scan the entire stack to handle the case when distance_to_split_plane == 0.0 && ray.direction[axis] == 0.0.
-            do {
-                --traversal_stack_size;
-            } while (traversal_stack_size > 0 && traversal_stack[traversal_stack_size].t_min >= intersection.t);
+            --traversal_stack_size;
 
             node = traversal_stack[traversal_stack_size].node;
             t_min = traversal_stack[traversal_stack_size].t_min;
