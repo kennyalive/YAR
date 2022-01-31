@@ -316,11 +316,7 @@ void KdTree_Builder::create_leaf(const Primitive_Info* primitives, uint32_t prim
         for (uint32_t i = 0; i < primitive_count; i++) {
             primitive_indices.push_back(primitives[i].primitive);
         }
-        // This fixes minor non-determinism when kdtrees built with different parameters
-        // have leaf nodes with the same primitives but listed in a different order.
-        // When there is more than one closest primitive (overlap at intersection point)
-        // then we return the primitive that is the first in the list. By sorting the leaf
-        // node's primitive list we ensure the same primitive is returned for both trees.
+        // Keep leaf primitive indices ordered to simplify debugging/thinking.
         std::sort(primitive_indices.end() - primitive_count, primitive_indices.end());
     }
     nodes.push_back(node);
