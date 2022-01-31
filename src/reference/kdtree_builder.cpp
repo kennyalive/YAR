@@ -231,10 +231,33 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, uint32_t primit
         primitive_buffer.resize(primitive_buffer.size() + total_primitive_count);
 
     // classify primitives with respect to split
+
+    // NOTE ABOUT PRIMITIVES IN THE SPLITTING PLANE: Primitives that lie in the splitting plane require special
+    // handling. Edge::less() comparator arranges edges with the same position by putting at first endpoints and
+    // then startpoints. This works correctly for all primitives except the ones that lie in the splitting plane.
+    // For them, endpoints will be on the left of the splitting plane and startpoints on the right - it means both
+    // edges will be skipped by the code that classifies primitives with respect split (and the entire primitive
+    // will be excluded from the tree). 
+    //
+    // The solution is to handle such primitives explicitly by checking that if a primitive is in the splitting
+    // plane then add it to the left node, even if the edge is 'endpoint'. In order to not duplicate the same 
+    // primitive in the left and in right node we add it only to the left node.
+    //
+    // There is one subtlety that should be taken into account to proof this code is correct. It's not immediately
+    // obvious if it's correct to use 'endpoint' but not 'startpoint' in order to prevent duplication.
+    // What if this specific 'endpoint' was selected as a 'splitting plane edge' - in that case it is not considered
+    // by the classification code. It can be shown this can't happen. Splitting edge selection algorithm always
+    // selects the first 'startpoint' if there are multiple 'endpoints' and 'startpoints' at the same position. And
+    // for the primitive in the clipping plane we always have one 'endpoint' and then one 'startpoint', so 'startpoint'
+    // will be used as a splitting edge, if necessary, and we have a guarantee that 'endpoint' will be part of classification.
+
     uint32_t n0 = 0;
     for (uint32_t i = 0; i < split_edge; i++) {
         const Edge edge = edges[split_axis][i];
-        if (edge.is_start() || edge.position_on_axis == split_position && edge.is_primitive_perpendicular_to_axis()) {
+
+        if (edge.is_start() ||
+            (edge.position_on_axis == split_position && edge.is_primitive_perpendicular_to_axis()))
+        {
             uint32_t index = edge.get_primitive_index();
             Primitive_Info primitive_info = primitive_buffer2[index];
 
@@ -250,7 +273,7 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, uint32_t primit
     uint32_t n1 = 0;
     for (uint32_t i = split_edge + 1; i < 2 * primitive_count; i++) {
         const Edge edge = edges[split_axis][i];
-        if (edge.is_end() || edge.position_on_axis == split_position && edge.is_primitive_perpendicular_to_axis()) {
+        if (edge.is_end()) {
             uint32_t index = edge.get_primitive_index();
             Primitive_Info primitive_info = primitive_buffer2[index];
 
