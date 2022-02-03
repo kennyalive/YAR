@@ -68,6 +68,32 @@ static void print_help_string(getopt_context_t* ctx) {
     printf("%s\n", getopt_create_help_string(ctx, buffer, sizeof(buffer)));
 }
 
+static std::vector<std::string> read_list_file(const std::string& list_file)
+{
+    std::string content = read_text_file(list_file);
+    std::vector<std::string> filenames;
+    size_t start = SIZE_MAX;
+    size_t last;
+    for (size_t i = 0; i < content.size(); i++) {
+        if (content[i] == '\n') { // handle new line
+            if (start != SIZE_MAX) {
+                filenames.emplace_back(content.data() + start, content.data() + last + 1);
+                start = SIZE_MAX;
+            }
+        }
+        else if (content[i] > 32) { // handle non-whitespace symbols
+            if (start == SIZE_MAX) {
+                start = i;
+            }
+            last = i;
+        }
+    }
+    if (start != SIZE_MAX) { // handle last filename
+        filenames.emplace_back(content.data() + start, content.data() + last + 1);
+    }
+    return filenames;
+}
+
 int main(int argc, char** argv) {
     initialize_fp_state();
     getopt_context_t ctx;
@@ -100,7 +126,14 @@ int main(int argc, char** argv) {
             return 0;
         }
         else if (opt == '+') {
-            files.push_back(ctx.current_opt_arg);
+            std::string filename = ctx.current_opt_arg;
+            if (to_lower(fs::path(filename).extension().string()) == ".list") {
+                auto filenames = read_list_file(filename);
+                files.insert(files.end(), filenames.begin(), filenames.end());
+            }
+            else {
+                files.push_back(filename);
+            }
         }
         else if (opt == OPT_HELP) {
             print_help_string(&ctx);
