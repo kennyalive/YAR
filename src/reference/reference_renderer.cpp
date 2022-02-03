@@ -476,5 +476,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         }
     }
 
-    write_exr_image("image.exr",  image.data(), image_size.x, image_size.y);
+    std::string output_filename = fs::path(scene.path).stem().string() + options.output_filename_suffix + ".exr";
+    write_exr_image(output_filename.c_str(), image.data(), image_size.x, image_size.y);
+    printf("Saved rendered image to file: %s\n", output_filename.c_str());
 }

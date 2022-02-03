@@ -17,6 +17,8 @@ struct Renderer_Options {
     bool flip_image_horizontally = false;
 
     bool force_rebuild_kdtree_cache = false;
+
+    std::string output_filename_suffix;
 };
 
 void render_reference_image(const std::string& input_file, const Renderer_Options& options);
