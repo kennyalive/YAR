@@ -60,8 +60,12 @@ int main(int argc, char** argv) {
     std::vector<std::string> files;
     Renderer_Options options;
 
-    Vector2i render_region_position {-1, -1};
-    Vector2i render_region_size { 1, 1 }; // default render region size is 1 pixel
+    bool is_render_region_specified = false;
+    Vector2i render_region_position {0, 0};
+    // Default render region size is 1 pixel, so if you want to debug a single pixel then 
+    // it's enough to specify only render region position (for example, --x 120 --y 253).
+    Vector2i render_region_size { 1, 1 };
+
     int render_tile_index = -1;
 
     int opt;
@@ -95,15 +99,19 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_RENDER_REGION_X) {
             render_region_position.x = atoi(ctx.current_opt_arg);
+            is_render_region_specified = true;
         }
         else if (opt == OPT_RENDER_REGION_Y) {
             render_region_position.y = atoi(ctx.current_opt_arg);
+            is_render_region_specified = true;
         }
         else if (opt == OPT_RENDER_REGION_W) {
             render_region_size.x = std::max(1, atoi(ctx.current_opt_arg));
+            is_render_region_specified = true;
         }
         else if (opt == OPT_RENDER_REGION_H) {
             render_region_size.y = std::max(1, atoi(ctx.current_opt_arg));
+            is_render_region_specified = true;
         }
         else if (opt == OPT_CROP_IMAGE_BY_RENDER_REGION) {
             options.crop_image_by_render_region = true;
@@ -125,7 +133,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (render_region_position.x >= 0 && render_region_position.y >= 0)
+    if (is_render_region_specified)
     {
         options.render_region.p0 = render_region_position;
         options.render_region.p1 = render_region_position + render_region_size;
