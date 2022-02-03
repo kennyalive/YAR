@@ -227,7 +227,10 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
 
             if (thread_ctx.pixel_sampler.config->get_samples_per_pixel() > 1) {
                 int n = thread_ctx.pixel_sampler.config->get_samples_per_pixel();
-                tile_variance_accumulator += (luminance_sq_sum - luminance_sum * luminance_sum / n) / (n * (n - 1));
+                double tile_variance = (luminance_sq_sum - luminance_sum * luminance_sum / n) / (n * (n - 1));
+                // rounding errors might introduce negative values, strictly mathematically tile_variance can't be negative
+                tile_variance = std::max(0.0, tile_variance); 
+                tile_variance_accumulator += tile_variance;
             }
         }
     }
