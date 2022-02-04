@@ -19,6 +19,66 @@
 #define TINYEXR_IMPLEMENTATION
 #include "tiny/tinyexr.h"
 
+static std::vector<ColorRGB> load_pfm_image(const std::string& file_path, int* width, int* height) {
+    Scoped_File f = fopen(file_path.c_str(), "rb");
+    if (!f)
+        error("load_pfm_image: failed to open file: %s", file_path.c_str());
+
+    static constexpr int buffer_size = 1024;
+    char buffer[buffer_size];
+
+    auto read_ascii_line = [&f, &buffer, &file_path]() {
+        int i = 0;
+        int ch;
+        bool newline_found = false;
+        while (i < buffer_size && (ch = fgetc(f)) != EOF) {
+            if (ch == '\n') {
+                buffer[i++] = 0;
+                newline_found = true;
+                break;
+            }
+            buffer[i++] = (char)ch;
+        }
+        if (!newline_found)
+            error("load_pfm_image: header ascii line does not end with a new line character: %s", file_path.c_str());
+    };
+
+    // Read file type.
+    read_ascii_line();
+    if (strncmp(buffer, "PF", 2) != 0)
+        error("load_pfm_image: non-RGB file detected, only RGB files are supported: %s", file_path.c_str());
+
+    // Read image dimensions.
+    read_ascii_line();
+    if (sscanf(buffer, "%d %d", width, height) != 2)
+        error("load_pfm_image: failed to read image dimensions: %s", file_path.c_str());
+
+    // Read aspect ratio/endianess value.
+    read_ascii_line();
+    float endianess;
+    if (sscanf(buffer, "%f", &endianess) != 1)
+        error("load_pfm_image: failed to read aspect ratio/endianess value: %s", file_path.c_str());
+    if (endianess > 0)
+        error("load_pfm_image: big endian RGB data is not supported: %s", file_path.c_str());
+
+    // Read RGB floating point triplets.
+    int pixel_count = (*width) * (*height);
+    std::vector<ColorRGB> pixels(pixel_count);
+    if (fread(pixels.data(), sizeof(ColorRGB), pixel_count, f) != pixel_count)
+        error("load_pfm_image: failed to read rgb data: %s", file_path.c_str());
+
+    // PFM format defines image rows from bottom to top, we need to flip
+    std::vector<ColorRGB> flipped_pixels(pixel_count);
+    ColorRGB* dst = flipped_pixels.data();
+    ColorRGB* src = pixels.data() + (*width) * (*height - 1);
+    for (int i = 0; i < *height; i++) {
+        memcpy(dst, src, sizeof(ColorRGB) * (*width));
+        dst += *width;
+        src -= *width;
+    }
+    return flipped_pixels;
+}
+
 Image::Image(int width, int height)
     : width(width)
     , height(height)
@@ -40,6 +100,11 @@ bool Image::load_from_file(const std::string file_path, bool decode_srgb, bool* 
             data[i] = ColorRGB(&out[i * 4]); // read rgb and ignore alpha
         }
         free(out);
+        if (is_hdr_image)
+            *is_hdr_image = true;
+    }
+    else if (get_extension(file_path) == ".pfm") {
+        data = load_pfm_image(file_path, &width, &height);
         if (is_hdr_image)
             *is_hdr_image = true;
     }

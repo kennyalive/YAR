@@ -318,7 +318,7 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
             std::string path = (fs::path(scene.path).parent_path() / texture_name).string();
             std::string ext = get_extension(path);
 
-            init_params.decode_srgb = ext != ".exr";
+            init_params.decode_srgb = (ext != ".exr" && ext != ".pfm");
 
             Image_Texture texture;
             texture.initialize_from_file(path, init_params);

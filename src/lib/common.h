@@ -151,3 +151,10 @@ inline float to_MB(uint64_t bytes) {
 // These functions control per-thread state.
 void enable_invalid_fp_exception();
 void initialize_fp_state();
+
+struct Scoped_File {
+    FILE* f = nullptr;
+    Scoped_File(FILE* f) : f(f) {}
+    ~Scoped_File() { if (f != nullptr) fclose(f); }
+    operator FILE* () { return f; }
+};
