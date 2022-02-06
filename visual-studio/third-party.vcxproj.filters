@@ -7,9 +7,6 @@
     <Filter Include="glfw">
       <UniqueIdentifier>{b6b8da2c-7203-4c5f-88d7-6ef3651a662f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="half">
-      <UniqueIdentifier>{19848736-492f-4845-939d-0a34755048fa}</UniqueIdentifier>
-    </Filter>
     <Filter Include="imgui">
       <UniqueIdentifier>{8fb8bcf7-dc41-4813-9dc0-5be5e88bcf5e}</UniqueIdentifier>
     </Filter>
@@ -102,9 +99,6 @@
     <ClCompile Include="..\third-party\glfw\window.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third-party\half\half.cpp">
-      <Filter>half</Filter>
-    </ClCompile>
     <ClCompile Include="..\third-party\imgui\imgui.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
@@ -123,7 +117,6 @@
     <ClCompile Include="..\third-party\volk\volk.c">
       <Filter>volk</Filter>
     </ClCompile>
-    <ClCompile Include="..\third-party\miniexr.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_impl_glfw.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
@@ -215,9 +208,6 @@
     </ClInclude>
     <ClInclude Include="..\third-party\glfw\win32_platform.h">
       <Filter>glfw</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third-party\half\half.h">
-      <Filter>half</Filter>
     </ClInclude>
     <ClInclude Include="..\third-party\imgui\imconfig.h">
       <Filter>imgui</Filter>

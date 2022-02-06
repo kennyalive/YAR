@@ -108,14 +108,12 @@
     <ClCompile Include="..\third-party\glfw\win32_time.c" />
     <ClCompile Include="..\third-party\glfw\win32_window.c" />
     <ClCompile Include="..\third-party\glfw\window.c" />
-    <ClCompile Include="..\third-party\half\half.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="..\third-party\miniexr.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\3rdParty\rply.c" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\BinaryFileFormat.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Camera.cpp" />
@@ -157,7 +155,6 @@
     <ClInclude Include="..\third-party\glfw\wgl_context.h" />
     <ClInclude Include="..\third-party\glfw\win32_joystick.h" />
     <ClInclude Include="..\third-party\glfw\win32_platform.h" />
-    <ClInclude Include="..\third-party\half\half.h" />
     <ClInclude Include="..\third-party\imgui\imconfig.h" />
     <ClInclude Include="..\third-party\imgui\imgui.h" />
     <ClInclude Include="..\third-party\imgui\imgui_impl_glfw.h" />

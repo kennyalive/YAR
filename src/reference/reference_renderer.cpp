@@ -18,39 +18,8 @@
 #include "lib/vector.h"
 
 #include "enkiTS/TaskScheduler.h"
-#include "half/half.h"
 #include "meow-hash/meow_hash_x64_aesni.h"
-
-// from third_party/miniexr.cpp
-unsigned char* miniexr_write(unsigned width, unsigned height, unsigned channels, const void* rgba16f, size_t* out_size);
-
-static void write_exr_image(const char* file_name, const ColorRGB* pixels, int w, int h) {
-    FILE* file;
-    if (fopen_s(&file, file_name, "wb") != 0)
-        return;
-
-    std::vector<unsigned short> rgb16f(w * h * 3);
-
-    unsigned short* p = rgb16f.data();
-    const ColorRGB* pixel = pixels;
-    for (int i = 0; i < h; i++) {
-        for (int j = 0; j < w; j++) {
-            *p++ = float_to_half(pixel->r);
-            *p++ = float_to_half(pixel->g);
-            *p++ = float_to_half(pixel->b);
-            pixel++;
-        }
-    }
-
-    size_t exr_size;
-    unsigned char* exr_data = miniexr_write(w, h, 3, rgb16f.data(), &exr_size);
-
-    size_t bytes_written = fwrite(exr_data, 1, exr_size, file);
-    ASSERT(bytes_written == exr_size);
-
-    free(exr_data);
-    fclose(file);
-}
+#include "tinyexr/tinyexr.h"
 
 // Returns a name that can be used to create a directory to store additional/generated project data.
 // The name is based on the hash of the scene's full path. So, for different project files that
@@ -479,7 +448,10 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
         }
     }
 
+    // Write image to disk.
     std::string output_filename = fs::path(scene.path).stem().string() + options.output_filename_suffix + ".exr";
-    write_exr_image(output_filename.c_str(), image.data(), image_size.x, image_size.y);
+    int result = SaveEXR(&image[0].r, image_size.x, image_size.y, 3, 1, output_filename.c_str(), nullptr);
+    if (result < 0)
+        error("Failed to write rendered image: %s", output_filename.c_str());
     printf("Saved rendered image to file: %s\n", output_filename.c_str());
 }
