@@ -49,6 +49,9 @@
     <Filter Include="pbrt-parser\impl\3rdParty">
       <UniqueIdentifier>{20bc9545-f82c-44f1-85db-1a0e59cb9dfe}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tinyexr">
+      <UniqueIdentifier>{91a23dae-2eb1-4011-88a0-9a0e66f0424d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third-party\enkiTS\TaskScheduler.cpp">
@@ -285,9 +288,6 @@
     <ClInclude Include="..\third-party\stb\stb_image_write.h">
       <Filter>stb</Filter>
     </ClInclude>
-    <ClInclude Include="..\third-party\tiny\tinyexr.h">
-      <Filter>tiny</Filter>
-    </ClInclude>
     <ClInclude Include="..\third-party\tiny\tiny_obj_loader.h">
       <Filter>tiny</Filter>
     </ClInclude>
@@ -296,6 +296,9 @@
     </ClInclude>
     <ClInclude Include="..\third-party\pbrt-parser\impl\3rdParty\rplyfile.h">
       <Filter>pbrt-parser\impl\3rdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\tinyexr\tinyexr.h">
+      <Filter>tinyexr</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

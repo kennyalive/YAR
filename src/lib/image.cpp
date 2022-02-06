@@ -17,7 +17,7 @@
 #endif
 
 #define TINYEXR_IMPLEMENTATION
-#include "tiny/tinyexr.h"
+#include "tinyexr/tinyexr.h"
 
 static std::vector<ColorRGB> load_pfm_image(const std::string& file_path, int* width, int* height) {
     Scoped_File f = fopen(file_path.c_str(), "rb");

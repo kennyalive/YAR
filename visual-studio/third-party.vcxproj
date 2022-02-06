@@ -181,7 +181,7 @@
     <ClInclude Include="..\third-party\pcg\pcg_basic.h" />
     <ClInclude Include="..\third-party\stb\stb_image.h" />
     <ClInclude Include="..\third-party\stb\stb_image_write.h" />
-    <ClInclude Include="..\third-party\tiny\tinyexr.h" />
+    <ClInclude Include="..\third-party\tinyexr\tinyexr.h" />
     <ClInclude Include="..\third-party\tiny\tiny_obj_loader.h" />
     <ClInclude Include="..\third-party\volk\volk.h" />
   </ItemGroup>
