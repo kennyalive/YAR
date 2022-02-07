@@ -2,12 +2,9 @@
 
 #include "lib/color.h"
 #include "lib/geometry.h"
+#include "lib/image.h"
 #include "lib/math.h" // Infinity constant
 #include "lib/vector.h"
-
-#include <functional>
-#include <mutex>
-#include <vector>
 
 struct Film_Filter {
     std::function<float(Vector2)> func;
@@ -15,8 +12,8 @@ struct Film_Filter {
 };
 
 struct Film_Pixel {
-    ColorRGB color_sum; // sum(w*c)
-    float weight_sum; // sum(w)
+    ColorRGB color_sum; // sum(Weight * Color)
+    float weight_sum = 0.f; // sum(Weight)
 };
 
 struct Film_Tile {
@@ -37,14 +34,14 @@ struct Film {
     Vector2i tile_grid_size;
 
     std::mutex pixels_mutex;
-    std::vector<Film_Pixel> pixels;
+    std::vector<Film_Pixel> pixels; // has render_region dimensions
     int finished_tile_count = 0;
 
     Film(Bounds2i render_region, Film_Filter filter);
     int get_tile_count() const { return tile_grid_size.x * tile_grid_size.y; }
     void get_tile_bounds(int tile_index, Bounds2i& tile_sample_bounds, Bounds2i& tile_pixel_bounds) const;
     void merge_tile(const Film_Tile& tile);
-    std::vector<ColorRGB> get_image() const;
+    Image get_image() const;
 };
 
 Film_Filter get_box_filter(float radius);

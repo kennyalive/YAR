@@ -412,46 +412,46 @@ void render_reference_image(const std::string& input_file, const Renderer_Option
     }
 
     // Create output image.
-    std::vector<ColorRGB> image = film.get_image();
-    Vector2i image_size = render_region.size();
+    Image image = film.get_image();
 
-    bool adjust_render_region_to_full_res_image = (render_region != Bounds2i{{0, 0}, scene.image_resolution}) && !options.crop_image_by_render_region;
+    const bool adjust_render_region_to_full_res_image =
+        !options.crop_image_by_render_region &&
+        render_region != Bounds2i{ {0, 0}, scene.image_resolution };
 
     if (adjust_render_region_to_full_res_image) {
-        const ColorRGB* src_pixel = image.data();
-        int src_width = render_region.size().x;
-        int src_height = render_region.size().y;
+        const ColorRGB* src_pixel = image.data.data();
 
         std::vector<ColorRGB> full_res_image(scene.image_resolution.x * scene.image_resolution.y);
         int dst_pixel_offset = render_region.p0.y * scene.image_resolution.x +  render_region.p0.x;
 
-        for (int y = 0; y < src_height; y++) {
-            for (int x = 0; x < src_width; x++) {
+        for (int y = 0; y < image.height; y++) {
+            for (int x = 0; x < image.width; x++) {
                 full_res_image[dst_pixel_offset + x] = *src_pixel++;
             }
             dst_pixel_offset += scene.image_resolution.x;
         }
-
-        image.swap(full_res_image);
-        image_size = scene.image_resolution;
+        image.data.swap(full_res_image);
+        image.width = scene.image_resolution.x;
+        image.height = scene.image_resolution.y;
     }
 
     if (options.flip_image_horizontally) {
-        ColorRGB* row = image.data();
-        for (int y = 0; y < image_size.y; y++) {
+        ColorRGB* row = image.data.data();
+        for (int y = 0; y < image.height; y++) {
             ColorRGB* here = row;
-            ColorRGB* there = row + image_size.x - 1;
+            ColorRGB* there = row + image.width - 1;
             while (here < there) {
                 std::swap(*here++, *there--);
             }
-            row += image_size.x;
+            row += image.width;
         }
     }
 
     // Write image to disk.
     std::string output_filename = fs::path(scene.path).stem().string() + options.output_filename_suffix + ".exr";
-    int result = SaveEXR(&image[0].r, image_size.x, image_size.y, 3, 1, output_filename.c_str(), nullptr);
-    if (result < 0)
-        error("Failed to write rendered image: %s", output_filename.c_str());
+    std::vector<EXRAttribute> custom_attributes;
+    if (!image.write_exr(output_filename, custom_attributes)) {
+        error("Failed to save rendered image: %s", output_filename.c_str());
+    }
     printf("Saved rendered image to file: %s\n", output_filename.c_str());
 }

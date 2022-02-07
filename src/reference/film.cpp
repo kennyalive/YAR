@@ -127,19 +127,20 @@ void Film::merge_tile(const Film_Tile& tile) {
     }
 }
 
-std::vector<ColorRGB> Film::get_image() const {
-    std::vector<ColorRGB> image(pixels.size());
-    for (size_t i = 0; i < pixels.size(); i++) {
-        const Film_Pixel& pixel = pixels[i];
+Image Film::get_image() const {
+    Image image(render_region.size().x, render_region.size().y);
+    ColorRGB* image_pixel = image.data.data();
 
-        ColorRGB color = pixel.color_sum.is_black() ? Color_Black : pixel.color_sum / pixel.weight_sum;
+    for (const Film_Pixel& film_pixel : pixels) {
+        ColorRGB resolved_color = (film_pixel.weight_sum == 0.f) ?
+            Color_Black : film_pixel.color_sum / film_pixel.weight_sum;
 
         // handle out-of-gamut values
-        color.r = std::max(0.f, color.r);
-        color.g = std::max(0.f, color.g);
-        color.b = std::max(0.f, color.b);
+        resolved_color.r = std::max(0.f, resolved_color.r);
+        resolved_color.g = std::max(0.f, resolved_color.g);
+        resolved_color.b = std::max(0.f, resolved_color.b);
 
-        image[i] = color;
+        *image_pixel++ = resolved_color;
     }
     return image;
 }
