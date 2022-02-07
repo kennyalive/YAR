@@ -152,3 +152,67 @@ bool Image::write_tga(const std::string& file_path) const {
     }
     return stbi_write_tga(file_path.c_str(), width, height, 3, srgb_image.data()) != 0;
 }
+
+bool Image::write_exr(const std::string& file_path, const std::vector<EXRAttribute>& custom_attributes) const
+{
+    std::vector<float> channels[3];
+    channels[0].resize(width * height);
+    channels[1].resize(width * height);
+    channels[2].resize(width * height);
+    for (int i = 0; i < width * height; i++) {
+        channels[0][i] = data[i].r;
+        channels[1][i] = data[i].g;
+        channels[2][i] = data[i].b;
+    }
+
+    float* channel_pointers_in_BGR_order[3] = {
+        channels[2].data(), // B
+        channels[1].data(), // G
+        channels[0].data()  // R
+    };
+
+    EXRImage exr_image;
+    InitEXRImage(&exr_image);
+    exr_image.images = (unsigned char**)channel_pointers_in_BGR_order;
+    exr_image.width = width;
+    exr_image.height = height;
+    exr_image.num_channels = 3;
+
+    EXRChannelInfo channel_infos[3];
+    memset(channel_infos, 0, sizeof(channel_infos));
+    channel_infos[0].name[0] = 'B';
+    channel_infos[1].name[0] = 'G';
+    channel_infos[2].name[0] = 'R';
+
+    int input_component_types[3] = {
+        TINYEXR_PIXELTYPE_FLOAT,
+        TINYEXR_PIXELTYPE_FLOAT,
+        TINYEXR_PIXELTYPE_FLOAT
+    };
+    int output_component_types[3] = {
+        TINYEXR_PIXELTYPE_HALF,
+        TINYEXR_PIXELTYPE_HALF,
+        TINYEXR_PIXELTYPE_HALF
+    };
+
+    EXRHeader exr_header;
+    InitEXRHeader(&exr_header);
+    if (!custom_attributes.empty()) {
+        exr_header.num_custom_attributes = (int)custom_attributes.size();
+        exr_header.custom_attributes = const_cast<EXRAttribute*>(custom_attributes.data());
+    }
+    exr_header.channels = channel_infos;
+    exr_header.pixel_types = input_component_types;
+    exr_header.num_channels = 3;
+    exr_header.compression_type = TINYEXR_COMPRESSIONTYPE_ZIP;
+    exr_header.requested_pixel_types = output_component_types;
+
+    const char* err = nullptr;
+    int result = SaveEXRImageToFile(&exr_image, &exr_header, file_path.c_str(), &err);
+    if (err) {
+        printf("Image::write_exr: tinexr returned error message: %s\n", err);
+        FreeEXRErrorMessage(err);
+        err = nullptr;
+    }
+    return result == TINYEXR_SUCCESS;
+}
