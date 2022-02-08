@@ -21,6 +21,39 @@
 #include "meow-hash/meow_hash_x64_aesni.h"
 #include "tinyexr/tinyexr.h"
 
+struct EXR_Attributes_Writer {
+    static constexpr int buffer_size = 4 * 1024;
+    unsigned char value_buffer[buffer_size];
+    unsigned char* buffer_ptr = value_buffer;
+    std::vector<EXRAttribute> attributes;
+
+    void add_string_attribute(const char* name, const char* value) {
+        int size = (int)strlen(value); // string attributes do not require null terminator to be included
+        add_attribute(name, "string", value, size);
+    }
+    void add_integer_attribute(const char* name, int value) {
+        add_attribute(name, "int", &value, sizeof(int));
+    }
+    void add_float_attribute(const char* name, float value) {
+        add_attribute(name, "float", &value, sizeof(float));
+    }
+    void add_attribute(const char* name, const char* type, const void* value, int size) {
+        ASSERT(buffer_ptr + size <= value_buffer + buffer_size);
+        memcpy(buffer_ptr, value, size);
+        auto value_ptr = buffer_ptr;
+        buffer_ptr += size;
+
+        attributes.push_back(EXRAttribute{});
+        EXRAttribute& attrib = attributes.back();
+        ASSERT(strlen(name) < 256);
+        strcpy(attrib.name, name);
+        ASSERT(strlen(type) < 256);
+        strcpy(attrib.type, type);
+        attrib.value = value_ptr;
+        attrib.size = size;
+    }
+};
+
 // Returns a name that can be used to create a directory to store additional/generated project data.
 // The name is based on the hash of the scene's full path. So, for different project files that
 // reference the same scene this function will return the same string.
