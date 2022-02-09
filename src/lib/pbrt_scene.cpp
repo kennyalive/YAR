@@ -593,6 +593,10 @@ Scene load_pbrt_scene(const YAR_Project& project) {
         else if (pbrt_integrator->type == pbrt::Integrator::Type::path_tracer) {
             scene.raytracer_config.rendering_algorithm = Raytracer_Config::Rendering_Algorithm::path_tracer;
         }
+        else if (pbrt_integrator->type == pbrt::Integrator::Type::bidirectional_path_tracer) {
+            // TODO: implement BDPT integrator
+            scene.raytracer_config.rendering_algorithm = Raytracer_Config::Rendering_Algorithm::path_tracer;
+        }
         else {
             error("Unsupported pbrt integrator");
         }
