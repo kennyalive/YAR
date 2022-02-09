@@ -668,8 +668,8 @@ namespace pbrt {
           if (includedFileName[0] != '/') {
             includedFileName = rootNamePath+"/"+includedFileName;
           }
-          // if (dbg)
-          std::cout << "... including file '" << includedFileName << " ..." << std::endl;
+          if (dbg)
+            std::cout << "... including file '" << includedFileName << " ..." << std::endl;
         
           tokenizerStack.push(tokens);
           FileType::SP file = std::make_shared<FileType>(includedFileName);

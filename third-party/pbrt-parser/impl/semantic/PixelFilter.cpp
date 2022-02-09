@@ -4,10 +4,8 @@ namespace pbrt {
 
 void createPixelFilter(Scene::SP ours, pbrt::syntactic::Scene::SP pbrt) 
 {
-    if (!pbrt->pixelFilter) {
-        std::cout << "pbrt-parser: pixel filter is missing\n";
-        return;
-    }
+    if (!pbrt->pixelFilter)
+        return; // Use default filter
 
     ours->pixelFilter = std::make_shared<PixelFilter>();
 

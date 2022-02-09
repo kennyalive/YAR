@@ -1139,7 +1139,8 @@ namespace pbrt {
 
       enum class Type {
           direct_lighting,
-          path_tracer
+          path_tracer,
+          bidirectional_path_tracer,
       };
 
       Type type = Type::path_tracer;

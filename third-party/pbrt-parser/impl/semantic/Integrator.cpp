@@ -19,8 +19,12 @@ void createIntegrator(Scene::SP ours, pbrt::syntactic::Scene::SP pbrt)
         ours->integrator->type = Integrator::Type::path_tracer;
         ours->integrator->maxDepth = pbrt->integrator->getParam1i("maxdepth", 5);
     }
+    else if (pbrt->integrator->type == "bdpt") {
+        ours->integrator->type = Integrator::Type::bidirectional_path_tracer;
+        ours->integrator->maxDepth = pbrt->integrator->getParam1i("maxdepth", 5);
+    }
     else {
-        std::cout << "pbrt-parser: unsupported integrator type: " + pbrt->sampler->type + "\n";
+        std::cout << "pbrt-parser: unsupported integrator type: " + pbrt->integrator->type + "\n";
     }
 }
 
