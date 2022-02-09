@@ -471,22 +471,22 @@ ColorRGB Image_Texture::sample_trilinear(const Vector2& uv, float lod, Wrap_Mode
     return trilinear_sample;
 }
 
-static std::vector<float> EWA_filter_weights;
-
-void initalize_EWA_filter_weights(int table_size, float alpha) {
-    EWA_filter_weights.resize(table_size);
-
-    for (int i = 0; i < int(EWA_filter_weights.size()); i++) {
-        float x = float(i) / float(table_size - 1);
-        EWA_filter_weights[i] = std::exp(-alpha * x);
-    }
-}
-
 // The theory and the algorithm for EWA filter is provided in:
 // "Fundamentals of Texture Mapping and Image Warping", thesis by Paul S. Heckbert, 1989
 // PBRT book also implements this algorithm.
 static ColorRGB do_EWA(const Image& image, Vector2 uv, Vector2 uv_axis1, Vector2 uv_axis2, Wrap_Mode wrap_mode)
 {
+    static std::vector<float> EWA_filter_weights = []() {
+        const int table_size = 256;
+        const float alpha = 2.f;
+        std::vector<float> weights(table_size);
+        for (int i = 0; i < int(weights.size()); i++) {
+            float x = float(i) / float(table_size - 1);
+            weights[i] = std::exp(-alpha * x);
+        }
+        return weights;
+    }();
+
     // Transition from UV space to texture space with texels placed at integer coordinates.
     uv[0] = uv[0] * image.width - 0.5f;
     uv[1] = uv[1] * image.height - 0.5f;

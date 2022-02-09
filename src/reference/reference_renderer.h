@@ -21,4 +21,4 @@ struct Renderer_Options {
     std::string output_filename_suffix;
 };
 
-void render_reference_image(const std::string& input_file, const Renderer_Options& options);
+void cpu_renderer_render(const std::string& input_file, const Renderer_Options& options);

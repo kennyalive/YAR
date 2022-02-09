@@ -216,3 +216,16 @@ bool Image::write_exr(const std::string& file_path, const std::vector<EXRAttribu
     }
     return result == TINYEXR_SUCCESS;
 }
+
+void Image::flip_horizontally()
+{
+    ColorRGB* row = data.data();
+    for (int y = 0; y < height; y++) {
+        ColorRGB* here = row;
+        ColorRGB* there = row + width - 1;
+        while (here < there) {
+            std::swap(*here++, *there--);
+        }
+        row += width;
+    }
+}

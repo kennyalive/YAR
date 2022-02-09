@@ -92,7 +92,8 @@ struct Scene_Geometry_Data {
     // Multiple scene objects can use the same kdtree due to instancing.
     const std::vector<KdTree>* kdtrees = nullptr;
 
-    // Offsets in 'kdtrees' array for trees associated with specific geometry type.
+    // Offsets in kdtrees array.
+    // Each offset defines where the range of kdtrees for specific geometry type starts.
     std::array<int, Geometry_Type_Count> geometry_type_offsets;
 };
 

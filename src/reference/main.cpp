@@ -204,7 +204,7 @@ int main(int argc, char** argv) {
         return 1;
     }
     for (const std::string& input_file : files) {
-        render_reference_image(input_file, options);
+        cpu_renderer_render(input_file, options);
     }
     return 0;
 }

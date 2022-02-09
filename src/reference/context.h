@@ -1,5 +1,6 @@
 #pragma once
 
+#include "camera.h"
 #include "image_texture.h"
 #include "light_sampling.h"
 #include "kdtree.h"
@@ -8,6 +9,7 @@
 
 #include "lib/light.h"
 #include "lib/random.h"
+#include "lib/raytracer_config.h"
 #include "lib/utils.h"
 
 class Camera;
@@ -27,18 +29,22 @@ struct Array2D_Registry {
 };
 
 struct Scene_Context {
-    const Scene* scene = nullptr;
-    const Camera* camera = nullptr;
+    Raytracer_Config raytracer_config;
+    Camera camera;
     const KdTree* acceleration_structure = nullptr;
+
+    // Materials
     Materials materials;
     std::vector<Image_Texture> textures;
-    Stratified_Pixel_Sampler_Configuration pixel_sampler_config;
-    Array2D_Registry array2d_registry; // registered 2d arrays of samples
 
-    // Light data
+    // Lights
     Lights lights;
     Environment_Light_Sampler environment_light_sampler;
     bool has_environment_light_sampler = false;
+
+    // Samplers
+    Stratified_Pixel_Sampler_Configuration pixel_sampler_config;
+    Array2D_Registry array2d_registry; // registered 2d arrays of samples
 };
 
 struct Path_Context {

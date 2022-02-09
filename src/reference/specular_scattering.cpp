@@ -86,7 +86,7 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
     ASSERT(specular_scattering.type != Specular_Scattering_Type::none);
 
     const int max_differential_ray_bounces =
-        thread_ctx.scene_context->scene->raytracer_config.max_differential_ray_specular_bounces;
+        thread_ctx.scene_context->raytracer_config.max_differential_ray_specular_bounces;
 
     *specular_attenuation = Color_White;
     while (specular_scattering.type != Specular_Scattering_Type::none && path_ctx.bounce_count < max_bounces) {

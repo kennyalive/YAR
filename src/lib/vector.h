@@ -380,6 +380,7 @@ struct Vector2i {
     bool operator!=(Vector2i other) const {
         return !(*this == other);
     }
+    int area() const { return x * y; }
 };
 
 inline Vector2i operator+(Vector2i a, Vector2i b) {

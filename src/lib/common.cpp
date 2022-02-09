@@ -115,6 +115,11 @@ int64_t elapsed_nanoseconds(Timestamp timestamp) {
     return static_cast<int64_t>(nanoseconds);
 }
 
+float elapsed_seconds(Timestamp timestamp)
+{
+    return (float)((double)elapsed_nanoseconds(timestamp) / 1e9);
+}
+
 void enable_invalid_fp_exception() {
     _MM_SET_EXCEPTION_STATE(0); // reset current exception state
     _MM_SET_EXCEPTION_MASK(_MM_MASK_MASK & ~_MM_MASK_INVALID /*un-mask invalid fp exception bit*/);

@@ -16,7 +16,7 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     Path_Context& path_ctx = thread_ctx.path_context;
 
-    const int max_bounces = scene_ctx.scene->raytracer_config.max_light_bounces;
+    const int max_bounces = scene_ctx.raytracer_config.max_light_bounces;
 
     ColorRGB path_coeff = Color_White;
     Ray current_ray = ray;

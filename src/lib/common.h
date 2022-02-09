@@ -34,6 +34,7 @@ double get_cpu_frequency_ghz();
 int64_t elapsed_milliseconds(Timestamp timestamp);
 int64_t elapsed_microseconds(Timestamp timestamp);
 int64_t elapsed_nanoseconds(Timestamp timestamp);
+float elapsed_seconds(Timestamp timestamp);
 
 #if ENABLE_PROFILING
 #define START_TIMER { Timestamp t;
