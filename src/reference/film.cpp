@@ -121,7 +121,7 @@ void Film::merge_tile(const Film_Tile& tile) {
         int currentPercentage = 100 * finished_tile_count / get_tile_count();
 
         if (currentPercentage > previousPercentage)
-            printf("\rProgress: %d%%", currentPercentage);
+            printf("\rRendering: %d%%", currentPercentage);
         if (finished_tile_count == get_tile_count())
             printf("\n");
     }

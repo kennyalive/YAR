@@ -19,6 +19,8 @@
 #include "meow-hash/meow_hash_x64_aesni.h"
 #include "tinyexr/tinyexr.h"
 
+constexpr int time_category_field_width = 21; // for printf 'width' specifier
+
 static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
 {
     // Load textures.
@@ -88,7 +90,8 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
     // Create kdtree cache if necessary.
     if (!cache_exists) {
         Timestamp t;
-        printf("Kdtree cache is not found. Building kdtree cache: ");
+        printf("Kdtree cache was not found\n");
+        printf("%-*s", time_category_field_width, "Building kdtree cache ");
 
         if (!fs_create_directories(kdtree_cache_directory))
             error("Failed to create kdtree cache directory: %s\n", kdtree_cache_directory.string().c_str());
@@ -98,11 +101,11 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
             fs::path kdtree_file = kdtree_cache_directory / (std::to_string(i) + ".kdtree");
             kdtree.save(kdtree_file.string());
         }
-        printf("%.2fs\n", elapsed_milliseconds(t) / 1e3f);
+        printf("%.3f seconds\n", elapsed_seconds(t));
     }
 
     // Load triangle mesh kdtrees.
-    printf("Loading kdtree cache: ");
+    Timestamp t_kdtree_cache;
     std::vector<KdTree> kdtrees;
     kdtrees.reserve(scene.geometries.triangle_meshes.size());
 
@@ -115,7 +118,7 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
         kdtree.set_geometry_data(&geometry_datas[i]);
         kdtrees.push_back(std::move(kdtree));
     }
-    printf("done\n");
+    printf("%-*s %.3f seconds\n", time_category_field_width, "Load KdTree cache", elapsed_seconds(t_kdtree_cache));
     return kdtrees;
 }
 
@@ -146,9 +149,8 @@ struct KdTree_Data {
         scene_geometry_data.geometry_type_offsets = geometry_type_offsets;
 
         Timestamp t_scene_kdtree;
-        printf("Building scene kdtree: ");
         scene_kdtree = build_scene_kdtree(&scene_geometry_data);
-        printf("%.2fs\n", elapsed_seconds(t_scene_kdtree));
+        printf("%-*s %.3f seconds\n", time_category_field_width, "Build scene KdTree", elapsed_seconds(t_scene_kdtree));
     }
 };
 
@@ -275,7 +277,8 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
     film.merge_tile(tile);
 }
 
-static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options& options, Bounds2i render_region)
+static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options& options, Bounds2i render_region,
+    double* variance_estimate)
 {
     Film_Filter film_filter = [cfg = scene_ctx.raytracer_config]()
     {
@@ -376,10 +379,8 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
                 variance_count += thread_contexts[i].variance_count;
             }
         }
-        double variance_estimate = variance_accumulator / variance_count;
-        printf("Variance estimate %.6f, stddev %.6f\n", variance_estimate, std::sqrt(variance_estimate));
+        *variance_estimate = variance_accumulator / variance_count;
     }
-
     return film.get_image();
 }
 
@@ -461,18 +462,20 @@ static void create_output_image(const Bounds2i& render_region, const Vector2i& c
     if (!image.write_exr(output_filename, attrib_writer.attributes)) {
         error("Failed to save rendered image: %s", output_filename.c_str());
     }
-    printf("Saved rendered image to file: %s\n", output_filename.c_str());
+    printf("Saved output image to %s\n", output_filename.c_str());
 }
 
 void cpu_renderer_render(const std::string& input_file, const Renderer_Options& options)
 {
     Timestamp t_start;
+    printf("Loading: %s\n", input_file.c_str());
 
     //
-    // Load project file.
+    // Parse project file.
     //
-    printf("Loading project: %s\n", input_file.c_str());
+    Timestamp t_project;
     Scene scene = load_scene(input_file);
+    printf("%-*s %.3f seconds\n", time_category_field_width, "Parse project", elapsed_seconds(t_project));
 
     //
     // Initialize scene.
@@ -487,7 +490,9 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
 
     // Textures should be initialized before kdtrees,
     // kdtrees might store texture references for transparency testing
+    Timestamp t_textures;
     init_textures(scene, scene_ctx);
+    printf("%-*s %.3f seconds\n", time_category_field_width, "Initialize textures", elapsed_seconds(t_textures));
 
     KdTree_Data kdtree_data;
     kdtree_data.initialize(scene, options, scene_ctx.textures);
@@ -499,7 +504,7 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
     init_pixel_sampler_config(scene_ctx.pixel_sampler_config, scene_ctx);
 
     float load_time = elapsed_seconds(t_start);
-    printf("Project loaded in %.3f seconds\n", load_time);
+    printf("%-*s %.3f seconds\n", time_category_field_width, "Total loading time", load_time);
 
     //
     // Render scene.
@@ -520,9 +525,11 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
     }();
 
     Timestamp t_render;
-    Image image = render_scene(scene_ctx, options, render_region);
+    double variance_estimate = 0.f;
+    Image image = render_scene(scene_ctx, options, render_region, &variance_estimate);
     float render_time = elapsed_seconds(t_render);
-    printf("Image rendered in %.3f seconds\n", render_time);
+    printf("%-*s %.3f seconds\n", time_category_field_width, "Render time", render_time);
+    printf("Variance %.6f, StdDev %.6f\n", variance_estimate, std::sqrt(variance_estimate));
 
     //
     // Save output image.
