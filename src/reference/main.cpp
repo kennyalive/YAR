@@ -18,6 +18,7 @@ enum Options {
     OPT_RNG_SEED_OFFSET,
     OPT_FLIP_HORIZONTALLY,
     OPT_FORCE_REBUILD_KDTREE_CACHE,
+    OPT_OUTPUT_DIRECTORY,
     OPT_OUTPUT_FILENAME_SUFFIX,
 };
 
@@ -52,6 +53,9 @@ static const getopt_option_t option_list[] =
 
     { "force-rebuild-kdtree-cache", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_FORCE_REBUILD_KDTREE_CACHE,
         "force rebuild of kdtree cache for current scene" },
+
+    { "directory", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_OUTPUT_DIRECTORY,
+        "location where to store output images", "directory_path" },
 
     { "suffix", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_OUTPUT_FILENAME_SUFFIX,
         "suffix that will be added to the output image filename", "string" },
@@ -179,6 +183,9 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_FORCE_REBUILD_KDTREE_CACHE) {
             options.force_rebuild_kdtree_cache = true;
+        }
+        else if (opt == OPT_OUTPUT_DIRECTORY) {
+            options.output_directory = ctx.current_opt_arg;
         }
         else if (opt == OPT_OUTPUT_FILENAME_SUFFIX) {
             options.output_filename_suffix = ctx.current_opt_arg;

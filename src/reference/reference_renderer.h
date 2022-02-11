@@ -18,6 +18,7 @@ struct Renderer_Options {
 
     bool force_rebuild_kdtree_cache = false;
 
+    std::string output_directory;
     std::string output_filename_suffix;
 };
 

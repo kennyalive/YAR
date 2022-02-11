@@ -542,6 +542,9 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
     else
         output_filename = fs::path(input_file).stem().string();
 
+    if (!options.output_directory.empty())
+        output_filename = (fs::path(options.output_directory) / fs::path(output_filename)).string();
+
     output_filename += options.output_filename_suffix;
     output_filename += ".exr"; // output is always in OpenEXR format
 
