@@ -567,6 +567,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
     // Import film.
     pbrt::Film::SP pbrt_film = pbrt_scene->film;
     if (pbrt_film) {
+        scene.output_filename = pbrt_film->fileName;
         scene.image_resolution.x = pbrt_film->resolution.x;
         scene.image_resolution.y = pbrt_film->resolution.y;
         scene.raytracer_config.max_rgb_component_value_of_film_sample = pbrt_film->maxComponentValue;

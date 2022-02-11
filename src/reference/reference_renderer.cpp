@@ -423,8 +423,11 @@ struct EXR_Custom_Attributes {
     float render_time = 0.f;
 };
 
-static void create_output_image(const Bounds2i& render_region, const Vector2i& canvas_resolution,
-    const EXR_Custom_Attributes& exr_attributes, const Renderer_Options& options, Image&& image)
+static void create_output_image(
+    const std::string& output_filename,
+    const Bounds2i& render_region, const Vector2i& canvas_resolution,
+    const EXR_Custom_Attributes& exr_attributes, const Renderer_Options& options,
+    Image&& image)
 {
     if (!options.crop_image_by_render_region) {
         // Render region should be placed into a proper canvas position
@@ -458,7 +461,6 @@ static void create_output_image(const Bounds2i& render_region, const Vector2i& c
     attrib_writer.add_float_attribute("yar_render_time", exr_attributes.render_time);
 
     // Write file to disk.
-    std::string output_filename = fs::path(exr_attributes.input_file).stem().string() + options.output_filename_suffix + ".exr";
     if (!image.write_exr(output_filename, attrib_writer.attributes)) {
         error("Failed to save rendered image: %s", output_filename.c_str());
     }
@@ -534,10 +536,20 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
     //
     // Save output image.
     //
+    std::string output_filename;
+    if (!scene.output_filename.empty())
+        output_filename = fs::path(scene.output_filename).replace_extension().string();
+    else
+        output_filename = fs::path(input_file).stem().string();
+
+    output_filename += options.output_filename_suffix;
+    output_filename += ".exr"; // output is always in OpenEXR format
+
     EXR_Custom_Attributes exr_attributes{
         .input_file = input_file,
         .load_time = load_time,
         .render_time = render_time
     };
-    create_output_image(render_region, scene.image_resolution, exr_attributes, options, std::move(image));
+
+    create_output_image(output_filename, render_region, scene.image_resolution, exr_attributes, options, std::move(image));
 }

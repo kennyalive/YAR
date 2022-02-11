@@ -16,6 +16,9 @@ struct Scene {
     Scene_Type type;
     std::string path;
 
+    // Optional filename of the output image.
+    std::string output_filename;
+
     //
     // Renderer configuration
     //
