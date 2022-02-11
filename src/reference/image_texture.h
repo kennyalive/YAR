@@ -19,8 +19,6 @@ enum class Filter_Type {
     mitchell_B_1_3_C_1_3,
 };
 
-void initalize_EWA_filter_weights(int table_size, float alpha);
-
 class Image_Texture {
 public:
     struct Init_Params {

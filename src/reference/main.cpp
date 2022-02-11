@@ -195,8 +195,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (is_render_region_specified)
-    {
+    if (is_render_region_specified) {
         options.render_region.p0 = render_region_position;
         options.render_region.p1 = render_region_position + render_region_size;
     }
