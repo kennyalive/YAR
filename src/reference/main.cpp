@@ -26,7 +26,7 @@ enum Options {
 static const getopt_option_t option_list[] =
 {
     { "help", 0, GETOPT_OPTION_TYPE_NO_ARG, 0, OPT_HELP, "print this help text" },
-    { "test", 0, GETOPT_OPTION_TYPE_NO_ARG, 0, OPT_RUN_TESTS, "run the tests" },
+    { "test", 0, GETOPT_OPTION_TYPE_OPTIONAL, 0, OPT_RUN_TESTS, "run the tests" },
 
     { "nthreads", 0, GETOPT_OPTION_TYPE_REQUIRED, 0, OPT_THREAD_COUNT,
         "specify thread count", "thread_count" },
@@ -149,7 +149,7 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_RUN_TESTS) {
             printf("running tests...\n");
-            run_tests();
+            run_tests(ctx.current_opt_arg ? ctx.current_opt_arg : "");
             return 0;
         }
         else if (opt == OPT_THREAD_COUNT) {
