@@ -3,7 +3,7 @@
 #define ASSERT(expression) if (!(expression)) __debugbreak()
 
 #define ENABLE_PROFILING 1
-#define ENABLE_INVALID_FP_EXCEPTION 0
+#define ENABLE_INVALID_FP_EXCEPTION 1
 
 void error(const std::string& message);
 void error(const char* format, ...);
