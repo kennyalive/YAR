@@ -419,6 +419,12 @@ struct EXR_Attributes_Writer {
 
 struct EXR_Custom_Attributes {
     std::string input_file;
+    int spp = 0; // samples per pixel
+
+    // Here are the attributes that vary between render sessions. We store such
+    // attributes in the output file only if --openexr-varying-attributes command
+    // line option is specified. The reason why we do not always write them is to
+    // keep output deterministic by default.
     float load_time = 0.f;
     float render_time = 0.f;
 };
@@ -457,8 +463,12 @@ static void create_output_image(
     attrib_writer.add_string_attribute("yar_name", "YAR");
     attrib_writer.add_string_attribute("yar_render_device", "cpu");
     attrib_writer.add_string_attribute("yar_input_file", exr_attributes.input_file.c_str());
-    attrib_writer.add_float_attribute("yar_load_time", exr_attributes.load_time);
-    attrib_writer.add_float_attribute("yar_render_time", exr_attributes.render_time);
+    attrib_writer.add_integer_attribute("yar_spp", exr_attributes.spp);
+
+    if (options.enable_openexr_varying_attributes) {
+        attrib_writer.add_float_attribute("yar_load_time", exr_attributes.load_time);
+        attrib_writer.add_float_attribute("yar_render_time", exr_attributes.render_time);
+    }
 
     // Write file to disk.
     if (!image.write_exr(output_filename, attrib_writer.attributes)) {
@@ -550,6 +560,7 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
 
     EXR_Custom_Attributes exr_attributes{
         .input_file = input_file,
+        .spp = scene_ctx.pixel_sampler_config.get_samples_per_pixel(),
         .load_time = load_time,
         .render_time = render_time
     };

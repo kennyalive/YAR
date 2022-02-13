@@ -20,6 +20,7 @@ enum Options {
     OPT_FORCE_REBUILD_KDTREE_CACHE,
     OPT_OUTPUT_DIRECTORY,
     OPT_OUTPUT_FILENAME_SUFFIX,
+    OPT_ENABLE_OPENEXR_VARYING_ATTRIBUTES,
 };
 
 static const getopt_option_t option_list[] =
@@ -59,6 +60,9 @@ static const getopt_option_t option_list[] =
 
     { "suffix", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_OUTPUT_FILENAME_SUFFIX,
         "suffix that will be added to the output image filename", "string" },
+
+    { "openexr-varying-attributes", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_ENABLE_OPENEXR_VARYING_ATTRIBUTES,
+        "enable openexr custom attributes that define information that changes between render sessions" },
 
     GETOPT_OPTIONS_END
 };
@@ -183,6 +187,9 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_FORCE_REBUILD_KDTREE_CACHE) {
             options.force_rebuild_kdtree_cache = true;
+        }
+        else if (opt == OPT_ENABLE_OPENEXR_VARYING_ATTRIBUTES) {
+            options.enable_openexr_varying_attributes = true;
         }
         else if (opt == OPT_OUTPUT_DIRECTORY) {
             options.output_directory = ctx.current_opt_arg;

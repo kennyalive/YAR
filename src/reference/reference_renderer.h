@@ -17,6 +17,7 @@ struct Renderer_Options {
     bool flip_image_horizontally = false;
 
     bool force_rebuild_kdtree_cache = false;
+    bool enable_openexr_varying_attributes = false;
 
     std::string output_directory;
     std::string output_filename_suffix;
