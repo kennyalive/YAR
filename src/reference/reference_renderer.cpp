@@ -476,7 +476,7 @@ static void save_output_image(
     if (!image.write_exr(output_filename, attrib_writer.attributes)) {
         error("Failed to save rendered image: %s", output_filename.c_str());
     }
-    printf("Saved output image to %s\n", output_filename.c_str());
+    printf("Saved output image to %s\n\n", output_filename.c_str());
 }
 
 void cpu_renderer_render(const std::string& input_file, const Renderer_Options& options)
