@@ -500,9 +500,9 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
     // vertical field of view which matches our convention (fov_y) but
     // for "vertical" images the pbrt's fov represents horizontal fov,
     // which should be converted to our convention (fov_y).
-    if (scene->image_resolution.y > scene->image_resolution.x) {
+    if (scene->film_resolution.y > scene->film_resolution.x) {
         float fov_x_over_2_tan = std::tan(radians(pbrt_camera->fov / 2.f));
-        float fov_y_over_2_tan = fov_x_over_2_tan * float(scene->image_resolution.y) / float(scene->image_resolution.x);
+        float fov_y_over_2_tan = fov_x_over_2_tan * float(scene->film_resolution.y) / float(scene->film_resolution.x);
         scene->camera_fov_y = degrees(2.f * std::atan(fov_y_over_2_tan));
     }
     else {
@@ -568,8 +568,8 @@ Scene load_pbrt_scene(const YAR_Project& project) {
     pbrt::Film::SP pbrt_film = pbrt_scene->film;
     if (pbrt_film) {
         scene.output_filename = pbrt_film->fileName;
-        scene.image_resolution.x = pbrt_film->resolution.x;
-        scene.image_resolution.y = pbrt_film->resolution.y;
+        scene.film_resolution.x = pbrt_film->resolution.x;
+        scene.film_resolution.y = pbrt_film->resolution.y;
         scene.raytracer_config.max_rgb_component_value_of_film_sample = pbrt_film->maxComponentValue;
     }
 

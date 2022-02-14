@@ -27,7 +27,7 @@ struct YAR_Project {
     // it must be either an absolute path or to be relative to the program's current working directory.
     fs::path scene_path;
 
-    Vector2i image_resolution;
+    Vector2i film_resolution;
     Bounds2i render_region;
     Matrix3x4 camera_to_world = Matrix3x4{};
 

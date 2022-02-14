@@ -91,15 +91,15 @@ Scene load_scene(const std::string& input_file) {
     scene.type = project.scene_type;
     scene.path = project.scene_path.string();
 
-    if (project.image_resolution != Vector2i{})
-        scene.image_resolution = project.image_resolution;
-    if (scene.image_resolution == Vector2i{})
-        scene.image_resolution = Vector2i{ 1280, 720 };
+    if (project.film_resolution != Vector2i{})
+        scene.film_resolution = project.film_resolution;
+    if (scene.film_resolution == Vector2i{})
+        scene.film_resolution = Vector2i{ 1920, 1080 };
 
     if (project.render_region != Bounds2i{})
         scene.render_region = project.render_region;
     if (scene.render_region == Bounds2i{})
-        scene.render_region = Bounds2i{ {0, 0}, scene.image_resolution };
+        scene.render_region = Bounds2i{ {0, 0}, scene.film_resolution };
 
     if (project.obj_info.z_is_up_specified) {
         ASSERT(project.scene_type == Scene_Type::obj);

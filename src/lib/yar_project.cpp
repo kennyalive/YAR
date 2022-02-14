@@ -181,8 +181,8 @@ struct Parser {
         else if (match_string("scene_path")) {
             project.scene_path = get_string();
         }
-        else if (match_string("image_resolution")) {
-            get_fixed_numeric_array(2, &project.image_resolution.x);
+        else if (match_string("film_resolution")) {
+            get_fixed_numeric_array(2, &project.film_resolution.x);
         }
         else if (match_string("render_region")) {
             get_fixed_numeric_array(4, &project.render_region.p0.x);

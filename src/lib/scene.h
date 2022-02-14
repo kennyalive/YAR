@@ -22,7 +22,7 @@ struct Scene {
     //
     // Renderer configuration
     //
-    Vector2i image_resolution;
+    Vector2i film_resolution;
     Bounds2i render_region;
     float camera_fov_y = 0.f;
     bool  z_is_up = false;
