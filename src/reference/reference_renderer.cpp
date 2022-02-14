@@ -429,29 +429,31 @@ struct EXR_Custom_Attributes {
     float render_time = 0.f;
 };
 
-static void create_output_image(
-    const std::string& output_filename,
-    const Bounds2i& render_region, const Vector2i& canvas_resolution,
-    const EXR_Custom_Attributes& exr_attributes, const Renderer_Options& options,
-    Image&& image)
+static void save_output_image(
+    const std::string& output_filename, Image image,
+    const Bounds2i& render_region, const Vector2i& film_resolution,
+    const Renderer_Options& options, const EXR_Custom_Attributes& exr_attributes)
 {
+    ASSERT(image.width == render_region.size().x);
+    ASSERT(image.height == render_region.size().y);
+
     if (!options.crop_image_by_render_region) {
         // Render region should be placed into a proper canvas position
         // when we render only a sub-region of the entire image.
-        if (render_region != Bounds2i{ {0, 0}, canvas_resolution }) {
+        if (render_region != Bounds2i{ {0, 0}, film_resolution }) {
             const ColorRGB* src_pixel = image.data.data();
 
-            std::vector<ColorRGB> canvas_pixels(canvas_resolution.area());
-            ColorRGB* dst_pixel = &canvas_pixels[render_region.p0.y * canvas_resolution.x + render_region.p0.x];
+            std::vector<ColorRGB> film_pixels(film_resolution.area()); // the pixels outside render region will be black
+            ColorRGB* dst_pixel = &film_pixels[render_region.p0.y * film_resolution.x + render_region.p0.x];
 
             for (int y = 0; y < image.height; y++) {
                 memcpy(dst_pixel, src_pixel, image.width * sizeof(ColorRGB));
                 src_pixel += image.width;
-                dst_pixel += canvas_resolution.x;
+                dst_pixel += film_resolution.x;
             }
-            image.data.swap(canvas_pixels);
-            image.width = canvas_resolution.x;
-            image.height = canvas_resolution.y;
+            image.data.swap(film_pixels);
+            image.width = film_resolution.x;
+            image.height = film_resolution.y;
         }
     }
 
@@ -460,7 +462,7 @@ static void create_output_image(
 
     // Initialize EXR custom attributes.
     EXR_Attributes_Writer attrib_writer;
-    attrib_writer.add_string_attribute("yar_name", "YAR");
+    attrib_writer.add_string_attribute("renderer_name", "YAR");
     attrib_writer.add_string_attribute("yar_render_device", "cpu");
     attrib_writer.add_string_attribute("yar_input_file", exr_attributes.input_file.c_str());
     attrib_writer.add_integer_attribute("yar_spp", exr_attributes.spp);
@@ -495,8 +497,16 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
     Scene_Context scene_ctx;
     scene_ctx.raytracer_config = scene.raytracer_config;
 
+    if (options.samples_per_pixel > 0) {
+        int k = (int)std::ceil(std::sqrt(options.samples_per_pixel));
+        scene_ctx.raytracer_config.x_pixel_sample_count = k;
+        scene_ctx.raytracer_config.y_pixel_sample_count = k;
+    }
+
+    const Vector2i film_resolution = (options.film_resolution != Vector2i{}) ? options.film_resolution : scene.film_resolution;
+
     scene_ctx.camera = Camera(scene.view_points[0],
-        Vector2(scene.image_resolution),
+        Vector2(film_resolution),
         scene.camera_fov_y,
         scene.z_is_up);
 
@@ -523,18 +533,27 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
     //
     const Bounds2i render_region = [&options, &scene]() {
         Bounds2i rr;
-        if (options.render_region != Bounds2i{})
+        if (options.render_region != Bounds2i{}) {
             rr = options.render_region;
-        else if (scene.render_region != Bounds2i{})
+        }
+        else if (options.film_resolution != Vector2i{}) {
+            // Custom film resolution invalidates scene.render_region,
+            // so we set render region to match custom film resolution.
+            rr = Bounds2i{ {0, 0}, options.film_resolution };
+        }
+        else if (scene.render_region != Bounds2i{}) {
             rr = scene.render_region;
-        else
-            rr = { {0, 0}, scene.image_resolution };
-
-        ASSERT(rr.p0 >= Vector2i{});
-        ASSERT(rr.p0 < rr.p1);
-        ASSERT(rr.p1 <= scene.image_resolution);
+        }
+        else {
+            rr = { {0, 0}, scene.film_resolution };
+        }
         return rr;
     }();
+
+    // assert that render region is within the film dimensions
+    ASSERT(render_region.p0 >= Vector2i{});
+    ASSERT(render_region.p0 < render_region.p1);
+    ASSERT(render_region.p1 <= film_resolution);
 
     Timestamp t_render;
     double variance_estimate = 0.f;
@@ -565,5 +584,5 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
         .render_time = render_time
     };
 
-    create_output_image(output_filename, render_region, scene.image_resolution, exr_attributes, options, std::move(image));
+    save_output_image(output_filename, image, render_region, film_resolution, options, exr_attributes);
 }

@@ -21,12 +21,17 @@ enum Options {
     OPT_OUTPUT_DIRECTORY,
     OPT_OUTPUT_FILENAME_SUFFIX,
     OPT_ENABLE_OPENEXR_VARYING_ATTRIBUTES,
+    OPT_SAMPLES_PER_PIXEL,
+    OPT_FILM_RESOLUTION,
 };
 
 static const getopt_option_t option_list[] =
 {
-    { "help", 0, GETOPT_OPTION_TYPE_NO_ARG, 0, OPT_HELP, "print this help text" },
-    { "test", 0, GETOPT_OPTION_TYPE_OPTIONAL, 0, OPT_RUN_TESTS, "run the tests" },
+    { "help", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_HELP,
+        "print this help text" },
+
+    { "test", 0, GETOPT_OPTION_TYPE_OPTIONAL, nullptr, OPT_RUN_TESTS,
+        "run the test(s)", "test_name" },
 
     { "nthreads", 0, GETOPT_OPTION_TYPE_REQUIRED, 0, OPT_THREAD_COUNT,
         "specify thread count", "thread_count" },
@@ -62,18 +67,23 @@ static const getopt_option_t option_list[] =
         "suffix that will be added to the output image filename", "string" },
 
     { "openexr-varying-attributes", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_ENABLE_OPENEXR_VARYING_ATTRIBUTES,
-        "enable openexr custom attributes that define information that changes between render sessions" },
+        "enable OpenEXR custom attributes that vary between render sessions" },
+
+    { "spp", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_SAMPLES_PER_PIXEL,
+        "set samples per pixel value (overrides project settings)",
+        "positive_integer_number" },
+
+    { "resolution", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_FILM_RESOLUTION,
+        "specifies resolution of the output image (overrides project settings)",
+        "640x480, 1080p, QHD, 4K, etc" },
 
     GETOPT_OPTIONS_END
 };
 
 static void print_help_string(getopt_context_t* ctx) {
-    printf("Usage:\n");
-    printf("yar <yar_file> [options...]\n");
-
-    char buffer[2048];
-    printf("Options:\n");
-    printf("%s\n", getopt_create_help_string(ctx, buffer, sizeof(buffer)));
+    char buffer[4096];
+    printf("Usage: RAY.exe <pbrt_file or yar_file> [options...]\n");
+    printf("Options:\n%s\n", getopt_create_help_string(ctx, buffer, sizeof(buffer)));
 }
 
 static std::vector<std::string> read_list_file(const std::string& list_file)
@@ -196,6 +206,37 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_OUTPUT_FILENAME_SUFFIX) {
             options.output_filename_suffix = ctx.current_opt_arg;
+        }
+        else if (opt == OPT_SAMPLES_PER_PIXEL) {
+            options.samples_per_pixel = atoi(ctx.current_opt_arg);
+            ASSERT(options.samples_per_pixel > 0);
+        }
+        else if (opt == OPT_FILM_RESOLUTION) {
+            int width, height;
+            if (sscanf(ctx.current_opt_arg, "%dx%d", &width, &height) == 2) {
+                ASSERT(width > 0 && height > 0);
+                options.film_resolution = Vector2i{ width, height };
+            }
+            else {
+                std::string s = to_lower(ctx.current_opt_arg);
+                if (s == "720p" || s == "hd") {
+                    options.film_resolution = Vector2i{ 1280, 720 };
+                }
+                else if (s == "1080p" || s == "fhd") {
+                    options.film_resolution = Vector2i{ 1920, 1080 };
+                }
+                else if (s == "1440p" || s == "qhd") {
+                    options.film_resolution = Vector2i{ 2560, 1440 };
+                }
+                else if (s == "2160p" || s == "uhd" || s == "4k") {
+                    options.film_resolution = Vector2i{ 3840, 2160 };
+                }
+                else {
+                    printf("Unsupported argument for --resolution option: %s\n", ctx.current_opt_arg);
+                    printf("Here are the examples of valid arguments: 1280x720, FHD, 1440p, 4K\n");
+                    return 1;
+                }
+            }
         }
         else {
            ASSERT(!"unknown option");
