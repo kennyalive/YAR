@@ -256,6 +256,13 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
         KdTree triangle_mesh_kdtree = build_triangle_mesh_kdtree(&geometry_data);
         printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
 
+#if USE_KD_TILES
+        float memory_ratio = float(
+            double(triangle_mesh_kdtree.tiles.size() * sizeof(KdTile)) /
+            double(triangle_mesh_kdtree.nodes.size() * sizeof(KdNode)));
+        printf("KdTile memory to KdNode memory ratio: %f\n", memory_ratio);
+#endif
+
         if (print_kdtree_stats) {
             printf("\n");
             kdtree_calculate_stats(triangle_mesh_kdtree).print();

@@ -3,6 +3,12 @@
 #include "lib/bounding_box.h"
 #include "lib/geometry.h"
 
+#define USE_KD_TILES 1
+
+#if USE_KD_TILES
+#include "kdtile.h"
+#endif
+
 struct Intersection;
 struct KdTree;
 struct Ray;
@@ -124,6 +130,10 @@ struct KdTree {
 
     std::vector<KdNode> nodes;
     std::vector<uint32_t> primitive_indices;
+
+#if USE_KD_TILES
+    std::vector<KdTile> tiles;
+#endif
 
     // Reference to geometry data for which this kdtree is built.
     // For triangle mesh kdtree it points to Triangle_Mesh_Geometry_Data object.

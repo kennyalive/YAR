@@ -440,6 +440,11 @@ KdTree build_triangle_mesh_kdtree(const Triangle_Mesh_Geometry_Data* triangle_me
     tree.nodes = std::move(builder.nodes);
     tree.primitive_indices = std::move(builder.primitive_indices);
     tree.set_geometry_data(triangle_mesh_geometry_data);
+
+#if USE_KD_TILES
+    tree.tiles = convert_kdtree_nodes_to_tiled_layout(tree);
+#endif
+
     return tree;
 }
 

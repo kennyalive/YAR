@@ -102,6 +102,7 @@
     <ClCompile Include="..\src\reference\kdtree_builder.cpp" />
     <ClCompile Include="..\src\reference\direct_lighting.cpp" />
     <ClCompile Include="..\src\reference\kdtree_stats.cpp" />
+    <ClCompile Include="..\src\reference\kdtile.cpp" />
     <ClCompile Include="..\src\reference\light_sampling.cpp" />
     <ClCompile Include="..\src\reference\main.cpp" />
     <ClCompile Include="..\src\reference\parameter_evaluation.cpp" />
@@ -128,6 +129,7 @@
   <ItemGroup>
     <ClInclude Include="..\src\reference\bsdf.h" />
     <ClInclude Include="..\src\reference\kdtree_stats.h" />
+    <ClInclude Include="..\src\reference\kdtile.h" />
     <ClInclude Include="..\src\reference\light_sampling.h" />
     <ClInclude Include="..\src\reference\parameter_evaluation.h" />
     <ClInclude Include="..\src\reference\path_tracing.h" />

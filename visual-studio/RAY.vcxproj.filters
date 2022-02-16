@@ -42,6 +42,7 @@
       <Filter>tests</Filter>
     </ClCompile>
     <ClCompile Include="..\src\reference\kdtree_stats.cpp" />
+    <ClCompile Include="..\src\reference\kdtile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -66,6 +67,7 @@
     <ClInclude Include="..\src\reference\path_tracing.h" />
     <ClInclude Include="..\src\reference\specular_scattering.h" />
     <ClInclude Include="..\src\reference\kdtree_stats.h" />
+    <ClInclude Include="..\src\reference\kdtile.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">
