@@ -17,6 +17,9 @@ void run_tests(const std::string& test_name) {
         test_watertightness();
         test_kdtree();
     }
+    else if (test_name == "kdtree") {
+        test_kdtree();
+    }
     else if (test_name == "bench_intersection") {
         benchmark_triangle_intersection();
     }
