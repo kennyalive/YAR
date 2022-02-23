@@ -134,9 +134,6 @@ struct KdTree {
     static uint64_t compute_scene_kdtree_data_hash(const Scene_Geometry_Data& scene_geometry_data);
 
     bool intersect(const Ray& ray, Intersection& intersection) const;
-#if USE_KD_TILES
-    bool intersect_tiled_structure(const Ray& ray, Intersection& intersection) const;
-#endif
     bool intersect_any(const Ray& ray, float tmax) const;
     
     Bounding_Box bounds; // kdtree spatial bounds
@@ -148,7 +145,6 @@ struct KdTree {
     std::vector<KdNode> nodes;
     std::vector<uint32_t> primitive_indices;
 
-#if USE_KD_TILES
     struct Tile_Buffer_Deleter {
         void operator()(uint8_t* data) {
             _aligned_free(data);
@@ -156,7 +152,6 @@ struct KdTree {
     };
     std::unique_ptr<uint8_t, Tile_Buffer_Deleter> tile_buffer; // cache line aligned
     size_t tile_buffer_size = 0;
-#endif
 
     // Reference to geometry data for which this kdtree is built.
     // For triangle mesh kdtree it points to Triangle_Mesh_Geometry_Data object.

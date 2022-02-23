@@ -182,12 +182,7 @@ uint64_t KdTree::compute_scene_kdtree_data_hash(const Scene_Geometry_Data& scene
 
 bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
 {
-#if USE_KD_TILES
-    if (tile_buffer) {
-        return intersect_tiled_structure(ray, intersection);
-    }
-#endif
-
+if (!USE_KD_TILES || !tile_buffer) {
 #ifdef BRUTE_FORCE_INTERSECTION
     uint32_t primitive_count = 0;
     if (intersector == &intersect_triangle_mesh_kdtree_leaf_primitive)
@@ -290,11 +285,10 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
     } // while (intersection.t > t_min)
     return intersection.t < ray_tmax;
 #endif // !BRUTE_FORCE_INTERSECTION
-}
 
+} // if (!USE_KD_TILES || !tile_buffer)
 #if USE_KD_TILES
-bool KdTree::intersect_tiled_structure(const Ray& ray, Intersection& intersection) const
-{
+else {
     float t_min, t_max; // parametric range for the ray's overlap with the current node
 
 #if ENABLE_INVALID_FP_EXCEPTION
@@ -444,6 +438,7 @@ traversal_finished:
     return intersection.t < ray_tmax;
 }
 #endif // USE_KD_TILES
+}
 
 bool KdTree::intersect_any(const Ray& ray, float tmax) const
 {
