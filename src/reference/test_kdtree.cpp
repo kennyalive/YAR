@@ -82,7 +82,7 @@ Ray Ray_Generator::generate_ray(const Vector3& last_hit_position, const Vector3&
     return Ray{origin, direction};
 }
 
-const int benchmark_ray_count = 1'000'000;
+const int benchmark_ray_count = 30'000'000;
 
 static void benchmark_geometry_kdtree(const KdTree& kdtree, const Operation_Info&) {
     const bool debug_rays = false;
