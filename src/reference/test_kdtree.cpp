@@ -230,7 +230,7 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
     std::vector<Triangle_Mesh> custom_meshes = create_custom_meshes();
 
     std::vector<Operation_Info> infos{
-        {"", &custom_meshes[0], "<mesh to test FP bug fix in clip_bounds function>", 100'000},
+        //{"", &custom_meshes[0], "<mesh to test FP bug fix in clip_bounds function>", 100'000},
         {"../data/test-files/teapot.obj", nullptr, "", 100'000},
         {"../data/test-files/bunny.obj", nullptr, "", 10'000},
         {"../data/test-files/dragon.obj", nullptr, "", 5'000},
@@ -258,9 +258,16 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
         Triangle_Mesh_Geometry_Data geometry_data;
         geometry_data.mesh = &mesh;
 
-        Timestamp t;
-        KdTree triangle_mesh_kdtree = build_triangle_mesh_kdtree(&geometry_data);
-        printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
+        fs::path kdtree_filename = fs::path(info.mesh_file_name).replace_extension(".kdtree");
+        if (!fs_exists(kdtree_filename)) {
+            Timestamp t;
+            KdTree kdtree = build_triangle_mesh_kdtree(&geometry_data);
+            printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
+            kdtree.save(kdtree_filename.string());
+        }
+
+        KdTree triangle_mesh_kdtree = KdTree::load(kdtree_filename.string());
+        triangle_mesh_kdtree.set_geometry_data(&geometry_data);
 
 #if USE_KD_TILES
         float memory_ratio = float(
