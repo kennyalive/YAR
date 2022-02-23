@@ -306,6 +306,7 @@ else {
         float t_max;
         uint8_t primitive_count; // if > 0, then this traversal node contains leaf information
         uint32_t primitive_index;
+        uint64_t* stat_to_increment = nullptr;
     };
     Traversal_Info traversal_stack[max_traversal_depth];
     int traversal_stack_size = 0;
@@ -365,12 +366,12 @@ else {
                 ASSERT(traversal_stack_size < max_traversal_depth);
 
                 if (second_child_type == kdtile_child_type_node) {
-                    traversal_stack[traversal_stack_size++] = { tile, tile + second_child_info[0], t_split, t_max, 0, 0 };
+                    traversal_stack[traversal_stack_size++] = { tile, tile + second_child_info[0], t_split, t_max, 0, 0, &inside_tile_transitions };
                 }
                 else if (second_child_type == kdtile_child_type_external_node) {
                     uint32_t cache_line_index = *reinterpret_cast<const uint32_t*>(second_child_info);
                     const uint8_t* external_tile = tile_buffer.get() + cache_line_index * cache_line_size;
-                    traversal_stack[traversal_stack_size++] = { external_tile, external_tile, t_split, t_max, 0, 0 };
+                    traversal_stack[traversal_stack_size++] = { external_tile, external_tile, t_split, t_max, 0, 0, &external_tile_transitions };
                 }
                 else if (second_child_type == kdtile_child_type_leaf) {
                     uint8_t primitive_count = second_child_info[0];
@@ -395,11 +396,13 @@ else {
 
         if (child_type == kdtile_child_type_node) {
             node = tile + child_info[0];
+            inside_tile_transitions++;
         }
         else if (child_type == kdtile_child_type_external_node) {
             uint32_t cache_line_index = *reinterpret_cast<const uint32_t*>(child_info);
             tile = tile_buffer.get() + cache_line_index * cache_line_size;
             node = tile;
+            external_tile_transitions++;
         }
         else { // kdtile_child_type_leaf or kdtile_child_type_empty
             uint8_t primitive_count = 0;
@@ -431,6 +434,9 @@ else {
                 t_max = traversal_stack[traversal_stack_size].t_max;
                 primitive_count = traversal_stack[traversal_stack_size].primitive_count;
                 primitive_offset = traversal_stack[traversal_stack_size].primitive_index;
+
+                if (traversal_stack[traversal_stack_size].stat_to_increment)
+                    ++(*traversal_stack[traversal_stack_size].stat_to_increment);
             } while (primitive_count > 0);
         }
     } // while (intersection.t > t_min)

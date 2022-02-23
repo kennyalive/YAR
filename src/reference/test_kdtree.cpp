@@ -133,6 +133,10 @@ static void benchmark_geometry_kdtree(const KdTree& kdtree, const Operation_Info
     printf("single raycast time: %.2f nanoseconds, %d clocks\n", nanoseconds_per_raycast, clocks);
     double mrays_per_sec = (benchmark_ray_count / 1e6f) / (time_ns / 1e9f);
     printf("raycast performance: %.2f MRays/sec\n\n", mrays_per_sec);
+
+    printf("inside_tile_transitions %" PRIu64 "\n", kdtree.inside_tile_transitions);
+    printf("external_tile_transitions %" PRIu64 "\n", kdtree.external_tile_transitions);
+    printf("inside to external ratio %.2f\n", float(double(kdtree.inside_tile_transitions) / double(kdtree.external_tile_transitions)));
 }
 
 static void validate_triangle_mesh_kdtree(const KdTree& kdtree, const Operation_Info& info) {

@@ -118,6 +118,9 @@ struct Scene_Geometry_Data {
 };
 
 struct KdTree {
+    mutable uint64_t inside_tile_transitions = 0;
+    mutable uint64_t external_tile_transitions = 0;
+
     static KdTree load(const std::string& file_name);
     void save(const std::string& file_name) const;
 
