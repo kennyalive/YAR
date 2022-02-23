@@ -65,6 +65,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>std.h</PrecompiledHeaderFile>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <AdditionalOptions>/wd26812 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -85,6 +86,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>std.h</PrecompiledHeaderFile>
+      <AdditionalOptions>/wd26812 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

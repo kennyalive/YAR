@@ -258,7 +258,7 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
 
 #if USE_KD_TILES
         float memory_ratio = float(
-            double(triangle_mesh_kdtree.tiles.size() * sizeof(KdTile)) /
+            double(triangle_mesh_kdtree.tile_buffer_size) /
             double(triangle_mesh_kdtree.nodes.size() * sizeof(KdNode)));
         printf("KdTile memory to KdNode memory ratio: %f\n", memory_ratio);
 #endif

@@ -442,7 +442,14 @@ KdTree build_triangle_mesh_kdtree(const Triangle_Mesh_Geometry_Data* triangle_me
     tree.set_geometry_data(triangle_mesh_geometry_data);
 
 #if USE_KD_TILES
-    tree.tiles = convert_kdtree_nodes_to_tiled_layout(tree);
+    if (!tree.nodes[0].is_leaf()) {
+        std::vector<uint8_t> tiles = convert_kdtree_nodes_to_tiled_layout(tree);
+        tree.tile_buffer = std::unique_ptr<uint8_t, KdTree::Tile_Buffer_Deleter>(
+            (uint8_t*)_aligned_malloc(tiles.size(), cache_line_size)
+            );
+        memcpy(tree.tile_buffer.get(), tiles.data(), tiles.size());
+        tree.tile_buffer_size = tiles.size();
+    }
 #endif
 
     return tree;

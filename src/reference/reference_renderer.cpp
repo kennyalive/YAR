@@ -150,6 +150,17 @@ struct KdTree_Data {
 
         Timestamp t_scene_kdtree;
         scene_kdtree = build_scene_kdtree(&scene_geometry_data);
+
+#if USE_KD_TILES
+        if (!scene_kdtree.nodes[0].is_leaf()) {
+            std::vector<uint8_t> tiles = convert_kdtree_nodes_to_tiled_layout(scene_kdtree);
+            scene_kdtree.tile_buffer = std::unique_ptr<uint8_t, KdTree::Tile_Buffer_Deleter>(
+                (uint8_t*)_aligned_malloc(tiles.size(), cache_line_size)
+                );
+            memcpy(scene_kdtree.tile_buffer.get(), tiles.data(), tiles.size());
+            scene_kdtree.tile_buffer_size = tiles.size();
+        }
+#endif
         printf("%-*s %.3f seconds\n", time_category_field_width, "Build scene KdTree", elapsed_seconds(t_scene_kdtree));
     }
 };

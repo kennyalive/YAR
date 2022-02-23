@@ -1,61 +1,24 @@
 #pragma once
 
-#define LARGE_KD_TILES 1
+constexpr int cache_line_size = 64;
 
-#if LARGE_KD_TILES
-// 128 bytes (2 cache lines) tile.
-// Single tile allows to store 4 level deep kdtree subtrees (max nodes per subtree = 1 + 2 + 4 + 8 = 15).
-// _________________________________________________
-// Level 0 |                  |0|                    |
-// Level 1 |        |1|                  |2|         |
-// Level 2 |   |3|      |4|        |5|        |6|    |
-// Level 3 | |7| |8|  |9| |10|  |11| |12|  |13| |14| |
-// __________________________________________________
+// All nodes in the tiled layout are 'interior' nodes. We don't allocate
+// dedicated nodes to store leaf related information or, for empty nodes,
+// we don't allocate dedicated nodes just to mark them as empty.
 //
-struct KdTile {
-    // 4 bytes: 2 bits per node for 15 nodes + 2 unused bits
-    // If node's 2 bit field != 3 then it's an interior node, otherwise it's a leaf.
-    // Additionally, for interior node, the value of 2 bit field (0, 1 or 2) defines the index of the split axis.
-    uint32_t flags;
-
-    // 60 bytes: split positions, used only by the interior nodes.
-    float split_positions[15];
-
-    // 64 bytes.
-    // For 3rd level interior node, each pair of uint32 stores indices of the left and right "child tiles".
-    // For leaf node (at most 8 leaves per tile), each pair of uint32 stores primitive count (first uint32) and
-    // primitive index/offset (second uint32).
-    uint32_t data[16];
-};
-static_assert(sizeof(KdTile) == 64 * 2);
-
-#else // LARGE_KD_TILES == 0
-// 64 bytes (one cache line) tile.
-// Single tile allows to store 3 level deep kdtree subtrees (max nodes per subtree = 1 + 2 + 4 = 7).
-// _________________________________________________
-// Level 0 |                  |0|                    |
-// Level 1 |        |1|                  |2|         |
-// Level 2 |   |3|      |4|        |5|        |6|    |
-// __________________________________________________
+// If the left or the right child of the current node terminates traversal then
+// all leaf related information is stored in the current node.
 //
-struct KdTile {
-    // 4 bytes: 2 bits per node for 15 nodes + 2 unused bits
-    // If node's 2 bit field != 3 then it's an interior node, otherwise it's a leaf.
-    // Additionally, for interior node, the value of 2 bit field (0, 1 or 2) defines the index of the split axis.
-    uint32_t flags;
-
-    // 60 bytes: split positions, used only by the interior nodes.
-    float split_positions[7];
-
-    // 32 bytes.
-    // For 2nd level interior node, each pair of uint32 stores indices of the left and right "child tiles".
-    // For leaf node (at most 4 leaves per tile), each pair of uint32 stores primitive count (first uint32) and
-    // primitive index/offset (second uint32).
-    uint32_t data[8];
+// One benefit of this approach is that we avoid allocation of real memory for
+// 'empty nodes' (i.e. leaves that have no primitives). Also we avoid that last
+// jump to the leaf node which might cause a cache miss but instead we grab all 
+// leaf related information from the current node.
+enum KdTile_Child_Type {
+    kdtile_child_type_empty = 0, // ends traversal
+    kdtile_child_type_leaf = 1, // ends traversal, leaf primitives information is stored in the current node
+    kdtile_child_type_node = 2, // reference to a node from the current tile
+    kdtile_child_type_external_node = 3 // reference to a node from a different tile
 };
-static_assert(sizeof(KdTile) == 64);
-
-#endif // LARGE_KD_TILES
 
 struct KdTree;
-std::vector<KdTile> convert_kdtree_nodes_to_tiled_layout(const KdTree& kdtree);
+std::vector<uint8_t> convert_kdtree_nodes_to_tiled_layout(const KdTree& kdtree);

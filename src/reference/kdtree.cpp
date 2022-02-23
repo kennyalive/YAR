@@ -84,7 +84,14 @@ KdTree KdTree::load(const std::string& file_name)
         error("KdTree::load: failed to read kdtree data: %s", file_name.c_str());
 
 #if USE_KD_TILES
-    kdtree.tiles = convert_kdtree_nodes_to_tiled_layout(kdtree);
+    if (!kdtree.nodes[0].is_leaf()) {
+        std::vector<uint8_t> tiles = convert_kdtree_nodes_to_tiled_layout(kdtree);
+        kdtree.tile_buffer = std::unique_ptr<uint8_t, KdTree::Tile_Buffer_Deleter>(
+            (uint8_t*)_aligned_malloc(tiles.size(), cache_line_size)
+            );
+        memcpy(kdtree.tile_buffer.get(), tiles.data(), tiles.size());
+        kdtree.tile_buffer_size = tiles.size();
+    }
 #endif
 
     return kdtree;
@@ -173,9 +180,14 @@ uint64_t KdTree::compute_scene_kdtree_data_hash(const Scene_Geometry_Data& scene
 
 //#define BRUTE_FORCE_INTERSECTION
 
-#if !USE_KD_TILES
 bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
 {
+#if USE_KD_TILES
+    if (tile_buffer) {
+        return intersect_tiled_structure(ray, intersection);
+    }
+#endif
+
 #ifdef BRUTE_FORCE_INTERSECTION
     uint32_t primitive_count = 0;
     if (intersector == &intersect_triangle_mesh_kdtree_leaf_primitive)
@@ -279,10 +291,9 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
     return intersection.t < ray_tmax;
 #endif // !BRUTE_FORCE_INTERSECTION
 }
-#else // USE_KD_TILES
 
-#if LARGE_KD_TILES
-bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
+#if USE_KD_TILES
+bool KdTree::intersect_tiled_structure(const Ray& ray, Intersection& intersection) const
 {
     float t_min, t_max; // parametric range for the ray's overlap with the current node
 
@@ -295,258 +306,143 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
 #endif
 
     struct Traversal_Info {
-        const KdTile* tile;
-        int node_index; // [0..14]
+        const uint8_t* tile;
+        const uint8_t* node;
         float t_min;
         float t_max;
+        uint8_t primitive_count; // if > 0, then this traversal node contains leaf information
+        uint32_t primitive_index;
     };
     Traversal_Info traversal_stack[max_traversal_depth];
     int traversal_stack_size = 0;
 
-    const KdTile* tile = &tiles[0];
-    int node_index = 0;
+    const uint8_t* tile = tile_buffer.get();
+    ASSERT(reinterpret_cast<uintptr_t>(tile_buffer.get()) % 64 == 0);
+    const uint8_t* node = tile;
     const float ray_tmax = intersection.t;
 
-    while (intersection.t > t_min) {
-        const uint32_t node_flags = (tile->flags >> (2 * node_index)) & 3;
-        bool is_leaf = node_flags == 3;
-        if (!is_leaf) {
-            const int axis = node_flags;
-            const float distance_to_split_plane = tile->split_positions[node_index] - ray.origin[axis];
-
-            const KdTile* below_tile = nullptr;
-            const KdTile* above_tile = nullptr;
-            int below_index = -1;
-            int above_index = -1;
-
-            if (node_index < 7) {
-                below_tile = tile;
-                above_tile = tile;
-                below_index = 2 * node_index + 1;
-                above_index = 2 * node_index + 2;
-            }
-            else {
-                below_tile = &tiles[tile->data[(node_index - 7) * 2 + 0]];
-                above_tile = &tiles[tile->data[(node_index - 7) * 2 + 1]];
-                below_index = 0;
-                above_index = 0;
-            }
-
-            if (distance_to_split_plane != 0.0) { // general case
-                const KdTile* first_tile;
-                const KdTile* second_tile;
-                int first_index, second_index;
-
-                if (distance_to_split_plane > 0.0) {
-                    first_tile = below_tile;
-                    first_index = below_index;
-                    second_tile = above_tile;
-                    second_index = above_index;
-                }
-                else {
-                    first_tile = above_tile;
-                    first_index = above_index;
-                    second_tile = below_tile;
-                    second_index = below_index;
-                }
-
-                // Select node to traverse next.
-                float t_split = distance_to_split_plane / ray.direction[axis]; // != 0 because distance_to_split_plane != 0
-                if (t_split >= t_max || t_split < 0.0) {
-                    tile = first_tile;
-                    node_index = first_index;
-                }
-                else if (t_split <= t_min) { // 0 < t_split <= t_min
-                    tile = second_tile;
-                    node_index = second_index;
-                }
-                else { // t_min < t_split < t_max
-                    ASSERT(traversal_stack_size < max_traversal_depth);
-                    traversal_stack[traversal_stack_size++] = { second_tile, second_index, t_split, t_max };
-                    tile = first_tile;
-                    node_index = first_index;
-                    t_max = t_split;
-                }
-            }
-            else { // special case, distance_to_split_plane == 0.0
-                if (ray.direction[axis] > 0.0) {
-                    tile = above_tile;
-                    node_index = above_index;
-                }
-                else {
-                    tile = below_tile;
-                    node_index = below_index;
-                }
-            }
-        }
-        else { // leaf node
-            int level = log2_int(node_index + 1);
-            int stride = 16 >> level;
-            int level_first_index = (1 << level) - 1;
-            int index_in_level = node_index - level_first_index;
-            int offset = index_in_level * stride;
-
-            uint32_t primitive_count = tile->data[offset + 0];
-            uint32_t primitive_offset = tile->data[offset + 1];
-
-            if (primitive_count == 1) {
-                intersector(ray, geometry_data, primitive_offset, intersection);
-            }
-            else {
-                for (uint32_t i = 0; i < primitive_count; i++) {
-                    uint32_t primitive_index = primitive_indices[primitive_offset + i];
-                    intersector(ray, geometry_data, primitive_index, intersection);
-                }
-            }
-
-            if (traversal_stack_size == 0)
-                break;
-
-            --traversal_stack_size;
-
-            tile = traversal_stack[traversal_stack_size].tile;
-            node_index = traversal_stack[traversal_stack_size].node_index;
-            t_min = traversal_stack[traversal_stack_size].t_min;
-            t_max = traversal_stack[traversal_stack_size].t_max;
-        }
-    } // while (intersection.t > t_min)
-    return intersection.t < ray_tmax;
-}
-
-#else // LARGE_KD_TILES == 0
-
-bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
-{
-    float t_min, t_max; // parametric range for the ray's overlap with the current node
-
-#if ENABLE_INVALID_FP_EXCEPTION
-    if (!bounds.intersect_by_ray_without_NaNs(ray, &t_min, &t_max))
-        return false;
-#else
-    if (!bounds.intersect_by_ray(ray, &t_min, &t_max))
-        return false;
-#endif
-
-    struct Traversal_Info {
-        const KdTile* tile;
-        int node_index; // [0..6]
-        float t_min;
-        float t_max;
-    };
-    Traversal_Info traversal_stack[max_traversal_depth];
-    int traversal_stack_size = 0;
-
-    const KdTile* tile = &tiles[0];
-    int node_index = 0;
-    const float ray_tmax = intersection.t;
+    static constexpr int right_child_offset[4] = { 5, 10, 6, 9 };
 
     while (intersection.t > t_min) {
-        const uint32_t node_flags = (tile->flags >> (2 * node_index)) & 3;
-        bool is_leaf = node_flags == 3;
-        if (!is_leaf) {
-            const int axis = node_flags;
-            const float distance_to_split_plane = tile->split_positions[node_index] - ray.origin[axis];
+        uint8_t metadata = node[0];
+        const int axis = metadata & 3;
+        const float split_position = *reinterpret_cast<const float*>(node + 1);
 
-            const KdTile* below_tile = nullptr;
-            const KdTile* above_tile = nullptr;
-            int below_index = -1;
-            int above_index = -1;
+        KdTile_Child_Type left_child_type = static_cast<KdTile_Child_Type>((metadata >> 2) & 3);
+        KdTile_Child_Type right_child_type = static_cast<KdTile_Child_Type>((metadata >> 4) & 3);
+        const uint8_t* left_child_info = node + 5;
+        const uint8_t* right_child_info = node + right_child_offset[left_child_type];
 
-            if (node_index < 3) {
-                below_tile = tile;
-                above_tile = tile;
-                below_index = 2 * node_index + 1;
-                above_index = 2 * node_index + 2;
+        KdTile_Child_Type first_child_type;
+        const uint8_t* first_child_info;
+        KdTile_Child_Type second_child_type;
+        const uint8_t* second_child_info;
+
+        KdTile_Child_Type child_type;
+        const uint8_t* child_info;
+
+        const float distance_to_split_plane = split_position - ray.origin[axis];
+
+        if (distance_to_split_plane != 0.0) { // general case
+            if (distance_to_split_plane > 0.f) {
+                first_child_type = left_child_type;
+                first_child_info = left_child_info;
+                second_child_type = right_child_type;
+                second_child_info = right_child_info;
             }
             else {
-                below_tile = &tiles[tile->data[(node_index - 3) * 2 + 0]];
-                above_tile = &tiles[tile->data[(node_index - 3) * 2 + 1]];
-                below_index = 0;
-                above_index = 0;
+                first_child_type = right_child_type;
+                first_child_info = right_child_info;
+                second_child_type = left_child_type;
+                second_child_info = left_child_info;
             }
 
-            if (distance_to_split_plane != 0.0) { // general case
-                const KdTile* first_tile;
-                const KdTile* second_tile;
-                int first_index, second_index;
-
-                if (distance_to_split_plane > 0.0) {
-                    first_tile = below_tile;
-                    first_index = below_index;
-                    second_tile = above_tile;
-                    second_index = above_index;
-                }
-                else {
-                    first_tile = above_tile;
-                    first_index = above_index;
-                    second_tile = below_tile;
-                    second_index = below_index;
-                }
-
-                // Select node to traverse next.
-                float t_split = distance_to_split_plane / ray.direction[axis]; // != 0 because distance_to_split_plane != 0
-                if (t_split >= t_max || t_split < 0.0) {
-                    tile = first_tile;
-                    node_index = first_index;
-                }
-                else if (t_split <= t_min) { // 0 < t_split <= t_min
-                    tile = second_tile;
-                    node_index = second_index;
-                }
-                else { // t_min < t_split < t_max
-                    ASSERT(traversal_stack_size < max_traversal_depth);
-                    traversal_stack[traversal_stack_size++] = { second_tile, second_index, t_split, t_max };
-                    tile = first_tile;
-                    node_index = first_index;
-                    t_max = t_split;
-                }
+            // Select node to traverse next.
+            float t_split = distance_to_split_plane / ray.direction[axis]; // != 0 because distance_to_split_plane != 0
+            if (t_split >= t_max || t_split < 0.0) {
+                child_type = first_child_type;
+                child_info = first_child_info;
             }
-            else { // special case, distance_to_split_plane == 0.0
-                if (ray.direction[axis] > 0.0) {
-                    tile = above_tile;
-                    node_index = above_index;
+            else if (t_split <= t_min) { // 0 < t_split <= t_min
+                child_type = second_child_type;
+                child_info = second_child_info;
+            }
+            else { // t_min < t_split < t_max
+                ASSERT(traversal_stack_size < max_traversal_depth);
+
+                if (second_child_type == kdtile_child_type_node) {
+                    traversal_stack[traversal_stack_size++] = { tile, tile + second_child_info[0], t_split, t_max, 0, 0 };
                 }
-                else {
-                    tile = below_tile;
-                    node_index = below_index;
+                else if (second_child_type == kdtile_child_type_external_node) {
+                    uint32_t cache_line_index = *reinterpret_cast<const uint32_t*>(second_child_info);
+                    const uint8_t* external_tile = tile_buffer.get() + cache_line_index * cache_line_size;
+                    traversal_stack[traversal_stack_size++] = { external_tile, external_tile, t_split, t_max, 0, 0 };
                 }
+                else if (second_child_type == kdtile_child_type_leaf) {
+                    uint8_t primitive_count = second_child_info[0];
+                    uint32_t primitive_offset = *reinterpret_cast<const uint32_t*>(second_child_info + 1);
+                    traversal_stack[traversal_stack_size++] = { nullptr, nullptr, 0.f, 0.f, primitive_count, primitive_offset };
+                }
+                child_type = first_child_type;
+                child_info = first_child_info;
+                t_max = t_split;
             }
         }
-        else { // leaf node
-            int level = log2_int(node_index + 1);
-            int stride = 8 >> level;
-            int level_first_index = (1 << level) - 1;
-            int index_in_level = node_index - level_first_index;
-            int offset = index_in_level * stride;
-
-            uint32_t primitive_count = tile->data[offset + 0];
-            uint32_t primitive_offset = tile->data[offset + 1];
-
-            if (primitive_count == 1) {
-                intersector(ray, geometry_data, primitive_offset, intersection);
+        else { // special case, distance_to_split_plane == 0.0
+            if (ray.direction[axis] > 0.0) {
+                child_type = right_child_type;
+                child_info = right_child_info;
             }
             else {
-                for (uint32_t i = 0; i < primitive_count; i++) {
-                    uint32_t primitive_index = primitive_indices[primitive_offset + i];
-                    intersector(ray, geometry_data, primitive_index, intersection);
-                }
+                child_type = left_child_type;
+                child_info = left_child_info;
             }
+        }
 
-            if (traversal_stack_size == 0)
-                break;
+        if (child_type == kdtile_child_type_node) {
+            node = tile + child_info[0];
+        }
+        else if (child_type == kdtile_child_type_external_node) {
+            uint32_t cache_line_index = *reinterpret_cast<const uint32_t*>(child_info);
+            tile = tile_buffer.get() + cache_line_index * cache_line_size;
+            node = tile;
+        }
+        else { // kdtile_child_type_leaf or kdtile_child_type_empty
+            uint8_t primitive_count = 0;
+            uint32_t primitive_offset;
 
-            --traversal_stack_size;
+            if (child_type == kdtile_child_type_leaf) {
+                primitive_count = child_info[0];
+                primitive_offset = *reinterpret_cast<const uint32_t*>(child_info + 1);
+            }
+            do {
+                if (primitive_count == 1) {
+                    intersector(ray, geometry_data, primitive_offset, intersection);
+                }
+                else {
+                    for (uint32_t i = 0; i < primitive_count; i++) {
+                        uint32_t primitive_index = primitive_indices[primitive_offset + i];
+                        intersector(ray, geometry_data, primitive_index, intersection);
+                    }
+                }
 
-            tile = traversal_stack[traversal_stack_size].tile;
-            node_index = traversal_stack[traversal_stack_size].node_index;
-            t_min = traversal_stack[traversal_stack_size].t_min;
-            t_max = traversal_stack[traversal_stack_size].t_max;
+                if (traversal_stack_size == 0)
+                    goto traversal_finished;
+
+                --traversal_stack_size;
+
+                tile = traversal_stack[traversal_stack_size].tile;
+                node = traversal_stack[traversal_stack_size].node;
+                t_min = traversal_stack[traversal_stack_size].t_min;
+                t_max = traversal_stack[traversal_stack_size].t_max;
+                primitive_count = traversal_stack[traversal_stack_size].primitive_count;
+                primitive_offset = traversal_stack[traversal_stack_size].primitive_index;
+            } while (primitive_count > 0);
         }
     } // while (intersection.t > t_min)
+traversal_finished:
     return intersection.t < ray_tmax;
 }
-#endif // LARGE_KD_TILES
-
 #endif // USE_KD_TILES
 
 bool KdTree::intersect_any(const Ray& ray, float tmax) const
