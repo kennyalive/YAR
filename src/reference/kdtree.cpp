@@ -196,7 +196,6 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
 
     struct Traversal_Info {
         const KdNode* node;
-        float t_min;
         float t_max;
     };
     Traversal_Info traversal_stack[max_traversal_depth];
@@ -238,7 +237,7 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
                 }
                 else { // t_min < t_split < t_max
                     ASSERT(traversal_stack_size < max_traversal_depth);
-                    traversal_stack[traversal_stack_size++] = {second_child, t_split, t_max};
+                    traversal_stack[traversal_stack_size++] = {second_child, t_max};
                     node = first_child;
                     t_max = t_split;
                 }
@@ -267,7 +266,7 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
             --traversal_stack_size;
 
             node = traversal_stack[traversal_stack_size].node;
-            t_min = traversal_stack[traversal_stack_size].t_min;
+            t_min = t_max;
             t_max = traversal_stack[traversal_stack_size].t_max;
         }
     } // while (intersection.t > t_min)
