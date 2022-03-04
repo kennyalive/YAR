@@ -194,6 +194,8 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
         return false;
 #endif
 
+    const Vector3 inv_direction = Vector3(1.f) / ray.direction;
+
     struct Traversal_Info {
         const KdNode* node;
         float t_max;
@@ -228,7 +230,9 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
                 }
 
                 // Select node to traverse next.
-                float t_split = distance_to_split_plane / ray.direction[axis]; // != 0 because distance_to_split_plane != 0
+                float t_split = distance_to_split_plane * inv_direction[axis]; 
+                ASSERT(t_split != 0.f); // because distance_to_split_plane != 0
+
                 if (t_split >= t_max || t_split < 0.0) {
                     node = first_child;
                 }
