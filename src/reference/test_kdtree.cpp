@@ -219,7 +219,7 @@ static std::vector<Triangle_Mesh> create_custom_meshes() {
     return meshes;
 }
 
-static void process_kdrees(std::function<void (const KdTree&, const Operation_Info&)> kdtree_handler, bool print_kdtree_stats)
+static void process_kdrees(std::function<void (const KdTree&, const Operation_Info&)> kdtree_handler)
 {
     std::vector<Triangle_Mesh> custom_meshes = create_custom_meshes();
 
@@ -252,13 +252,25 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
         Triangle_Mesh_Geometry_Data geometry_data;
         geometry_data.mesh = &mesh;
 
-        Timestamp t;
-        KdTree triangle_mesh_kdtree = build_triangle_mesh_kdtree(&geometry_data);
-        printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
-
-        if (print_kdtree_stats) {
+        fs::path kdtree_filename = fs::path(info.mesh_file_name).replace_extension(".kdtree");
+        if (!info.mesh_file_name.empty() && !fs_exists(kdtree_filename)) {
+            Timestamp t;
+            KdTree kdtree = build_triangle_mesh_kdtree(&geometry_data);
+            printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
+            kdtree.save(kdtree_filename.string());
             printf("\n");
-            kdtree_calculate_stats(triangle_mesh_kdtree).print();
+            kdtree_calculate_stats(kdtree).print();
+        }
+
+        KdTree triangle_mesh_kdtree;
+        if (!info.mesh_file_name.empty()) {
+            triangle_mesh_kdtree = KdTree::load(kdtree_filename.string());
+            triangle_mesh_kdtree.set_geometry_data(&geometry_data);
+        }
+        else {
+            Timestamp t;
+            triangle_mesh_kdtree = build_triangle_mesh_kdtree(&geometry_data);
+            printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
         }
         kdtree_handler(triangle_mesh_kdtree, info);
     }
@@ -266,10 +278,10 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
 
 void test_kdtree()
 {
-    process_kdrees(&validate_triangle_mesh_kdtree, false);
+    process_kdrees(&validate_triangle_mesh_kdtree);
 }
 
 void benchmark_kdtree()
 {
-    process_kdrees(&benchmark_geometry_kdtree, true);
+    process_kdrees(&benchmark_geometry_kdtree);
 }
