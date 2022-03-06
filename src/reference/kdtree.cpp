@@ -241,7 +241,9 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
                 }
                 else { // t_min < t_split < t_max
                     ASSERT(traversal_stack_size < max_traversal_depth);
-                    traversal_stack[traversal_stack_size++] = {second_child, t_max};
+                    traversal_stack[traversal_stack_size].node = second_child;
+                    traversal_stack[traversal_stack_size].t_max = t_max;
+                    traversal_stack_size++;
                     node = first_child;
                     t_max = t_split;
                 }
