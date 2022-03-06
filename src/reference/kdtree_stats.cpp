@@ -8,13 +8,12 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
 {
     KdTree_Stats stats;
     stats.nodes_size = kdtree.nodes.size() * sizeof(KdNode);
-    stats.indices_size = kdtree.primitive_indices.size() * sizeof(uint32_t);
-    stats.node_count = (uint32_t)kdtree.nodes.size();
     stats.max_depth_limit = KdTree::get_max_depth_limit(kdtree.get_primitive_count());
 
     // Collect leaf count, primitives per leaf.
     uint64_t primitive_per_leaf_accumulated = 0;
-    for (KdNode node : kdtree.nodes) {
+    for (size_t i = 0; i < kdtree.nodes.size(); i++) {
+        const KdNode node = kdtree.nodes[i];
         if (node.is_leaf()) {
             const uint32_t pc = node.get_primitive_count();
             if (pc == 0) {
@@ -31,7 +30,11 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
                 else
                     stats.leaves_with_huge_primitive_count++;
             }
+            int index_node_count = pc / 2;
+            i += index_node_count; // skip nodes that store array of indices
+            stats.index_node_count += index_node_count;
         }
+        stats.node_count++;
     }
     stats.leaf_primitives_mean = float(double(primitive_per_leaf_accumulated) / stats.leaf_count);
 
@@ -96,6 +99,9 @@ std::vector<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32
             parent_map[below_child] = i;
             parent_map[above_child] = i;
         }
+        else {
+            i += kdtree.nodes[i].get_primitive_count() / 2; // skip nodes that store array of indices
+        }
     }
     std::vector<uint32_t> path{ node_index };
     auto it = parent_map.find(node_index);
@@ -117,12 +123,8 @@ static std::vector<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree,
         const uint32_t pc = node.get_primitive_count();
         subtree_primitive_indices.resize(pc);
         node_index_to_primitive_count[node_index] = pc;
-        if (pc == 1) {
-            subtree_primitive_indices[0] = node.get_index();
-        }
-        else {
-            for (uint32_t k = 0; k < pc; k++)
-                subtree_primitive_indices[k] = kdtree.primitive_indices[node.get_index() + k];
+        for (uint32_t k = 0; k < pc; k++) {
+            subtree_primitive_indices[k] = node.get_primitive_indices_array()[k];
         }
     }
     else {
@@ -178,10 +180,8 @@ void KdTree_Stats::print()
 {
     auto get_percentage = [](uint64_t part, uint64_t total) { return float(double(part) / double(total)) * 100.f; };
 
-    uint64_t size_in_bytes = nodes_size + indices_size;
+    uint64_t size_in_bytes = nodes_size;
     float size_in_mb = size_in_bytes / (1024.f * 1024.f);
-    float nodes_size_percentage = get_percentage(nodes_size, size_in_bytes);
-    float incides_size_percentage = std::max(0.f, 100.f - nodes_size_percentage);
 
     float leaf_nodes_percentage = get_percentage(leaf_count, node_count);
     float empty_nodes_percentage = get_percentage(empty_node_count, node_count);
@@ -207,10 +207,10 @@ void KdTree_Stats::print()
     printf("KdTree information\n");
     printf("------------------------\n");
     printf("kdtree size                     %.2f MB (%" PRIu64 " bytes)\n", size_in_mb, size_in_bytes);
-    printf("nodes/indices memory ratio      nodes %.1f%%, indices %.1f%%\n", nodes_size_percentage, incides_size_percentage);
     printf("node count                      %u\n", node_count);
     printf("leaf count                      %u\n", leaf_count);
     printf("empty node count                %u\n", empty_node_count);
+    printf("index node count                %u\n", index_node_count);
     printf("node type ratios                interior %.2f%%, leaves %.2f%%, empty %.2f%%\n",
         interior_nodes_percentage, leaf_nodes_percentage, empty_nodes_percentage);
     printf("leaf depth mean                 %.2f\n", leaf_depth_mean);

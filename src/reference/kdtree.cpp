@@ -73,13 +73,6 @@ KdTree KdTree::load(const std::string& file_name)
     size_t nodes_byte_count = node_count * sizeof(KdNode);
     file.read(reinterpret_cast<char*>(kdtree.nodes.data()), nodes_byte_count);
 
-    // primitive indices
-    uint32_t index_count = 0;
-    file.read(reinterpret_cast<char*>(&index_count), 4);
-    kdtree.primitive_indices.resize(index_count);
-    size_t indices_byte_count = index_count * 4;
-    file.read(reinterpret_cast<char*>(kdtree.primitive_indices.data()), indices_byte_count);
-
     if (file.fail())
         error("KdTree::load: failed to read kdtree data: %s", file_name.c_str());
 
@@ -103,12 +96,6 @@ void KdTree::save(const std::string& file_name) const
     file.write(reinterpret_cast<const char*>(&node_count), sizeof(uint32_t));
     size_t nodes_byte_count = node_count * sizeof(KdNode);
     file.write(reinterpret_cast<const char*>(nodes.data()), nodes_byte_count);
-
-    // primitive indices
-    uint32_t index_count = (uint32_t)primitive_indices.size();
-    file.write(reinterpret_cast<const char*>(&index_count), sizeof(uint32_t));
-    size_t indices_byte_count = index_count * 4;
-    file.write(reinterpret_cast<const char*>(primitive_indices.data()), indices_byte_count);
 
     if (file.fail())
         error("KdTree::save: failed to write kdtree data: %s", file_name.c_str());
@@ -146,7 +133,7 @@ uint32_t KdTree::get_primitive_count() const
 
 uint64_t KdTree::get_allocated_memory_size() const
 {
-    return (uint64_t)(nodes.size() * sizeof(KdNode) + primitive_indices.size() * sizeof(uint32_t));
+    return (uint64_t)(nodes.size() * sizeof(KdNode));
 }
 
 int KdTree::get_max_depth_limit(uint32_t primitive_count)
@@ -256,14 +243,11 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
             }
         }
         else { // leaf node
-            if (node->get_primitive_count() == 1) {
-                intersector(ray, geometry_data, node->get_index(), intersection);
-            }
-            else {
-                for (uint32_t i = 0; i < node->get_primitive_count(); i++) {
-                    uint32_t primitive_index = primitive_indices[node->get_index() + i];
-                    intersector(ray, geometry_data, primitive_index, intersection);
-                }
+            const uint32_t* primitive_array = node->get_primitive_indices_array();
+            const uint32_t primitive_count = node->get_primitive_count();
+
+            for (uint32_t i = 0; i < primitive_count; i++) {
+                intersector(ray, geometry_data, primitive_array[i], intersection);
             }
 
             if (traversal_stack_size == 0)

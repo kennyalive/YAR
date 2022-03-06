@@ -2,10 +2,10 @@
 
 struct KdTree_Stats {
     uint64_t nodes_size = 0;
-    uint64_t indices_size = 0;
     uint32_t node_count = 0;
     uint32_t empty_node_count = 0;
     uint32_t leaf_count = 0;
+    uint32_t index_node_count = 0;
 
     uint32_t leaves_with_normal_primitive_count[16] = {}; // 1-16 primitives per node
     uint32_t leaves_with_large_primitive_count = 0; //17-32

@@ -31,21 +31,12 @@ struct KdNode {
         word1 = std::bit_cast<uint32_t>(split);
     }
 
-    void init_empty_node() { // leaf without primitives
-        word0 = leaf_or_axis_mask; // word0 == 3
-        word1 = 0; // not used for empty node, just sets default value
-    }
-
-    void init_leaf_with_single_primitive(uint32_t primitive_index) {
-        word0 = leaf_or_axis_mask | (1 << 2); // word0 == 7
-        word1 = primitive_index;
-    }
-
-    void init_leaf_with_multiple_primitives(uint32_t primitive_count, uint32_t primitive_indices_offset) {
-        ASSERT(primitive_count > 1);
-        // word0 == 11, 15, 19, ... (for primitive_count = 2, 3, 4, ...)
+    void init_leaf(uint32_t primitive_count) {
         word0 = leaf_or_axis_mask | (primitive_count << 2);
-        word1 = primitive_indices_offset;
+        // Primitive indices are stored in the array with the first element in the
+        // word1 field and other elements are stored in memory sequentially.
+        // The array is padded to end on KdNode boundary.
+        word1 = uint32_t(-1);
     }
 
     bool is_leaf() const {
@@ -57,9 +48,9 @@ struct KdNode {
         return word0 >> 2;
     }
 
-    uint32_t get_index() const {
+    const uint32_t* get_primitive_indices_array() const {
         ASSERT(is_leaf());
-        return word1;
+        return &word1;
     }
 
     int get_split_axis() const {
@@ -123,7 +114,6 @@ struct KdTree {
     uint64_t geometry_data_hash = 0;
 
     std::vector<KdNode> nodes;
-    std::vector<uint32_t> primitive_indices;
 
     // Reference to geometry data for which this kdtree is built.
     // For triangle mesh kdtree it points to Triangle_Mesh_Geometry_Data object.
