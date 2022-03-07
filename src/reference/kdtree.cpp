@@ -200,10 +200,7 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
 
             const KdNode* below_child = node + 1;
             const KdNode* above_child = &nodes[node->get_above_child()];
-
-            // TODO: test this more on complex scenes. This improves performance on landscape scene (3.5%)
-            // but for simpler scenes it's not always a win.
-            //_mm_prefetch((const char*)above_child, _MM_HINT_T0);
+            prefetch(above_child);
 
             if (distance_to_split_plane != 0.0) { // general case
                 const KdNode *first_child, *second_child;

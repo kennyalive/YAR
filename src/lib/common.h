@@ -4,6 +4,7 @@
 
 #define ENABLE_PROFILING 1
 #define ENABLE_INVALID_FP_EXCEPTION 1
+#define ENABLE_PREFETCH 1
 
 void error(const std::string& message);
 void error(const char* format, ...);
@@ -159,3 +160,9 @@ struct Scoped_File {
     ~Scoped_File() { if (f != nullptr) fclose(f); }
     operator FILE* () { return f; }
 };
+
+inline void prefetch(const void* ptr) {
+#if ENABLE_PREFETCH
+    _mm_prefetch((const char*)ptr, _MM_HINT_T0);
+#endif
+}
