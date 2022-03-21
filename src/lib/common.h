@@ -1,6 +1,6 @@
 #pragma once
 
-#define ASSERT(expression) if (!(expression)) __debugbreak()
+#define ASSERT(expression) if (expression) {} else __debugbreak()
 
 #define ENABLE_PROFILING 1
 #define ENABLE_INVALID_FP_EXCEPTION 1
