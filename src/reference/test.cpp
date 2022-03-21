@@ -4,6 +4,7 @@
 void test_random();
 void test_sampling();
 void test_triangle_intersection();
+void test_simd_triangle_intersection();
 void test_watertightness();
 void test_kdtree();
 void benchmark_triangle_intersection();
@@ -14,8 +15,15 @@ void run_tests(const std::string& test_name) {
         test_random();
         test_sampling();
         test_triangle_intersection();
+        test_simd_triangle_intersection();
         test_watertightness();
         test_kdtree();
+    }
+    else if (test_name == "intersection") {
+        test_triangle_intersection();
+    }
+    else if (test_name == "simd") {
+        test_simd_triangle_intersection();
     }
     else if (test_name == "kdtree") {
         test_kdtree();

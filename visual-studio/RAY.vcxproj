@@ -98,6 +98,7 @@
     <ClCompile Include="..\src\reference\camera.cpp" />
     <ClCompile Include="..\src\reference\film.cpp" />
     <ClCompile Include="..\src\reference\intersection.cpp" />
+    <ClCompile Include="..\src\reference\intersection_simd.cpp" />
     <ClCompile Include="..\src\reference\kdtree.cpp" />
     <ClCompile Include="..\src\reference\kdtree_builder.cpp" />
     <ClCompile Include="..\src\reference\direct_lighting.cpp" />
@@ -127,6 +128,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\bsdf.h" />
+    <ClInclude Include="..\src\reference\intersection_simd.h" />
     <ClInclude Include="..\src\reference\kdtree_stats.h" />
     <ClInclude Include="..\src\reference\light_sampling.h" />
     <ClInclude Include="..\src\reference\parameter_evaluation.h" />
