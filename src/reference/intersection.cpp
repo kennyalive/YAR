@@ -99,15 +99,8 @@ float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vec
     //    if (det < 0 && t_scaled > 0 || det > 0 && t_scaled < 0) return Infinity;
     // MSVC compiler generates 2 x64 instructions: xor, jl.
     // Benchmark consistenly shows 1 cycle gain :)
-    // TODO: replace memcpy with std::bit_cast if no surprises in generated code
-    {
-        uint32_t det_bits;
-        memcpy(&det_bits, &det, 4);
-        uint32_t t_scaled_bits;
-        memcpy(&t_scaled_bits, &t_scaled, 4);
-        if ((det_bits ^ t_scaled_bits) >> 31)
-            return Infinity;
-    }
+    if ((std::bit_cast<uint32_t>(det) ^ std::bit_cast<uint32_t>(t_scaled)) >> 31)
+        return Infinity;
 
     float inv_det = 1.f / det;
     float t = inv_det * t_scaled;
