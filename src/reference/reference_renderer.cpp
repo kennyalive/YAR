@@ -195,7 +195,13 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
     }
 }
 
-static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, int tile_index, Film& film) {
+struct Rendering_Progress {
+    std::mutex progress_update_mutex;
+    int finished_tile_count = 0;
+};
+
+static Film_Tile render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Film& film, int tile_index, Rendering_Progress* progress)
+{
     Bounds2i sample_bounds;
     Bounds2i pixel_bounds;
     film.get_tile_bounds(tile_index, sample_bounds, pixel_bounds);
@@ -274,7 +280,22 @@ static void render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_c
         thread_ctx.variance_count += sample_bounds.area();
     }
 
-    film.merge_tile(tile);
+    // Update rendering progress.
+    {
+        std::lock_guard<std::mutex> lock(progress->progress_update_mutex);
+
+        const int all_tile_count = film.get_tile_count();
+        const int finished_tile_count = ++progress->finished_tile_count;
+
+        int previous_percentage = 100 * (finished_tile_count - 1) / all_tile_count;
+        int current_percentage = 100 * finished_tile_count / all_tile_count;
+
+        if (current_percentage > previous_percentage)
+            printf("\rRendering: %d%%", current_percentage);
+        if (finished_tile_count == all_tile_count)
+            printf("\n");
+    }
+    return tile;
 }
 
 static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options& options, Bounds2i render_region,
@@ -298,6 +319,7 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
 
     std::vector<Thread_Context> thread_contexts;
     std::vector<uint8_t> is_thread_context_initialized;
+    Rendering_Progress progress;
 
     if (options.render_tile_index >= 0) {
         thread_contexts.resize(1);
@@ -307,7 +329,8 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         thread_contexts[0].scene_context = &scene_ctx;
         is_thread_context_initialized.resize(1, true);
 
-        render_tile(scene_ctx, thread_contexts[0], options.render_tile_index, film);
+        Film_Tile tile = render_tile(scene_ctx, thread_contexts[0], film, options.render_tile_index, &progress);
+        film.merge_tile(tile);
     }
     else if (options.thread_count == 1) {
         thread_contexts.resize(1);
@@ -318,10 +341,13 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         is_thread_context_initialized.resize(1, true);
 
         for (int tile_index = 0; tile_index < film.get_tile_count(); tile_index++) {
-            render_tile(scene_ctx, thread_contexts[0], tile_index, film);
+            Film_Tile tile = render_tile(scene_ctx, thread_contexts[0], film, tile_index, &progress);
+            film.merge_tile(tile);
         }
     }
     else {
+        std::vector<Film_Tile> tiles(film.get_tile_count());
+
         struct Render_Tile_Task : public enki::ITaskSet {
             const Renderer_Options* options;
             uint8_t* p_is_thread_context_initialized;
@@ -330,6 +356,8 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
             const Scene_Context* ctx;
             int tile_index;
             Film* film;
+            std::vector<Film_Tile>* tiles;
+            Rendering_Progress* progress;
 
             void ExecuteRange(enki::TaskSetPartition, uint32_t threadnum) override {
                 ASSERT(threadnum < thread_context_count);
@@ -341,7 +369,7 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
                     p_thread_contexts[threadnum].scene_context = ctx;
                     p_is_thread_context_initialized[threadnum] = true;
                 }
-                render_tile(*ctx, p_thread_contexts[threadnum], tile_index, *film);
+                (*tiles)[tile_index] = render_tile(*ctx, p_thread_contexts[threadnum], *film, tile_index, progress);
             }
         };
 
@@ -364,10 +392,15 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
             task.ctx = &scene_ctx;
             task.tile_index = tile_index;
             task.film = &film;
+            task.tiles = &tiles;
+            task.progress = &progress;
             tasks[tile_index] = task;
             task_scheduler.AddTaskSetToPipe(&tasks[tile_index]);
         }
         task_scheduler.WaitforAllAndShutdown();
+
+        for (const Film_Tile& tile : tiles)
+            film.merge_tile(tile);
     }
 
     if (scene_ctx.pixel_sampler_config.get_samples_per_pixel() > 1) {

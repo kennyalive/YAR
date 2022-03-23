@@ -93,15 +93,6 @@ void Film::get_tile_bounds(int tile_index, Bounds2i& tile_sample_bounds, Bounds2
 }
 
 void Film::merge_tile(const Film_Tile& tile) {
-    // The tile merge operation should be mutually exclusive because border pixels from
-    // neighbor tiles can overlap. The sample space is divided into sample tiles and
-    // they do _not_ overlap. A Film_Tile does not store the sample tile pixels but rather
-    // the pixels that are affected by the samples from sample tile - it means Film_Tile
-    // can be larger than sample tile if filter width is large enough (> 0.5). Because of
-    // this Film_Tiles can overlap which requires synchronization when merging tile pixels
-    // into film but sample tiles never overlap which allows to render them in parallel.
-    std::lock_guard<std::mutex> lock(pixels_mutex);
-
     for (int y = tile.pixel_bounds.p0.y; y < tile.pixel_bounds.p1.y; y++) {
         for (int x = tile.pixel_bounds.p0.x; x < tile.pixel_bounds.p1.x; x++) {
             Vector2i p {x, y};
@@ -112,18 +103,6 @@ void Film::merge_tile(const Film_Tile& tile) {
             film_pixel.color_sum += tile_pixel.color_sum;
             film_pixel.weight_sum += tile_pixel.weight_sum;
         }
-    }
-
-    // Update progress.
-    {
-        finished_tile_count++;
-        int previousPercentage = 100 * (finished_tile_count - 1) / get_tile_count();
-        int currentPercentage = 100 * finished_tile_count / get_tile_count();
-
-        if (currentPercentage > previousPercentage)
-            printf("\rRendering: %d%%", currentPercentage);
-        if (finished_tile_count == get_tile_count())
-            printf("\n");
     }
 }
 
