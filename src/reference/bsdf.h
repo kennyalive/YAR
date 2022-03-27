@@ -64,4 +64,21 @@ struct Ashikhmin_Shirley_Phong_BRDF : public BSDF {
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
+// Because BSDFs in this renderer always represent finite bsdf functions,
+// we don't handle specular transmittance here. It is handled by delta
+// scattering pipeline. If get_specular_scattering_params() decides that
+// current scattering event is specular trasmission then Pbrt3_Uber_BRDF
+// brdf is not used. Pbrt3_Uber_BRDF implementation adjusts pdf to take 
+// into account that Pbrt3_Uber_BRDF defines only finite part of uber bsdf.
+struct Pbrt3_Uber_BRDF : public BSDF {
+    ColorRGB diffuse_reflectance;
+    ColorRGB specular_reflectance;
+    ColorRGB opacity;
+
+    Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_Uber_Material& params);
+    ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
+    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    float pdf(const Vector3& wo, const Vector3& wi) const override;
+};
+
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material);

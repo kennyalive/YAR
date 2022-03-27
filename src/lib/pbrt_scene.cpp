@@ -175,6 +175,9 @@ Material_Handle add_material(Materials& materials, const Material& material)
     else if constexpr (material_type == Material_Type::glass) {
         materials_of_given_type = &materials.glass;
     }
+    else if constexpr (material_type == Material_Type::pbrt3_uber) {
+        materials_of_given_type = &materials.pbrt3_uber;
+    }
     else {
         static_assert(false, "add_material: Unexpected Material_Type value");
     }
@@ -291,6 +294,27 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
             set_constant_parameter(mtl.diffuse_reflectance, ColorRGB(&coated_diffuse->kd.x));
 
         return add_material<Material_Type::coated_diffuse>(materials, mtl);
+    }
+
+    if (auto uber_material = std::dynamic_pointer_cast<pbrt::UberMaterial>(pbrt_material)) {
+        Pbrt3_Uber_Material mtl;
+
+        if (uber_material->map_kd)
+            mtl.diffuse_reflectance = import_pbrt_texture_rgb(uber_material->map_kd, scene);
+        else
+            set_constant_parameter(mtl.diffuse_reflectance, ColorRGB(&uber_material->kd.x));
+
+        if (uber_material->map_ks)
+            mtl.specular_reflectance = import_pbrt_texture_rgb(uber_material->map_ks, scene);
+        else
+            set_constant_parameter(mtl.specular_reflectance, ColorRGB(&uber_material->ks.x));
+
+        if (uber_material->map_opacity)
+            mtl.opacity = import_pbrt_texture_rgb(uber_material->map_opacity, scene);
+        else
+            set_constant_parameter(mtl.opacity, ColorRGB(&uber_material->opacity.x));
+
+        return add_material<Material_Type::pbrt3_uber>(materials, mtl);
     }
 
     // Default material.

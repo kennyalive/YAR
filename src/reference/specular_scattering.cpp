@@ -53,6 +53,11 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, M
         float fresnel = dielectric_fresnel(cos_theta_i, 1.f / specular_scattering.etaI_over_etaT);
 
         float r = thread_ctx.rng.get_float();
+
+        // NOTE: for total internal reflection we have 'fresnel == 1' and the following
+        // condition 'r < fresnel' is always true. This gives a guarantee that transmission
+        // event is never selected in the case of total internal reflection.
+
         if (r < fresnel) {
             specular_scattering.type = Specular_Scattering_Type::specular_reflection;
             // The reflection event is choosen with probability == fresnel.
@@ -73,6 +78,31 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, M
             else
                 thread_ctx.current_dielectric_material = Null_Material;
         }
+    }
+    else if (material_handle.type == Material_Type::pbrt3_uber) {
+        const Pbrt3_Uber_Material& params = scene_ctx.materials.pbrt3_uber[material_handle.index];
+
+        ColorRGB opacity = evaluate_rgb_parameter(thread_ctx, params.opacity);
+        ASSERT(opacity.r <= 1.f && opacity.g <= 1.f && opacity.b <= 1.f);
+        float reflection_probability = opacity.luminance();
+
+        float r = thread_ctx.rng.get_float();
+        if (r < reflection_probability) {
+            // Report that we don't have delta transmission here and we need to create a finite bsdf.
+            return Specular_Scattering{};
+        }
+
+        float transmission_probability = 1.f - reflection_probability;
+        ASSERT(transmission_probability > 0.f);
+
+        specular_scattering.type = Specular_Scattering_Type::specular_transmission;
+
+        ColorRGB transmission_coeff = Color_White - opacity;
+        specular_scattering.scattering_coeff = transmission_coeff / transmission_probability;
+
+        // Uber materials that are not fully opaque do not change direction of the
+        // transmitted ray. The purpose of transmission is to modulate radiance by material's opacity.
+        specular_scattering.etaI_over_etaT = 1.f;
     }
     return specular_scattering;
 }
@@ -109,8 +139,16 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
         else {
             ASSERT(specular_scattering.type == Specular_Scattering_Type::specular_transmission);
             const float eta = specular_scattering.etaI_over_etaT;
-            const bool refracted = refract(shading_ctx.wo, shading_ctx.normal, eta, &ray.direction);
-            ASSERT(refracted); // specular_transmission event should never be selected when total internal reflection happens
+            // QUESTION: why can we have 'wo' that is perpendicular to the normal?
+            // Is it mostly due to FP rounding error or we can indeed sample perpendicular direction?
+            // That's the reason why we have this 'eta==1' special case.
+            if (eta == 1.f) {
+                ray.direction = -shading_ctx.wo;
+            }
+            else {
+                const bool refracted = refract(shading_ctx.wo, shading_ctx.normal, eta, &ray.direction);
+                ASSERT(refracted); // specular_transmission event should never be selected when total internal reflection happens
+            }
             if (compute_differential_rays)
                 differential_rays = shading_ctx.compute_differential_rays_for_specular_transmission(ray, eta);
         }

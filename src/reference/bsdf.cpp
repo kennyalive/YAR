@@ -253,6 +253,45 @@ float Ashikhmin_Shirley_Phong_BRDF::pdf(const Vector3& wo, const Vector3& wi) co
     return pdf;
 }
 
+//
+// Uber material from PBRT 3
+//
+Pbrt3_Uber_BRDF::Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_Uber_Material& params)
+    : BSDF(thread_ctx.shading_context)
+{
+    reflection_scattering = true;
+    // NOTE: uber material also supports perfect specular transmission.
+    // As in other parts of this renderer delta scattering is handled by a dedicated
+    // code (specular_scattering.h/cpp) and BSDFs represent only finite functions.
+
+    diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
+    specular_reflectance = evaluate_rgb_parameter(thread_ctx, params.specular_reflectance);
+    ASSERT(specular_reflectance == Color_Black); // TODO: implement specular scattering
+    opacity = evaluate_rgb_parameter(thread_ctx, params.opacity);
+}
+
+ColorRGB Pbrt3_Uber_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
+{
+    ColorRGB diffuse_brdf = Pi_Inv * diffuse_reflectance * opacity;
+    return diffuse_brdf;
+}
+
+ColorRGB Pbrt3_Uber_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const
+{
+    Vector3 local_dir = sample_hemisphere_cosine(u);
+    *wi = shading_ctx->local_to_world(local_dir);
+    *pdf = Pbrt3_Uber_BRDF::pdf(wo, *wi);
+    return Pbrt3_Uber_BRDF::evaluate(wo, *wi);
+}
+
+float Pbrt3_Uber_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
+{
+    ASSERT(dot(n, wi) >= 0.f);
+    float cosine_distribution_pdf = dot(n, wi) / Pi; // pdf for cosine-weighted hemisphere sampling
+    float finite_term_selection_probability = opacity.luminance();
+    return cosine_distribution_pdf * finite_term_selection_probability;
+}
+
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     switch (material.type) {
@@ -279,6 +318,12 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
         const Coated_Diffuse_Material& params = scene_ctx.materials.coated_diffuse[material.index];
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Ashikhmin_Shirley_Phong_BRDF>();
         return new (bsdf_allocation) Ashikhmin_Shirley_Phong_BRDF(thread_ctx, params);
+    }
+    case Material_Type::pbrt3_uber:
+    {
+        const Pbrt3_Uber_Material& params = scene_ctx.materials.pbrt3_uber[material.index];
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Uber_BRDF>();
+        return new (bsdf_allocation) Pbrt3_Uber_BRDF(thread_ctx, params);
     }
     default:
     {

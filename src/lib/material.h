@@ -11,6 +11,7 @@ enum class Material_Type : uint32_t {
     plastic,
     coated_diffuse,
     glass,
+    pbrt3_uber,
     count,
     null_material = std::numeric_limits<uint32_t>::max()
 };
@@ -98,6 +99,13 @@ struct Glass_Material {
     bool operator==(const Glass_Material&) const = default;
 };
 
+struct Pbrt3_Uber_Material {
+    RGB_Parameter diffuse_reflectance;
+    RGB_Parameter specular_reflectance;
+    RGB_Parameter opacity;
+    bool operator==(const Pbrt3_Uber_Material&) const = default;
+};
+
 struct Materials {
     std::vector<Lambertian_Material> lambertian;
     std::vector<Perfect_Reflector_Material> perfect_reflector;
@@ -106,4 +114,5 @@ struct Materials {
     std::vector<Plastic_Material> plastic;
     std::vector<Coated_Diffuse_Material> coated_diffuse;
     std::vector<Glass_Material> glass;
+    std::vector<Pbrt3_Uber_Material> pbrt3_uber;
 };
