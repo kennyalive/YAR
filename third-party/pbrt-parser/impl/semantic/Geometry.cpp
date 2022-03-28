@@ -43,24 +43,46 @@ static int rply_vertex_callback_vec2(p_ply_argument argument) {
 }
 
 static int rply_face_callback(p_ply_argument argument) {
-  int* buffer;
-  ply_get_argument_user_data(argument, (void**)&buffer, nullptr);
+  std::vector<pbrt::vec3i>* indices;
+  ply_get_argument_user_data(argument, (void**)&indices, nullptr);
 
   long length, value_index;
   ply_get_argument_property(argument, nullptr, &length, &value_index);
 
-  // the first value of a list property, the one that gives the number of entries
+  // if value_index is -1, then current property is the first value in the list,
+  // which represents the total number of items in the list
   if (value_index == -1) {
-    if (length != 3) {
-      // NOTE: we can also handles quads if necessary (length == 4)
-      throw std::runtime_error("Found face with vertex count different from 3, only triangles are supported");
+    if (length != 3 && length != 4) {
+      throw std::runtime_error("Found face with vertex count different from 3 or 4, only triangles and quads are supported");
     }
     return 1; // continue;
   }
 
-  long index;
-  ply_get_argument_element(argument, nullptr, &index);
-  buffer[index * 3 + value_index] = (int)ply_get_argument_value(argument);
+  long face_index;
+  ply_get_argument_element(argument, nullptr, &face_index);
+
+  int vertex_index = (int)ply_get_argument_value(argument);
+
+  if (value_index == 0 || // It's the first vertex of the face, create a new triangle then.
+      value_index == 3) // It's the fourth vertex of the face, it means we have a quad, so create a second triangle.
+  {
+      indices->push_back(pbrt::vec3i{});
+  }
+
+  if (value_index == 0)
+      indices->back().x = vertex_index;
+  else if (value_index == 1)
+      indices->back().y = vertex_index;
+  else if (value_index == 2)
+      indices->back().z = vertex_index;
+  else if (value_index == 3) {
+      indices->back().x = (*indices)[indices->size() - 2].x;
+      indices->back().y = (*indices)[indices->size() - 2].z;
+      indices->back().z = vertex_index;
+  }
+  else {
+      assert(false);
+  }
   return 1;
 }
 
@@ -80,7 +102,6 @@ namespace pbrt {
         throw std::runtime_error(std::string("Unable to read the header of PLY file " + fileName).c_str());
 
       long vertex_count = 0;
-      long face_count = 0;
       bool has_normals = false;
       bool has_uvs = false;
       bool has_indices = false;
@@ -140,8 +161,6 @@ namespace pbrt {
 
         // Check for face element.
         else if (strcmp(name, "face") == 0) {
-          face_count = instance_count;
-
           // Inspect face properties.
           p_ply_property property = nullptr;
           while ((property = ply_get_next_property(element, property)) != nullptr) {
@@ -155,35 +174,34 @@ namespace pbrt {
         }
       }
 
-      if (vertex_count == 0 || face_count == 0)
-        throw std::runtime_error(fileName + ": PLY file is invalid! No face/vertex elements found!");
-
-      pos.resize(vertex_count);
-      if (has_normals)
-        nor.resize(vertex_count);
-      if (has_uvs)
-        tex.resize(vertex_count);
-      if (has_indices)
-        idx.resize(face_count);
+      if (vertex_count == 0)
+        throw std::runtime_error(fileName + ": PLY file is invalid! No vertex elements found!");
 
       // Set callbacks to process the PLY properties.
+      pos.resize(vertex_count);
       ply_set_read_cb(ply, "vertex", "x", rply_vertex_callback_vec3, &pos[0].x, 0);
       ply_set_read_cb(ply, "vertex", "y", rply_vertex_callback_vec3, &pos[0].y, 0);
       ply_set_read_cb(ply, "vertex", "z", rply_vertex_callback_vec3, &pos[0].z, 0);
 
       if (has_normals) {
+        nor.resize(vertex_count);
         ply_set_read_cb(ply, "vertex", "nx", rply_vertex_callback_vec3, &nor[0].x, 0);
         ply_set_read_cb(ply, "vertex", "ny", rply_vertex_callback_vec3, &nor[0].y, 0);
         ply_set_read_cb(ply, "vertex", "nz", rply_vertex_callback_vec3, &nor[0].z, 0);
       }
 
       if (has_uvs) {
+        tex.resize(vertex_count);
         ply_set_read_cb(ply, "vertex", tex_coord_u_name, rply_vertex_callback_vec2, &tex[0].x, 0);
         ply_set_read_cb(ply, "vertex", tex_coord_v_name, rply_vertex_callback_vec2, &tex[0].y, 0);
       }
 
       if (has_indices) {
-        ply_set_read_cb(ply, "face", vertex_indices_name, rply_face_callback, &idx[0].x, 0);
+        ply_set_read_cb(ply, "face", vertex_indices_name, rply_face_callback, &idx, 0);
+        // idx array will be filled with push_back because we don't know in advance the
+        // number of triangles. We support quad faces (2 triangles), so we don't have 1:1
+        // mapping between faces and triangles.
+        idx.resize(0); 
       }
 
       // Read ply file.
