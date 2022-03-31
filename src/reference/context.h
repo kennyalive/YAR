@@ -8,6 +8,7 @@
 #include "shading_context.h"
 
 #include "lib/light.h"
+#include "lib/material.h"
 #include "lib/random.h"
 #include "lib/raytracer_config.h"
 #include "lib/utils.h"

@@ -19,4 +19,12 @@ struct Scene_Object {
     // For Object_Xform with only rotation and scale in 3x3 submatrix the above can be re-written
     // in this form: Normal_Xform = Object_Xform * Inverse_Scale_Xform^2.
     Vector3 inv_scale_squared = Vector3(1);
+
+    // This flag can be enabled when geometry defines enclosed volume (no cracks). It allows to properly
+    // track transitions between dielectric boundaries. Tracing of nested dielectrics does not care about
+    // normal orientation conventions - we keep additional state that allows to track current media.
+    // When this flag is not enabled (or can not be enabled due to enclosed volume requirement) then we
+    // do ad-hoc dielectric transition tracking using original shading normal orientation to define the
+    // notion of inside/outside.
+    bool participate_in_nested_dielectrics_tracking = false;
 };

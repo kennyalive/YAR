@@ -109,7 +109,7 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
 
     // Enforce renderer convention that direction of the incident ray (wo) is in
     // the hemisphere of the geometric normal.
-    // Additionally adjust_shading_normal() below also ensures that 'wo' is in the
+    // Additionally, adjust_shading_normal() below ensures that 'wo' is in the
     // hemisphere of the shading normal.
     if (dot(geometric_normal, wo) < 0) {
         geometric_normal = -geometric_normal;
@@ -120,6 +120,7 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
         normal = -normal;
         dndu = -dndu;
         dndv = -dndv;
+        original_shading_normal_was_flipped = true;
     }
 
     if (differential_rays)
@@ -185,7 +186,7 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
     area_light = intersection.scene_object->area_light;
 
     if (intersection.scene_object->material != Null_Material) {
-        specular_scattering = get_specular_scattering_params(thread_ctx, intersection.scene_object->material);
+        specular_scattering = get_specular_scattering_params(thread_ctx, intersection.scene_object);
 
         if (specular_scattering.type == Specular_Scattering_Type::none)
             bsdf = create_bsdf(thread_ctx, intersection.scene_object->material);

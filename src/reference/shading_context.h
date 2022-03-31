@@ -18,6 +18,15 @@ struct Shading_Context {
     Vector2 uv; // surface uv parameterization
     Vector3 geometric_normal;
 
+    // This renderer is built in such a way that in most cases it is not sensitive to the normal
+    // orientation convention (internally we flip normal if necessary, so it is always in the
+    // hemisphere of the outgoing ray). There are still cases (one case?) when we need to know
+    // the original shading normal orientation (as defined by the source geometry). For example,
+    // when nested dielectrics tracing is disabled or not applicable, then we use original shading
+    // normal orientation to determine if we are inside or outside the object.
+    // The following property allows to determine original shading normal orientation.
+    bool original_shading_normal_was_flipped = false;
+
     Vector3 dpdu;
     Vector3 dpdv;
     Vector3 dndu;

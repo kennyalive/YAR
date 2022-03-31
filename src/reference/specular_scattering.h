@@ -1,9 +1,8 @@
 #pragma once
 
 #include "lib/color.h"
-#include "lib/material.h"
 
-struct Differential_Rays;
+struct Scene_Object;
 struct Thread_Context;
 
 enum class Specular_Scattering_Type {
@@ -18,5 +17,5 @@ struct Specular_Scattering {
     float etaI_over_etaT = 1.f; // relative index of refracton, incident side relative to transmitted side
 };
 
-Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, Material_Handle material_handle);
+Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, const Scene_Object* scene_objec);
 bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRGB* specular_attenuation);

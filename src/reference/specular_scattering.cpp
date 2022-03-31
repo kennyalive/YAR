@@ -9,10 +9,13 @@
 
 #include "lib/scene.h"
 
-Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, Material_Handle material_handle)
+Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, const Scene_Object* scene_object)
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
+
+    const Material_Handle material_handle = scene_object->material;
+    const bool nested_dielectrics_tracing = scene_object->participate_in_nested_dielectrics_tracking;
 
     Specular_Scattering specular_scattering{ Specular_Scattering_Type::none };
 
@@ -39,12 +42,24 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, M
     else if (material_handle.type == Material_Type::glass) {
         const Glass_Material& params = scene_ctx.materials.glass[material_handle.index];
         float dielectric_ior = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
-        if (thread_ctx.current_dielectric_material == Null_Material) {
-            specular_scattering.etaI_over_etaT = 1.f / dielectric_ior;
+        if (nested_dielectrics_tracing) {
+            if (thread_ctx.current_dielectric_material == Null_Material) {
+                specular_scattering.etaI_over_etaT = 1.f / dielectric_ior;
+            }
+            else {
+                ASSERT(thread_ctx.current_dielectric_material == material_handle);
+                specular_scattering.etaI_over_etaT = dielectric_ior / 1.f;
+            }
         }
         else {
-            ASSERT(thread_ctx.current_dielectric_material == material_handle);
-            specular_scattering.etaI_over_etaT = dielectric_ior / 1.f;
+            Vector3 outside_direction = shading_ctx.original_shading_normal_was_flipped ?
+                -shading_ctx.normal : shading_ctx.normal;
+
+            bool enter_event = dot(outside_direction, shading_ctx.wo) > 0.f;
+            if (enter_event)
+                specular_scattering.etaI_over_etaT = 1.f / dielectric_ior;
+            else
+                specular_scattering.etaI_over_etaT = dielectric_ior / 1.f;
         }
 
         // fresnel depends on incident direction (Wi) but for specular reflection dot(n, wi) == dot(n, wo)
@@ -73,10 +88,12 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, M
             specular_scattering.scattering_coeff *= specular_scattering.etaI_over_etaT * specular_scattering.etaI_over_etaT;
 
             // Update current dielectric state.
-            if (thread_ctx.current_dielectric_material == Null_Material)
-                thread_ctx.current_dielectric_material = material_handle;
-            else
-                thread_ctx.current_dielectric_material = Null_Material;
+            if (nested_dielectrics_tracing) {
+                if (thread_ctx.current_dielectric_material == Null_Material)
+                    thread_ctx.current_dielectric_material = material_handle;
+                else
+                    thread_ctx.current_dielectric_material = Null_Material;
+            }
         }
     }
     else if (material_handle.type == Material_Type::pbrt3_uber) {
