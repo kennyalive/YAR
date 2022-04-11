@@ -20,7 +20,7 @@ enum Options {
     OPT_FORCE_REBUILD_KDTREE_CACHE,
     OPT_OUTPUT_DIRECTORY,
     OPT_OUTPUT_FILENAME_SUFFIX,
-    OPT_ENABLE_OPENEXR_VARYING_ATTRIBUTES,
+    OPT_OPENEXR_DISABLE_VARYING_ATTRIBUTES,
     OPT_SAMPLES_PER_PIXEL,
     OPT_FILM_RESOLUTION,
 };
@@ -66,8 +66,8 @@ static const getopt_option_t option_list[] =
     { "suffix", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_OUTPUT_FILENAME_SUFFIX,
         "suffix that will be added to the output image filename", "string" },
 
-    { "openexr-varying-attributes", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_ENABLE_OPENEXR_VARYING_ATTRIBUTES,
-        "enable OpenEXR custom attributes that vary between render sessions" },
+    { "openexr-disable-varying-attributes", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_OPENEXR_DISABLE_VARYING_ATTRIBUTES,
+        "do not generate OpenEXR custom attributes that vary between render sessions" },
 
     { "spp", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_SAMPLES_PER_PIXEL,
         "set samples per pixel value (overrides project settings)",
@@ -198,8 +198,8 @@ int main(int argc, char** argv) {
         else if (opt == OPT_FORCE_REBUILD_KDTREE_CACHE) {
             options.force_rebuild_kdtree_cache = true;
         }
-        else if (opt == OPT_ENABLE_OPENEXR_VARYING_ATTRIBUTES) {
-            options.enable_openexr_varying_attributes = true;
+        else if (opt == OPT_OPENEXR_DISABLE_VARYING_ATTRIBUTES) {
+            options.openexr_disable_varying_attributes = true;
         }
         else if (opt == OPT_OUTPUT_DIRECTORY) {
             options.output_directory = ctx.current_opt_arg;

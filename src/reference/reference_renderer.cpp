@@ -460,6 +460,8 @@ struct EXR_Custom_Attributes {
     // keep output deterministic by default.
     float load_time = 0.f;
     float render_time = 0.f;
+
+    float variance = 0.f;
 };
 
 static void save_output_image(
@@ -500,9 +502,10 @@ static void save_output_image(
     attrib_writer.add_string_attribute("yar_input_file", exr_attributes.input_file.c_str());
     attrib_writer.add_integer_attribute("yar_spp", exr_attributes.spp);
 
-    if (options.enable_openexr_varying_attributes) {
+    if (!options.openexr_disable_varying_attributes) {
         attrib_writer.add_float_attribute("yar_load_time", exr_attributes.load_time);
         attrib_writer.add_float_attribute("yar_render_time", exr_attributes.render_time);
+        attrib_writer.add_float_attribute("yar_variance", exr_attributes.variance);
     }
 
     // Write file to disk.
@@ -614,7 +617,8 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
         .input_file = input_file,
         .spp = scene_ctx.pixel_sampler_config.get_samples_per_pixel(),
         .load_time = load_time,
-        .render_time = render_time
+        .render_time = render_time,
+        .variance = (float)variance_estimate
     };
 
     save_output_image(output_filename, image, render_region, film_resolution, options, exr_attributes);
