@@ -497,15 +497,20 @@ static void save_output_image(
 
     // Initialize EXR custom attributes.
     EXR_Attributes_Writer attrib_writer;
-    attrib_writer.add_string_attribute("renderer_name", "YAR");
+    attrib_writer.add_string_attribute("yar_build_version", "0.0");
+    attrib_writer.add_integer_attribute("yar_build_asserts", ENABLE_ASSERT);
     attrib_writer.add_string_attribute("yar_render_device", "cpu");
     attrib_writer.add_string_attribute("yar_input_file", exr_attributes.input_file.c_str());
     attrib_writer.add_integer_attribute("yar_spp", exr_attributes.spp);
 
+    // We have deterministic CPU rendering, so variance does not change between
+    // renders if other parameters are the same. That's why we don't put variance
+    // under openexr_disable_varying_attributes scope.
+    attrib_writer.add_float_attribute("yar_variance", exr_attributes.variance);
+
     if (!options.openexr_disable_varying_attributes) {
         attrib_writer.add_float_attribute("yar_load_time", exr_attributes.load_time);
         attrib_writer.add_float_attribute("yar_render_time", exr_attributes.render_time);
-        attrib_writer.add_float_attribute("yar_variance", exr_attributes.variance);
     }
 
     // Write file to disk.

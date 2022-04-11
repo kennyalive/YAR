@@ -1,10 +1,15 @@
 #pragma once
 
-#define ASSERT(expression) if (expression) {} else __debugbreak()
-
+#define ENABLE_ASSERT 1
 #define ENABLE_PROFILING 1
 #define ENABLE_INVALID_FP_EXCEPTION 1
 #define ENABLE_PREFETCH 1
+
+#if ENABLE_ASSERT
+#define ASSERT(expression) if (expression) {} else __debugbreak()
+#else
+#define ASSERT(expression)
+#endif
 
 void error(const std::string& message);
 void error(const char* format, ...);
