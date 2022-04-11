@@ -60,11 +60,24 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
         Vector2 u_light = thread_ctx.pixel_sampler.get_next_2d_sample();
         Vector2 u_bsdf = thread_ctx.pixel_sampler.get_next_2d_sample();
 
-        // Add contribution of the current path.
-        L += path_coeff * estimate_direct_lighting_from_single_sample(thread_ctx, u_light_index, u_light, u_bsdf);
+        // Sample light and add its contribution to current path.
+        ColorRGB direct_lighting = estimate_direct_lighting_from_single_sample(thread_ctx, u_light_index, u_light, u_bsdf);
+        L += path_coeff * direct_lighting;
 
         if (++path_ctx.bounce_count == max_bounces)
             break;
+
+        // Generate next path segment.
+        Vector3 wi;
+        float bsdf_pdf;
+
+        Vector2 u = thread_ctx.pixel_sampler.get_next_2d_sample();
+        ColorRGB f = shading_ctx.bsdf->sample(u, shading_ctx.wo, &wi, &bsdf_pdf);
+        if (f.is_black())
+            break;
+
+        path_coeff *= f * (std::abs(dot(shading_ctx.normal, wi)) / bsdf_pdf);
+        current_ray = Ray{shading_ctx.position, wi};
 
         // Apply russian roulette.
         if (path_ctx.bounce_count >= bounce_count_when_to_apply_russian_roulette) {
@@ -80,18 +93,6 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
 
             path_coeff /= 1 - termination_probability;
         }
-
-        // Generate next path segment.
-        Vector3 wi;
-        float bsdf_pdf;
-
-        Vector2 u = thread_ctx.pixel_sampler.get_next_2d_sample();
-        ColorRGB f = shading_ctx.bsdf->sample(u, shading_ctx.wo, &wi, &bsdf_pdf);
-        if (f.is_black())
-            break;
-
-        path_coeff *= f * (std::abs(dot(shading_ctx.normal, wi)) / bsdf_pdf);
-        current_ray = Ray{shading_ctx.position, wi};
     }
     return L;
 }
