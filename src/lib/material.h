@@ -100,9 +100,25 @@ struct Glass_Material {
 };
 
 struct Pbrt3_Uber_Material {
+    // Opacity allows the light to go through the surface without being scattered.
+    // Yes, it's not physically based process but what is real, anyway?
+    //
+    // If incoming radiance is L_incoming then the amount of passthrough radiance is:
+    //      L_passthrough = (White - Opacity) * L_incoming.
+    // The amount of radiance that's being scattered according to other parameters is:
+    //      L_before_scattering = Opacity * L_incoming.
+    RGB_Parameter opacity;
+
     RGB_Parameter diffuse_reflectance;
     RGB_Parameter specular_reflectance;
-    RGB_Parameter opacity;
+    Float_Parameter roughness;
+    Float_Parameter index_of_refraction;
+
+    RGB_Parameter delta_reflectance;
+    bool has_delta_reflectance = false;
+    RGB_Parameter delta_transmission;
+    bool has_delta_transmission = false;
+
     bool operator==(const Pbrt3_Uber_Material&) const = default;
 };
 

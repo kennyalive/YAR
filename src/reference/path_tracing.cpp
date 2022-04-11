@@ -56,6 +56,8 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
         if (!hit_found || shading_ctx.area_light != Null_Light)
             break;
 
+        path_coeff *= shading_ctx.specular_scattering.finite_scattering_weight;
+
         float u_light_index = thread_ctx.pixel_sampler.get_next_1d_sample();
         Vector2 u_light = thread_ctx.pixel_sampler.get_next_2d_sample();
         Vector2 u_bsdf = thread_ctx.pixel_sampler.get_next_2d_sample();

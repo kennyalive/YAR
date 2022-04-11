@@ -42,16 +42,29 @@ static Sampled_Spectrum to_sampled_spectrum(const pbrt::Spectrum& pbrt_spectrum)
     return Sampled_Spectrum::from_tabulated_data(lambdas.data(), values.data(), (int)lambdas.size());
 }
 
-// here we define disney roughness as quantity such that alpha = roughness^2
-static float pbrt_roughness_to_disney_roughness(float pbrt_roughness, bool remap) {
-    float alpha = pbrt_roughness;
+// We define disney roughness as square root from microfacet alpha parameter: alpha = disney_roughness^2.
+static float pbrt_roughness_to_disney_roughness(float pbrt_roughness, bool remap)
+{
+    float alpha;
     if (remap) {
+        // remap is true. It means that pbrt_roughness is a user-friendly value from
+        // [0..1] range and we need to remap it to represent 'alpha' parameter from
+        // microfacet distribution.
+
+        // TODO: assert is disabled for now, because some materials violate this.
+        // Do we need a warning here?
+        //ASSERT(pbrt_roughness >= 0.f && pbrt_roughness <= 1.f);
+
         pbrt_roughness = std::max(pbrt_roughness, 1e-3f);
         float x = std::log(pbrt_roughness);
         alpha = 1.62142f + 0.819955f*x + 0.1734f*x*x + 0.0171201f*x*x*x + 0.000640711f*x*x*x*x;
     }
-    float roughness = std::sqrt(alpha);
-    return roughness;
+    else {
+        // remap is false. pbrt_roughtness specifies directly microfacet alpha parameter.
+        alpha = pbrt_roughness;
+    }
+    float disney_roughness = std::sqrt(alpha);
+    return disney_roughness;
 }
 
 static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size, Matrix3x4& transform) {
@@ -192,7 +205,30 @@ Material_Handle add_material(Materials& materials, const Material& material)
     return Material_Handle{ material_type, (int)materials_of_given_type->size() - 1 };
 }
 
-static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_material, Scene* scene) {
+static RGB_Parameter init_rgb_parameter_from_texture_or_constant(Scene* scene,
+    pbrt::Texture::SP texture, const pbrt::vec3f& const_value)
+{
+    RGB_Parameter param;
+    if (texture)
+        param = import_pbrt_texture_rgb(texture, scene);
+    else
+        set_constant_parameter(param, ColorRGB(&const_value.x));
+    return param;
+}
+
+static Float_Parameter init_float_parameter_from_texture_or_constant(Scene* scene,
+    pbrt::Texture::SP texture, float const_value)
+{
+    Float_Parameter param;
+    if (texture)
+        param = import_pbrt_texture_float(texture, scene);
+    else
+        set_constant_parameter(param, const_value);
+    return param;
+}
+
+static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_material, Scene* scene)
+{
     Materials& materials = scene->materials;
 
     if (auto matte = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_material)) {
@@ -296,23 +332,39 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         return add_material<Material_Type::coated_diffuse>(materials, mtl);
     }
 
-    if (auto uber_material = std::dynamic_pointer_cast<pbrt::UberMaterial>(pbrt_material)) {
+    if (auto uber = std::dynamic_pointer_cast<pbrt::UberMaterial>(pbrt_material)) {
+        ASSERT(uber->alpha == 0.f);
+        ASSERT(uber->map_alpha == nullptr);
+        ASSERT(uber->shadowAlpha == 0.f);
+        ASSERT(uber->map_shadowAlpha == nullptr);
+        ASSERT(uber->uRoughness == 0.f);
+        ASSERT(uber->map_uRoughness == nullptr);
+        ASSERT(uber->vRoughness == 0.f);
+        ASSERT(uber->map_vRoughness == nullptr);
+        ASSERT(uber->map_roughness == nullptr);
+        ASSERT(uber->map_bump == nullptr);
+
         Pbrt3_Uber_Material mtl;
 
-        if (uber_material->map_kd)
-            mtl.diffuse_reflectance = import_pbrt_texture_rgb(uber_material->map_kd, scene);
-        else
-            set_constant_parameter(mtl.diffuse_reflectance, ColorRGB(&uber_material->kd.x));
+        mtl.opacity = init_rgb_parameter_from_texture_or_constant(scene, uber->map_opacity, uber->opacity);
 
-        if (uber_material->map_ks)
-            mtl.specular_reflectance = import_pbrt_texture_rgb(uber_material->map_ks, scene);
-        else
-            set_constant_parameter(mtl.specular_reflectance, ColorRGB(&uber_material->ks.x));
+        mtl.diffuse_reflectance = init_rgb_parameter_from_texture_or_constant(scene, uber->map_kd, uber->kd);
+        mtl.specular_reflectance = init_rgb_parameter_from_texture_or_constant(scene, uber->map_ks, uber->ks);
 
-        if (uber_material->map_opacity)
-            mtl.opacity = import_pbrt_texture_rgb(uber_material->map_opacity, scene);
-        else
-            set_constant_parameter(mtl.opacity, ColorRGB(&uber_material->opacity.x));
+        float roughness = pbrt_roughness_to_disney_roughness(uber->roughness, true);
+        set_constant_parameter(mtl.roughness, roughness);
+
+        set_constant_parameter(mtl.index_of_refraction, uber->index);
+
+        mtl.delta_reflectance = init_rgb_parameter_from_texture_or_constant(scene, uber->map_kr, uber->kr);
+        mtl.has_delta_reflectance =
+            mtl.delta_reflectance.texture_index >= 0 ||
+            mtl.delta_reflectance.constant_value != Color_Black;
+
+        mtl.delta_transmission = init_rgb_parameter_from_texture_or_constant(scene, uber->map_kt, uber->kt);
+        mtl.has_delta_transmission =
+            mtl.delta_transmission.texture_index >= 0 ||
+            mtl.delta_transmission.constant_value != Color_Black;
 
         return add_material<Material_Type::pbrt3_uber>(materials, mtl);
     }

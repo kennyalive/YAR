@@ -51,9 +51,12 @@ struct Shading_Context {
 
     Light_Handle area_light;
 
-    // Scattering at intersection point. 'bsdf' and 'specular_scattering' are mutually exclusive.
-    // In case of finite bsdf scattering the 'bsdf' member is initialized and for delta scattering only
-    // 'specular_scattering' is valid.
+    // Scattering at intersection point. During light-surface interaction the scattering process can be
+    // described either by the BSDF function or it can be a delta scattering event (in the latter case,
+    // the directions of scattered light form a set of zero measure with respect to solid angle metric...
+    // I'm just kidding, sorry. Not sorry, it's the simplest possible explanation!!!).
+    // For compound materials that exhibit both finite and delta scattering the result of bsdf scattering
+    // should be weighted by a Specular_Scattering::finite_scattering_weight to get correct estimator.
     const BSDF* bsdf = nullptr;
     Specular_Scattering specular_scattering;
 
