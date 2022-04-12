@@ -137,7 +137,8 @@ Plastic_BRDF::Plastic_BRDF(const Thread_Context& thread_ctx, const Plastic_Mater
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
 }
 
-ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
+ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
+{
     Vector3 wh = (wo + wi).normalized();
 
     float cos_theta_i = dot(wi, wh);
@@ -153,7 +154,8 @@ ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
     return diffuse_brdf + specular_brdf;
 }
 
-ColorRGB Plastic_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
+ColorRGB Plastic_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const
+{
     if (u[0] < 0.5f) { // sample diffuse
         u[0] *= 2.f; // remap u[0] to [0, 1) range
 
@@ -173,7 +175,8 @@ ColorRGB Plastic_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* 
     return evaluate(wo, *wi);
 }
 
-float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
+float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
+{
     ASSERT(dot(n, wi) >= 0.f);
     float diffuse_pdf = dot(n, wi) / Pi;
 
@@ -263,18 +266,45 @@ Pbrt3_Uber_BRDF::Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_U
     opacity = evaluate_rgb_parameter(thread_ctx, params.opacity);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
     specular_reflectance = evaluate_rgb_parameter(thread_ctx, params.specular_reflectance);
+
+    float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
+    alpha = roughness * roughness;
+
+    index_of_refraction = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
 }
 
 ColorRGB Pbrt3_Uber_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
 {
     ColorRGB diffuse_brdf = Pi_Inv * diffuse_reflectance * opacity;
-    return diffuse_brdf;
+
+    Vector3 wh = (wo + wi).normalized();
+    float cos_theta_i = dot(wi, wh);
+    ASSERT(cos_theta_i >= 0);
+    float F = dielectric_fresnel(cos_theta_i, index_of_refraction);
+    float D = GGX_Distribution::D(wh, n, alpha);
+    float G = GGX_Distribution::G(wi, wo, n, alpha);
+    float f = (G * D * F) / (4.f * dot(n, wo) * dot(n, wi));
+    ColorRGB specular_brdf = f * specular_reflectance * opacity;
+
+    return diffuse_brdf + specular_brdf;
 }
 
 ColorRGB Pbrt3_Uber_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const
 {
-    Vector3 local_dir = sample_hemisphere_cosine(u);
-    *wi = shading_ctx->local_to_world(local_dir);
+    if (u[0] < 0.5f) { // sample diffuse
+        u[0] *= 2.f; // remap u[0] to [0, 1) range
+        Vector3 local_dir = sample_hemisphere_cosine(u);
+        *wi = shading_ctx->local_to_world(local_dir);
+    }
+    else { // sample specular
+        u[0] = (u[0] - 0.5f) * 2.f; // remap u[0] to [0, 1) range
+        Vector3 wh = sample_microfacet_normal(*shading_ctx, u, wo, alpha);
+        *wi = reflect(wo, wh);
+    }
+
+    if (dot(n, *wi) <= 0.f)
+        return Color_Black;
+
     *pdf = Pbrt3_Uber_BRDF::pdf(wo, *wi);
     return Pbrt3_Uber_BRDF::evaluate(wo, *wi);
 }
@@ -283,7 +313,12 @@ float Pbrt3_Uber_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 {
     ASSERT(dot(n, wi) >= 0.f);
     float diffuse_pdf = dot(n, wi) / Pi;
-    return diffuse_pdf;
+
+    Vector3 wh = (wo + wi).normalized();
+    float specular_pdf = calculate_microfacet_wi_pdf(wo, wh, n, alpha);
+
+    float pdf = 0.5f * (diffuse_pdf + specular_pdf);
+    return pdf;
 }
 
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {

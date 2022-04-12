@@ -71,9 +71,11 @@ struct Ashikhmin_Shirley_Phong_BRDF : public BSDF {
 // brdf is not used. Pbrt3_Uber_BRDF implementation adjusts pdf to take 
 // into account that Pbrt3_Uber_BRDF defines only finite part of uber bsdf.
 struct Pbrt3_Uber_BRDF : public BSDF {
+    ColorRGB opacity;
     ColorRGB diffuse_reflectance;
     ColorRGB specular_reflectance;
-    ColorRGB opacity;
+    float alpha = 0.f;
+    float index_of_refraction = 1.f;
 
     Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_Uber_Material& params);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
