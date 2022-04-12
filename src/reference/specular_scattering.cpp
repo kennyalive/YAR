@@ -52,10 +52,7 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, c
             }
         }
         else {
-            Vector3 outside_direction = shading_ctx.original_shading_normal_was_flipped ?
-                -shading_ctx.normal : shading_ctx.normal;
-
-            bool enter_event = dot(outside_direction, shading_ctx.wo) > 0.f;
+            bool enter_event = !shading_ctx.original_shading_normal_was_flipped;
             if (enter_event)
                 specular_scattering.etaI_over_etaT = 1.f / dielectric_ior;
             else
@@ -115,9 +112,7 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, c
                 ASSERT(r < 1.f);
 
                 float dielectric_ior = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
-                Vector3 outside_direction = shading_ctx.original_shading_normal_was_flipped ?
-                    -shading_ctx.normal : shading_ctx.normal;
-                bool enter_event = dot(outside_direction, shading_ctx.wo) > 0.f;
+                bool enter_event = !shading_ctx.original_shading_normal_was_flipped;
                 if (enter_event)
                     specular_scattering.etaI_over_etaT = 1.f / dielectric_ior;
                 else
