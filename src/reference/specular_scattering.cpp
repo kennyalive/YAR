@@ -96,62 +96,36 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, c
     else if (material_handle.type == Material_Type::pbrt3_uber) {
         const Pbrt3_Uber_Material& params = scene_ctx.materials.pbrt3_uber[material_handle.index];
 
-        ColorRGB opacity = evaluate_rgb_parameter(thread_ctx, params.opacity);
-        ASSERT(opacity.r <= 1.f && opacity.g <= 1.f && opacity.b <= 1.f);
-
-        float scattering_probability = (opacity == Color_White) ? 1.f : opacity.luminance();
-        ASSERT(scattering_probability <= 1.f);
-
         float r = thread_ctx.rng.get_float();
+        int component_to_sample = int(r * params.component_count);
+        ASSERT(component_to_sample < params.component_count);
 
-        if (r < scattering_probability) { // scattering event
-            if (params.has_delta_reflectance || params.has_delta_transmission) {
-                ASSERT(!nested_dielectrics_tracing); // TODO: not supported yet for uber material
+        int component_type = params.components[component_to_sample];
+        if (component_type == Pbrt3_Uber_Material::DELTA_REFLECTION) {
+            float dielectric_ior = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
+            bool enter_event = !shading_ctx.original_shading_normal_was_flipped;
+            float etaT_over_etaI = enter_event ? dielectric_ior : 1.f / dielectric_ior;
 
-                r /= scattering_probability; // re-sample random number
-                ASSERT(r < 1.f);
+            // fresnel depends on incident direction (wi) but for specular reflection dot(n, wi) == dot(n, wo)
+            float cos_theta_i = dot(shading_ctx.normal, shading_ctx.wo);
+            ASSERT(cos_theta_i > 0.f);
+            float fresnel = dielectric_fresnel(cos_theta_i, etaT_over_etaI);
 
-                float dielectric_ior = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
-                bool enter_event = !shading_ctx.original_shading_normal_was_flipped;
-                if (enter_event)
-                    specular_scattering.etaI_over_etaT = 1.f / dielectric_ior;
-                else
-                    specular_scattering.etaI_over_etaT = dielectric_ior / 1.f;
-
-                // fresnel depends on incident direction (Wi) but for specular reflection dot(n, wi) == dot(n, wo)
-                float cos_theta_i = dot(shading_ctx.normal, shading_ctx.wo);
-                ASSERT(cos_theta_i > 0.f);
-                float fresnel = dielectric_fresnel(cos_theta_i, 1.f / specular_scattering.etaI_over_etaT);
-
-                float delta_term_probability = 0.5f;
-
-                if (r < delta_term_probability) { // delta scattering
-                    if (!params.has_delta_transmission) { // delta reflection
-                        specular_scattering.type = Specular_Scattering_Type::specular_reflection;
-                        ColorRGB reflection_coeff = fresnel * evaluate_rgb_parameter(thread_ctx, params.delta_reflectance);
-                        specular_scattering.scattering_coeff = reflection_coeff / (scattering_probability * delta_term_probability);
-                    }
-                    // delta transmission
-                    else if (!params.has_delta_reflectance) {
-                        ASSERT(false); // TODO: not implemented
-                    }
-                    // delta reflection + delta transmission: select event with a probability based on fresnel value
-                    else {
-                        ASSERT(false); // TODO: not implemented
-                    }
-                }
-                else { // finite scattering
-                    specular_scattering.finite_scattering_weight = 1.f / (scattering_probability * (1.f - delta_term_probability));
-                }
-            }
+            ColorRGB reflectance = evaluate_rgb_parameter(thread_ctx, params.delta_reflectance);
+            specular_scattering.scattering_coeff = (float(params.component_count) * fresnel) * reflectance;
+            specular_scattering.sample_delta_direction = true;
+            specular_scattering.delta_direction = reflect(shading_ctx.wo, shading_ctx.normal);
         }
-        else { // passthrough event
-            float passthrough_probability = 1.f - scattering_probability;
-            ASSERT(passthrough_probability > 0.f);
-
-            specular_scattering.type = Specular_Scattering_Type::specular_transmission;
-            specular_scattering.etaI_over_etaT = 1.f; // passthrough event does not change ray direction
-            specular_scattering.scattering_coeff = (Color_White - opacity) / passthrough_probability;
+        else if (component_type == Pbrt3_Uber_Material::DELTA_TRANSMISSION) {
+            ASSERT(!nested_dielectrics_tracing); // TODO: not supported yet for uber material
+            ASSERT(false); // TODO: not implemented
+        }
+        else if (component_type == Pbrt3_Uber_Material::OPACITY) {
+            ColorRGB opacity = evaluate_rgb_parameter(thread_ctx, params.opacity);
+            ASSERT(opacity.r <= 1.f && opacity.g <= 1.f && opacity.b <= 1.f);
+            specular_scattering.scattering_coeff = float(params.component_count) * (Color_White - opacity);
+            specular_scattering.sample_delta_direction = true;
+            specular_scattering.delta_direction = -shading_ctx.wo;
         }
     }
 

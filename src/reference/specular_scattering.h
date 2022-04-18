@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lib/color.h"
+#include "lib/vector.h"
 
 struct Scene_Object;
 struct Thread_Context;
@@ -18,12 +19,10 @@ struct Specular_Scattering {
     // Relative index of refraction, incident side relative to transmitted side.
     float etaI_over_etaT = 1.f;
 
-    // Defines how BSDF-based scattering should be adjusted when material specifies both
-    // BSDF function and delta scattering properties. In that case we split available
-    // samples between finite and delta scattering events. This value is used to properly
-    // weight finite/delta terms to get mathematically correct estimator. For materials
-    // with only BSDF scattering this weight equals to unity.
-    float finite_scattering_weight = 1.f;
+    // For materials with both finite and delta layers this flag signals that the
+    // next path segment should be traced along delta_direction.
+    bool sample_delta_direction = false;
+    Vector3 delta_direction;
 };
 
 Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, const Scene_Object* scene_objec);
