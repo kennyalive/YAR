@@ -346,25 +346,32 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
 
         Pbrt3_Uber_Material mtl;
 
-        mtl.opacity = init_rgb_parameter_from_texture_or_constant(scene, uber->map_opacity, uber->opacity);
-
         mtl.diffuse_reflectance = init_rgb_parameter_from_texture_or_constant(scene, uber->map_kd, uber->kd);
+        if (mtl.diffuse_reflectance.texture_index >= 0 || mtl.diffuse_reflectance.constant_value != Color_Black)
+            mtl.components[mtl.component_count++] = Pbrt3_Uber_Material::DIFFUSE;
+
         mtl.specular_reflectance = init_rgb_parameter_from_texture_or_constant(scene, uber->map_ks, uber->ks);
+        if (mtl.specular_reflectance.texture_index >= 0 || mtl.specular_reflectance.constant_value != Color_Black)
+            mtl.components[mtl.component_count++] = Pbrt3_Uber_Material::SPECULAR;
+
+        mtl.delta_reflectance = init_rgb_parameter_from_texture_or_constant(scene, uber->map_kr, uber->kr);
+        if (mtl.delta_reflectance.texture_index >= 0 || mtl.delta_reflectance.constant_value != Color_Black)
+            mtl.components[mtl.component_count++] = Pbrt3_Uber_Material::DELTA_REFLECTION;
+
+        mtl.delta_transmission = init_rgb_parameter_from_texture_or_constant(scene, uber->map_kt, uber->kt);
+        if (mtl.delta_transmission.texture_index >= 0 || mtl.delta_transmission.constant_value != Color_Black)
+            mtl.components[mtl.component_count++] = Pbrt3_Uber_Material::DELTA_TRANSMISSION;
+
+        mtl.opacity = init_rgb_parameter_from_texture_or_constant(scene, uber->map_opacity, uber->opacity);
+        if (mtl.opacity.texture_index >= 0 || mtl.opacity.constant_value != Color_White)
+            mtl.components[mtl.component_count++] = Pbrt3_Uber_Material::OPACITY;
+
+        ASSERT(mtl.component_count <= std::size(mtl.components));
 
         float roughness = pbrt_roughness_to_disney_roughness(uber->roughness, true);
         set_constant_parameter(mtl.roughness, roughness);
 
         set_constant_parameter(mtl.index_of_refraction, uber->index);
-
-        mtl.delta_reflectance = init_rgb_parameter_from_texture_or_constant(scene, uber->map_kr, uber->kr);
-        mtl.has_delta_reflectance =
-            mtl.delta_reflectance.texture_index >= 0 ||
-            mtl.delta_reflectance.constant_value != Color_Black;
-
-        mtl.delta_transmission = init_rgb_parameter_from_texture_or_constant(scene, uber->map_kt, uber->kt);
-        mtl.has_delta_transmission =
-            mtl.delta_transmission.texture_index >= 0 ||
-            mtl.delta_transmission.constant_value != Color_Black;
 
         return add_material<Material_Type::pbrt3_uber>(materials, mtl);
     }
