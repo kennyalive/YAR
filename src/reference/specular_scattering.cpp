@@ -153,11 +153,12 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
             shading_ctx.has_dxdy_derivatives &&
             path_ctx.bounce_count <= max_differential_ray_bounces;
 
-        Ray ray{ shading_ctx.position }; // specularly reflected or transmitted ray
+        Ray ray; // specularly reflected or transmitted ray
         Differential_Rays differential_rays;
 
         if (specular_scattering.type == Specular_Scattering_Type::specular_reflection) {
             ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
+            ray.origin = shading_ctx.get_adjusted_position_to_prevent_self_intersection(ray.direction);
             if (compute_differential_rays)
                 differential_rays = shading_ctx.compute_differential_rays_for_specular_reflection(ray);
         }
@@ -174,6 +175,7 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
                 const bool refracted = refract(shading_ctx.wo, shading_ctx.normal, eta, &ray.direction);
                 ASSERT(refracted); // specular_transmission event should never be selected when total internal reflection happens
             }
+            ray.origin = shading_ctx.get_adjusted_position_to_prevent_self_intersection(ray.direction);
             if (compute_differential_rays)
                 differential_rays = shading_ctx.compute_differential_rays_for_specular_transmission(ray, eta);
         }

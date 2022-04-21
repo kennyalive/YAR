@@ -44,9 +44,10 @@ struct Diffuse_Sphere_Light_Sampler {
         const Diffuse_Sphere_Light& light,
         const Vector3& shading_pos);
 
-    // Returns distance to the sampled point on the sphere.
-    // Output parameter wi - direction from the shading position to the sampled point
-    float sample(Vector2 u, Vector3* wi) const;
+    // Uniformly samples solid angle formed by the shading point and a sphere.
+    // Returns position on the sphere that corresponds to the sampled direction.
+    // The returned position has anti-self-intersection adjustment applied.
+    Vector3 sample(Vector2 u) const;
 
     bool is_direction_inside_light_cone(const Vector3& wi) const;
 };

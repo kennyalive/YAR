@@ -84,6 +84,11 @@ struct Shading_Context {
     Differential_Rays compute_differential_rays_for_specular_reflection(const Ray& reflected_ray) const;
     Differential_Rays compute_differential_rays_for_specular_transmission(const Ray& transmitted_ray, float etaI_over_etaT) const;
 
+    // The direction vector determines the hemisphere in which the adjusted position will be.
+    // We do adjustment by moving the intersection point along the geometric normal (but not
+    // along the direction vector, the direction vector only defines the hemisphere).
+    Vector3 get_adjusted_position_to_prevent_self_intersection(const Vector3& direction) const;
+
 private:
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti);
     void calculate_UV_derivates();

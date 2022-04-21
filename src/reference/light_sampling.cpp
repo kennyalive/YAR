@@ -90,7 +90,7 @@ Diffuse_Sphere_Light_Sampler::Diffuse_Sphere_Light_Sampler(const Diffuse_Sphere_
     cone_sampling_pdf = 1.f / (2.f * Pi * (1.f - cos_theta_max));
 }
 
-float Diffuse_Sphere_Light_Sampler::sample(Vector2 u, Vector3* wi) const {
+Vector3 Diffuse_Sphere_Light_Sampler::sample(Vector2 u) const {
     ASSERT(u < Vector2(1));
 
     float radius2 = light.radius * light.radius;
@@ -112,14 +112,11 @@ float Diffuse_Sphere_Light_Sampler::sample(Vector2 u, Vector3* wi) const {
     // compute direction from the sphere center to the sampled point
     Vector3 direction = (sin_alpha * std::cos(phi)) * axes[0] +  (sin_alpha * std::sin(phi)) * axes[1] + cos_alpha * axes[2];
 
+    // finally we have a point on the sphere
     Vector3 p = light.radius * direction;
     p = offset_ray_origin(p, direction);
     p += light.position;
-    Vector3 light_vector = p - shading_pos;
-
-    float distance_to_sample = light_vector.length();
-    *wi = light_vector / distance_to_sample;
-    return distance_to_sample;
+    return p;
 }
 
 bool Diffuse_Sphere_Light_Sampler::is_direction_inside_light_cone(const Vector3& wi) const {

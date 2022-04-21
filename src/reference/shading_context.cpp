@@ -191,12 +191,6 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
         if (specular_scattering.type == Specular_Scattering_Type::none)
             bsdf = create_bsdf(thread_ctx, intersection.scene_object->material);
     }
-
-    // Adjust position to avoid self-shadowing.
-    // TODO: we also need to handle the case when non-delta bsdf allows transmission. Should we adjust
-    // position __after__ bsdf was sampled, so we know if it's a reflection or transmission event ?
-    const bool transmission_event = (specular_scattering.type == Specular_Scattering_Type::specular_transmission);
-    position = offset_ray_origin(position, transmission_event ? -geometric_normal : geometric_normal);
 }
 
 void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Intersection& ti) {
@@ -350,6 +344,14 @@ Differential_Rays Shading_Context::compute_differential_rays_for_specular_transm
     dy_ray.direction = (transmitted_ray.direction + dwi_dy).normalized();
 
     return Differential_Rays { dx_ray, dy_ray };
+}
+
+Vector3 Shading_Context::get_adjusted_position_to_prevent_self_intersection(const Vector3& direction) const
+{
+    if (dot(direction, geometric_normal) > 0.f)
+        return offset_ray_origin(position, geometric_normal);
+    else
+        return offset_ray_origin(position, -geometric_normal);
 }
 
 bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays* differential_rays)
