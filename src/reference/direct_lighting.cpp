@@ -68,10 +68,6 @@ static ColorRGB direct_lighting_from_rectangular_light(
     const Vector3 light_n = light.light_to_world_transform.get_column(2);
     const Vector3 light_center = light.light_to_world_transform.get_column(3);
 
-    // rectangular light emits light only from the front side
-    if (dot(light_n, (shading_ctx.position - light_center).normalized()) <= 0.f)
-        return Color_Black;
-
     ColorRGB L;
     // Light sampling part of MIS.
     {
@@ -84,26 +80,31 @@ static ColorRGB direct_lighting_from_rectangular_light(
         float distance_to_sample = light_vec.length();
         Vector3 wi = light_vec / distance_to_sample;
 
-        float n_dot_wi = dot(shading_ctx.normal, wi);
-        bool scattering_possible = n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
-                                   n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
+        float light_n_dot_wi = dot(light_n, -wi);
 
-        if (scattering_possible) {
-            ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
+        // Compare against small positive constant (instead of 0). This ensures we don't have tiny pdfs.
+        // 1e-4f corresponds to ~89.994 degrees angle. We assume that added bias is small.
+        if (light_n_dot_wi > 1e-4f) {
+            float n_dot_wi = dot(shading_ctx.normal, wi);
 
-            if (!f.is_black()) {
-                Ray light_visibility_ray{adjusted_position, wi};
-                bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample * (1.f - 1e-5f));
+            bool scattering_possible =
+                n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
+                n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
 
-                if (!occluded) {
-                    ASSERT(dot(light_n, -wi) > -1e-5f); // might be a bit below zero due to fp rounding errors
-                    float light_n_dot_wi = std::max(0.f, dot(light_n, -wi));
+            if (scattering_possible) {
+                ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
 
-                    float light_pdf = (distance_to_sample * distance_to_sample) / (light.size.x * light.size.y * light_n_dot_wi);
-                    float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, wi);
-                    float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
+                if (!f.is_black()) {
+                    Ray light_visibility_ray{ adjusted_position, wi };
+                    bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample * (1.f - 1e-5f));
 
-                    L += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
+                    if (!occluded) {
+                        float light_pdf = (distance_to_sample * distance_to_sample) / (light.size.x * light.size.y * light_n_dot_wi);
+                        float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, wi);
+                        float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
+
+                        L += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
+                    }
                 }
             }
         }
@@ -116,29 +117,29 @@ static ColorRGB direct_lighting_from_rectangular_light(
 
         if (!f.is_black()) {
             ASSERT(bsdf_pdf > 0.f);
+            float light_n_dot_wi = dot(light_n, -wi);
 
-            Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(wi);
-            Ray light_visibility_ray{adjusted_position, wi};
+            // Compare against small positive constant (instead of 0). This ensures we don't have tiny pdfs.
+            // 1e-4f corresponds to ~89.994 degrees angle. We assume that added bias is small.
+            if (light_n_dot_wi > 1e-4f) {
+                Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(wi);
+                Ray light_visibility_ray{ adjusted_position, wi };
 
-            Intersection isect;
-            bool found_isect = scene_ctx.acceleration_structure->intersect(light_visibility_ray, isect);
+                Intersection isect;
+                bool found_isect = scene_ctx.acceleration_structure->intersect(light_visibility_ray, isect);
 
-            if (found_isect && isect.scene_object->area_light == light_handle) {
-                ASSERT(isect.geometry_type == Geometry_Type::triangle_mesh);
-                const Triangle_Intersection& ti = isect.triangle_intersection;
-                Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
-                float d = (p - shading_ctx.position).length();
+                if (found_isect && isect.scene_object->area_light == light_handle) {
+                    ASSERT(isect.geometry_type == Geometry_Type::triangle_mesh);
+                    const Triangle_Intersection& ti = isect.triangle_intersection;
+                    Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
+                    float d = (p - shading_ctx.position).length();
 
-                // We already checked that the light is oriented towards the surface
-                // but for specific point we still can get different result due fp finite precision.
-                ASSERT(dot(light_n, -wi) > -1e-4f);
-                float light_n_dot_wi = std::max(0.f, dot(light_n, -wi));
+                    float light_pdf = (d * d) / (light.size.x * light.size.y * light_n_dot_wi);
+                    float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
+                    float n_dot_wi = dot(shading_ctx.normal, wi);
 
-                float light_pdf = (d * d) / (light.size.x * light.size.y * light_n_dot_wi);
-                float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
-                float n_dot_wi = dot(shading_ctx.normal, wi);
-
-                L += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / bsdf_pdf);
+                    L += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / bsdf_pdf);
+                }
             }
         }
     }
