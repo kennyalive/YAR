@@ -3,26 +3,18 @@
 #include "sampling.h"
 #include "lib/color.h"
 #include "lib/light.h"
-#include "lib/math.h"
-#include "lib/random.h"
 
 struct Environment_Light;
 struct Diffuse_Sphere_Light;
-struct Scene_Context;
 class Image_Texture;
-
-struct Light_Sample {
-    Vector3 Wi;
-    ColorRGB Le;
-    float pdf = 0.f;
-};
 
 struct Environment_Light_Sampler {
     const Environment_Light* light = nullptr;
     const Image_Texture* environment_map = nullptr;
     Distribution_2D radiance_distribution;
 
-    Light_Sample sample(Vector2 u) const;
+    ColorRGB sample(Vector2 u, Vector3* wi, float* pdf) const;
+
     ColorRGB get_unfiltered_radiance_for_direction(const Vector3& world_direction) const;
     ColorRGB get_filtered_radiance_for_direction(const Vector3& world_direction) const;
     float pdf(const Vector3& world_direction) const;

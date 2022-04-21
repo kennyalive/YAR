@@ -218,25 +218,27 @@ static ColorRGB direct_lighting_from_environment_light(
     ColorRGB L;
     // Light sampling part of MIS.
     {
-        Light_Sample light_sample = scene_ctx.environment_light_sampler.sample(u_light);
+        Vector3 wi;
+        float light_pdf;
+        ColorRGB Le = scene_ctx.environment_light_sampler.sample(u_light, &wi, &light_pdf);
 
-        float n_dot_wi = dot(shading_ctx.normal, light_sample.Wi);
+        float n_dot_wi = dot(shading_ctx.normal, wi);
         bool scattering_possible = n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
                                    n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
 
         if (scattering_possible) {
-            ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, light_sample.Wi);
+            ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
 
             if (!f.is_black()) {
-                Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(light_sample.Wi);
-                Ray light_visibility_ray{adjusted_position, light_sample.Wi};
+                Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(wi);
+                Ray light_visibility_ray{adjusted_position, wi};
                 bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
 
                 if (!occluded) {
-                    float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, light_sample.Wi);
-                    float mis_weight = mis_power_heuristic(light_sample.pdf, bsdf_pdf);
+                    float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, wi);
+                    float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
 
-                    L += (light_sample.Le * f) * (mis_weight * std::abs(n_dot_wi) / light_sample.pdf);
+                    L += (Le * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
                 }
             }
         }
