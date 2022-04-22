@@ -62,3 +62,44 @@ Vector3 offset_ray_origin(const Vector3& p, const Vector3& geometric_normal) {
     p_adjusted.z = std::abs(p.z) < origin ? (p.z + float_scale*geometric_normal.z) : p_i.z;
     return p_adjusted;
 }
+
+void offset_ray_origin_in_both_directions(const Vector3& p, const Vector3& geometric_normal,
+    Vector3* p_adjusted_in_positive_direction, Vector3* p_adjusted_in_negative_direction)
+{
+    static constexpr float int_scale = 256.f;
+    static constexpr float origin = 1.0 / 32.0f;
+    static constexpr float float_scale = 1.0 / 65536.0f;
+
+    const Vector3i di = Vector3i(int_scale * geometric_normal);
+
+    int ix1 = std::bit_cast<int>(p.x) - di.x;
+    int ix2 = std::bit_cast<int>(p.x) + di.x;
+    p_adjusted_in_positive_direction->x = std::bit_cast<float>(p.x < 0 ? ix1 : ix2);
+    p_adjusted_in_negative_direction->x = std::bit_cast<float>(p.x < 0 ? ix2 : ix1);
+
+    int iy1 = std::bit_cast<int>(p.y) - di.y;
+    int iy2 = std::bit_cast<int>(p.y) + di.y;
+    p_adjusted_in_positive_direction->y = std::bit_cast<float>(p.y < 0 ? iy1 : iy2);
+    p_adjusted_in_negative_direction->y = std::bit_cast<float>(p.y < 0 ? iy2 : iy1);
+
+    int iz1 = std::bit_cast<int>(p.z) - di.z;
+    int iz2 = std::bit_cast<int>(p.z) + di.z;
+    p_adjusted_in_positive_direction->z = std::bit_cast<float>(p.z < 0 ? iz1 : iz2);
+    p_adjusted_in_negative_direction->z = std::bit_cast<float>(p.z < 0 ? iz2 : iz1);
+
+    if (std::abs(p.x) < origin) {
+        float dx = float_scale * geometric_normal.x;
+        p_adjusted_in_positive_direction->x = p.x + dx;
+        p_adjusted_in_negative_direction->x = p.x - dx;
+    }
+    if (std::abs(p.y) < origin) {
+        float dy = float_scale * geometric_normal.y;
+        p_adjusted_in_positive_direction->y = p.y + dy;
+        p_adjusted_in_negative_direction->y = p.y - dy;
+    }
+    if (std::abs(p.z) < origin) {
+        float dz = float_scale * geometric_normal.z;
+        p_adjusted_in_positive_direction->z = p.z + dz;
+        p_adjusted_in_negative_direction->z = p.z - dz;
+    }
+}

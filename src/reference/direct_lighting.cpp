@@ -22,9 +22,12 @@ inline float mis_power_heuristic(float pdf1, float pdf2) {
     return pdf1*pdf1 / (pdf1*pdf1 + pdf2*pdf2);
 }
 
-static ColorRGB direct_lighting_from_point_light(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Point_Light& light) {
-    Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(light.position - shading_ctx.position);
-    const Vector3 light_vec = (light.position - adjusted_position);
+static ColorRGB direct_lighting_from_point_light(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
+    const Point_Light& light)
+{
+    Vector3 position = shading_ctx.get_ray_origin_using_control_point(light.position);
+
+    const Vector3 light_vec = light.position - position;
     const float light_dist = light_vec.length();
     const Vector3 light_dir = light_vec / light_dist;
 
@@ -32,8 +35,8 @@ static ColorRGB direct_lighting_from_point_light(const Scene_Context& scene_ctx,
     if (n_dot_l <= 0.f)
         return Color_Black;
 
-    Ray light_visibility_ray{adjusted_position, light_dir};
-    bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, light_dist - 1e-4f);
+    Ray light_visibility_ray{position, light_dir};
+    bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, light_dist * (1.f - 1e-5f));
     if (occluded)
         return Color_Black;
 
@@ -42,13 +45,15 @@ static ColorRGB direct_lighting_from_point_light(const Scene_Context& scene_ctx,
     return L;
 }
 
-static ColorRGB direct_lighting_from_directional_light(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Directional_Light& light) {
+static ColorRGB direct_lighting_from_directional_light(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
+    const Directional_Light& light)
+{
     float n_dot_l = dot(shading_ctx.normal, light.direction);
     if (n_dot_l <= 0.f)
         return Color_Black;
 
-    Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(light.direction);
-    Ray light_visibility_ray{adjusted_position, light.direction};
+    Vector3 position = shading_ctx.get_ray_origin_using_control_direction(light.direction);
+    Ray light_visibility_ray{position, light.direction};
     bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
     if (occluded)
         return Color_Black;
@@ -73,10 +78,9 @@ static ColorRGB direct_lighting_from_rectangular_light(
     {
         Vector3 local_light_point = Vector3{ light.size * (u_light - Vector2(0.5f)), 0.0f };
         Vector3 light_point = transform_point(light.light_to_world_transform, local_light_point);
+        Vector3 position = shading_ctx.get_ray_origin_using_control_point(light_point);
 
-        Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(light_point - shading_ctx.position);
-
-        const Vector3 light_vec = (light_point - adjusted_position);
+        const Vector3 light_vec = light_point - position;
         float distance_to_sample = light_vec.length();
         Vector3 wi = light_vec / distance_to_sample;
 
@@ -95,7 +99,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
                 ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
 
                 if (!f.is_black()) {
-                    Ray light_visibility_ray{ adjusted_position, wi };
+                    Ray light_visibility_ray{ position, wi };
                     bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample * (1.f - 1e-5f));
 
                     if (!occluded) {
@@ -122,8 +126,8 @@ static ColorRGB direct_lighting_from_rectangular_light(
             // Compare against small positive constant (instead of 0). This ensures we don't have tiny pdfs.
             // 1e-4f corresponds to ~89.994 degrees angle. We assume that added bias is small.
             if (light_n_dot_wi > 1e-4f) {
-                Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(wi);
-                Ray light_visibility_ray{ adjusted_position, wi };
+                Vector3 position = shading_ctx.get_ray_origin_using_control_direction(wi);
+                Ray light_visibility_ray{ position, wi };
 
                 Intersection isect;
                 bool found_isect = scene_ctx.acceleration_structure->intersect(light_visibility_ray, isect);
@@ -132,7 +136,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
                     ASSERT(isect.geometry_type == Geometry_Type::triangle_mesh);
                     const Triangle_Intersection& ti = isect.triangle_intersection;
                     Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
-                    float d = (p - shading_ctx.position).length();
+                    float d = (p - position).length();
 
                     float light_pdf = (d * d) / (light.size.x * light.size.y * light_n_dot_wi);
                     float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
@@ -156,10 +160,10 @@ static ColorRGB direct_lighting_from_sphere_light(
     ColorRGB L;
     // Light sampling part of MIS.
     {
-        Vector3 light_point_adjusted = light_sampler.sample(u_light);
-        Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(light_point_adjusted - shading_ctx.position);
+        Vector3 light_point = light_sampler.sample(u_light);
+        Vector3 position = shading_ctx.get_ray_origin_using_control_point(light_point);
 
-        const Vector3 light_vec = light_point_adjusted - adjusted_position;
+        const Vector3 light_vec = light_point - position;
         float distance_to_sample = light_vec.length();
         Vector3 wi = light_vec / distance_to_sample;
 
@@ -171,8 +175,8 @@ static ColorRGB direct_lighting_from_sphere_light(
             ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
 
             if (!f.is_black()) {
-                Ray light_visibility_ray{adjusted_position, wi};
-                bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample);
+                Ray light_visibility_ray{position, wi};
+                bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample * (1.f - 1e-5f));
 
                 if (!occluded) {
                     float light_pdf = light_sampler.cone_sampling_pdf;
@@ -194,8 +198,8 @@ static ColorRGB direct_lighting_from_sphere_light(
             ASSERT(bsdf_pdf > 0.f);
 
             if (light_sampler.is_direction_inside_light_cone(wi)) {
-                Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(wi);
-                Ray light_visibility_ray{adjusted_position, wi};
+                Vector3 position = shading_ctx.get_ray_origin_using_control_direction(wi);
+                Ray light_visibility_ray{position, wi};
 
                 Intersection isect;
                 bool found_isect = scene_ctx.acceleration_structure->intersect(light_visibility_ray, isect);
@@ -231,8 +235,8 @@ static ColorRGB direct_lighting_from_environment_light(
             ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
 
             if (!f.is_black()) {
-                Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(wi);
-                Ray light_visibility_ray{adjusted_position, wi};
+                Vector3 position = shading_ctx.get_ray_origin_using_control_direction(wi);
+                Ray light_visibility_ray{position, wi};
                 bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
 
                 if (!occluded) {
@@ -258,8 +262,8 @@ static ColorRGB direct_lighting_from_environment_light(
             ColorRGB Le = scene_ctx.environment_light_sampler.get_unfiltered_radiance_for_direction(wi);
 
             if (!Le.is_black()) {
-                Vector3 adjusted_position = shading_ctx.get_adjusted_position_to_prevent_self_intersection(wi);
-                Ray light_visibility_ray{adjusted_position, wi};
+                Vector3 position = shading_ctx.get_ray_origin_using_control_direction(wi);
+                Ray light_visibility_ray{position, wi};
                 bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
 
                 if (!occluded) {

@@ -78,7 +78,7 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
 
         path_coeff *= f * (std::abs(dot(shading_ctx.normal, wi)) / bsdf_pdf);
 
-        current_ray.origin = shading_ctx.get_adjusted_position_to_prevent_self_intersection(wi);
+        current_ray.origin = shading_ctx.get_ray_origin_using_control_direction(wi);
         current_ray.direction = wi;
 
         // Apply russian roulette.

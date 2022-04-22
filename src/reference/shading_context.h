@@ -27,6 +27,12 @@ struct Shading_Context {
     // The following property allows to determine original shading normal orientation.
     bool original_shading_normal_was_flipped = false;
 
+    // Ray origin variables are computed by nudging shading 'position' along geometric normal.
+    // The goal of having these positions is to avoid self-intersection problem when we spawn
+    // new ray from the shading point.
+    Vector3 ray_origin_for_positive_normal_direction;
+    Vector3 ray_origin_for_negative_normal_direction;
+
     Vector3 dpdu;
     Vector3 dpdv;
     Vector3 dndu;
@@ -84,10 +90,12 @@ struct Shading_Context {
     Differential_Rays compute_differential_rays_for_specular_reflection(const Ray& reflected_ray) const;
     Differential_Rays compute_differential_rays_for_specular_transmission(const Ray& transmitted_ray, float etaI_over_etaT) const;
 
-    // The direction vector determines the hemisphere in which the adjusted position will be.
-    // We do adjustment by moving the intersection point along the geometric normal (but not
-    // along the direction vector, the direction vector only defines the hemisphere).
-    Vector3 get_adjusted_position_to_prevent_self_intersection(const Vector3& direction) const;
+    // The position returned by these functions is a shading point moved slightly away from the
+    // surface to ensure that we don't have self-intersection problem. The hemisphere_direction
+    // and hemisphere_point parameters allow to choose hemisphere into which we are going to
+    // trace a new ray.
+    Vector3 get_ray_origin_using_control_direction(const Vector3& hemisphere_direction) const;
+    Vector3 get_ray_origin_using_control_point(const Vector3& hemisphere_point) const;
 
 private:
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti);

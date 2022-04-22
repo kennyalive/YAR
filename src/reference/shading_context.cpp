@@ -123,6 +123,11 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
         original_shading_normal_was_flipped = true;
     }
 
+    offset_ray_origin_in_both_directions(position, geometric_normal,
+        &ray_origin_for_positive_normal_direction,
+        &ray_origin_for_negative_normal_direction
+    );
+
     if (differential_rays)
     {
         has_dxdy_derivatives = true;
@@ -346,12 +351,18 @@ Differential_Rays Shading_Context::compute_differential_rays_for_specular_transm
     return Differential_Rays { dx_ray, dy_ray };
 }
 
-Vector3 Shading_Context::get_adjusted_position_to_prevent_self_intersection(const Vector3& direction) const
+Vector3 Shading_Context::get_ray_origin_using_control_direction(const Vector3& hemisphere_direction) const
 {
-    if (dot(direction, geometric_normal) > 0.f)
-        return offset_ray_origin(position, geometric_normal);
+    if (dot(hemisphere_direction, geometric_normal) > 0.f)
+        return ray_origin_for_positive_normal_direction;
     else
-        return offset_ray_origin(position, -geometric_normal);
+        return ray_origin_for_negative_normal_direction;
+}
+
+Vector3 Shading_Context::get_ray_origin_using_control_point(const Vector3& hemisphere_point) const
+{
+    Vector3 hemisphere_direction = hemisphere_point - position;
+    return get_ray_origin_using_control_direction(hemisphere_direction);
 }
 
 bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays* differential_rays)

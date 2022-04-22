@@ -113,7 +113,6 @@ Vector3 Diffuse_Sphere_Light_Sampler::sample(Vector2 u) const {
 
     // finally we have a point on the sphere
     Vector3 p = light.radius * direction;
-    p = offset_ray_origin(p, direction);
     p += light.position;
     return p;
 }

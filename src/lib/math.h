@@ -129,6 +129,9 @@ inline bool refract(const Vector3& w_incident, const Vector3& normal, float etaI
 // with the origin that is set to a surface point.
 Vector3 offset_ray_origin(const Vector3& p, const Vector3& geometric_normal);
 
+void offset_ray_origin_in_both_directions(const Vector3& p, const Vector3& geometric_normal,
+    Vector3* p_adjusted_in_positive_direction, Vector3* p_adjusted_in_negative_direction);
+
 template <typename T>
 void shuffle(T* data, int n, RNG& rng) {
     ASSERT(n > 0);
