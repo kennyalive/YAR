@@ -23,6 +23,7 @@ struct Specular_Scattering {
     // next path segment should be traced along delta_direction.
     bool sample_delta_direction = false;
     Vector3 delta_direction;
+    float finite_scattering_weight = 1.f;
 };
 
 Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, const Scene_Object* scene_objec);

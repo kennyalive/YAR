@@ -127,6 +127,14 @@ Specular_Scattering get_specular_scattering_params(Thread_Context& thread_ctx, c
             specular_scattering.sample_delta_direction = true;
             specular_scattering.delta_direction = -shading_ctx.wo;
         }
+
+        int finite_terms_count = 0;
+        for (int i = 0; i < params.component_count; i++) {
+            if (params.components[i] < Pbrt3_Uber_Material::DELTA_REFLECTION)
+                finite_terms_count++;
+        }
+        if (finite_terms_count > 0)
+            specular_scattering.finite_scattering_weight = float(params.component_count) / finite_terms_count;
     }
 
     return specular_scattering;

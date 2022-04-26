@@ -21,10 +21,20 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
     ColorRGB path_coeff = Color_White;
     Ray current_ray = ray;
 
+    bool sample_emitted_radiance_after_delta_layer = false;
+
     ColorRGB L;
     while (true) {
         const Differential_Rays* p_differential_rays = (path_ctx.bounce_count == 0) ? &differential_rays : nullptr;
         bool hit_found = trace_ray(thread_ctx, current_ray, p_differential_rays);
+
+        if (sample_emitted_radiance_after_delta_layer) {
+            sample_emitted_radiance_after_delta_layer = false;
+            if (hit_found)
+                L += path_coeff * get_emitted_radiance(thread_ctx);
+            else if (scene_ctx.has_environment_light_sampler)
+                L += path_coeff * scene_ctx.environment_light_sampler.get_filtered_radiance_for_direction(shading_ctx.miss_ray.direction);
+        }
 
         // If we hit perfect specular surface then keep bouncing until we reach finite bsdf or exit the scene.
         if (shading_ctx.specular_scattering.type != Specular_Scattering_Type::none) {
@@ -72,11 +82,18 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
         float bsdf_pdf;
 
         Vector2 u = thread_ctx.pixel_sampler.get_next_2d_sample();
-        ColorRGB f = shading_ctx.bsdf->sample(u, shading_ctx.wo, &wi, &bsdf_pdf);
-        if (f.is_black())
-            break;
 
-        path_coeff *= f * (std::abs(dot(shading_ctx.normal, wi)) / bsdf_pdf);
+        if (shading_ctx.specular_scattering.sample_delta_direction) {
+            wi = shading_ctx.specular_scattering.delta_direction;
+            path_coeff *= shading_ctx.specular_scattering.scattering_coeff;
+            sample_emitted_radiance_after_delta_layer = true;
+        }
+        else {
+            ColorRGB f = shading_ctx.bsdf->sample(u, shading_ctx.wo, &wi, &bsdf_pdf);
+            if (f.is_black())
+                break;
+            path_coeff *= f * (shading_ctx.specular_scattering.finite_scattering_weight * std::abs(dot(shading_ctx.normal, wi)) / bsdf_pdf);
+        }
 
         current_ray.origin = shading_ctx.get_ray_origin_using_control_direction(wi);
         current_ray.direction = wi;
