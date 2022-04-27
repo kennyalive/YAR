@@ -173,16 +173,9 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
         else {
             ASSERT(specular_scattering.type == Specular_Scattering_Type::specular_transmission);
             const float eta = specular_scattering.etaI_over_etaT;
-            // QUESTION: why can we have 'wo' that is perpendicular to the normal?
-            // Is it mostly due to FP rounding error or we can indeed sample perpendicular direction?
-            // That's the reason why we have this 'eta==1' special case.
-            if (eta == 1.f) {
-                ray.direction = -shading_ctx.wo;
-            }
-            else {
-                const bool refracted = refract(shading_ctx.wo, shading_ctx.normal, eta, &ray.direction);
-                ASSERT(refracted); // specular_transmission event should never be selected when total internal reflection happens
-            }
+            const bool refracted = refract(shading_ctx.wo, shading_ctx.normal, eta, &ray.direction);
+            ASSERT(refracted); // specular_transmission event should never be selected when total internal reflection happens
+
             ray.origin = shading_ctx.get_ray_origin_using_control_direction(ray.direction);
             if (compute_differential_rays)
                 differential_rays = shading_ctx.compute_differential_rays_for_specular_transmission(ray, eta);
