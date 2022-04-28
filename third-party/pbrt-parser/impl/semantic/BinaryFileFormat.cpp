@@ -608,6 +608,7 @@ int Integrator::writeTo(BinaryWriter &binary)  {
     int integratorType = static_cast<int>(type);
     binary.write(integratorType);
     binary.write(maxDepth);
+    binary.write(russianRouletteThreshold);
     return TYPE_INTEGRATOR;
 }
 
@@ -616,6 +617,7 @@ void Integrator::readFrom(BinaryReader &binary) {
     binary.read(integratorType);
     type = static_cast<Type>(integratorType);
     binary.read(maxDepth);
+    binary.read(russianRouletteThreshold);
 }
 
 int PixelFilter::writeTo(BinaryWriter &binary)  {

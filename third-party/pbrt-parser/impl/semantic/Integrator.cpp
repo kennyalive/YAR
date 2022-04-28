@@ -18,6 +18,7 @@ void createIntegrator(Scene::SP ours, pbrt::syntactic::Scene::SP pbrt)
     else if (pbrt->integrator->type == "path") {
         ours->integrator->type = Integrator::Type::path_tracer;
         ours->integrator->maxDepth = pbrt->integrator->getParam1i("maxdepth", 5);
+        ours->integrator->russianRouletteThreshold = pbrt->integrator->getParam1f("rrthreshold", 1.f);
     }
     else if (pbrt->integrator->type == "bdpt") {
         ours->integrator->type = Integrator::Type::bidirectional_path_tracer;

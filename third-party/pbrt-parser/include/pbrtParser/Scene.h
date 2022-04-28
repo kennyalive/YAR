@@ -1145,6 +1145,7 @@ namespace pbrt {
 
       Type type = Type::path_tracer;
       int maxDepth = -1;
+      float russianRouletteThreshold = 1.f;
 
       std::string toString() const override { return "Integrator"; }
       int writeTo(BinaryWriter &) override;
