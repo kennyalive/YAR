@@ -20,6 +20,12 @@ struct Raytracer_Config {
     // 3 - second bound of indirect lighting
     int max_light_bounces = 32;
 
+    // Do not apply russian roulette if any radiance component is greater-equal than this value.
+    float russian_roulette_radiance_threshold = 1.f;
+
+    // Do not apply russian roulette until we have this number of light bounces.
+    int russian_roulette_bounce_count_threshold = 3;
+
     // This constant defines when to stop computing differential rays when bouncing off
     // perfect specular surfaces multiple times. Differential rays approximation gets
     // increasingly less precise with each bounce and at some point it ceases to be
