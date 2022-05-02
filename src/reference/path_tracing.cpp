@@ -9,49 +9,41 @@
 
 #include "lib/scene.h"
 
-ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray,
-    const Differential_Rays& differential_rays)
+ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays& differential_rays)
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
-    Path_Context& path_ctx = thread_ctx.path_context;
+    const Specular_Scattering& specular_scattering = shading_ctx.specular_scattering;
     const Raytracer_Config& rt_config = scene_ctx.raytracer_config;
 
-    const int max_bounces = rt_config.max_light_bounces;
-    const int max_differential_ray_bounces = rt_config.max_differential_ray_specular_bounces;
-
+    Path_Context& path_ctx = thread_ctx.path_context;
     Ray current_ray = ray;
     ColorRGB path_coeff = Color_White;
 
-    // These differential rays are computed after scattering on delta surfaces.
-    Differential_Rays specular_differential_rays;
-    bool use_specular_differential_rays = false;
-
     ColorRGB L;
     while (true) {
-        const bool sample_emitted_radiance_after_delta_layer =
-            shading_ctx.specular_scattering.sample_delta_direction ||
-            shading_ctx.specular_scattering.type != Specular_Scattering_Type::none;
+        // Store delta scattering information from the last hit. The next trace ray will
+        // reset it to default values, but we still need it to be available after that point.
+        bool collect_emitted_radiance_after_delta_bounce = shading_ctx.delta_scattering_event;
+        Differential_Rays delta_differential_rays = specular_scattering.differential_rays;
 
+        // Check if we have differential rays available.
         const Differential_Rays* p_differential_rays = nullptr;
-        if (path_ctx.bounce_count == 0) {
+        if (path_ctx.bounce_count == 0)
             p_differential_rays = &differential_rays;
-        }
-        else if (use_specular_differential_rays) {
-            p_differential_rays = &specular_differential_rays;
-            use_specular_differential_rays = false;
-        }
+        else if (specular_scattering.has_differential_rays)
+            p_differential_rays = &delta_differential_rays;
 
         bool hit_found = trace_ray(thread_ctx, current_ray, p_differential_rays);
 
-        // Collect directly visible and delta scattered emitted light.
-        if (path_ctx.bounce_count == 0 || sample_emitted_radiance_after_delta_layer) {
+        // Special cases to collect emitted light.
+        if (path_ctx.bounce_count == 0 || collect_emitted_radiance_after_delta_bounce) {
             if (hit_found)
                 L += path_coeff * get_emitted_radiance(thread_ctx);
             else if (scene_ctx.has_environment_light_sampler)
                 L += path_coeff * scene_ctx.environment_light_sampler.get_filtered_radiance_for_direction(shading_ctx.miss_ray.direction);
 
-            if (path_ctx.bounce_count == max_bounces)
+            if (path_ctx.bounce_count == rt_config.max_light_bounces)
                 break;
         }
 
@@ -66,54 +58,35 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray,
         Vector2 u_bsdf_mis = thread_ctx.pixel_sampler.get_next_2d_sample();
         Vector2 u_bsdf_next_segment = thread_ctx.pixel_sampler.get_next_2d_sample();
 
-        if (shading_ctx.specular_scattering.type == Specular_Scattering_Type::none) {
-            // Sample light and add contribution from the current path.
+        Vector3 wi;
+        if (!shading_ctx.delta_scattering_event) {
             ColorRGB direct_lighting = estimate_direct_lighting_from_single_sample(thread_ctx, u_light_index, u_light_mis, u_bsdf_mis);
             L += path_coeff * direct_lighting;
 
-            if (++path_ctx.bounce_count == max_bounces)
+            path_ctx.bounce_count++;
+            if (path_ctx.bounce_count == rt_config.max_light_bounces)
                 break;
 
-            // Generate next path segment.
-            Vector3 wi;
-            if (shading_ctx.specular_scattering.sample_delta_direction) {
-                wi = shading_ctx.specular_scattering.delta_direction;
-                path_coeff *= shading_ctx.specular_scattering.scattering_coeff;
-            }
-            else {
-                float bsdf_pdf;
-                ColorRGB f = shading_ctx.bsdf->sample(u_bsdf_next_segment, shading_ctx.wo, &wi, &bsdf_pdf);
-                if (f.is_black())
-                    break;
-                path_coeff *= f * (shading_ctx.specular_scattering.finite_scattering_weight * std::abs(dot(shading_ctx.normal, wi)) / bsdf_pdf);
-            }
-            current_ray.origin = shading_ctx.get_ray_origin_using_control_direction(wi);
-            current_ray.direction = wi;
+            float bsdf_pdf;
+            ColorRGB f = shading_ctx.bsdf->sample(u_bsdf_next_segment, shading_ctx.wo, &wi, &bsdf_pdf);
+            if (f.is_black())
+                break;
+
+            path_coeff *= f * (std::abs(dot(shading_ctx.normal, wi)) / (bsdf_pdf * shading_ctx.bsdf_layer_selection_probability));
         }
-        else if (shading_ctx.specular_scattering.type == Specular_Scattering_Type::specular_reflection) {
-            current_ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
-            current_ray.origin = shading_ctx.get_ray_origin_using_control_direction(current_ray.direction);
-            if (shading_ctx.has_dxdy_derivatives && path_ctx.bounce_count < max_differential_ray_bounces) {
-                specular_differential_rays = shading_ctx.compute_differential_rays_for_specular_reflection(current_ray);
-                use_specular_differential_rays = true;
+        else {
+            if (shading_ctx.bsdf) {
+                ColorRGB direct_lighting = estimate_direct_lighting_from_single_sample(thread_ctx, u_light_index, u_light_mis, u_bsdf_mis);
+                L += path_coeff * direct_lighting;
             }
-            path_coeff *= shading_ctx.specular_scattering.scattering_coeff;
+            wi = specular_scattering.delta_direction;
+            path_coeff *= specular_scattering.attenuation;
             path_ctx.perfect_specular_bounce_count++;
             path_ctx.bounce_count++;
         }
-        else if (shading_ctx.specular_scattering.type == Specular_Scattering_Type::specular_transmission) {
-            const float eta = shading_ctx.specular_scattering.etaI_over_etaT;
-            const bool refracted = refract(shading_ctx.wo, shading_ctx.normal, eta, &current_ray.direction);
-            ASSERT(refracted); // specular_transmission event should never be selected when total internal reflection happens
-            current_ray.origin = shading_ctx.get_ray_origin_using_control_direction(current_ray.direction);
-            if (shading_ctx.has_dxdy_derivatives && path_ctx.bounce_count < max_differential_ray_bounces) {
-                specular_differential_rays = shading_ctx.compute_differential_rays_for_specular_transmission(current_ray, eta);
-                use_specular_differential_rays = true;
-            }
-            path_coeff *= shading_ctx.specular_scattering.scattering_coeff;
-            path_ctx.perfect_specular_bounce_count++;
-            path_ctx.bounce_count++;
-        }
+
+        current_ray.origin = shading_ctx.get_ray_origin_using_control_direction(wi);
+        current_ray.direction = wi;
 
         // Apply russian roulette.
         if (path_ctx.bounce_count >= rt_config.russian_roulette_bounce_count_threshold) {
@@ -122,8 +95,7 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray,
             // condition is evaluated to the same value for all paths at the given depth.
             // The same reasoning explains why we can't move this call down even further
             // and to have it inside the next condition - that condition is a function
-            // of the current path and the condition evaluation result is not the same among
-            // different paths at the given depth.
+            // of the current path.
             float u_termination = thread_ctx.pixel_sampler.get_next_1d_sample();
 
             float max_coeff = std::max(path_coeff[0], std::max(path_coeff[1], path_coeff[2]));

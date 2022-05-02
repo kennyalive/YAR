@@ -57,14 +57,17 @@ struct Shading_Context {
 
     Light_Handle area_light;
 
-    // Scattering at intersection point. During light-surface interaction the scattering process can be
-    // described either by the BSDF function or it can be a delta scattering event (in the latter case,
-    // the directions of scattered light form a set of zero measure with respect to solid angle metric...
-    // I'm just kidding, sorry. Not sorry, it's the simplest possible explanation!!!).
-    // For compound materials that exhibit both finite and delta scattering the result of bsdf scattering
-    // should be weighted by a Specular_Scattering::finite_scattering_weight to get correct estimator.
+    // Surface's BSDF. Can be null when 'delta_scattering_event' is true.
+    // Some materials might be described by a BSDF function plus a delta
+    // layer, in that case both BSDF and 'delta_scattering_event' are set.
     const BSDF* bsdf = nullptr;
+
+    // When material has both BSDF and a delta layer, then this value is how
+    // often we sample bsdf for path generation (as opposed to delta layer sampling).
+    float bsdf_layer_selection_probability = 1.f;
+
     Specular_Scattering specular_scattering;
+    bool delta_scattering_event = false;
 
     // This flag is mostly for debugging purposes to mark regions where shading normal adaptation was applied.
     // The shading normal adaptation modifies shading normal N and ensures that Wo is in the positive hemisphere.
