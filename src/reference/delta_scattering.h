@@ -7,7 +7,7 @@
 struct Scene_Object;
 struct Thread_Context;
 
-struct Specular_Scattering {
+struct Delta_Scattering {
     // When material has both BSDF and a delta layer then this value is how often we sample
     // the delta layer for path generation as opposed to bsdf sampling. For materials with
     // only BSDF scattering it is 0, and for pure delta materials it is 1. This field is always
@@ -29,6 +29,6 @@ struct Specular_Scattering {
 
 // Returns true if delta scattering event is happening, otherwise false.
 bool check_for_delta_scattering_event(Thread_Context& thread_ctx, const Scene_Object* scene_object,
-    Specular_Scattering* specular_scattering);
+    Delta_Scattering* delta_scattering);
 
 bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRGB* specular_attenuation);

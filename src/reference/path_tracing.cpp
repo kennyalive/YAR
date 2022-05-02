@@ -13,7 +13,7 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
-    const Specular_Scattering& specular_scattering = shading_ctx.specular_scattering;
+    const Delta_Scattering& delta_scattering = shading_ctx.delta_scattering;
     const Raytracer_Config& rt_config = scene_ctx.raytracer_config;
 
     Path_Context& path_ctx = thread_ctx.path_context;
@@ -25,13 +25,13 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
         // Store delta scattering information from the last hit. The next trace ray will
         // reset it to default values, but we still need it to be available after that point.
         bool collect_emitted_radiance_after_delta_bounce = shading_ctx.delta_scattering_event;
-        Differential_Rays delta_differential_rays = specular_scattering.differential_rays;
+        Differential_Rays delta_differential_rays = delta_scattering.differential_rays;
 
         // Check if we have differential rays available.
         const Differential_Rays* p_differential_rays = nullptr;
         if (path_ctx.bounce_count == 0)
             p_differential_rays = &differential_rays;
-        else if (specular_scattering.has_differential_rays)
+        else if (delta_scattering.has_differential_rays)
             p_differential_rays = &delta_differential_rays;
 
         bool hit_found = trace_ray(thread_ctx, current_ray, p_differential_rays);
@@ -79,8 +79,8 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
                 ColorRGB direct_lighting = estimate_direct_lighting_from_single_sample(thread_ctx, u_light_index, u_light_mis, u_bsdf_mis);
                 L += path_coeff * direct_lighting;
             }
-            wi = specular_scattering.delta_direction;
-            path_coeff *= specular_scattering.attenuation;
+            wi = delta_scattering.delta_direction;
+            path_coeff *= delta_scattering.attenuation;
             path_ctx.perfect_specular_bounce_count++;
             path_ctx.bounce_count++;
         }

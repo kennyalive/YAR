@@ -2,7 +2,7 @@
 
 #include "lib/light.h"
 #include "lib/vector.h"
-#include "specular_scattering.h"
+#include "delta_scattering.h"
 
 struct Intersection;
 struct Triangle_Intersection;
@@ -66,7 +66,7 @@ struct Shading_Context {
     // often we sample bsdf for path generation (as opposed to delta layer sampling).
     float bsdf_layer_selection_probability = 1.f;
 
-    Specular_Scattering specular_scattering;
+    Delta_Scattering delta_scattering;
     bool delta_scattering_event = false;
 
     // This flag is mostly for debugging purposes to mark regions where shading normal adaptation was applied.

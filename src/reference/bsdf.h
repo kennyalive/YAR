@@ -65,11 +65,8 @@ struct Ashikhmin_Shirley_Phong_BRDF : public BSDF {
 };
 
 // Because BSDFs in this renderer always represent finite bsdf functions,
-// we don't handle specular transmittance here. It is handled by delta
-// scattering pipeline. If get_specular_scattering_params() decides that
-// current scattering event is specular trasmission then Pbrt3_Uber_BRDF
-// brdf is not used. Pbrt3_Uber_BRDF implementation adjusts pdf to take 
-// into account that Pbrt3_Uber_BRDF defines only finite part of uber bsdf.
+// the pbrt uber BSDF also is not responsible for delta reflection/transmission
+// scattering. It is handled by the delta scattering pipeline.
 struct Pbrt3_Uber_BRDF : public BSDF {
     ColorRGB opacity;
     ColorRGB diffuse_reflectance;

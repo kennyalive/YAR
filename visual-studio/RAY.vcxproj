@@ -113,7 +113,7 @@
     <ClCompile Include="..\src\reference\scattering.cpp" />
     <ClCompile Include="..\src\reference\shading_context.cpp" />
     <ClCompile Include="..\src\reference\image_texture.cpp" />
-    <ClCompile Include="..\src\reference\specular_scattering.cpp" />
+    <ClCompile Include="..\src\reference\delta_scattering.cpp" />
     <ClCompile Include="..\src\reference\test.cpp" />
     <ClCompile Include="..\src\reference\test_kdtree.cpp" />
     <ClCompile Include="..\src\reference\test_random.cpp" />
@@ -146,7 +146,7 @@
     <ClInclude Include="..\src\reference\sampling.h" />
     <ClInclude Include="..\src\reference\shading_context.h" />
     <ClInclude Include="..\src\reference\image_texture.h" />
-    <ClInclude Include="..\src\reference\specular_scattering.h" />
+    <ClInclude Include="..\src\reference\delta_scattering.h" />
     <ClInclude Include="..\src\reference\test.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

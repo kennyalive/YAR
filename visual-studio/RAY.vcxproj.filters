@@ -31,7 +31,7 @@
     <ClCompile Include="..\src\reference\test_random.cpp">
       <Filter>tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\reference\specular_scattering.cpp" />
+    <ClCompile Include="..\src\reference\delta_scattering.cpp" />
     <ClCompile Include="..\src\reference\test_watertightness.cpp">
       <Filter>tests</Filter>
     </ClCompile>
@@ -65,7 +65,7 @@
     <ClInclude Include="..\src\reference\light_sampling.h" />
     <ClInclude Include="..\src\reference\pixel_sampling.h" />
     <ClInclude Include="..\src\reference\path_tracing.h" />
-    <ClInclude Include="..\src\reference\specular_scattering.h" />
+    <ClInclude Include="..\src\reference\delta_scattering.h" />
     <ClInclude Include="..\src\reference\kdtree_stats.h" />
     <ClInclude Include="..\src\reference\intersection_simd.h" />
   </ItemGroup>

@@ -193,9 +193,9 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
     // Initialize scattering properties.
     if (intersection.scene_object->material != Null_Material) {
         delta_scattering_event = check_for_delta_scattering_event(thread_ctx,
-            intersection.scene_object, &specular_scattering);
+            intersection.scene_object, &delta_scattering);
 
-        bsdf_layer_selection_probability = 1.f - specular_scattering.delta_layer_selection_probability;
+        bsdf_layer_selection_probability = 1.f - delta_scattering.delta_layer_selection_probability;
         ASSERT(bsdf_layer_selection_probability >= 0.f && bsdf_layer_selection_probability <= 1.f);
 
         if (bsdf_layer_selection_probability != 0.f)

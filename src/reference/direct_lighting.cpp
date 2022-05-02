@@ -4,11 +4,11 @@
 
 #include "bsdf.h"
 #include "context.h"
+#include "delta_scattering.h"
 #include "intersection.h"
 #include "light_sampling.h"
 #include "sampling.h"
 #include "shading_context.h"
-#include "specular_scattering.h"
 
 #include "lib/light.h"
 #include "lib/math.h"

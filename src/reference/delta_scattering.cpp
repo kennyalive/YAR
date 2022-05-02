@@ -1,6 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
-#include "specular_scattering.h"
+#include "delta_scattering.h"
 
 #include "context.h"
 #include "parameter_evaluation.h"
@@ -148,7 +148,7 @@ static Delta_Info get_pbrt_uber_info(Thread_Context& thread_ctx,
 }
 
 bool check_for_delta_scattering_event(Thread_Context& thread_ctx, const Scene_Object* scene_object,
-    Specular_Scattering* specular_scattering)
+    Delta_Scattering* delta_scattering)
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Material_Handle material = scene_object->material;
@@ -171,7 +171,7 @@ bool check_for_delta_scattering_event(Thread_Context& thread_ctx, const Scene_Ob
         delta_info = get_pbrt_uber_info(thread_ctx, params, scene_object);
     }
 
-    specular_scattering->delta_layer_selection_probability = delta_info.delta_layer_selection_probability;
+    delta_scattering->delta_layer_selection_probability = delta_info.delta_layer_selection_probability;
 
     if (delta_info.scattering_type == Delta_Scattering_Type::none)
         return false;
@@ -232,10 +232,10 @@ bool check_for_delta_scattering_event(Thread_Context& thread_ctx, const Scene_Ob
         delta_direction = -shading_ctx.wo;
     }
 
-    specular_scattering->attenuation = delta_info.attenuation;
-    specular_scattering->delta_direction = delta_direction;
-    specular_scattering->has_differential_rays = has_differential_rays;
-    specular_scattering->differential_rays = differential_rays;
+    delta_scattering->attenuation = delta_info.attenuation;
+    delta_scattering->delta_direction = delta_direction;
+    delta_scattering->has_differential_rays = has_differential_rays;
+    delta_scattering->differential_rays = differential_rays;
     return true;
 }
 
@@ -246,17 +246,17 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
     //const Shading_Context& shading_ctx = thread_ctx.shading_context;
     //Path_Context& path_ctx = thread_ctx.path_context;
 
-    //const Specular_Scattering& specular_scattering = shading_ctx.specular_scattering;
-    //ASSERT(specular_scattering.type != Specular_Scattering_Type::none);
+    //const Specular_Scattering& delta_scattering = shading_ctx.delta_scattering;
+    //ASSERT(delta_scattering.type != Specular_Scattering_Type::none);
 
     //const int max_differential_ray_bounces =
     //    thread_ctx.scene_context->raytracer_config.max_differential_ray_specular_bounces;
 
     //*specular_attenuation = Color_White;
-    //while (specular_scattering.type != Specular_Scattering_Type::none && path_ctx.bounce_count < max_bounces) {
+    //while (delta_scattering.type != Specular_Scattering_Type::none && path_ctx.bounce_count < max_bounces) {
     //    path_ctx.bounce_count++;
     //    path_ctx.perfect_specular_bounce_count++;
-    //    *specular_attenuation *= specular_scattering.scattering_coeff;
+    //    *specular_attenuation *= delta_scattering.scattering_coeff;
 
     //    const bool compute_differential_rays =
     //        shading_ctx.has_dxdy_derivatives &&
@@ -265,15 +265,15 @@ bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRG
     //    Ray ray; // specularly reflected or transmitted ray
     //    Differential_Rays differential_rays;
 
-    //    if (specular_scattering.type == Specular_Scattering_Type::specular_reflection) {
+    //    if (delta_scattering.type == Specular_Scattering_Type::specular_reflection) {
     //        ray.direction = reflect(shading_ctx.wo, shading_ctx.normal);
     //        ray.origin = shading_ctx.get_ray_origin_using_control_direction(ray.direction);
     //        if (compute_differential_rays)
     //            differential_rays = shading_ctx.compute_differential_rays_for_specular_reflection(ray);
     //    }
     //    else {
-    //        ASSERT(specular_scattering.type == Specular_Scattering_Type::specular_transmission);
-    //        const float eta = specular_scattering.etaI_over_etaT;
+    //        ASSERT(delta_scattering.type == Specular_Scattering_Type::specular_transmission);
+    //        const float eta = delta_scattering.etaI_over_etaT;
     //        const bool refracted = refract(shading_ctx.wo, shading_ctx.normal, eta, &ray.direction);
     //        ASSERT(refracted); // specular_transmission event should never be selected when total internal reflection happens
 
