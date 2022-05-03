@@ -100,7 +100,7 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
 
             float max_coeff = std::max(path_coeff[0], std::max(path_coeff[1], path_coeff[2]));
 
-            if (max_coeff < rt_config.russian_roulette_radiance_threshold) {
+            if (max_coeff < rt_config.russian_roulette_threshold) {
                 float termination_probability = std::max(0.05f, 1.f - max_coeff);
                 if (u_termination < termination_probability) {
                     break;

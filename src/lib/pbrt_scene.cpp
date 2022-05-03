@@ -689,7 +689,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
             // In pbrt maxdepth denotes the max number of bounces.
             scene.raytracer_config.max_light_bounces = pbrt_integrator->maxDepth;
         }
-        scene.raytracer_config.russian_roulette_radiance_threshold = pbrt_integrator->russianRouletteThreshold;
+        scene.raytracer_config.russian_roulette_threshold = pbrt_integrator->russianRouletteThreshold;
     }
 
     // Import pixel filter.
