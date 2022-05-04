@@ -30,5 +30,3 @@ struct Delta_Scattering {
 // Returns true if delta scattering event is happening, otherwise false.
 bool check_for_delta_scattering_event(Thread_Context& thread_ctx, const Scene_Object* scene_object,
     Delta_Scattering* delta_scattering);
-
-bool trace_specular_bounces(Thread_Context& thread_ctx, int max_bounces, ColorRGB* specular_attenuation);

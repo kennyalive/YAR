@@ -307,12 +307,6 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
         return Color_Black;
     }
 
-    if (shading_ctx.delta_scattering_event) {
-        ColorRGB specular_attenuation;
-        trace_specular_bounces(thread_ctx, 1, &specular_attenuation);
-        return specular_attenuation * get_emitted_radiance(thread_ctx);
-    }
-
     // debug visualization of samples with adjusted shading normal.
     /*if (shading_ctx.shading_normal_adjusted)
         return Color_Red;*/
@@ -323,7 +317,7 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
         L = get_emitted_radiance(thread_ctx);
     }
     // Intersection with finite BSDF surface.
-    else {
+    else if (shading_ctx.bsdf) {
         for (const Point_Light& light : scene_ctx.lights.point_lights) {
             L += direct_lighting_from_point_light(scene_ctx, shading_ctx, light);
         }
@@ -374,6 +368,30 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
             L += L2;
         }
     }
+
+    if (shading_ctx.delta_scattering_event) {
+        // Store current delta scattering information in order to have access to it after trace_ray call.
+        Delta_Scattering ds = shading_ctx.delta_scattering;
+
+        Ray delta_ray;
+        delta_ray.origin = shading_ctx.get_ray_origin_using_control_direction(ds.delta_direction);
+        delta_ray.direction = ds.delta_direction;
+
+        const Differential_Rays* p_differential_rays = ds.has_differential_rays ?
+            &ds.differential_rays : nullptr;
+
+        bool hit_found = trace_ray(thread_ctx, delta_ray, p_differential_rays);
+
+        ColorRGB emitted_radiance;
+        if (hit_found)
+            emitted_radiance = get_emitted_radiance(thread_ctx);
+        else if (scene_ctx.has_environment_light_sampler)
+            emitted_radiance = scene_ctx.environment_light_sampler.get_filtered_radiance_for_direction(
+                shading_ctx.miss_ray.direction);
+
+        L += ds.attenuation * emitted_radiance;
+    }
+
     return L;
 }
 
