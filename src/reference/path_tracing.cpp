@@ -7,7 +7,7 @@
 #include "direct_lighting.h"
 #include "shading_context.h"
 
-ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays& differential_rays)
+ColorRGB trace_path(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays& differential_rays)
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;

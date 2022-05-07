@@ -254,7 +254,7 @@ static Film_Tile render_tile(const Scene_Context& scene_ctx, Thread_Context& thr
                 if (scene_ctx.raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::direct_lighting)
                     radiance = estimate_direct_lighting(thread_ctx, ray, differential_rays);
                 else if (scene_ctx.raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::path_tracer)
-                    radiance = estimate_path_contribution(thread_ctx, ray, differential_rays);
+                    radiance = trace_path(thread_ctx, ray, differential_rays);
 
                 ASSERT(radiance.is_finite());
                 tile.add_sample(film_pos, radiance);
