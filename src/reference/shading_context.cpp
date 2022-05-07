@@ -55,7 +55,7 @@ static bool adjust_shading_normal(const Vector3& wo, const Vector3& ng, Vector3*
     return true;
 }
 
-void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, const Ray& ray,
+void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, const Ray& ray,
     const Differential_Rays* differential_rays, const Intersection& intersection)
 {
     *this = Shading_Context{};
@@ -188,19 +188,23 @@ void Shading_Context::initialize_from_intersection(Thread_Context& thread_ctx, c
         coordinate_system_from_vector(normal, &tangent1, &tangent2);
     }
 
+    material = intersection.scene_object->material;
     area_light = intersection.scene_object->area_light;
+    nested_dielectric = intersection.scene_object->participate_in_nested_dielectrics_tracking;
+}
 
-    // Initialize scattering properties.
-    if (intersection.scene_object->material != Null_Material) {
-        delta_scattering_event = check_for_delta_scattering_event(thread_ctx,
-            intersection.scene_object, &delta_scattering);
+void Shading_Context::initialize_scattering(Thread_Context& thread_ctx, float u)
+{
+    if (material == Null_Material) // TODO: do we need this? if yes, write a comment when it's needed
+        return;
 
-        bsdf_layer_selection_probability = 1.f - delta_scattering.delta_layer_selection_probability;
-        ASSERT(bsdf_layer_selection_probability >= 0.f && bsdf_layer_selection_probability <= 1.f);
+    delta_scattering_event = check_for_delta_scattering_event(thread_ctx, u, &delta_scattering);
 
-        if (bsdf_layer_selection_probability != 0.f)
-            bsdf = create_bsdf(thread_ctx, intersection.scene_object->material);
-    }
+    bsdf_layer_selection_probability = 1.f - delta_scattering.delta_layer_selection_probability;
+    ASSERT(bsdf_layer_selection_probability >= 0.f && bsdf_layer_selection_probability <= 1.f);
+
+    if (bsdf_layer_selection_probability != 0.f)
+        bsdf = create_bsdf(thread_ctx, material);
 }
 
 void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Intersection& ti) {
@@ -378,6 +382,6 @@ bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Differential_Ra
         thread_ctx.shading_context.miss_ray = ray;
         return false;
     }
-    thread_ctx.shading_context.initialize_from_intersection(thread_ctx, ray, differential_rays, isect);
+    thread_ctx.shading_context.initialize_local_geometry(thread_ctx, ray, differential_rays, isect);
     return true;
 }

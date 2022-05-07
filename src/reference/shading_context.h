@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lib/light.h"
+#include "lib/material.h"
 #include "lib/vector.h"
 #include "delta_scattering.h"
 
@@ -55,7 +56,10 @@ struct Shading_Context {
     Vector3 tangent1;
     Vector3 tangent2;
 
+    Material_Handle material;
     Light_Handle area_light;
+
+    bool nested_dielectric = false;
 
     // Surface's BSDF. Can be null when 'delta_scattering_event' is true.
     // Some materials might be described by a BSDF function plus a delta
@@ -80,8 +84,10 @@ struct Shading_Context {
 
     Shading_Context() {}
 
-    void initialize_from_intersection(Thread_Context& thread_ctx, const Ray& ray,
+    void initialize_local_geometry(Thread_Context& thread_ctx, const Ray& ray,
         const Differential_Rays* differential_rays, const Intersection& intersection);
+
+    void initialize_scattering(Thread_Context& thread_ctx, float u);
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
 

@@ -306,6 +306,8 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
         }
         return Color_Black;
     }
+    float u_init_scattering = thread_ctx.pixel_sampler.get_next_1d_sample();
+    thread_ctx.shading_context.initialize_scattering(thread_ctx, u_init_scattering);
 
     // debug visualization of samples with adjusted shading normal.
     /*if (shading_ctx.shading_normal_adjusted)

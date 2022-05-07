@@ -7,8 +7,6 @@
 #include "scattering.h"
 #include "shading_context.h"
 
-#include "lib/scene.h"
-
 namespace {
 enum class Delta_Scattering_Type {
     none,
@@ -35,12 +33,11 @@ static Delta_Info get_perfect_reflector_info(Thread_Context& thread_ctx,
     return result;
 }
 
-static Delta_Info get_perfect_refractor_info(Thread_Context& thread_ctx,
-    const Perfect_Refractor_Material& params, const Scene_Object* scene_object)
+static Delta_Info get_perfect_refractor_info(Thread_Context& thread_ctx, const Perfect_Refractor_Material& params)
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
 
-    bool enter_event = scene_object->participate_in_nested_dielectrics_tracking ?
+    bool enter_event = shading_ctx.nested_dielectric ?
         thread_ctx.current_dielectric_material == Null_Material :
         !shading_ctx.original_shading_normal_was_flipped;
 
@@ -53,13 +50,12 @@ static Delta_Info get_perfect_refractor_info(Thread_Context& thread_ctx,
     return result;
 }
 
-static Delta_Info get_glass_info(Thread_Context& thread_ctx,
-    const Glass_Material& params, const Scene_Object* scene_object)
+static Delta_Info get_glass_info(Thread_Context& thread_ctx, const Glass_Material& params, float u)
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     Delta_Info result;
 
-    bool enter_event = scene_object->participate_in_nested_dielectrics_tracking ?
+    bool enter_event = shading_ctx.nested_dielectric ?
         thread_ctx.current_dielectric_material == Null_Material :
         !shading_ctx.original_shading_normal_was_flipped;
 
@@ -74,8 +70,7 @@ static Delta_Info get_glass_info(Thread_Context& thread_ctx,
     // 'r < fresnel' is always true. This gives a guarantee that transmission event is
     // never selected in the case of total internal reflection.
 
-    float r = thread_ctx.rng.get_float(); // TODO: get this from sampler?
-    if (r < fresnel) {
+    if (u < fresnel) {
         result.scattering_type = Delta_Scattering_Type::reflection;
         // The reflection event is choosen with probability = fresnel.
         // attenuation = fresnel * reflectance / probability => attenuation = reflectance.
@@ -99,19 +94,17 @@ static Delta_Info get_glass_info(Thread_Context& thread_ctx,
     return result;
 }
 
-static Delta_Info get_pbrt_uber_info(Thread_Context& thread_ctx,
-    const Pbrt3_Uber_Material& params, const Scene_Object* scene_object)
+static Delta_Info get_pbrt_uber_info(Thread_Context& thread_ctx, const Pbrt3_Uber_Material& params, float u)
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     Delta_Info result;
 
-    float r = thread_ctx.rng.get_float(); // TODO: get this from sampler?
-    int component_index = int(r * params.component_count);
+    int component_index = int(u * params.component_count);
     ASSERT(component_index < params.component_count);
     int component_type = params.components[component_index];
 
     if (component_type == Pbrt3_Uber_Material::DELTA_REFLECTION) {
-        bool enter_event = scene_object->participate_in_nested_dielectrics_tracking ?
+        bool enter_event = shading_ctx.nested_dielectric ?
             thread_ctx.current_dielectric_material == Null_Material :
             !shading_ctx.original_shading_normal_was_flipped;
 
@@ -147,11 +140,11 @@ static Delta_Info get_pbrt_uber_info(Thread_Context& thread_ctx,
     return result;
 }
 
-bool check_for_delta_scattering_event(Thread_Context& thread_ctx, const Scene_Object* scene_object,
-    Delta_Scattering* delta_scattering)
+bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float u, Delta_Scattering* delta_scattering)
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
-    const Material_Handle material = scene_object->material;
+    const Shading_Context& shading_ctx = thread_ctx.shading_context;
+    const Material_Handle material = shading_ctx.material;
 
     Delta_Info delta_info;
     if (material.type == Material_Type::perfect_reflector) {
@@ -160,15 +153,15 @@ bool check_for_delta_scattering_event(Thread_Context& thread_ctx, const Scene_Ob
     }
     else if (material.type == Material_Type::perfect_refractor) {
         const Perfect_Refractor_Material& params = scene_ctx.materials.perfect_refractor[material.index];
-        delta_info = get_perfect_refractor_info(thread_ctx, params, scene_object);
+        delta_info = get_perfect_refractor_info(thread_ctx, params);
     }
     else if (material.type == Material_Type::glass) {
         const Glass_Material& params = scene_ctx.materials.glass[material.index];
-        delta_info = get_glass_info(thread_ctx, params, scene_object);
+        delta_info = get_glass_info(thread_ctx, params, u);
     }
     else if (material.type == Material_Type::pbrt3_uber) {
         const Pbrt3_Uber_Material& params = scene_ctx.materials.pbrt3_uber[material.index];
-        delta_info = get_pbrt_uber_info(thread_ctx, params, scene_object);
+        delta_info = get_pbrt_uber_info(thread_ctx, params, u);
     }
 
     delta_scattering->delta_layer_selection_probability = delta_info.delta_layer_selection_probability;
@@ -177,8 +170,7 @@ bool check_for_delta_scattering_event(Thread_Context& thread_ctx, const Scene_Ob
         return false;
 
     // Update current dielectric state.
-    if (scene_object->participate_in_nested_dielectrics_tracking &&
-        delta_info.scattering_type == Delta_Scattering_Type::transmission)
+    if (shading_ctx.nested_dielectric && delta_info.scattering_type == Delta_Scattering_Type::transmission)
     {
         if (thread_ctx.current_dielectric_material == Null_Material)
             thread_ctx.current_dielectric_material = material;
@@ -191,7 +183,6 @@ bool check_for_delta_scattering_event(Thread_Context& thread_ctx, const Scene_Ob
     //
     // Compute new ray direction.
     //
-    const Shading_Context& shading_ctx = thread_ctx.shading_context;
     const Path_Context& path_ctx = thread_ctx.path_context;
     const Raytracer_Config& rt_config = scene_ctx.raytracer_config;
 

@@ -22,6 +22,12 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
 
     ColorRGB L;
     while (true) {
+        float u_init_scattering = thread_ctx.pixel_sampler.get_next_1d_sample();
+        float u_light_index = thread_ctx.pixel_sampler.get_next_1d_sample();
+        Vector2 u_light_mis = thread_ctx.pixel_sampler.get_next_2d_sample();
+        Vector2 u_bsdf_mis = thread_ctx.pixel_sampler.get_next_2d_sample();
+        Vector2 u_bsdf_next_segment = thread_ctx.pixel_sampler.get_next_2d_sample();
+
         // Store delta scattering information from the last hit. The next trace ray will
         // reset it to default values, but we still need it to be available after that point.
         bool collect_emitted_radiance_after_delta_bounce = shading_ctx.delta_scattering_event;
@@ -53,10 +59,7 @@ ColorRGB estimate_path_contribution(Thread_Context& thread_ctx, const Ray& ray, 
         if (!hit_found || shading_ctx.area_light != Null_Light)
             break;
 
-        float u_light_index = thread_ctx.pixel_sampler.get_next_1d_sample();
-        Vector2 u_light_mis = thread_ctx.pixel_sampler.get_next_2d_sample();
-        Vector2 u_bsdf_mis = thread_ctx.pixel_sampler.get_next_2d_sample();
-        Vector2 u_bsdf_next_segment = thread_ctx.pixel_sampler.get_next_2d_sample();
+        thread_ctx.shading_context.initialize_scattering(thread_ctx, u_init_scattering);
 
         Vector3 wi;
         if (!shading_ctx.delta_scattering_event) {

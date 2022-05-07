@@ -4,7 +4,6 @@
 #include "lib/ray.h"
 #include "lib/vector.h"
 
-struct Scene_Object;
 struct Thread_Context;
 
 struct Delta_Scattering {
@@ -28,5 +27,4 @@ struct Delta_Scattering {
 };
 
 // Returns true if delta scattering event is happening, otherwise false.
-bool check_for_delta_scattering_event(Thread_Context& thread_ctx, const Scene_Object* scene_object,
-    Delta_Scattering* delta_scattering);
+bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float u, Delta_Scattering* delta_scattering);
