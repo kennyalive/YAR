@@ -19,6 +19,11 @@ static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* ge
     float t = intersect_triangle_watertight(ray, p0, p1, p2, &b);
 
     if (t < intersection.t) {
+        // Check for degenerate triangle.
+        Vector3 normal_direction = cross(p1 - p0, p2 - p0);
+        if (normal_direction.length_squared() == 0.f)
+            return;
+        
         // Do alpha test.
         if (data->alpha_texture != nullptr) {
             Vector2 uv = data->mesh->get_uv(primitive_index, b);
