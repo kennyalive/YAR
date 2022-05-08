@@ -21,6 +21,7 @@ enum Options {
     OPT_OUTPUT_DIRECTORY,
     OPT_OUTPUT_FILENAME_SUFFIX,
     OPT_OPENEXR_DISABLE_VARYING_ATTRIBUTES,
+    OPT_OPENEXR_COMPRESS,
     OPT_SAMPLES_PER_PIXEL,
     OPT_FILM_RESOLUTION,
 };
@@ -68,6 +69,9 @@ static const getopt_option_t option_list[] =
 
     { "openexr-disable-varying-attributes", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_OPENEXR_DISABLE_VARYING_ATTRIBUTES,
         "do not generate OpenEXR custom attributes that vary between render sessions" },
+
+    { "openexr-compress", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_OPENEXR_COMPRESS,
+        "enable OpenEXR zip compression of image data" },
 
     { "spp", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_SAMPLES_PER_PIXEL,
         "set samples per pixel value (overrides project settings)",
@@ -200,6 +204,9 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_OPENEXR_DISABLE_VARYING_ATTRIBUTES) {
             options.openexr_disable_varying_attributes = true;
+        }
+        else if (opt == OPT_OPENEXR_COMPRESS) {
+            options.openexr_enable_compression = true;
         }
         else if (opt == OPT_OUTPUT_DIRECTORY) {
             options.output_directory = ctx.current_opt_arg;

@@ -514,7 +514,7 @@ static void save_output_image(
     }
 
     // Write file to disk.
-    if (!image.write_exr(output_filename, attrib_writer.attributes)) {
+    if (!image.write_exr(output_filename, options.openexr_enable_compression, attrib_writer.attributes)) {
         error("Failed to save rendered image: %s", output_filename.c_str());
     }
     printf("Saved output image to %s\n\n", output_filename.c_str());

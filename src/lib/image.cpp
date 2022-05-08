@@ -153,7 +153,7 @@ bool Image::write_tga(const std::string& file_path) const {
     return stbi_write_tga(file_path.c_str(), width, height, 3, srgb_image.data()) != 0;
 }
 
-bool Image::write_exr(const std::string& file_path, const std::vector<EXRAttribute>& custom_attributes) const
+bool Image::write_exr(const std::string& file_path, bool compress_image, const std::vector<EXRAttribute>& custom_attributes) const
 {
     std::vector<float> channels[3];
     channels[0].resize(width * height);
@@ -204,7 +204,7 @@ bool Image::write_exr(const std::string& file_path, const std::vector<EXRAttribu
     exr_header.channels = channel_infos;
     exr_header.pixel_types = input_component_types;
     exr_header.num_channels = 3;
-    exr_header.compression_type = TINYEXR_COMPRESSIONTYPE_ZIP;
+    exr_header.compression_type = compress_image ? TINYEXR_COMPRESSIONTYPE_ZIP : TINYEXR_COMPRESSIONTYPE_NONE;
     exr_header.requested_pixel_types = output_component_types;
 
     const char* err = nullptr;

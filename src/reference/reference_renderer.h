@@ -24,6 +24,9 @@ struct Renderer_Options {
     // Examples of non-varying attributes: output file name, per pixel sample count.
     bool openexr_disable_varying_attributes = false;
 
+    // Enables OpenEXR feature to store image data in compressed form (zip)
+    bool openexr_enable_compression = false;
+
     std::string output_directory;
     std::string output_filename_suffix;
 
