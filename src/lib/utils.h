@@ -1,35 +1,49 @@
 #pragma once
 
 struct Memory_Pool {
-    uint8_t* memory = nullptr;
-    int64_t allocated_size = 0;
-    int64_t used_size = 0;
+    void* pool_ptr = nullptr;
+    size_t pool_size = 0;
+    size_t allocated_bytes = 0;
 
-    void allocate_pool_memory(int64_t size) {
-        ASSERT(memory == nullptr);
-        memory = new uint8_t[size];
-        allocated_size = size;
+    ~Memory_Pool()
+    {
+        ASSERT(pool_ptr == nullptr);
     }
 
-    void deallocate_pool_memory() {
-        delete[] memory;
-        memory = nullptr;
+    void allocate_pool_memory(size_t size)
+    {
+        ASSERT(pool_ptr == nullptr);
+        pool_ptr = (uint8_t*)allocate_aligned_memory(size, 64);
+        pool_size = size;
     }
 
-    void reset() {
-        used_size = 0;
+    void deallocate_pool_memory()
+    {
+        free_aligned_memory(pool_ptr);
+        pool_ptr = nullptr;
+        pool_size = 0;
+        allocated_bytes = 0;
+    }
+
+    void reset()
+    {
+        allocated_bytes = 0;
     }
 
     template <typename T>
-    void* allocate() {
-        int64_t offset = (used_size + alignof(T) - 1) & ~(alignof(T) - 1);
-        int64_t new_used_size = offset + sizeof(T);
+    void* allocate()
+    {
+        constexpr size_t mask = alignof(T) - 1;
+        size_t offset = (allocated_bytes + mask) & ~mask;
+        size_t new_size = offset + sizeof(T);
 
-        ASSERT(new_used_size <= allocated_size);
-        if (new_used_size > allocated_size)
+        ASSERT(new_size <= pool_size);
+        if (new_size > pool_size)
             return nullptr;
+        allocated_bytes = new_size;
 
-        used_size = new_used_size;
-        return memory + offset;
+        void* ptr = static_cast<uint8_t*>(pool_ptr) + offset;
+        ASSERT((reinterpret_cast<uintptr_t>(ptr) & mask) == 0);
+        return ptr;
     }
 };

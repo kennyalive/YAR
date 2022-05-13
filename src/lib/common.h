@@ -171,3 +171,21 @@ inline void prefetch(const void* ptr) {
     _mm_prefetch((const char*)ptr, _MM_HINT_T0);
 #endif
 }
+
+inline void* allocate_aligned_memory(size_t size, size_t alignment)
+{
+#ifdef _MSC_VER
+    return _aligned_malloc(size, alignment);
+#else
+#error allocate_aligned_memory is not implemented
+#endif
+}
+
+inline void free_aligned_memory(void* ptr)
+{
+#ifdef _MSC_VER
+    _aligned_free(ptr);
+#else
+#error free_aligned_memory is not implemented
+#endif
+}
