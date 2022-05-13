@@ -60,8 +60,7 @@ void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, cons
 {
     *this = Shading_Context{};
 
-    wo = -ray.direction;
-    ASSERT(wo.is_normalized());
+    wo = -ray.direction.normalized();
 
     // Geometry_Type-specific initialization.
     //
