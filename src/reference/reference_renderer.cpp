@@ -414,6 +414,10 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         }
         *variance_estimate = variance_accumulator / variance_count;
     }
+
+    for (auto& thread_ctx : thread_contexts)
+        thread_ctx.memory_pool.deallocate_pool_memory();
+
     return film.get_image();
 }
 
