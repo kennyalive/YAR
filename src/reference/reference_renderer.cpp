@@ -321,18 +321,7 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
     std::vector<uint8_t> is_thread_context_initialized;
     Rendering_Progress progress;
 
-    if (options.render_tile_index >= 0) {
-        thread_contexts.resize(1);
-        thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
-        thread_contexts[0].pixel_sampler.init(&scene_ctx.pixel_sampler_config, &thread_contexts[0].rng);
-        thread_contexts[0].renderer_options = &options;
-        thread_contexts[0].scene_context = &scene_ctx;
-        is_thread_context_initialized.resize(1, true);
-
-        Film_Tile tile = render_tile(scene_ctx, thread_contexts[0], film, options.render_tile_index, &progress);
-        film.merge_tile(tile);
-    }
-    else if (options.thread_count == 1) {
+     if (options.thread_count == 1) {
         thread_contexts.resize(1);
         thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
         thread_contexts[0].pixel_sampler.init(&scene_ctx.pixel_sampler_config, &thread_contexts[0].rng);

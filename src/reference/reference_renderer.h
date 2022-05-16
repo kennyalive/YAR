@@ -8,7 +8,6 @@ struct Renderer_Options {
 
     Bounds2i render_region;
     bool crop_image_by_render_region = false;
-    int render_tile_index = -1;
 
     // Can be useful during debugging to vary random numbers and get configuration that
     // reproduces desired behavior.

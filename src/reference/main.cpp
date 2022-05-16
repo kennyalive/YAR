@@ -14,7 +14,6 @@ enum Options {
     OPT_RENDER_REGION_W,
     OPT_RENDER_REGION_H,
     OPT_CROP_IMAGE_BY_RENDER_REGION,
-    OPT_RENDER_TILE,
     OPT_RNG_SEED_OFFSET,
     OPT_FLIP_HORIZONTALLY,
     OPT_FORCE_REBUILD_KDTREE_CACHE,
@@ -45,9 +44,6 @@ static const getopt_option_t option_list[] =
         "set render region width", "width" },
     { "h", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_REGION_H,
         "set render region height", "height" },
-
-    { "tile", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_TILE,
-        "render single tile with the given index", "tile_index" },
 
     { "crop", 0, GETOPT_OPTION_TYPE_NO_ARG, 0, OPT_CROP_IMAGE_BY_RENDER_REGION,
         "crop image by render region rectangle" },
@@ -133,8 +129,6 @@ int main(int argc, char** argv) {
     // it's enough to specify only render region position (for example, --x 120 --y 253).
     Vector2i render_region_size { 1, 1 };
 
-    int render_tile_index = -1;
-
     int opt;
     while ((opt = getopt_next(&ctx)) != -1) {
         if (opt == '?') {
@@ -189,9 +183,6 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_CROP_IMAGE_BY_RENDER_REGION) {
             options.crop_image_by_render_region = true;
-        }
-        else if (opt == OPT_RENDER_TILE) {
-            render_tile_index = atoi(ctx.current_opt_arg);
         }
         else if (opt == OPT_RNG_SEED_OFFSET) {
             options.rng_seed_offset = atoi(ctx.current_opt_arg);
@@ -253,10 +244,6 @@ int main(int argc, char** argv) {
     if (is_render_region_specified) {
         options.render_region.p0 = render_region_position;
         options.render_region.p1 = render_region_position + render_region_size;
-    }
-
-    if (render_tile_index >= 0) {
-        options.render_tile_index = render_tile_index;
     }
 
     if (files.empty()) {
