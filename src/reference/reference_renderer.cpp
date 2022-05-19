@@ -211,7 +211,7 @@ struct Checkpoint_Info {
 }
 
 static std::vector<int> start_or_resume_checkpoint(const std::string& checkpoint_directory,
-    const Checkpoint_Info& info, std::vector<Film_Tile>* tiles)
+    const Checkpoint_Info& info, std::vector<Film_Tile>* tiles, float* previous_sessions_time)
 {
     const char* func_name = "start_or_resume_from_checkpoint_directory";
     fs::path metadata_file_path = fs::path(checkpoint_directory) / "checkpoint";
@@ -290,6 +290,7 @@ static std::vector<int> start_or_resume_checkpoint(const std::string& checkpoint
 
     // Scan checkpoint directory for already finished tiles.
     std::set<int> already_rendered_tiles;
+    float max_time = 0.f;
     for (const auto& entry : fs::directory_iterator(checkpoint_directory)) {
         std::string filename = entry.path().stem().string();
         if (!filename.starts_with("tile_"))
@@ -299,12 +300,23 @@ static std::vector<int> start_or_resume_checkpoint(const std::string& checkpoint
         already_rendered_tiles.insert(tile_index);
 
         std::vector<uint8_t> content = read_binary_file(entry.path().string());
+        int offset = 0;
+
+        float time;
+        memcpy(&time, content.data() + offset, sizeof(float));
+        offset += sizeof(float);
+        max_time = std::max(max_time, time);
+
         Film_Tile& tile = (*tiles)[tile_index];
-        memcpy(&tile.pixel_bounds, content.data(), sizeof(Bounds2i));
+        memcpy(&tile.pixel_bounds, content.data() + offset, sizeof(Bounds2i));
+        offset += sizeof(Bounds2i);
+
         int pixel_count = tile.pixel_bounds.area();
         tile.pixels.resize(pixel_count);
-        memcpy(tile.pixels.data(), content.data() + sizeof(Bounds2i), pixel_count * sizeof(Film_Pixel));
+        memcpy(tile.pixels.data(), content.data() + offset, pixel_count * sizeof(Film_Pixel));
     }
+
+    *previous_sessions_time = max_time;
 
     // Create a list of tiles that need to be rendered.
     std::vector<int> tiles_to_render;
@@ -317,7 +329,7 @@ static std::vector<int> start_or_resume_checkpoint(const std::string& checkpoint
 }
 
 static void write_tile_to_checkpoint_directory(const std::string& checkpoint_directory,
-    const Film_Tile& tile, int tile_index)
+    const Film_Tile& tile, int tile_index, float current_render_time)
 {
     const char* func_name = "write_tile_to_checkpoint_directory";
 
@@ -333,7 +345,12 @@ static void write_tile_to_checkpoint_directory(const std::string& checkpoint_dir
     static_assert(sizeof(Bounds2i) == 16);
     static_assert(sizeof(Film_Pixel) == 16);
 
-    const char* data_ptr = reinterpret_cast<const char*>(&tile.pixel_bounds);
+    const char* data_ptr;
+
+    data_ptr = reinterpret_cast<const char*>(&current_render_time);
+    temp_file.write(data_ptr, sizeof(float));
+
+    data_ptr = reinterpret_cast<const char*>(&tile.pixel_bounds);
     temp_file.write(data_ptr, sizeof(Bounds2i));
 
     data_ptr = reinterpret_cast<const char*>(tile.pixels.data());
@@ -461,8 +478,10 @@ static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int t
 }
 
 static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options& options, Bounds2i render_region,
-    double* variance_estimate)
+    double* variance_estimate, float* render_time)
 {
+    float previous_sessions_time = 0.f;
+
     Film_Filter film_filter = [cfg = scene_ctx.raytracer_config]()
     {
         if (cfg.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::box)
@@ -491,13 +510,14 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         info.total_tile_count = film.get_tile_count();
         info.input_filename = scene_ctx.input_filename;
         info.samples_per_pixel = scene_ctx.pixel_sampler_config.get_samples_per_pixel();
-        tile_indices = start_or_resume_checkpoint(options.checkpoint_directory, info, &tiles);
+        tile_indices = start_or_resume_checkpoint(options.checkpoint_directory, info, &tiles, &previous_sessions_time);
 
         progress.finished_tile_count = film.get_tile_count() - (int)tile_indices.size();
 
         if (progress.finished_tile_count > 0) {
             int checkpoint_progress_percentage = 100 * progress.finished_tile_count / film.get_tile_count();
             printf("Resuming rendering from checkpoint %s\n", options.checkpoint_directory.c_str());
+            printf("Time spent in previous sessions: %.3f seconds\n", previous_sessions_time);
             printf("Rendering: %d%%", checkpoint_progress_percentage);
         }
         else {
@@ -509,6 +529,8 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         for (int i = 0; i < film.get_tile_count(); i++)
             tile_indices[i] = i;
     }
+
+    Timestamp t_render;
 
     if (options.thread_count == 1) {
         thread_contexts.resize(1);
@@ -532,6 +554,8 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
             Film* film;
             std::vector<Film_Tile>* tiles;
             Rendering_Progress* progress;
+            float previous_sessions_time;
+            Timestamp* t_render;
 
             void ExecuteRange(enki::TaskSetPartition, uint32_t threadnum) override {
                 ASSERT(threadnum < thread_context_count);
@@ -545,8 +569,10 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
                 }
                 (*tiles)[tile_index] = render_tile(p_thread_contexts[threadnum], *film, tile_index, progress);
 
-                if (!options->checkpoint_directory.empty())
-                    write_tile_to_checkpoint_directory(options->checkpoint_directory, (*tiles)[tile_index], tile_index);
+                if (!options->checkpoint_directory.empty()) {
+                    float current_render_time = previous_sessions_time + elapsed_seconds(*t_render);
+                    write_tile_to_checkpoint_directory(options->checkpoint_directory, (*tiles)[tile_index], tile_index, current_render_time);
+                }
             }
         };
 
@@ -571,6 +597,9 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
             task.film = &film;
             task.tiles = &tiles;
             task.progress = &progress;
+            task.previous_sessions_time = previous_sessions_time;
+            task.t_render = &t_render;
+
             tasks[tile_index] = task;
             task_scheduler.AddTaskSetToPipe(&tasks[tile_index]);
         }
@@ -579,6 +608,10 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
 
     for (const Film_Tile& tile : tiles)
         film.merge_tile(tile);
+
+    Image image = film.get_image();
+
+    *render_time = previous_sessions_time + elapsed_seconds(t_render);
 
     if (scene_ctx.pixel_sampler_config.get_samples_per_pixel() > 1) {
         double variance_accumulator = 0.0;
@@ -595,7 +628,7 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
     for (auto& thread_ctx : thread_contexts)
         thread_ctx.memory_pool.deallocate_pool_memory();
 
-    return film.get_image();
+    return image;
 }
 
 struct EXR_Attributes_Writer {
@@ -778,10 +811,9 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
     ASSERT(render_region.p0 < render_region.p1);
     ASSERT(render_region.p1 <= film_resolution);
 
-    Timestamp t_render;
-    double variance_estimate = 0.f;
-    Image image = render_scene(scene_ctx, options, render_region, &variance_estimate);
-    float render_time = elapsed_seconds(t_render);
+    double variance_estimate = 0.0;
+    float render_time = 0.f;
+    Image image = render_scene(scene_ctx, options, render_region, &variance_estimate, &render_time);
     printf("%-*s %.3f seconds\n", time_category_field_width, "Render time", render_time);
     printf("Variance %.6f, StdDev %.6f\n", variance_estimate, std::sqrt(variance_estimate));
 
