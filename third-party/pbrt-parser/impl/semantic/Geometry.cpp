@@ -438,14 +438,9 @@ namespace pbrt {
       /* now, add area light sources */
       
       if (!pbrtShape->attributes->areaLightSources.empty()) {
-        std::cout << "Shape has " << pbrtShape->attributes->areaLightSources.size()
-                  << " area light sources..." << std::endl;
-        auto &areaLights = pbrtShape->attributes->areaLightSources;
-        if (!areaLights.empty()) {
-          if (areaLights.size() > 1)
+        if (pbrtShape->attributes->areaLightSources.size() > 1)
             std::cout << "Warning: Shape has more than one area light!?" << std::endl;
-          newShape->areaLight = parseAreaLight(areaLights[0]);
-        }
+        newShape->areaLight = parseAreaLight(pbrtShape->attributes->areaLightSources[0]);
       }
     }
 
