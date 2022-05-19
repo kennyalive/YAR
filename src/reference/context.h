@@ -30,6 +30,8 @@ struct Array2D_Registry {
 };
 
 struct Scene_Context {
+    std::string input_filename;
+
     Raytracer_Config raytracer_config;
     Camera camera;
     const KdTree* acceleration_structure = nullptr;

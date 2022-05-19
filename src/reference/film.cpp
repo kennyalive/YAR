@@ -18,20 +18,13 @@ static Film_Pixel& get_film_pixel(Film& film, Vector2i p) {
     return film.pixels[offset];
 }
 
-Film_Tile::Film_Tile(Bounds2i pixel_bounds, Film_Filter filter, float max_rgb_component_value) {
+Film_Tile::Film_Tile(Bounds2i pixel_bounds) {
     this->pixel_bounds = pixel_bounds;
-    this->filter = filter;
-    this->max_rgb_component_value = max_rgb_component_value;
     pixels.resize(pixel_bounds.area());
     memset(pixels.data(), 0, pixels.size() * sizeof(Film_Pixel));
 }
 
-void Film_Tile::add_sample(Vector2 film_pos, ColorRGB color) {
-    float max_component = std::max(color.r, std::max(color.g, color.b));
-    if (max_component > max_rgb_component_value) {
-        color *= (max_rgb_component_value / max_component);
-    }
-
+void Film_Tile::add_sample(const Film_Filter& filter, Vector2 film_pos, ColorRGB color) {
     // find pixels that are affected by the sample
     Bounds2i region;
     region.p0.x = (int)std::ceil(film_pos.x - filter.radius - 0.5f);

@@ -18,6 +18,8 @@ namespace fs = std::filesystem;
 bool fs_exists(const fs::path& path);
 bool fs_create_directories(const fs::path& path); 
 bool fs_delete_directory(const fs::path & path);
+bool fs_is_empty(const fs::path& path);
+bool fs_rename(const fs::path& old_path, const fs::path& new_path);
 
 // The place where program's resources are located (spirv binaries) and also
 // the program can write to this location if necessary (kdtree cache.

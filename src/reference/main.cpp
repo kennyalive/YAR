@@ -23,6 +23,7 @@ enum Options {
     OPT_OPENEXR_COMPRESS,
     OPT_SAMPLES_PER_PIXEL,
     OPT_FILM_RESOLUTION,
+    OPT_CHECKPOINT,
 };
 
 static const getopt_option_t option_list[] =
@@ -63,6 +64,9 @@ static const getopt_option_t option_list[] =
     { "suffix", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_OUTPUT_FILENAME_SUFFIX,
         "suffix that will be added to the output image filename", "string" },
 
+    { "checkpoint", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_CHECKPOINT,
+        "start or resume multi-session rendering", "checkpoint_directory_path" },
+
     { "openexr-disable-varying-attributes", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_OPENEXR_DISABLE_VARYING_ATTRIBUTES,
         "do not generate OpenEXR custom attributes that vary between render sessions" },
 
@@ -74,7 +78,7 @@ static const getopt_option_t option_list[] =
         "positive_integer_number" },
 
     { "resolution", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_FILM_RESOLUTION,
-        "specifies resolution of the output image (overrides project settings)",
+        "specify resolution of the output image (overrides project settings)",
         "640x480, 1080p, QHD, 4K, etc" },
 
     GETOPT_OPTIONS_END
@@ -204,6 +208,9 @@ int main(int argc, char** argv) {
         }
         else if (opt == OPT_OUTPUT_FILENAME_SUFFIX) {
             options.output_filename_suffix = ctx.current_opt_arg;
+        }
+        else if (opt == OPT_CHECKPOINT) {
+            options.checkpoint_directory = ctx.current_opt_arg;
         }
         else if (opt == OPT_SAMPLES_PER_PIXEL) {
             options.samples_per_pixel = atoi(ctx.current_opt_arg);

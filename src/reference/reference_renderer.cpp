@@ -195,19 +195,176 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
     }
 }
 
+static std::string format_tile_index(int tile_index)
+{
+    std::string s = std::to_string(tile_index);
+    s.insert(0, s.length() <= 4 ? 4 - s.length() : 0, '0');
+    return s;
+}
+
+namespace {
+struct Checkpoint_Info {
+    std::string input_filename;
+    int total_tile_count = 0;
+    int samples_per_pixel = 0;
+};
+}
+
+static std::vector<int> start_or_resume_checkpoint(const std::string& checkpoint_directory,
+    const Checkpoint_Info& info, std::vector<Film_Tile>* tiles)
+{
+    const char* func_name = "start_or_resume_from_checkpoint_directory";
+    fs::path metadata_file_path = fs::path(checkpoint_directory) / "checkpoint";
+
+    // If checkpoint directory does not exist or it is an empty directory then
+    // perform initialization of the checkpoint by creating checkpoint metadata
+    // file. Then return the list of all tile indices.
+    if (!fs_exists(checkpoint_directory)) {
+        if (!fs_create_directories(checkpoint_directory))
+            error("%s: failed to create checkpoint directory: %s",
+                func_name, checkpoint_directory.c_str());
+    }
+    if (fs_is_empty(checkpoint_directory)) {
+        std::ofstream metadata_file(metadata_file_path, std::ofstream::out);
+        if (!metadata_file)
+            error("%s: failed to create checkpoint file: %s",
+                func_name, metadata_file_path.string().c_str());
+
+        metadata_file << "input_filename " << info.input_filename << "\n";
+        metadata_file << "total_tile_count " << info.total_tile_count << "\n";
+        metadata_file << "samples_per_pixer " << info.samples_per_pixel << "\n";
+
+        // add all tiles to the list because no tiles were rendered yet
+        std::vector<int> all_tiles(info.total_tile_count);
+        for (int i = 0; i < info.total_tile_count; i++)
+            all_tiles[i] = i;
+        return all_tiles;
+    }
+
+    // Check that we have a valid checkpoint and that metadata matches current project settings.
+    if (!fs_exists(metadata_file_path))
+        error("%s: %s is not a checkpoint directory: 'checkpoint' file is missing",
+            func_name, checkpoint_directory.c_str());
+
+    std::ifstream metadata_file(metadata_file_path);
+    if (!metadata_file)
+        error("%s: failed to open checkpoint metadata file: %s",
+            func_name, metadata_file_path.string().c_str());
+
+    auto str_to_int = [](const std::string& s) {
+        int result = 0;
+        auto conv_result = std::from_chars(&*s.begin(), &*s.end(), result);
+        ASSERT(conv_result.ptr == &*s.end());
+        return result;
+    };
+
+    std::string tag_name;
+    std::string stored_input_filename;
+    std::string total_tile_count_str;
+    std::string samples_per_pixel_str;
+
+    metadata_file >> tag_name; metadata_file >> stored_input_filename;
+    metadata_file >> tag_name; metadata_file >> total_tile_count_str;
+    metadata_file >> tag_name; metadata_file >> samples_per_pixel_str;
+
+    if (!metadata_file)
+        error("%s: failed to read all the required fields from the metadata file: %s",
+            func_name, metadata_file_path.string().c_str());
+
+    if (stored_input_filename != info.input_filename)
+        error("%s: can not resume rendering because input_filename is changed.\n"
+            "Checkpoint: %s, current project: %s",
+            func_name, stored_input_filename.c_str(), info.input_filename.c_str());
+
+    int stored_total_tile_count = str_to_int(total_tile_count_str);
+    if (stored_total_tile_count != info.total_tile_count)
+        error("%s: can not resume rendering because total_tile_count is changed.\n"
+            "Checkpoint: %d, current project: %d",
+            func_name, stored_total_tile_count, info.total_tile_count);
+
+    int stored_samples_per_pixel = str_to_int(samples_per_pixel_str);
+    if (stored_samples_per_pixel != info.samples_per_pixel)
+        error("%s: can not resume rendering because samples_per_pixer is changed.\n"
+            "Checkpoint: %d, current project: %d",
+            func_name, stored_samples_per_pixel, info.samples_per_pixel);
+
+    // Scan checkpoint directory for already finished tiles.
+    std::set<int> already_rendered_tiles;
+    for (const auto& entry : fs::directory_iterator(checkpoint_directory)) {
+        std::string filename = entry.path().stem().string();
+        if (!filename.starts_with("tile_"))
+            continue;
+
+        int tile_index = str_to_int(filename.substr(5));
+        already_rendered_tiles.insert(tile_index);
+
+        std::vector<uint8_t> content = read_binary_file(entry.path().string());
+        Film_Tile& tile = (*tiles)[tile_index];
+        memcpy(&tile.pixel_bounds, content.data(), sizeof(Bounds2i));
+        int pixel_count = tile.pixel_bounds.area();
+        tile.pixels.resize(pixel_count);
+        memcpy(tile.pixels.data(), content.data() + sizeof(Bounds2i), pixel_count * sizeof(Film_Pixel));
+    }
+
+    // Create a list of tiles that need to be rendered.
+    std::vector<int> tiles_to_render;
+    tiles_to_render.reserve(info.total_tile_count - already_rendered_tiles.size());
+    for (int i = 0; i < info.total_tile_count; i++) {
+        if (already_rendered_tiles.find(i) == already_rendered_tiles.end())
+            tiles_to_render.push_back(i);
+    }
+    return tiles_to_render;
+}
+
+static void write_tile_to_checkpoint_directory(const std::string& checkpoint_directory,
+    const Film_Tile& tile, int tile_index)
+{
+    const char* func_name = "write_tile_to_checkpoint_directory";
+
+    // The first step, is to write a tile to a temporary file. If the program terminates
+    // during write operation then the checpoint directory will stay in consistent state.
+    fs::path temp_file_path = fs::path(checkpoint_directory) / ("temp_tile_" + format_tile_index(tile_index));
+    std::ofstream temp_file(temp_file_path, std::ofstream::out | std::ofstream::binary);
+    if (!temp_file)
+        error("%s: failed to create file: %s", func_name, temp_file_path.string().c_str());
+
+    // just to check we don't have padded bytes inside the structure and
+    // we can serialize entire structure with a single write.
+    static_assert(sizeof(Bounds2i) == 16);
+    static_assert(sizeof(Film_Pixel) == 16);
+
+    const char* data_ptr = reinterpret_cast<const char*>(&tile.pixel_bounds);
+    temp_file.write(data_ptr, sizeof(Bounds2i));
+
+    data_ptr = reinterpret_cast<const char*>(tile.pixels.data());
+    temp_file.write(data_ptr, tile.pixels.size() * sizeof(Film_Pixel));
+
+    if (temp_file.fail())
+        error("%s: failed to write to file: %s", func_name, temp_file_path.string().c_str());
+    temp_file.close();
+
+    // Rename temporary tile file. The assumption is that std::filesystem::rename is atomic.
+    fs::path file_path = fs::path(checkpoint_directory) / ("tile_" + format_tile_index(tile_index));
+    if (fs_exists(file_path))
+        error("%s: tile file already exists: %s", func_name, file_path.string().c_str());
+    if (!fs_rename(temp_file_path, file_path))
+        error("%s: failed to rename temp file to: %s", func_name, file_path.string().c_str());
+}
+
 struct Rendering_Progress {
     std::mutex progress_update_mutex;
     int finished_tile_count = 0;
 };
 
-static Film_Tile render_tile(const Scene_Context& scene_ctx, Thread_Context& thread_ctx, const Film& film, int tile_index, Rendering_Progress* progress)
+static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int tile_index, Rendering_Progress* progress)
 {
+    const Scene_Context& scene_ctx = *thread_ctx.scene_context;
+
     Bounds2i sample_bounds;
     Bounds2i pixel_bounds;
     film.get_tile_bounds(tile_index, sample_bounds, pixel_bounds);
 
-    const float max_rgb_component_value = scene_ctx.raytracer_config.max_rgb_component_value_of_film_sample;
-    Film_Tile tile(pixel_bounds, film.filter, max_rgb_component_value);
+    Film_Tile tile(pixel_bounds);
 
     double tile_variance_accumulator = 0.0;
 
@@ -255,9 +412,14 @@ static Film_Tile render_tile(const Scene_Context& scene_ctx, Thread_Context& thr
                     radiance = estimate_direct_lighting(thread_ctx, ray, differential_rays);
                 else if (scene_ctx.raytracer_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::path_tracer)
                     radiance = trace_path(thread_ctx, ray, differential_rays);
-
                 ASSERT(radiance.is_finite());
-                tile.add_sample(film_pos, radiance);
+
+                float max_component_limit = scene_ctx.raytracer_config.max_rgb_component_value_of_film_sample;
+                float max_component = std::max(radiance.r, std::max(radiance.g, radiance.b));
+                if (max_component > max_component_limit)
+                    radiance *= (max_component_limit / max_component);
+
+                tile.add_sample(film.filter, film_pos, radiance);
 
                 float luminance = radiance.luminance();
                 luminance_sum += luminance;
@@ -321,7 +483,34 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
     std::vector<uint8_t> is_thread_context_initialized;
     Rendering_Progress progress;
 
-     if (options.thread_count == 1) {
+    std::vector<Film_Tile> tiles(film.get_tile_count());
+
+    std::vector<int> tile_indices;
+    if (!options.checkpoint_directory.empty()) {
+        Checkpoint_Info info;
+        info.total_tile_count = film.get_tile_count();
+        info.input_filename = scene_ctx.input_filename;
+        info.samples_per_pixel = scene_ctx.pixel_sampler_config.get_samples_per_pixel();
+        tile_indices = start_or_resume_checkpoint(options.checkpoint_directory, info, &tiles);
+
+        progress.finished_tile_count = film.get_tile_count() - (int)tile_indices.size();
+
+        if (progress.finished_tile_count > 0) {
+            int checkpoint_progress_percentage = 100 * progress.finished_tile_count / film.get_tile_count();
+            printf("Resuming rendering from checkpoint %s\n", options.checkpoint_directory.c_str());
+            printf("Rendering: %d%%", checkpoint_progress_percentage);
+        }
+        else {
+            printf("Created new checkpoint %s\n", options.checkpoint_directory.c_str());
+        }
+    }
+    else {
+        tile_indices.resize(film.get_tile_count());
+        for (int i = 0; i < film.get_tile_count(); i++)
+            tile_indices[i] = i;
+    }
+
+    if (options.thread_count == 1) {
         thread_contexts.resize(1);
         thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
         thread_contexts[0].pixel_sampler.init(&scene_ctx.pixel_sampler_config, &thread_contexts[0].rng);
@@ -329,20 +518,16 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         thread_contexts[0].scene_context = &scene_ctx;
         is_thread_context_initialized.resize(1, true);
 
-        for (int tile_index = 0; tile_index < film.get_tile_count(); tile_index++) {
-            Film_Tile tile = render_tile(scene_ctx, thread_contexts[0], film, tile_index, &progress);
-            film.merge_tile(tile);
-        }
+        for (int tile_index : tile_indices)
+            tiles[tile_index] = render_tile(thread_contexts[0], film, tile_index, &progress);
     }
     else {
-        std::vector<Film_Tile> tiles(film.get_tile_count());
-
         struct Render_Tile_Task : public enki::ITaskSet {
             const Renderer_Options* options;
             uint8_t* p_is_thread_context_initialized;
             Thread_Context* p_thread_contexts;
             uint32_t thread_context_count;
-            const Scene_Context* ctx;
+            const Scene_Context* scene_ctx;
             int tile_index;
             Film* film;
             std::vector<Film_Tile>* tiles;
@@ -353,12 +538,15 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
                 if (!p_is_thread_context_initialized[threadnum]) {
                     initialize_fp_state();
                     p_thread_contexts[threadnum].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
-                    p_thread_contexts[threadnum].pixel_sampler.init(&ctx->pixel_sampler_config, &p_thread_contexts[threadnum].rng);
+                    p_thread_contexts[threadnum].pixel_sampler.init(&scene_ctx->pixel_sampler_config, &p_thread_contexts[threadnum].rng);
                     p_thread_contexts[threadnum].renderer_options = options;
-                    p_thread_contexts[threadnum].scene_context = ctx;
+                    p_thread_contexts[threadnum].scene_context = scene_ctx;
                     p_is_thread_context_initialized[threadnum] = true;
                 }
-                (*tiles)[tile_index] = render_tile(*ctx, p_thread_contexts[threadnum], *film, tile_index, progress);
+                (*tiles)[tile_index] = render_tile(p_thread_contexts[threadnum], *film, tile_index, progress);
+
+                if (!options->checkpoint_directory.empty())
+                    write_tile_to_checkpoint_directory(options->checkpoint_directory, (*tiles)[tile_index], tile_index);
             }
         };
 
@@ -372,13 +560,13 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         is_thread_context_initialized.resize(task_scheduler.GetNumTaskThreads(), false);
 
         std::vector<Render_Tile_Task> tasks(film.get_tile_count());
-        for (int tile_index = 0; tile_index < film.get_tile_count(); tile_index++) {
+        for (int tile_index : tile_indices) {
             Render_Tile_Task task{};
             task.options = &options;
             task.p_is_thread_context_initialized = is_thread_context_initialized.data();
             task.p_thread_contexts = thread_contexts.data();
             task.thread_context_count = (uint32_t)thread_contexts.size();
-            task.ctx = &scene_ctx;
+            task.scene_ctx = &scene_ctx;
             task.tile_index = tile_index;
             task.film = &film;
             task.tiles = &tiles;
@@ -387,10 +575,10 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
             task_scheduler.AddTaskSetToPipe(&tasks[tile_index]);
         }
         task_scheduler.WaitforAllAndShutdown();
-
-        for (const Film_Tile& tile : tiles)
-            film.merge_tile(tile);
     }
+
+    for (const Film_Tile& tile : tiles)
+        film.merge_tile(tile);
 
     if (scene_ctx.pixel_sampler_config.get_samples_per_pixel() > 1) {
         double variance_accumulator = 0.0;
@@ -529,6 +717,7 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
     // Initialize scene.
     //
     Scene_Context scene_ctx;
+    scene_ctx.input_filename = scene.path;
     scene_ctx.raytracer_config = scene.raytracer_config;
 
     if (options.samples_per_pixel > 0) {

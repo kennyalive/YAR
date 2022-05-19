@@ -18,6 +18,7 @@
 #include <map>
 #include <mutex>
 #include <numeric>
+#include <set>
 #include <sstream>
 #include <string>
 #include <thread>

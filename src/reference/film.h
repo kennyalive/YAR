@@ -3,7 +3,6 @@
 #include "lib/bounding_box.h"
 #include "lib/color.h"
 #include "lib/image.h"
-#include "lib/math.h" // Infinity constant
 #include "lib/vector.h"
 
 // ---- Difference between film tiles and sample tiles ----
@@ -31,13 +30,11 @@ struct Film_Pixel {
 
 struct Film_Tile {
     Bounds2i pixel_bounds;
-    Film_Filter filter;
-    float max_rgb_component_value = Infinity;
     std::vector<Film_Pixel> pixels;
 
     Film_Tile() = default;
-    Film_Tile(Bounds2i pixel_bounds, Film_Filter filter, float max_rgb_component_value);
-    void add_sample(Vector2 film_pos, ColorRGB color);
+    Film_Tile(Bounds2i pixel_bounds);
+    void add_sample(const Film_Filter& filter, Vector2 film_pos, ColorRGB color);
 };
 
 struct Film {

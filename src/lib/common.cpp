@@ -28,7 +28,9 @@ void error(const char* format, ...) {
 
 bool fs_exists(const fs::path& path) {
     std::error_code ec;
-    return fs::exists(path, ec);
+    bool result = fs::exists(path, ec);
+    ASSERT(!ec);
+    return result;
 }
 
 bool fs_create_directories(const fs::path& path) {
@@ -38,7 +40,20 @@ bool fs_create_directories(const fs::path& path) {
 
 bool fs_delete_directory(const fs::path& path) {
     std::error_code ec;
-    return fs::remove_all(path) != static_cast<std::uintmax_t>(-1);
+    return fs::remove_all(path, ec) != static_cast<std::uintmax_t>(-1);
+}
+
+bool fs_is_empty(const fs::path& path) {
+    std::error_code ec;
+    bool result = fs::is_empty(path, ec);
+    ASSERT(!ec);
+    return result;
+}
+
+bool fs_rename(const fs::path& old_path, const fs::path& new_path) {
+    std::error_code ec;
+    fs::rename(old_path, new_path, ec);
+    return !ec;
 }
 
 fs::path get_data_directory() {

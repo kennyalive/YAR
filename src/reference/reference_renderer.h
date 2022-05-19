@@ -28,6 +28,7 @@ struct Renderer_Options {
 
     std::string output_directory;
     std::string output_filename_suffix;
+    std::string checkpoint_directory;
 
     int samples_per_pixel = 0; // overrides project settings
     Vector2i film_resolution; // overrides project settings
