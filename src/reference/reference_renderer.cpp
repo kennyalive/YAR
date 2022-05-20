@@ -208,17 +208,25 @@ struct Checkpoint_Info {
     int total_tile_count = 0;
     int samples_per_pixel = 0;
 };
+
+struct Checkpoint_Tile_Data {
+    Film_Tile tile;
+    double tile_variance_accumulator = 0.0;
+};
+
+struct Checkpoint {
+    std::map<int, Checkpoint_Tile_Data> finished_tiles; // tile_index -> tile
+    float previous_sessions_time = 0.f;
+};
 }
 
-static std::vector<int> start_or_resume_checkpoint(const std::string& checkpoint_directory, const Checkpoint_Info& info,
-    std::vector<Film_Tile>* tiles, std::vector<double>* tile_variance_accumulators, float* previous_sessions_time)
+Checkpoint start_or_resume_checkpoint(const std::string& checkpoint_directory, const Checkpoint_Info& info)
 {
     const char* func_name = "start_or_resume_from_checkpoint_directory";
     fs::path metadata_file_path = fs::path(checkpoint_directory) / "checkpoint";
 
-    // If checkpoint directory does not exist or it is an empty directory then
-    // perform initialization of the checkpoint by creating checkpoint metadata
-    // file. Then return the list of all tile indices.
+    // If checkpoint directory does not exist or it is an empty directory then perform
+    // initialization of the checkpoint by creating checkpoint metadata file.
     if (!fs_exists(checkpoint_directory)) {
         if (!fs_create_directories(checkpoint_directory))
             error("%s: failed to create checkpoint directory: %s",
@@ -233,12 +241,8 @@ static std::vector<int> start_or_resume_checkpoint(const std::string& checkpoint
         metadata_file << "input_filename " << info.input_filename << "\n";
         metadata_file << "total_tile_count " << info.total_tile_count << "\n";
         metadata_file << "samples_per_pixer " << info.samples_per_pixel << "\n";
-
-        // add all tiles to the list because no tiles were rendered yet
-        std::vector<int> all_tiles(info.total_tile_count);
-        for (int i = 0; i < info.total_tile_count; i++)
-            all_tiles[i] = i;
-        return all_tiles;
+        // default checkpoint object describes that no tiles were finished yet
+        return Checkpoint{};
     }
 
     // Check that we have a valid checkpoint and that metadata matches current project settings.
@@ -289,15 +293,14 @@ static std::vector<int> start_or_resume_checkpoint(const std::string& checkpoint
             func_name, stored_samples_per_pixel, info.samples_per_pixel);
 
     // Scan checkpoint directory for already finished tiles.
-    std::set<int> already_rendered_tiles;
-    float max_time = 0.f;
+    Checkpoint checkpoint;
     for (const auto& entry : fs::directory_iterator(checkpoint_directory)) {
         std::string filename = entry.path().stem().string();
         if (!filename.starts_with("tile_"))
             continue;
 
         int tile_index = str_to_int(filename.substr(5));
-        already_rendered_tiles.insert(tile_index);
+        Checkpoint_Tile_Data& tile_data = checkpoint.finished_tiles[tile_index];
 
         std::vector<uint8_t> content = read_binary_file(entry.path().string());
         int offset = 0;
@@ -305,32 +308,19 @@ static std::vector<int> start_or_resume_checkpoint(const std::string& checkpoint
         float time;
         memcpy(&time, content.data() + offset, sizeof(float));
         offset += sizeof(float);
-        max_time = std::max(max_time, time);
+        checkpoint.previous_sessions_time = std::max(checkpoint.previous_sessions_time, time);
 
-        double tile_variance_accumulator;
-        memcpy(&tile_variance_accumulator, content.data() + offset, sizeof(double));
+        memcpy(&tile_data.tile_variance_accumulator, content.data() + offset, sizeof(double));
         offset += sizeof(double);
-        (*tile_variance_accumulators)[tile_index] = tile_variance_accumulator;
 
-        Film_Tile& tile = (*tiles)[tile_index];
-        memcpy(&tile.pixel_bounds, content.data() + offset, sizeof(Bounds2i));
+        memcpy(&tile_data.tile.pixel_bounds, content.data() + offset, sizeof(Bounds2i));
         offset += sizeof(Bounds2i);
 
-        int pixel_count = tile.pixel_bounds.area();
-        tile.pixels.resize(pixel_count);
-        memcpy(tile.pixels.data(), content.data() + offset, pixel_count * sizeof(Film_Pixel));
+        int pixel_count = tile_data.tile.pixel_bounds.area();
+        tile_data.tile.pixels.resize(pixel_count);
+        memcpy(tile_data.tile.pixels.data(), content.data() + offset, pixel_count * sizeof(Film_Pixel));
     }
-
-    *previous_sessions_time = max_time;
-
-    // Create a list of tiles that need to be rendered.
-    std::vector<int> tiles_to_render;
-    tiles_to_render.reserve(info.total_tile_count - already_rendered_tiles.size());
-    for (int i = 0; i < info.total_tile_count; i++) {
-        if (already_rendered_tiles.find(i) == already_rendered_tiles.end())
-            tiles_to_render.push_back(i);
-    }
-    return tiles_to_render;
+    return checkpoint;
 }
 
 static void write_tile_to_checkpoint_directory(const std::string& checkpoint_directory,
@@ -391,8 +381,6 @@ static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int t
     film.get_tile_bounds(tile_index, sample_bounds, pixel_bounds);
 
     Film_Tile tile(pixel_bounds);
-
-    *tile_variance_accumulator = 0.0;
 
     ASSERT((sample_bounds.p1 <= Vector2i{0xffff + 1, 0xffff + 1}));
     ASSERT((sample_bounds.size() <= Vector2i{0xffff, 0xffff}));
@@ -455,10 +443,10 @@ static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int t
 
             if (thread_ctx.pixel_sampler.config->get_samples_per_pixel() > 1) {
                 int n = thread_ctx.pixel_sampler.config->get_samples_per_pixel();
-                double tile_variance = (luminance_sq_sum - luminance_sum * luminance_sum / n) / (n * (n - 1));
+                double pixel_variance = (luminance_sq_sum - luminance_sum * luminance_sum / n) / (n * (n - 1));
                 // rounding errors might introduce negative values, strictly mathematically tile_variance can't be negative
-                tile_variance = std::max(0.0, tile_variance);
-                *tile_variance_accumulator += tile_variance;
+                pixel_variance = std::max(0.0, pixel_variance);
+                *tile_variance_accumulator += pixel_variance;
             }
         }
     }
@@ -484,8 +472,6 @@ static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int t
 static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options& options, Bounds2i render_region,
     double* variance_estimate, float* render_time)
 {
-    float previous_sessions_time = 0.f;
-
     Film_Filter film_filter = [cfg = scene_ctx.raytracer_config]()
     {
         if (cfg.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::box)
@@ -508,19 +494,31 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
 
     std::vector<Film_Tile> tiles(film.get_tile_count());
     std::vector<double> tile_variance_accumulators(film.get_tile_count(), 0.0);
+    std::vector<int> tiles_to_render;
+    float previous_sessions_time = 0.f;
 
-    std::vector<int> tile_indices;
     if (!options.checkpoint_directory.empty()) {
         Checkpoint_Info info;
-        info.total_tile_count = film.get_tile_count();
         info.input_filename = scene_ctx.input_filename;
+        info.total_tile_count = film.get_tile_count();
         info.samples_per_pixel = scene_ctx.pixel_sampler_config.get_samples_per_pixel();
 
-        tile_indices = start_or_resume_checkpoint(options.checkpoint_directory, info,
-            &tiles, &tile_variance_accumulators, &previous_sessions_time);
+        Checkpoint checkpoint = start_or_resume_checkpoint(options.checkpoint_directory, info);
 
-        progress.finished_tile_count = film.get_tile_count() - (int)tile_indices.size();
+        tiles_to_render.reserve(film.get_tile_count() - checkpoint.finished_tiles.size());
+        for (int tile_index = 0; tile_index < film.get_tile_count(); tile_index++) {
+            auto it = checkpoint.finished_tiles.find(tile_index);
+            if (it == checkpoint.finished_tiles.end()) {
+                tiles_to_render.push_back(tile_index);
+            }
+            else {
+                tiles[tile_index] = std::move(it->second.tile);
+                tile_variance_accumulators[tile_index] = it->second.tile_variance_accumulator;
+            }
+        }
+        previous_sessions_time = checkpoint.previous_sessions_time;
 
+        progress.finished_tile_count = (int)checkpoint.finished_tiles.size();
         if (progress.finished_tile_count > 0) {
             int checkpoint_progress_percentage = 100 * progress.finished_tile_count / film.get_tile_count();
             printf("Resuming rendering from checkpoint %s\n", options.checkpoint_directory.c_str());
@@ -534,9 +532,9 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         }
     }
     else {
-        tile_indices.resize(film.get_tile_count());
+        tiles_to_render.resize(film.get_tile_count());
         for (int i = 0; i < film.get_tile_count(); i++)
-            tile_indices[i] = i;
+            tiles_to_render[i] = i;
     }
 
     Timestamp t_render;
@@ -549,7 +547,7 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         thread_contexts[0].scene_context = &scene_ctx;
         is_thread_context_initialized.resize(1, true);
 
-        for (int tile_index : tile_indices) {
+        for (int tile_index : tiles_to_render) {
             tiles[tile_index] = render_tile(thread_contexts[0], film, tile_index,
                 &tile_variance_accumulators[tile_index], &progress);
         }
@@ -600,7 +598,7 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         is_thread_context_initialized.resize(task_scheduler.GetNumTaskThreads(), false);
 
         std::vector<Render_Tile_Task> tasks(film.get_tile_count());
-        for (int tile_index : tile_indices) {
+        for (int tile_index : tiles_to_render) {
             Render_Tile_Task task{};
             task.options = &options;
             task.p_is_thread_context_initialized = is_thread_context_initialized.data();
@@ -626,6 +624,9 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
 
     Image image = film.get_image();
 
+    for (auto& thread_ctx : thread_contexts)
+        thread_ctx.memory_pool.deallocate_pool_memory();
+
     *render_time = previous_sessions_time + elapsed_seconds(t_render);
 
     if (scene_ctx.pixel_sampler_config.get_samples_per_pixel() > 1) {
@@ -640,10 +641,6 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         }
         *variance_estimate = variance_accumulator / variance_count;
     }
-
-    for (auto& thread_ctx : thread_contexts)
-        thread_ctx.memory_pool.deallocate_pool_memory();
-
     return image;
 }
 
