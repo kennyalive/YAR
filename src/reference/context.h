@@ -71,8 +71,4 @@ struct Thread_Context {
     // we track current dielectric material to assert this convention and also to determine
     // if it's enter or exit event.
     Material_Handle current_dielectric_material;
-
-    // Variance estimation.
-    double variance_accumulator = 0.0;
-    int64_t variance_count = 0;
 };
