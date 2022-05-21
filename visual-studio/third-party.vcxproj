@@ -91,7 +91,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\third-party\enkiTS\TaskScheduler.cpp" />
     <ClCompile Include="..\third-party\getopt\getopt.c" />
     <ClCompile Include="..\third-party\glfw\context.c" />
     <ClCompile Include="..\third-party\glfw\egl_context.c" />
@@ -141,10 +140,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\third-party\enkiTS\Atomics.h" />
-    <ClInclude Include="..\third-party\enkiTS\LockLessMultiReadPipe.h" />
-    <ClInclude Include="..\third-party\enkiTS\TaskScheduler.h" />
-    <ClInclude Include="..\third-party\enkiTS\Threads.h" />
     <ClInclude Include="..\third-party\getopt\getopt.h" />
     <ClInclude Include="..\third-party\glfw\egl_context.h" />
     <ClInclude Include="..\third-party\glfw\glfw3.h" />

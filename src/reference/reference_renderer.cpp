@@ -15,7 +15,6 @@
 #include "lib/scene_loader.h"
 #include "lib/vector.h"
 
-#include "enkiTS/TaskScheduler.h"
 #include "meow-hash/meow_hash_x64_aesni.h"
 #include "tinyexr/tinyexr.h"
 
