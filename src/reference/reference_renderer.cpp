@@ -469,67 +469,74 @@ static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int t
     return tile;
 }
 
+static Film_Filter create_film_filter(const Raytracer_Config& cfg)
+{
+    if (cfg.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::box)
+        return get_box_filter(cfg.pixel_filter_radius);
+
+    if (cfg.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::gaussian)
+        return get_gaussian_filter(cfg.pixel_filter_radius, cfg.pixel_filter_alpha);
+
+    if (cfg.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::triangle)
+        return get_triangle_filter(cfg.pixel_filter_radius);
+
+    ASSERT(!"create_film_filter: Unknown filter type");
+    return Film_Filter{};
+}
+
+static std::vector<int> load_checkpoint(const std::string& checkpoint_directory, const Checkpoint_Info& info,
+    std::vector<Film_Tile>* tiles, std::vector<double>* tile_variance_accumulators, float* previous_sessions_time)
+{
+    Checkpoint checkpoint = start_or_resume_checkpoint(checkpoint_directory, info);
+
+    std::vector<int> tiles_to_render;
+    tiles_to_render.reserve(info.total_tile_count - checkpoint.finished_tiles.size());
+    for (int tile_index = 0; tile_index < info.total_tile_count; tile_index++) {
+        auto it = checkpoint.finished_tiles.find(tile_index);
+        if (it == checkpoint.finished_tiles.end()) {
+            tiles_to_render.push_back(tile_index);
+        }
+        else {
+            (*tiles)[tile_index] = std::move(it->second.tile);
+            (*tile_variance_accumulators)[tile_index] = it->second.tile_variance_accumulator;
+        }
+    }
+    *previous_sessions_time = checkpoint.previous_sessions_time;
+
+    if (!checkpoint.finished_tiles.empty()) {
+        int checkpoint_progress_percentage = 100 * (int)checkpoint.finished_tiles.size() / info.total_tile_count;
+        printf("Resuming rendering from checkpoint %s\n", checkpoint_directory.c_str());
+        printf("Time spent in previous sessions: %.3f seconds\n", checkpoint.previous_sessions_time);
+        printf("Rendering progress: %d%%", checkpoint_progress_percentage);
+        if (checkpoint_progress_percentage == 100)
+            printf("\n");
+    }
+    else {
+        printf("Created new checkpoint %s\n", checkpoint_directory.c_str());
+    }
+    return tiles_to_render;
+}
+
 static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options& options, Bounds2i render_region,
     double* variance_estimate, float* render_time)
 {
-    Film_Filter film_filter = [cfg = scene_ctx.raytracer_config]()
-    {
-        if (cfg.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::box)
-            return get_box_filter(cfg.pixel_filter_radius);
-        
-        if (cfg.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::gaussian)
-            return get_gaussian_filter(cfg.pixel_filter_radius, cfg.pixel_filter_alpha);
+    Timestamp render_start_timestamp;
 
-        if (cfg.pixel_filter_type == Raytracer_Config::Pixel_Filter_Type::triangle)
-            return get_triangle_filter(cfg.pixel_filter_radius);
-
-        ASSERT(!"render_image: Unknown filter type");
-        return Film_Filter{};
-    }();
-    Film film(render_region, film_filter);
-
-    std::vector<Thread_Context> thread_contexts;
-    std::vector<uint8_t> is_thread_context_initialized;
-    Rendering_Progress progress;
+    Film film(render_region, create_film_filter(scene_ctx.raytracer_config));
 
     std::vector<Film_Tile> tiles(film.get_tile_count());
     std::vector<double> tile_variance_accumulators(film.get_tile_count(), 0.0);
-    std::vector<int> tiles_to_render;
     float previous_sessions_time = 0.f;
 
+    std::vector<int> tiles_to_render;
     if (!options.checkpoint_directory.empty()) {
         Checkpoint_Info info;
         info.input_filename = scene_ctx.input_filename;
         info.total_tile_count = film.get_tile_count();
         info.samples_per_pixel = scene_ctx.pixel_sampler_config.get_samples_per_pixel();
 
-        Checkpoint checkpoint = start_or_resume_checkpoint(options.checkpoint_directory, info);
-
-        tiles_to_render.reserve(film.get_tile_count() - checkpoint.finished_tiles.size());
-        for (int tile_index = 0; tile_index < film.get_tile_count(); tile_index++) {
-            auto it = checkpoint.finished_tiles.find(tile_index);
-            if (it == checkpoint.finished_tiles.end()) {
-                tiles_to_render.push_back(tile_index);
-            }
-            else {
-                tiles[tile_index] = std::move(it->second.tile);
-                tile_variance_accumulators[tile_index] = it->second.tile_variance_accumulator;
-            }
-        }
-        previous_sessions_time = checkpoint.previous_sessions_time;
-
-        progress.finished_tile_count = (int)checkpoint.finished_tiles.size();
-        if (progress.finished_tile_count > 0) {
-            int checkpoint_progress_percentage = 100 * progress.finished_tile_count / film.get_tile_count();
-            printf("Resuming rendering from checkpoint %s\n", options.checkpoint_directory.c_str());
-            printf("Time spent in previous sessions: %.3f seconds\n", previous_sessions_time);
-            printf("Rendering progress: %d%%", checkpoint_progress_percentage);
-            if (progress.finished_tile_count == film.get_tile_count())
-                printf("\n");
-        }
-        else {
-            printf("Created new checkpoint %s\n", options.checkpoint_directory.c_str());
-        }
+        tiles_to_render = load_checkpoint(options.checkpoint_directory, info,
+            &tiles, &tile_variance_accumulators, &previous_sessions_time);
     }
     else {
         tiles_to_render.resize(film.get_tile_count());
@@ -537,97 +544,79 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
             tiles_to_render[i] = i;
     }
 
-    Timestamp t_render;
+    Rendering_Progress progress;
+    progress.finished_tile_count = film.get_tile_count() - (int)tiles_to_render.size();
 
-    if (options.thread_count == 1) {
-        thread_contexts.resize(1);
-        thread_contexts[0].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
-        thread_contexts[0].pixel_sampler.init(&scene_ctx.pixel_sampler_config, &thread_contexts[0].rng);
-        thread_contexts[0].renderer_options = &options;
-        thread_contexts[0].scene_context = &scene_ctx;
-        is_thread_context_initialized.resize(1, true);
+    std::atomic_int tile_counter{0};
 
-        for (int tile_index : tiles_to_render) {
-            tiles[tile_index] = render_tile(thread_contexts[0], film, tile_index,
-                &tile_variance_accumulators[tile_index], &progress);
-        }
-    }
-    else {
-        struct Render_Tile_Task : public enki::ITaskSet {
-            const Renderer_Options* options;
-            uint8_t* p_is_thread_context_initialized;
-            Thread_Context* p_thread_contexts;
-            uint32_t thread_context_count;
-            const Scene_Context* scene_ctx;
-            int tile_index;
-            Film* film;
-            std::vector<Film_Tile>* tiles;
-            Rendering_Progress* progress;
-            float previous_sessions_time;
-            Timestamp* t_render;
-            double* tile_variance_accumulator;
+    // Each rendering thread runs this function.
+    // The function runs the loop where it grabs index of the next tile and renders it.
+    auto render_tile_thread_func = [
+            &scene_ctx,
+            &options,
+            &tile_counter,
+            &tiles_to_render,
+            &tiles,
+            &tile_variance_accumulators,
+            &film,
+            &progress,
+            previous_sessions_time,
+            &render_start_timestamp
+    ] {
+        initialize_fp_state();
 
-            void ExecuteRange(enki::TaskSetPartition, uint32_t threadnum) override {
-                ASSERT(threadnum < thread_context_count);
-                if (!p_is_thread_context_initialized[threadnum]) {
-                    initialize_fp_state();
-                    p_thread_contexts[threadnum].memory_pool.allocate_pool_memory(1 * 1024 * 1024);
-                    p_thread_contexts[threadnum].pixel_sampler.init(&scene_ctx->pixel_sampler_config, &p_thread_contexts[threadnum].rng);
-                    p_thread_contexts[threadnum].renderer_options = options;
-                    p_thread_contexts[threadnum].scene_context = scene_ctx;
-                    p_is_thread_context_initialized[threadnum] = true;
-                }
-                (*tiles)[tile_index] = render_tile(p_thread_contexts[threadnum], *film, tile_index,
-                    tile_variance_accumulator, progress);
+        Thread_Context thread_ctx;
+        thread_ctx.memory_pool.allocate_pool_memory(1 * 1024 * 1024);
+        thread_ctx.pixel_sampler.init(&scene_ctx.pixel_sampler_config, &thread_ctx.rng);
+        thread_ctx.renderer_options = &options;
+        thread_ctx.scene_context = &scene_ctx;
 
-                if (!options->checkpoint_directory.empty()) {
-                    float current_render_time = previous_sessions_time + elapsed_seconds(*t_render);
-                    write_tile_to_checkpoint_directory(options->checkpoint_directory, (*tiles)[tile_index], tile_index,
-                        current_render_time, *tile_variance_accumulator);
-                }
+        int index = tile_counter.fetch_add(1);
+
+        while (index < tiles_to_render.size()) {
+            int tile_index = tiles_to_render[index];
+            Film_Tile& tile = tiles[tile_index];
+            double& tile_variance_accumulator = tile_variance_accumulators[tile_index];
+
+            tile = render_tile(thread_ctx, film, tile_index, &tile_variance_accumulator, &progress);
+
+            if (!options.checkpoint_directory.empty()) {
+                float current_render_time = previous_sessions_time + elapsed_seconds(render_start_timestamp);
+                write_tile_to_checkpoint_directory(options.checkpoint_directory, tile, tile_index,
+                    current_render_time, tile_variance_accumulator);
             }
-        };
-
-        enki::TaskScheduler task_scheduler;
-        if (options.thread_count > 0)
-            task_scheduler.Initialize(options.thread_count);
-        else
-            task_scheduler.Initialize();
-
-        thread_contexts.resize(task_scheduler.GetNumTaskThreads());
-        is_thread_context_initialized.resize(task_scheduler.GetNumTaskThreads(), false);
-
-        std::vector<Render_Tile_Task> tasks(film.get_tile_count());
-        for (int tile_index : tiles_to_render) {
-            Render_Tile_Task task{};
-            task.options = &options;
-            task.p_is_thread_context_initialized = is_thread_context_initialized.data();
-            task.p_thread_contexts = thread_contexts.data();
-            task.thread_context_count = (uint32_t)thread_contexts.size();
-            task.scene_ctx = &scene_ctx;
-            task.tile_index = tile_index;
-            task.film = &film;
-            task.tiles = &tiles;
-            task.progress = &progress;
-            task.previous_sessions_time = previous_sessions_time;
-            task.t_render = &t_render;
-            task.tile_variance_accumulator = &tile_variance_accumulators[tile_index];
-
-            tasks[tile_index] = task;
-            task_scheduler.AddTaskSetToPipe(&tasks[tile_index]);
+            index = tile_counter.fetch_add(1);
         }
-        task_scheduler.WaitforAllAndShutdown();
+        thread_ctx.memory_pool.deallocate_pool_memory();
+    };
+
+    //
+    // Render tiles. The main (this) thread also runs rendering job.
+    //
+    int thread_count;
+    if (options.thread_count > 0)
+        thread_count = options.thread_count;
+    else
+        thread_count = std::max(1u, std::thread::hardware_concurrency());
+    thread_count = std::min(thread_count, (int)tiles_to_render.size());
+
+    if (thread_count > 0) {
+        std::vector<std::jthread> threads;
+        threads.reserve(thread_count - 1);
+
+        for (int i = 0; i < thread_count - 1; i++)
+            threads.push_back(std::jthread(render_tile_thread_func));
+
+        render_tile_thread_func();
     }
 
+    //
+    // Merge tiles to create final image.
+    //
     for (const Film_Tile& tile : tiles)
         film.merge_tile(tile);
 
     Image image = film.get_image();
-
-    for (auto& thread_ctx : thread_contexts)
-        thread_ctx.memory_pool.deallocate_pool_memory();
-
-    *render_time = previous_sessions_time + elapsed_seconds(t_render);
 
     if (scene_ctx.pixel_sampler_config.get_samples_per_pixel() > 1) {
         double variance_accumulator = 0.0;
@@ -641,6 +630,7 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         }
         *variance_estimate = variance_accumulator / variance_count;
     }
+    *render_time = previous_sessions_time + elapsed_seconds(render_start_timestamp);
     return image;
 }
 
