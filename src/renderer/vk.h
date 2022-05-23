@@ -5,7 +5,7 @@
 #define NOMINMAX
 #endif
 #include "volk/volk.h"
-#include "vk_enum_string_helper.h"
+#include "vulkan/vk_enum_string_helper.h"
 
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #include "vk_mem_alloc.h"
