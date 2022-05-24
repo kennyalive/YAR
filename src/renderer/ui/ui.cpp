@@ -1,12 +1,12 @@
 #include "std.h"
 #include "ui.h"
 
-#include "renderer/utils.h"
+#include "renderer/vk_utils.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
-#include "imgui/imgui_impl_vulkan.h"
-#include "imgui/imgui_impl_glfw.h"
+#include "imgui/impl/imgui_impl_vulkan.h"
+#include "imgui/impl/imgui_impl_glfw.h"
 
 static void show_time_scope(const GPU_Time_Scope* time_scope) {
     ImGui::Text("%s time : %.2f ms", time_scope->name.c_str(), time_scope->length_ms);

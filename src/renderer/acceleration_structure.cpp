@@ -188,7 +188,7 @@ Vk_Intersection_Accelerator create_intersection_accelerator(const std::vector<Sc
     // Build acceleration structures.
     Timestamp t;
 
-    vk_execute(vk.command_pool, vk.queue,
+    vk_execute(vk.command_pools[0], vk.queue,
         [&scene_objects, &gpu_meshes, &accelerator, &scratch_buffer](VkCommandBuffer command_buffer)
     {
         VkMemoryBarrier barrier { VK_STRUCTURE_TYPE_MEMORY_BARRIER };

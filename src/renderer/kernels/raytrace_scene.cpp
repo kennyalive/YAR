@@ -4,7 +4,7 @@
 
 #include "renderer/geometry.h"
 #include "renderer/kernel_context.h"
-#include "renderer/utils.h"
+#include "renderer/vk_utils.h"
 #include "shaders/shared_main.h"
 #include "shaders/shared_light.h"
 #include "lib/scene.h"

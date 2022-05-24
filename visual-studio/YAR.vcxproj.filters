@@ -3,7 +3,6 @@
   <ItemGroup>
     <ClCompile Include="..\src\std.cpp" />
     <ClCompile Include="..\src\renderer\main.cpp" />
-    <ClCompile Include="..\src\renderer\utils.cpp" />
     <ClCompile Include="..\src\renderer\vk.cpp" />
     <ClCompile Include="..\src\renderer\win32.cpp" />
     <ClCompile Include="..\src\renderer\kernels\copy_to_swapchain.cpp">
@@ -26,10 +25,10 @@
     <ClCompile Include="..\src\renderer\kernels\apply_tone_mapping.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\renderer\vk_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\std.h" />
-    <ClInclude Include="..\src\renderer\utils.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\renderer\platform.h" />
     <ClInclude Include="..\src\shaders\shared_light.h">
@@ -63,6 +62,7 @@
     <ClInclude Include="..\src\renderer\kernels\apply_tone_mapping.h">
       <Filter>kernels</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\renderer\vk_utils.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">

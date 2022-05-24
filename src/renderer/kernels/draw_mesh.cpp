@@ -4,8 +4,8 @@
 
 #include "renderer/geometry.h"
 #include "renderer/kernel_context.h"
-#include "renderer/utils.h"
 #include "shaders/shared_main.h"
+#include "renderer/vk_utils.h"
 
 #include "lib/matrix.h"
 

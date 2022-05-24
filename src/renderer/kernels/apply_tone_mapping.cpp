@@ -1,7 +1,9 @@
 #include "std.h"
+#include "lib/common.h"
+
 #include "apply_tone_mapping.h"
 
-#include "../utils.h"
+#include "../vk_utils.h"
 
 void Apply_Tone_Mapping::create() {
     set_layout = Descriptor_Set_Layout()

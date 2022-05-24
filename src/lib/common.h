@@ -45,14 +45,6 @@ int64_t elapsed_nanoseconds(Timestamp timestamp);
 float elapsed_seconds(Timestamp timestamp);
 
 #if ENABLE_PROFILING
-#define START_TIMER { Timestamp t;
-#define STOP_TIMER(message) \
-	auto d = elapsed_nanoseconds(t); \
-	static Timestamp t0; \
-	if (elapsed_milliseconds(t0) > 1000) { \
-		t0 = Timestamp(); \
-		printf(message ## " time = %lld  microseconds\n", d / 1000); } }
-
 struct Profile_Scope {
     const char* message = nullptr;
     Timestamp t;
@@ -64,14 +56,24 @@ struct Profile_Scope {
         printf("Profiler: %s %.2f ms\n", message, elapsed_microseconds(t) / 1000.f);
     }
 };
-
 #define REPORT_FUNCTION_TIME() Profile_Scope function_time_reporter(__FUNCTION__);
 #define REPORT_SCOPE_TIME(message) Profile_Scope function_time_reporter(message);
+#else
+#define REPORT_FUNCTION_TIME()
+#define REPORT_SCOPE_TIME(...)
+#endif
 
+#if 0
+#define START_TIMER { Timestamp t;
+#define STOP_TIMER(message) \
+	auto d = elapsed_nanoseconds(t); \
+	static Timestamp t0; \
+	if (elapsed_milliseconds(t0) > 1000) { \
+		t0 = Timestamp(); \
+		printf(message ## " time = %lld  microseconds\n", d / 1000); } }
 #else
 #define START_TIMER
 #define STOP_TIMER(...)
-REPORT_FUNCTION_TIME()
 #endif
 
 // http://www.reedbeta.com/blog/python-like-enumerate-in-cpp17/

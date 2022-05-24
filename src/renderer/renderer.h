@@ -10,7 +10,7 @@
 #include "ui/ui.h"
 
 #include "geometry.h"
-#include "utils.h"
+#include "vk_utils.h"
 #include "vk.h"
 
 #include "lib/flying_camera.h"
@@ -21,7 +21,7 @@ struct GLFWwindow;
 
 class Renderer {
 public:
-    void initialize(Vk_Create_Info vk_create_info, GLFWwindow* window);
+    void initialize(GLFWwindow* glfw_window, bool enable_validation_layers);
     void shutdown();
 
     void release_resolution_dependent_resources();
@@ -33,6 +33,8 @@ public:
     void run_frame();
 
 private:
+    void create_depth_buffer();
+    void destroy_depth_buffer();
     void create_render_passes();
     void create_default_textures();
     void draw_frame();
@@ -86,6 +88,13 @@ private:
     Draw_Mesh draw_mesh;
     Patch_Materials patch_materials;
     Raytrace_Scene raytrace_scene;
+
+    struct Depth_Buffer_Info {
+        VkImage image;
+        VkImageView image_view;
+        VmaAllocation allocation;
+    };
+    Depth_Buffer_Info depth_info;
 
     GPU_Time_Keeper time_keeper;
     struct {

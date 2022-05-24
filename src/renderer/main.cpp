@@ -77,9 +77,6 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
 }
 
 int run_realtime_renderer(bool enable_validation_layers) {
-    Vk_Create_Info vk_create_info{};
-    vk_create_info.enable_validation_layers = enable_validation_layers;
-
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         error("glfwInit failed");
@@ -90,7 +87,7 @@ int run_realtime_renderer(bool enable_validation_layers) {
     glfwSetKeyCallback(window, glfw_key_callback);
 
     Renderer renderer{};
-    renderer.initialize(vk_create_info, window);
+    renderer.initialize(window, enable_validation_layers);
     glfwSetWindowUserPointer(window, &renderer);
 
     if (!input_file.empty())
@@ -125,8 +122,8 @@ int run_realtime_renderer(bool enable_validation_layers) {
         if (recreate_swapchain) {
             VK_CHECK(vkDeviceWaitIdle(vk.device));
             renderer.release_resolution_dependent_resources();
-            vk_release_resolution_dependent_resources();
-            vk_restore_resolution_dependent_resources(renderer.vsync_enabled());
+            vk_destroy_swapchain();
+            vk_create_swapchain(renderer.vsync_enabled());
             renderer.restore_resolution_dependent_resources();
             recreate_swapchain = false;
         }
