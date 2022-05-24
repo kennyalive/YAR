@@ -37,11 +37,10 @@ void Renderer::initialize(GLFWwindow* window, bool enable_validation_layers) {
 
     // Device properties.
     {
+        raytrace_scene.properties = VkPhysicalDeviceRayTracingPropertiesNV { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV };
+
         VkPhysicalDeviceProperties2 physical_device_properties { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
-        if (vk.raytracing_supported) {
-            raytrace_scene.properties = VkPhysicalDeviceRayTracingPropertiesNV { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV };
-            physical_device_properties.pNext = &raytrace_scene.properties;
-        }
+        physical_device_properties.pNext = &raytrace_scene.properties;
         vkGetPhysicalDeviceProperties2(vk.physical_device, &physical_device_properties);
 
         printf("Device: %s\n", physical_device_properties.properties.deviceName);
@@ -51,21 +50,16 @@ void Renderer::initialize(GLFWwindow* window, bool enable_validation_layers) {
             VK_VERSION_PATCH(physical_device_properties.properties.apiVersion)
         );
 
-        if (vk.raytracing_supported) {
-            printf("\n");
-            printf("VkPhysicalDeviceRayTracingPropertiesNV:\n");
-            printf("  shaderGroupHandleSize = %u\n", raytrace_scene.properties.shaderGroupHandleSize);
-            printf("  maxRecursionDepth = %u\n", raytrace_scene.properties.maxRecursionDepth);
-            printf("  maxShaderGroupStride = %u\n", raytrace_scene.properties.maxShaderGroupStride);
-            printf("  shaderGroupBaseAlignment = %u\n", raytrace_scene.properties.shaderGroupBaseAlignment);
-            printf("  maxGeometryCount = %" PRIu64 "\n", raytrace_scene.properties.maxGeometryCount);
-            printf("  maxInstanceCount = %" PRIu64 "\n", raytrace_scene.properties.maxInstanceCount);
-            printf("  maxTriangleCount = %" PRIu64 "\n", raytrace_scene.properties.maxTriangleCount);
-            printf("  maxDescriptorSetAccelerationStructures = %u\n", raytrace_scene.properties.maxDescriptorSetAccelerationStructures);
-        }
-        else {
-            raytracing = false;
-        }
+        printf("\n");
+        printf("VkPhysicalDeviceRayTracingPropertiesNV:\n");
+        printf("  shaderGroupHandleSize = %u\n", raytrace_scene.properties.shaderGroupHandleSize);
+        printf("  maxRecursionDepth = %u\n", raytrace_scene.properties.maxRecursionDepth);
+        printf("  maxShaderGroupStride = %u\n", raytrace_scene.properties.maxShaderGroupStride);
+        printf("  shaderGroupBaseAlignment = %u\n", raytrace_scene.properties.shaderGroupBaseAlignment);
+        printf("  maxGeometryCount = %" PRIu64 "\n", raytrace_scene.properties.maxGeometryCount);
+        printf("  maxInstanceCount = %" PRIu64 "\n", raytrace_scene.properties.maxInstanceCount);
+        printf("  maxTriangleCount = %" PRIu64 "\n", raytrace_scene.properties.maxTriangleCount);
+        printf("  maxDescriptorSetAccelerationStructures = %u\n", raytrace_scene.properties.maxDescriptorSetAccelerationStructures);
     }
 
     create_render_passes();
@@ -149,10 +143,9 @@ void Renderer::shutdown() {
     if (project_loaded) {
         patch_materials.destroy();
         draw_mesh.destroy();
-        if (vk.raytracing_supported)
-            raytrace_scene.destroy();
+        raytrace_scene.destroy();
     }
-    
+
     vk_shutdown();
 }
 
@@ -198,8 +191,7 @@ void Renderer::restore_resolution_dependent_resources() {
     }
 
     if (project_loaded) {
-        if (vk.raytracing_supported)
-            raytrace_scene.update_output_image_descriptor(output_image.view);
+        raytrace_scene.update_output_image_descriptor(output_image.view);
     }
 
     apply_tone_mapping.update_resolution_dependent_descriptors(output_image.view);
@@ -439,13 +431,11 @@ void Renderer::load_project(const std::string& input_file) {
     draw_mesh.update_directional_lights((int)scene.lights.directional_lights.size());
     draw_mesh.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
 
-    if (vk.raytracing_supported) {
-        raytrace_scene.create(kernel_context, scene, gpu_meshes);
-        raytrace_scene.update_output_image_descriptor(output_image.view);
-        raytrace_scene.update_point_lights((int)scene.lights.point_lights.size());
-        raytrace_scene.update_directional_lights((int)scene.lights.directional_lights.size());
-        raytrace_scene.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
-    }
+    raytrace_scene.create(kernel_context, scene, gpu_meshes);
+    raytrace_scene.update_output_image_descriptor(output_image.view);
+    raytrace_scene.update_point_lights((int)scene.lights.point_lights.size());
+    raytrace_scene.update_directional_lights((int)scene.lights.directional_lights.size());
+    raytrace_scene.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
 
     Descriptor_Writes(gpu_scene.light_descriptor_set).storage_buffer(POINT_LIGHT_BINDING, gpu_scene.point_lights.handle, 0, VK_WHOLE_SIZE);
     Descriptor_Writes(gpu_scene.light_descriptor_set).storage_buffer(DIRECTIONAL_LIGHT_BINDING, gpu_scene.directional_lights.handle, 0, VK_WHOLE_SIZE);
@@ -490,11 +480,10 @@ void Renderer::run_frame() {
     flying_camera.update(dt);
     ui.camera_position = flying_camera.get_camera_pose().get_column(3);
 
-    if (project_loaded)
+    if (project_loaded) {
         draw_mesh.update(flying_camera.get_view_transform(), scene.camera_fov_y, scene.z_is_up);
-
-    if (project_loaded && vk.raytracing_supported)
         raytrace_scene.update_camera_transform(flying_camera.get_camera_pose());
+    }
 
     draw_frame();
 }
@@ -540,16 +529,16 @@ void Renderer::create_depth_buffer() {
         VK_CHECK(vkCreateImageView(vk.device, &desc, nullptr, &depth_info.image_view));
     }
 
-    VkImageSubresourceRange subresource_range{};
-    subresource_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    subresource_range.levelCount = 1;
-    subresource_range.layerCount = 1;
+    vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
+        VkImageSubresourceRange subresource_range{};
+        subresource_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        subresource_range.levelCount = 1;
+        subresource_range.layerCount = 1;
 
-    vk_execute(vk.command_pools[0], vk.queue, [&subresource_range, this](VkCommandBuffer command_buffer) {
         vk_cmd_image_barrier_for_subresource(command_buffer, depth_info.image, subresource_range,
             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-        });
+    });
 }
 
 void Renderer::destroy_depth_buffer() {
@@ -606,12 +595,6 @@ void Renderer::draw_frame() {
     vk_begin_frame();
     time_keeper.retrieve_query_results(); // get timestamp values from the previous frame
     gpu_times.frame->begin();
-
-    if (raytracing && ui.ui_result.raytracing_toggled) {
-        vk_cmd_image_barrier(vk.command_buffer, output_image.handle,
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    }
 
     if (project_loaded) {
         if (raytracing) {

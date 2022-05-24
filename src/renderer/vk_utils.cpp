@@ -271,6 +271,12 @@ Descriptor_Set_Layout& Descriptor_Set_Layout::accelerator(uint32_t binding, VkSh
     return *this;
 }
 
+Descriptor_Set_Layout& Descriptor_Set_Layout::accelerator_nv(uint32_t binding, VkShaderStageFlags stage_flags) {
+    assert(binding_count < max_bindings);
+    bindings[binding_count++] = get_set_layout_binding(binding, 1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, stage_flags);
+    return *this;
+}
+
 VkDescriptorSetLayout Descriptor_Set_Layout::create(const char* name) {
     VkDescriptorSetLayoutCreateInfo create_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
     create_info.bindingCount    = binding_count;

@@ -83,6 +83,7 @@ struct Descriptor_Set_Layout {
     Descriptor_Set_Layout& storage_buffer(uint32_t binding, VkShaderStageFlags stage_flags);
     Descriptor_Set_Layout& storage_buffer_array(uint32_t binding, uint32_t array_size, VkShaderStageFlags stage_flags);
     Descriptor_Set_Layout& accelerator(uint32_t binding, VkShaderStageFlags stage_flags);
+    Descriptor_Set_Layout& accelerator_nv(uint32_t binding, VkShaderStageFlags stage_flags);
     VkDescriptorSetLayout create(const char* name);
 };
 

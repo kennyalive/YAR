@@ -46,16 +46,8 @@ void UI::run_imgui() {
             ImGui::Spacing();
             ImGui::Checkbox("Vertical sync", &vsync);
 
-            if (!vk.raytracing_supported) {
-                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-            }
-            ui_result.raytracing_toggled = ImGui::Checkbox("Raytracing", raytracing);
+            ImGui::Checkbox("Raytracing", raytracing);
             ImGui::Checkbox("4 rays per pixel", spp4);
-            if (!vk.raytracing_supported) {
-                ImGui::PopItemFlag();
-                ImGui::PopStyleVar();
-            }
 
             ImGui::Text("Camera position: %.2f %.2f %.2f", camera_position.x, camera_position.y, camera_position.z);
 

@@ -8,7 +8,6 @@ struct UI {
     void run_imgui();
 
     struct UI_Result {
-        bool raytracing_toggled;
         bool reference_render_requested;
     };
     UI_Result ui_result;

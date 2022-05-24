@@ -11,7 +11,6 @@
 #include "glfw/glfw3.h"
 #include "glfw/glfw3native.h"
 
-
 static const VkDescriptorPoolSize descriptor_pool_sizes[] = {
     {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             16},
     {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             16},
@@ -146,6 +145,7 @@ static void create_device(GLFWwindow* window) {
         std::vector<const char*> device_extensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, // nullDescriptor feature
+            VK_NV_RAY_TRACING_EXTENSION_NAME,
         };
 
         uint32_t count = 0;

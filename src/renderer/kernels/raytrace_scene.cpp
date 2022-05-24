@@ -106,7 +106,7 @@ void Raytrace_Scene::create_pipeline(const Kernel_Context& ctx, const std::vecto
 
     descriptor_set_layout = Descriptor_Set_Layout()
         .storage_image(0, VK_SHADER_STAGE_RAYGEN_BIT_NV)
-        .accelerator(1, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
+        .accelerator_nv(1, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
         .uniform_buffer(2, VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
         .create("rt_set_layout");
 
