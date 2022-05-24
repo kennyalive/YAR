@@ -17,7 +17,7 @@ struct Draw_Mesh {
     Vk_Buffer                   uniform_buffer;
     void*                       mapped_uniform_buffer;
 
-    void create(const Kernel_Context& ctx, VkRenderPass render_pass, bool disable_backface_culling, bool front_face_has_clockwsise_winding);
+    void create(const Kernel_Context& ctx, VkFormat depth_attachment_format, bool disable_backface_culling, bool front_face_has_clockwsise_winding);
     void destroy();
     void update_point_lights(int light_count);
     void update_directional_lights(int light_count);
@@ -27,4 +27,3 @@ struct Draw_Mesh {
     void bind_sets_and_pipeline();
     void dispatch(const GPU_Mesh& gpu_mesh, int instance_index);
 };
-

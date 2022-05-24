@@ -53,8 +53,6 @@ private:
 
     VkRenderPass ui_render_pass;
     std::vector<VkFramebuffer> ui_framebuffers; // per swapchain image
-    VkRenderPass raster_render_pass;
-    VkFramebuffer raster_framebuffer;
 
     Vk_Image output_image;
 

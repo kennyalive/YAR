@@ -143,7 +143,6 @@ void Renderer::shutdown() {
 
     apply_tone_mapping.destroy();
     copy_to_swapchain.destroy();
-    vkDestroyRenderPass(vk.device, raster_render_pass, nullptr);
     vkDestroyRenderPass(vk.device, ui_render_pass, nullptr);
     release_resolution_dependent_resources();
 
@@ -158,9 +157,6 @@ void Renderer::shutdown() {
 }
 
 void Renderer::release_resolution_dependent_resources() {
-    vkDestroyFramebuffer(vk.device, raster_framebuffer, nullptr);
-    raster_framebuffer = VK_NULL_HANDLE;
-
     for (VkFramebuffer framebuffer : ui_framebuffers) {
         vkDestroyFramebuffer(vk.device, framebuffer, nullptr);
     }
@@ -184,23 +180,6 @@ void Renderer::restore_resolution_dependent_resources() {
                     VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
             });
         }
-    }
-
-    // rasterizer framebuffer
-    {
-        VkImageView attachments[] = {output_image.view, depth_info.image_view};
-
-        VkFramebufferCreateInfo create_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
-        create_info.renderPass      = raster_render_pass;
-        create_info.attachmentCount = (uint32_t)std::size(attachments);
-        create_info.pAttachments    = attachments;
-        create_info.width           = vk.surface_size.width;
-        create_info.height          = vk.surface_size.height;
-        create_info.layers          = 1;
-
-        VK_CHECK(vkCreateFramebuffer(vk.device, &create_info, nullptr, &raster_framebuffer));
-        vk_set_debug_name(raster_framebuffer, "color_depth_framebuffer");
-
     }
 
     // imgui framebuffer
@@ -455,7 +434,7 @@ void Renderer::load_project(const std::string& input_file) {
         patch_materials.dispatch(command_buffer, gpu_scene.material_descriptor_set);
     });
 
-    draw_mesh.create(kernel_context, raster_render_pass, scene.mesh_disable_backfacing_culling,  scene.front_face_has_clockwise_winding);
+    draw_mesh.create(kernel_context, get_depth_image_format(), scene.mesh_disable_backfacing_culling,  scene.front_face_has_clockwise_winding);
     draw_mesh.update_point_lights((int)scene.lights.point_lights.size());
     draw_mesh.update_directional_lights((int)scene.lights.directional_lights.size());
     draw_mesh.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
@@ -580,51 +559,6 @@ void Renderer::destroy_depth_buffer() {
 }
 
 void Renderer::create_render_passes() {
-    // Render pass for rasterization renderer.
-    {
-        VkAttachmentDescription attachments[2] = {};
-        attachments[0].format           = VK_FORMAT_R16G16B16A16_SFLOAT;
-        attachments[0].samples          = VK_SAMPLE_COUNT_1_BIT;
-        attachments[0].loadOp           = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachments[0].storeOp          = VK_ATTACHMENT_STORE_OP_STORE;
-        attachments[0].stencilLoadOp    = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachments[0].stencilStoreOp   = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[0].initialLayout    = VK_IMAGE_LAYOUT_UNDEFINED;
-        attachments[0].finalLayout      = VK_IMAGE_LAYOUT_GENERAL;
-
-        attachments[1].format           = get_depth_image_format();
-        attachments[1].samples          = VK_SAMPLE_COUNT_1_BIT;
-        attachments[1].loadOp           = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        attachments[1].storeOp          = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[1].stencilLoadOp    = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachments[1].stencilStoreOp   = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[1].initialLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        attachments[1].finalLayout      = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference color_attachment_ref;
-        color_attachment_ref.attachment = 0;
-        color_attachment_ref.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference depth_attachment_ref;
-        depth_attachment_ref.attachment = 1;
-        depth_attachment_ref.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount    = 1;
-        subpass.pColorAttachments       = &color_attachment_ref;
-        subpass.pDepthStencilAttachment = &depth_attachment_ref;
-
-        VkRenderPassCreateInfo create_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
-        create_info.attachmentCount = (uint32_t)std::size(attachments);
-        create_info.pAttachments = attachments;
-        create_info.subpassCount = 1;
-        create_info.pSubpasses = &subpass;
-
-        VK_CHECK(vkCreateRenderPass(vk.device, &create_info, nullptr, &raster_render_pass));
-        vk_set_debug_name(raster_render_pass, "color_depth_render_pass");
-    }
-
     // UI render pass.
     {
         VkAttachmentDescription attachments[1] = {};
@@ -696,7 +630,16 @@ void Renderer::draw_frame() {
                 gpu_scene.light_descriptor_set
             };
             vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gpu_scene.per_frame_pipeline_layout, 0, (uint32_t)std::size(per_frame_sets), per_frame_sets, 0, nullptr);
+
+            vk_cmd_image_barrier(vk.command_buffer, output_image.handle,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
             draw_rasterized_image();
+
+            vk_cmd_image_barrier(vk.command_buffer, output_image.handle,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
         }
     }
 
@@ -730,26 +673,34 @@ void Renderer::draw_rasterized_image() {
     viewport.height = static_cast<float>(vk.surface_size.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(vk.command_buffer, 0, 1, &viewport);
 
     VkRect2D scissor{};
     scissor.extent = vk.surface_size;
-
-    vkCmdSetViewport(vk.command_buffer, 0, 1, &viewport);
     vkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
 
-    VkClearValue clear_values[2];
-    clear_values[0].color = {0, 0, 0, 0.0f};
-    clear_values[1].depthStencil.depth = 1.0;
-    clear_values[1].depthStencil.stencil = 0;
+    VkRenderingAttachmentInfo color_attachment{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+    color_attachment.imageView = output_image.view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.clearValue.color = { 0.f, 0.f, 0.f, 0.f };
 
-    VkRenderPassBeginInfo render_pass_begin_info { VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-    render_pass_begin_info.renderPass        = raster_render_pass;
-    render_pass_begin_info.framebuffer       = raster_framebuffer;
-    render_pass_begin_info.renderArea.extent = vk.surface_size;
-    render_pass_begin_info.clearValueCount   = (uint32_t)std::size(clear_values);
-    render_pass_begin_info.pClearValues      = clear_values;
+    VkRenderingAttachmentInfo depth_attachment{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+    depth_attachment.imageView = depth_info.image_view;
+    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.clearValue.depthStencil = { 1.f, 0 };
 
-    vkCmdBeginRenderPass(vk.command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    VkRenderingInfo rendering_info{ VK_STRUCTURE_TYPE_RENDERING_INFO };
+    rendering_info.renderArea.extent = vk.surface_size;
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+    rendering_info.pDepthAttachment = &depth_attachment;
+
+    vkCmdBeginRendering(vk.command_buffer, &rendering_info);
     draw_mesh.bind_sets_and_pipeline();
 
     for (int i = 0; i < (int)scene.objects.size(); i++) {
@@ -763,8 +714,7 @@ void Renderer::draw_rasterized_image() {
         const GPU_Mesh& gpu_mesh = gpu_meshes[scene_object.geometry.index];
         draw_mesh.dispatch(gpu_mesh, i);
     }
-
-    vkCmdEndRenderPass(vk.command_buffer);
+    vkCmdEndRendering(vk.command_buffer);
 }
 
 void Renderer::draw_raytraced_image() {
