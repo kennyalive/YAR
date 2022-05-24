@@ -62,7 +62,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_GLFW_WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\third-party;$(ProjectDir)..\third-party\pbrt-parser\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\third-party;$(ProjectDir)..\third-party\pbrt-parser\include;$(ProjectDir)..\third-party\imgui</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4244</DisableSpecificWarnings>
     </ClCompile>
@@ -81,7 +81,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_GLFW_WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\third-party;$(ProjectDir)..\third-party\pbrt-parser\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\third-party;$(ProjectDir)..\third-party\pbrt-parser\include;$(ProjectDir)..\third-party\imgui</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4244</DisableSpecificWarnings>
     </ClCompile>
@@ -110,9 +110,10 @@
     <ClCompile Include="..\third-party\imgui\imgui.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_demo.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_draw.cpp" />
-    <ClCompile Include="..\third-party\imgui\imgui_impl_glfw.cpp" />
-    <ClCompile Include="..\third-party\imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="..\third-party\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\third-party\imgui\impl\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\third-party\imgui\impl\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\3rdParty\rply.c" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\BinaryFileFormat.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Camera.cpp" />
@@ -152,9 +153,9 @@
     <ClInclude Include="..\third-party\glfw\win32_platform.h" />
     <ClInclude Include="..\third-party\imgui\imconfig.h" />
     <ClInclude Include="..\third-party\imgui\imgui.h" />
-    <ClInclude Include="..\third-party\imgui\imgui_impl_glfw.h" />
-    <ClInclude Include="..\third-party\imgui\imgui_impl_vulkan.h" />
     <ClInclude Include="..\third-party\imgui\imgui_internal.h" />
+    <ClInclude Include="..\third-party\imgui\impl\imgui_impl_glfw.h" />
+    <ClInclude Include="..\third-party\imgui\impl\imgui_impl_vulkan.h" />
     <ClInclude Include="..\third-party\imgui\imstb_rectpack.h" />
     <ClInclude Include="..\third-party\imgui\imstb_textedit.h" />
     <ClInclude Include="..\third-party\imgui\imstb_truetype.h" />

@@ -46,6 +46,9 @@
     <Filter Include="tinyexr">
       <UniqueIdentifier>{91a23dae-2eb1-4011-88a0-9a0e66f0424d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="imgui\impl">
+      <UniqueIdentifier>{61be6261-d514-4674-81a4-079c97d6d0cb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third-party\glfw\context.c">
@@ -93,29 +96,11 @@
     <ClCompile Include="..\third-party\glfw\window.c">
       <Filter>glfw</Filter>
     </ClCompile>
-    <ClCompile Include="..\third-party\imgui\imgui.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third-party\imgui\imgui_demo.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third-party\imgui\imgui_draw.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third-party\imgui\imgui_widgets.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
     <ClCompile Include="..\third-party\pcg\pcg_basic.c">
       <Filter>pcg</Filter>
     </ClCompile>
     <ClCompile Include="..\third-party\volk\volk.c">
       <Filter>volk</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third-party\imgui\imgui_impl_glfw.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="..\third-party\imgui\imgui_impl_vulkan.cpp">
-      <Filter>imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\third-party\getopt\getopt.c">
       <Filter>getopt</Filter>
@@ -162,6 +147,27 @@
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\PixelFilter.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>
+    <ClCompile Include="..\third-party\imgui\imgui.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third-party\imgui\imgui_demo.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third-party\imgui\imgui_draw.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third-party\imgui\imgui_tables.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third-party\imgui\imgui_widgets.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third-party\imgui\impl\imgui_impl_glfw.cpp">
+      <Filter>imgui\impl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\third-party\imgui\impl\imgui_impl_vulkan.cpp">
+      <Filter>imgui\impl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\third-party\glfw\egl_context.h">
@@ -191,35 +197,11 @@
     <ClInclude Include="..\third-party\glfw\win32_platform.h">
       <Filter>glfw</Filter>
     </ClInclude>
-    <ClInclude Include="..\third-party\imgui\imconfig.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third-party\imgui\imgui.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third-party\imgui\imgui_internal.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third-party\imgui\imstb_rectpack.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third-party\imgui\imstb_textedit.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third-party\imgui\imstb_truetype.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
     <ClInclude Include="..\third-party\pcg\pcg_basic.h">
       <Filter>pcg</Filter>
     </ClInclude>
     <ClInclude Include="..\third-party\volk\volk.h">
       <Filter>volk</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third-party\imgui\imgui_impl_glfw.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third-party\imgui\imgui_impl_vulkan.h">
-      <Filter>imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\third-party\getopt\getopt.h">
       <Filter>getopt</Filter>
@@ -271,6 +253,30 @@
     </ClInclude>
     <ClInclude Include="..\third-party\tinyexr\tinyexr.h">
       <Filter>tinyexr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\imgui\imconfig.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\imgui\imgui.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\imgui\imgui_internal.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\imgui\imstb_rectpack.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\imgui\imstb_textedit.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\imgui\imstb_truetype.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\imgui\impl\imgui_impl_glfw.h">
+      <Filter>imgui\impl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\imgui\impl\imgui_impl_vulkan.h">
+      <Filter>imgui\impl</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
