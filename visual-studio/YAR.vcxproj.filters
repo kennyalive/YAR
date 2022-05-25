@@ -4,7 +4,6 @@
     <ClCompile Include="..\src\std.cpp" />
     <ClCompile Include="..\src\renderer\main.cpp" />
     <ClCompile Include="..\src\renderer\vk.cpp" />
-    <ClCompile Include="..\src\renderer\win32.cpp" />
     <ClCompile Include="..\src\renderer\kernels\copy_to_swapchain.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
@@ -27,7 +26,6 @@
   <ItemGroup>
     <ClInclude Include="..\src\std.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
-    <ClInclude Include="..\src\renderer\platform.h" />
     <ClInclude Include="..\src\shaders\shared_light.h">
       <Filter>shaders</Filter>
     </ClInclude>

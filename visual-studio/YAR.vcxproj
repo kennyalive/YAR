@@ -132,7 +132,6 @@
     <ClCompile Include="..\src\renderer\ui\ui.cpp" />
     <ClCompile Include="..\src\renderer\vk.cpp" />
     <ClCompile Include="..\src\renderer\vk_utils.cpp" />
-    <ClCompile Include="..\src\renderer\win32.cpp" />
     <ClCompile Include="..\src\std.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -145,7 +144,6 @@
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h" />
     <ClInclude Include="..\src\renderer\kernels\apply_tone_mapping.h" />
     <ClInclude Include="..\src\renderer\kernel_context.h" />
-    <ClInclude Include="..\src\renderer\platform.h" />
     <ClInclude Include="..\src\renderer\renderer.h" />
     <ClInclude Include="..\src\renderer\kernels\raytrace_scene.h" />
     <ClInclude Include="..\src\renderer\ui\ui.h" />

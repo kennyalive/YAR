@@ -1,6 +1,5 @@
 #include "std.h"
 #include "lib/common.h"
-#include "platform.h"
 #include "renderer.h"
 
 #include "glfw/glfw3.h"
@@ -127,7 +126,6 @@ int run_realtime_renderer(bool enable_validation_layers) {
             renderer.restore_resolution_dependent_resources();
             recreate_swapchain = false;
         }
-        platform::sleep(1);
     }
 
     renderer.shutdown();
