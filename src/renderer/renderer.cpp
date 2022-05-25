@@ -154,12 +154,28 @@ void Renderer::release_resolution_dependent_resources() {
         vkDestroyFramebuffer(vk.device, framebuffer, nullptr);
     }
     ui_framebuffers.resize(0);
+    depth_buffer_image.destroy();
     output_image.destroy();
-    destroy_depth_buffer();
 }
 
 void Renderer::restore_resolution_dependent_resources() {
-    create_depth_buffer();
+    // create depth buffer
+    {
+        VkFormat depth_format = get_depth_image_format();
+        depth_buffer_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, depth_format,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "depth_buffer");
+
+        vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
+            VkImageSubresourceRange subresource_range{};
+            subresource_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+            subresource_range.levelCount = 1;
+            subresource_range.layerCount = 1;
+
+            vk_cmd_image_barrier_for_subresource(command_buffer, depth_buffer_image.handle, subresource_range,
+                VK_PIPELINE_STAGE_NONE, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_PIPELINE_STAGE_NONE, 0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+            });
+    }
 
     // output image
     {
@@ -488,65 +504,6 @@ void Renderer::run_frame() {
     draw_frame();
 }
 
-void Renderer::create_depth_buffer() {
-    VkFormat depth_format = get_depth_image_format();
-
-    // create depth image
-    {
-        VkImageCreateInfo create_info { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-        create_info.imageType = VK_IMAGE_TYPE_2D;
-        create_info.format = depth_format;
-        create_info.extent.width = vk.surface_size.width;
-        create_info.extent.height = vk.surface_size.height;
-        create_info.extent.depth = 1;
-        create_info.mipLevels = 1;
-        create_info.arrayLayers = 1;
-        create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-        create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-        create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-        VmaAllocationCreateInfo alloc_create_info{};
-        alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
-
-        VK_CHECK(vmaCreateImage(vk.allocator, &create_info, &alloc_create_info, &depth_info.image, &depth_info.allocation, nullptr));
-    }
-
-    // create depth image view
-    {
-        VkImageViewCreateInfo desc { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
-        desc.image = depth_info.image;
-        desc.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        desc.format = depth_format;
-
-        desc.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        desc.subresourceRange.baseMipLevel = 0;
-        desc.subresourceRange.levelCount = 1;
-        desc.subresourceRange.baseArrayLayer = 0;
-        desc.subresourceRange.layerCount = 1;
-
-        VK_CHECK(vkCreateImageView(vk.device, &desc, nullptr, &depth_info.image_view));
-    }
-
-    vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
-        VkImageSubresourceRange subresource_range{};
-        subresource_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-        subresource_range.levelCount = 1;
-        subresource_range.layerCount = 1;
-
-        vk_cmd_image_barrier_for_subresource(command_buffer, depth_info.image, subresource_range,
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    });
-}
-
-void Renderer::destroy_depth_buffer() {
-    vmaDestroyImage(vk.allocator, depth_info.image, depth_info.allocation);
-    vkDestroyImageView(vk.device, depth_info.image_view, nullptr);
-    depth_info = Depth_Buffer_Info{};
-}
-
 void Renderer::create_render_passes() {
     // UI render pass.
     {
@@ -670,7 +627,7 @@ void Renderer::draw_rasterized_image() {
     color_attachment.clearValue.color = { 0.f, 0.f, 0.f, 0.f };
 
     VkRenderingAttachmentInfo depth_attachment{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-    depth_attachment.imageView = depth_info.image_view;
+    depth_attachment.imageView = depth_buffer_image.view;
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

@@ -33,8 +33,6 @@ public:
     void run_frame();
 
 private:
-    void create_depth_buffer();
-    void destroy_depth_buffer();
     void create_render_passes();
     void create_default_textures();
     void draw_frame();
@@ -54,6 +52,7 @@ private:
     VkRenderPass ui_render_pass;
     std::vector<VkFramebuffer> ui_framebuffers; // per swapchain image
 
+    Vk_Image depth_buffer_image;
     Vk_Image output_image;
 
     Kernel_Context kernel_context;
@@ -86,13 +85,6 @@ private:
     Draw_Mesh draw_mesh;
     Patch_Materials patch_materials;
     Raytrace_Scene raytrace_scene;
-
-    struct Depth_Buffer_Info {
-        VkImage image;
-        VkImageView image_view;
-        VmaAllocation allocation;
-    };
-    Depth_Buffer_Info depth_info;
 
     GPU_Time_Keeper time_keeper;
     struct {
