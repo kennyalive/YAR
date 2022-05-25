@@ -11,9 +11,6 @@
     <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\renderer\kernels\draw_mesh.cpp">
-      <Filter>kernels</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\renderer\kernels\raytrace_scene.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
@@ -38,9 +35,6 @@
       <Filter>kernels</Filter>
     </ClInclude>
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h">
-      <Filter>kernels</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\renderer\kernels\draw_mesh.h">
       <Filter>kernels</Filter>
     </ClInclude>
     <ClInclude Include="..\src\renderer\kernels\raytrace_scene.h">
@@ -109,12 +103,6 @@
       <Filter>shaders</Filter>
     </CustomBuild>
     <CustomBuild Include="..\src\shaders\patch_materials.comp.glsl">
-      <Filter>shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\src\shaders\draw_mesh.frag.glsl">
-      <Filter>shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\src\shaders\draw_mesh.vert.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
     <CustomBuild Include="..\src\shaders\raytrace_scene.rchit.glsl">

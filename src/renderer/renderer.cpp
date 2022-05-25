@@ -101,7 +101,6 @@ void Renderer::initialize(GLFWwindow* window, bool enable_validation_layers) {
     time_keeper.initialize_time_scopes();
     
     ui.frame_time_scope = gpu_times.frame;
-    ui.raytracing = &raytracing;
     ui.spp4 = &spp4;
 }
 
@@ -142,7 +141,6 @@ void Renderer::shutdown() {
 
     if (project_loaded) {
         patch_materials.destroy();
-        draw_mesh.destroy();
         raytrace_scene.destroy();
     }
 
@@ -182,13 +180,11 @@ void Renderer::restore_resolution_dependent_resources() {
         output_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, VK_FORMAT_R16G16B16A16_SFLOAT,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "output_image");
 
-        if (raytracing) {
-            vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
-                vk_cmd_image_barrier(command_buffer, output_image.handle,
-                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
-                    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
-            });
-        }
+        vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
+            vk_cmd_image_barrier(command_buffer, output_image.handle,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
+        });
     }
 
     // imgui framebuffer
@@ -442,11 +438,6 @@ void Renderer::load_project(const std::string& input_file) {
         patch_materials.dispatch(command_buffer, gpu_scene.material_descriptor_set);
     });
 
-    draw_mesh.create(kernel_context, get_depth_image_format(), scene.mesh_disable_backfacing_culling,  scene.front_face_has_clockwise_winding);
-    draw_mesh.update_point_lights((int)scene.lights.point_lights.size());
-    draw_mesh.update_directional_lights((int)scene.lights.directional_lights.size());
-    draw_mesh.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
-
     raytrace_scene.create(kernel_context, scene, gpu_meshes);
     raytrace_scene.update_output_image_descriptor(output_image.view);
     raytrace_scene.update_point_lights((int)scene.lights.point_lights.size());
@@ -463,7 +454,6 @@ void Renderer::load_project(const std::string& input_file) {
 static double last_frame_time;
 
 void Renderer::run_frame() {
-    bool old_raytracing = raytracing;
     ui.run_imgui();
 
     if (last_frame_time == 0.0) { // initialize
@@ -497,7 +487,6 @@ void Renderer::run_frame() {
     ui.camera_position = flying_camera.get_camera_pose().get_column(3);
 
     if (project_loaded) {
-        draw_mesh.update(flying_camera.get_view_transform(), scene.camera_fov_y, scene.z_is_up);
         raytrace_scene.update_camera_transform(flying_camera.get_camera_pose());
     }
 
@@ -554,33 +543,13 @@ void Renderer::draw_frame() {
     gpu_times.frame->begin();
 
     if (project_loaded) {
-        if (raytracing) {
-            VkDescriptorSet per_frame_sets[] = {
-                gpu_scene.base_descriptor_set,
-                gpu_scene.material_descriptor_set,
-                gpu_scene.light_descriptor_set
-            };
-            vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, gpu_scene.per_frame_pipeline_layout, 0, (uint32_t)std::size(per_frame_sets), per_frame_sets, 0, nullptr);
-            draw_raytraced_image();
-        }
-        else {
-            VkDescriptorSet per_frame_sets[] = {
-                gpu_scene.base_descriptor_set,
-                gpu_scene.material_descriptor_set,
-                gpu_scene.light_descriptor_set
-            };
-            vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gpu_scene.per_frame_pipeline_layout, 0, (uint32_t)std::size(per_frame_sets), per_frame_sets, 0, nullptr);
-
-            vk_cmd_image_barrier(vk.command_buffer, output_image.handle,
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-            draw_rasterized_image();
-
-            vk_cmd_image_barrier(vk.command_buffer, output_image.handle,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
-        }
+        VkDescriptorSet per_frame_sets[] = {
+            gpu_scene.base_descriptor_set,
+            gpu_scene.material_descriptor_set,
+            gpu_scene.light_descriptor_set
+        };
+        vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, gpu_scene.per_frame_pipeline_layout, 0, (uint32_t)std::size(per_frame_sets), per_frame_sets, 0, nullptr);
+        draw_raytraced_image();
     }
 
     tone_mapping();
@@ -603,58 +572,6 @@ void Renderer::draw_frame() {
 
     gpu_times.frame->end();
     vk_end_frame();
-}
-
-void Renderer::draw_rasterized_image() {
-    GPU_TIME_SCOPE(gpu_times.draw);
-
-    VkViewport viewport{};
-    viewport.width = static_cast<float>(vk.surface_size.width);
-    viewport.height = static_cast<float>(vk.surface_size.height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(vk.command_buffer, 0, 1, &viewport);
-
-    VkRect2D scissor{};
-    scissor.extent = vk.surface_size;
-    vkCmdSetScissor(vk.command_buffer, 0, 1, &scissor);
-
-    VkRenderingAttachmentInfo color_attachment{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-    color_attachment.imageView = output_image.view;
-    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    color_attachment.clearValue.color = { 0.f, 0.f, 0.f, 0.f };
-
-    VkRenderingAttachmentInfo depth_attachment{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
-    depth_attachment.imageView = depth_buffer_image.view;
-    depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.clearValue.depthStencil = { 1.f, 0 };
-
-    VkRenderingInfo rendering_info{ VK_STRUCTURE_TYPE_RENDERING_INFO };
-    rendering_info.renderArea.extent = vk.surface_size;
-    rendering_info.layerCount = 1;
-    rendering_info.colorAttachmentCount = 1;
-    rendering_info.pColorAttachments = &color_attachment;
-    rendering_info.pDepthAttachment = &depth_attachment;
-
-    vkCmdBeginRendering(vk.command_buffer, &rendering_info);
-    draw_mesh.bind_sets_and_pipeline();
-
-    for (int i = 0; i < (int)scene.objects.size(); i++) {
-        const Scene_Object& scene_object = scene.objects[i];
-        // Skip objects that we don't support yet...
-        if (scene_object.geometry.type != Geometry_Type::triangle_mesh)
-            continue;
-        if (scene_object.area_light != Null_Light && scene_object.area_light.type != Light_Type::diffuse_rectangular)
-            continue;
-
-        const GPU_Mesh& gpu_mesh = gpu_meshes[scene_object.geometry.index];
-        draw_mesh.dispatch(gpu_mesh, i);
-    }
-    vkCmdEndRendering(vk.command_buffer);
 }
 
 void Renderer::draw_raytraced_image() {

@@ -3,7 +3,6 @@
 #include "kernels/apply_tone_mapping.h"
 #include "kernels/copy_to_swapchain.h"
 #include "kernels/patch_materials.h"
-#include "kernels/draw_mesh.h"
 #include "kernels/raytrace_scene.h"
 #include "kernel_context.h"
 
@@ -36,7 +35,6 @@ private:
     void create_render_passes();
     void create_default_textures();
     void draw_frame();
-    void draw_rasterized_image();
     void draw_raytraced_image();
     void tone_mapping();
     void draw_imgui();
@@ -44,7 +42,6 @@ private:
     void start_reference_renderer();
 
 private:
-    bool raytracing = true;
     bool spp4 = false;
 
     Flying_Camera flying_camera;
@@ -82,7 +79,6 @@ private:
 
     Apply_Tone_Mapping apply_tone_mapping;
     Copy_To_Swapchain copy_to_swapchain;
-    Draw_Mesh draw_mesh;
     Patch_Materials patch_materials;
     Raytrace_Scene raytrace_scene;
 

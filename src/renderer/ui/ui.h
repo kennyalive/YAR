@@ -14,7 +14,6 @@ struct UI {
     bool show_ui = true;
     bool vsync = true;
 
-    bool* raytracing = nullptr;
     bool* spp4 = nullptr;
     const GPU_Time_Scope* frame_time_scope = nullptr;
 

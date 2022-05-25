@@ -128,7 +128,6 @@
     <ClCompile Include="..\src\renderer\main.cpp" />
     <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp" />
     <ClCompile Include="..\src\renderer\renderer.cpp" />
-    <ClCompile Include="..\src\renderer\kernels\draw_mesh.cpp" />
     <ClCompile Include="..\src\renderer\kernels\raytrace_scene.cpp" />
     <ClCompile Include="..\src\renderer\ui\ui.cpp" />
     <ClCompile Include="..\src\renderer\vk.cpp" />
@@ -148,7 +147,6 @@
     <ClInclude Include="..\src\renderer\kernel_context.h" />
     <ClInclude Include="..\src\renderer\platform.h" />
     <ClInclude Include="..\src\renderer\renderer.h" />
-    <ClInclude Include="..\src\renderer\kernels\draw_mesh.h" />
     <ClInclude Include="..\src\renderer\kernels\raytrace_scene.h" />
     <ClInclude Include="..\src\renderer\ui\ui.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
@@ -166,16 +164,6 @@
     </CustomBuild>
     <None Include="..\src\shaders\common.glsl" />
     <CustomBuild Include="..\src\shaders\copy_to_swapchain.comp.glsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="..\src\shaders\draw_mesh.frag.glsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </CustomBuild>
-    <CustomBuild Include="..\src\shaders\draw_mesh.vert.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>

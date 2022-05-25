@@ -45,8 +45,6 @@ void UI::run_imgui() {
             ImGui::Separator();
             ImGui::Spacing();
             ImGui::Checkbox("Vertical sync", &vsync);
-
-            ImGui::Checkbox("Raytracing", raytracing);
             ImGui::Checkbox("4 rays per pixel", spp4);
 
             ImGui::Text("Camera position: %.2f %.2f %.2f", camera_position.x, camera_position.y, camera_position.z);
