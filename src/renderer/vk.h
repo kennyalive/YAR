@@ -9,6 +9,7 @@
 #include "vulkan/vk_enum_string_helper.h"
 
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
 #include "vma/vk_mem_alloc.h"
 
 #define VK_CHECK_RESULT(result) if (result < 0) error(std::string("Error: ") + string_VkResult(result));

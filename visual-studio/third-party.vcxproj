@@ -176,6 +176,7 @@
     <ClInclude Include="..\third-party\stb\stb_image_write.h" />
     <ClInclude Include="..\third-party\tinyexr\tinyexr.h" />
     <ClInclude Include="..\third-party\tiny\tiny_obj_loader.h" />
+    <ClInclude Include="..\third-party\vma\vk_mem_alloc.h" />
     <ClInclude Include="..\third-party\volk\volk.h" />
   </ItemGroup>
   <ItemGroup>

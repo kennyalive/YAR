@@ -508,7 +508,7 @@ void Renderer::create_depth_buffer() {
         create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
         VmaAllocationCreateInfo alloc_create_info{};
-        alloc_create_info.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+        alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
 
         VK_CHECK(vmaCreateImage(vk.allocator, &create_info, &alloc_create_info, &depth_info.image, &depth_info.allocation, nullptr));
     }
