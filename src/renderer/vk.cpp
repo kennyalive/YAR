@@ -17,7 +17,7 @@ static const VkDescriptorPoolSize descriptor_pool_sizes[] = {
     {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              16},
     {VK_DESCRIPTOR_TYPE_SAMPLER,                    16},
     {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              16},
-    {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV,  16},
+    {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 16},
 };
 
 constexpr uint32_t max_descriptor_sets = 64;
@@ -145,7 +145,6 @@ static void create_device(GLFWwindow* window) {
         std::vector<const char*> device_extensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, // nullDescriptor feature
-            VK_NV_RAY_TRACING_EXTENSION_NAME,
         };
 
         uint32_t count = 0;
@@ -211,6 +210,10 @@ static void create_device(GLFWwindow* window) {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
         descriptor_indexing_features.runtimeDescriptorArray = VK_TRUE;
 
+        VkPhysicalDeviceMaintenance4Features maintenance4_features{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_4_FEATURES };
+        maintenance4_features.maintenance4 = VK_TRUE;
+
         VkPhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features{
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR };
         acceleration_structure_features.accelerationStructure = VK_TRUE;
@@ -226,7 +229,8 @@ static void create_device(GLFWwindow* window) {
         buffer_device_address_features.pNext = &dynamic_rendering_features;
         dynamic_rendering_features.pNext = &synchronization2_features;
         synchronization2_features.pNext = &descriptor_indexing_features;
-        descriptor_indexing_features.pNext = &acceleration_structure_features;
+        descriptor_indexing_features.pNext = &maintenance4_features;
+        maintenance4_features.pNext = &acceleration_structure_features;
         acceleration_structure_features.pNext = &ray_tracing_pipeline_features;
         ray_tracing_pipeline_features.pNext = &robustness2_features;
 

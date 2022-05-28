@@ -5,10 +5,10 @@
 #include "light_resources.glsl"
 #include "shading_context.glsl"
 
-vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel, int point_light_count, int directional_light_count, int diffuse_rectangular_light_count)
+vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureEXT accel, int point_light_count, int directional_light_count, int diffuse_rectangular_light_count)
 {
     vec3 L = vec3(0);
-    Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexNV].material;
+    Material_Handle mtl_handle = instance_infos[gl_InstanceCustomIndexEXT].material;
 
     const vec3 P = offset_ray(sc.P, sc.Ng);
 
@@ -23,7 +23,7 @@ vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel,
 
         // trace shadow ray
         shadow_ray_payload.shadow_factor = 1.0f;
-        traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, P, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
+        traceRayEXT(accel, gl_RayFlagsOpaqueEXT|gl_RayFlagsTerminateOnFirstHitEXT, 0xff, 1, 0, 1, P, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
         if (shadow_ray_payload.shadow_factor == 0.0)
             continue;
 
@@ -41,7 +41,7 @@ vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel,
 
         // trace shadow ray
         shadow_ray_payload.shadow_factor = 1.0f;
-        traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, P, 0.0, light_dir, 1e5 /* compute tmax? */, 1);
+        traceRayEXT(accel, gl_RayFlagsOpaqueEXT|gl_RayFlagsTerminateOnFirstHitEXT, 0xff, 1, 0, 1, P, 0.0, light_dir, 1e5 /* compute tmax? */, 1);
         if (shadow_ray_payload.shadow_factor == 0.0)
             continue;
 
@@ -49,7 +49,7 @@ vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel,
         L += bsdf * directional_lights[i].irradiance * n_dot_l;
     }
 
-    uint seed = uint(gl_LaunchIDNV.y)*uint(800) + uint(gl_LaunchIDNV.x);
+    uint seed = uint(gl_LaunchIDEXT.y)*uint(800) + uint(gl_LaunchIDEXT.x);
     uint rng_state = wang_hash(seed);
 
     for (int i = 0; i < diffuse_rectangular_light_count; i++) {
@@ -82,7 +82,7 @@ vec3 estimate_direct_lighting(Shading_Context sc, accelerationStructureNV accel,
 
             // trace shadow ray
             shadow_ray_payload.shadow_factor = 1.0f;
-            traceNV(accel, gl_RayFlagsOpaqueNV|gl_RayFlagsTerminateOnFirstHitNV, 0xff, 1, 0, 1, P, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
+            traceRayEXT(accel, gl_RayFlagsOpaqueEXT|gl_RayFlagsTerminateOnFirstHitEXT, 0xff, 1, 0, 1, P, 0.0, light_dir, light_dist - Shadow_Epsilon, 1);
             if (shadow_ray_payload.shadow_factor == 0.0)
                 continue;
 

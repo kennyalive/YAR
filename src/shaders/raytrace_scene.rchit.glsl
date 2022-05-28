@@ -1,6 +1,6 @@
 #version 460
 #extension GL_GOOGLE_include_directive : require
-#extension GL_NV_ray_tracing : require
+#extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : require
 
 #include "common.glsl"
@@ -8,8 +8,8 @@
 
 #define HIT_SHADER
 #include "rt_utils.glsl"
-layout (location=0) rayPayloadInNV Ray_Payload payload;
-layout (location=1) rayPayloadNV Shadow_Ray_Payload shadow_ray_payload;
+layout (location=0) rayPayloadInEXT Ray_Payload payload;
+layout (location=1) rayPayloadEXT Shadow_Ray_Payload shadow_ray_payload;
 
 #include "direct_lighting.glsl"
 #include "geometry.glsl"
@@ -17,10 +17,10 @@ layout (location=1) rayPayloadNV Shadow_Ray_Payload shadow_ray_payload;
 #include "compute_bsdf.glsl"
 #include "light_resources.glsl"
 
-hitAttributeNV vec2 attribs;
+hitAttributeEXT vec2 attribs;
 
 layout(set=KERNEL_SET_0, binding = 1)
-uniform accelerationStructureNV accel;
+uniform accelerationStructureEXT accel;
 
 layout(std140, set=KERNEL_SET_0, binding=2)
 uniform Uniform_Block {
@@ -33,7 +33,7 @@ uniform Uniform_Block {
 
 Vertex fetch_vertex(int index)
 {
-    int geometry_buffer_index = instance_infos[gl_InstanceCustomIndexNV].geometry.index; // TODO: do this only if geometry.type is Triangle_Mesh.
+    int geometry_buffer_index = instance_infos[gl_InstanceCustomIndexEXT].geometry.index; // TODO: do this only if geometry.type is Triangle_Mesh.
     uint vertex_index = index_buffers[geometry_buffer_index].indices[index];
     Mesh_Vertex bv = vertex_buffers[geometry_buffer_index].vertices[vertex_index];
 
@@ -50,8 +50,8 @@ Shading_Context init_shading_context()
     Vertex v1 = fetch_vertex(gl_PrimitiveID*3 + 1);
     Vertex v2 = fetch_vertex(gl_PrimitiveID*3 + 2);
 
-    const vec3 Wo = -gl_WorldRayDirectionNV;
-    const mat3 normal_transform = mat3(gl_ObjectToWorldNV);
+    const vec3 Wo = -gl_WorldRayDirectionEXT;
+    const mat3 normal_transform = mat3(gl_ObjectToWorldEXT);
 
     // Compute geometric normal.
     // Ensure it's in the same hemisphere as Wo (renderer's convention).
@@ -69,7 +69,7 @@ Shading_Context init_shading_context()
 
     Shading_Context sc;
     sc.Wo = Wo;
-    sc.P = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
+    sc.P = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
     sc.Ng = Ng;
     sc.N = N;
     sc.UV = barycentric_interpolate(attribs.x, attribs.y, v0.uv, v1.uv, v2.uv);
@@ -81,7 +81,7 @@ void main()
     Shading_Context sc = init_shading_context();
     vec3 L = estimate_direct_lighting(sc, accel, point_light_count, directional_light_count, diffuse_rectangular_light_count);
 
-    int area_light_index = instance_infos[gl_InstanceCustomIndexNV].area_light_index; 
+    int area_light_index = instance_infos[gl_InstanceCustomIndexEXT].area_light_index; 
     if (area_light_index != -1) {
         L += diffuse_rectangular_lights[area_light_index].emitted_radiance;
     }

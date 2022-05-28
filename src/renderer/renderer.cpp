@@ -37,7 +37,8 @@ void Renderer::initialize(GLFWwindow* window, bool enable_validation_layers) {
 
     // Device properties.
     {
-        raytrace_scene.properties = VkPhysicalDeviceRayTracingPropertiesNV { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV };
+        raytrace_scene.properties = VkPhysicalDeviceRayTracingPipelinePropertiesKHR{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
 
         VkPhysicalDeviceProperties2 physical_device_properties { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
         physical_device_properties.pNext = &raytrace_scene.properties;
@@ -51,15 +52,14 @@ void Renderer::initialize(GLFWwindow* window, bool enable_validation_layers) {
         );
 
         printf("\n");
-        printf("VkPhysicalDeviceRayTracingPropertiesNV:\n");
+        printf("VkPhysicalDeviceRayTracingPipelinePropertiesKHR:\n");
         printf("  shaderGroupHandleSize = %u\n", raytrace_scene.properties.shaderGroupHandleSize);
-        printf("  maxRecursionDepth = %u\n", raytrace_scene.properties.maxRecursionDepth);
+        printf("  maxRayRecursionDepth = %u\n", raytrace_scene.properties.maxRayRecursionDepth);
         printf("  maxShaderGroupStride = %u\n", raytrace_scene.properties.maxShaderGroupStride);
         printf("  shaderGroupBaseAlignment = %u\n", raytrace_scene.properties.shaderGroupBaseAlignment);
-        printf("  maxGeometryCount = %" PRIu64 "\n", raytrace_scene.properties.maxGeometryCount);
-        printf("  maxInstanceCount = %" PRIu64 "\n", raytrace_scene.properties.maxInstanceCount);
-        printf("  maxTriangleCount = %" PRIu64 "\n", raytrace_scene.properties.maxTriangleCount);
-        printf("  maxDescriptorSetAccelerationStructures = %u\n", raytrace_scene.properties.maxDescriptorSetAccelerationStructures);
+        printf("  maxRayDispatchInvocationCount = %u\n", raytrace_scene.properties.maxRayDispatchInvocationCount);
+        printf("  shaderGroupHandleAlignment = %u\n", raytrace_scene.properties.shaderGroupHandleAlignment);
+        printf("  maxRayHitAttributeSize = %u\n", raytrace_scene.properties.maxRayHitAttributeSize);
     }
 
     create_render_passes();
@@ -228,14 +228,14 @@ void Renderer::load_project(const std::string& input_file) {
         const Triangle_Mesh& triangle_mesh = scene.geometries.triangle_meshes[i];
         GPU_Mesh& gpu_mesh = gpu_meshes[i];
 
-        gpu_mesh.model_vertex_count = static_cast<uint32_t>(triangle_mesh.vertices.size());
-        gpu_mesh.model_index_count = static_cast<uint32_t>(triangle_mesh.indices.size());
+        gpu_mesh.vertex_count = (uint32_t)triangle_mesh.vertices.size();
+        gpu_mesh.index_count = (uint32_t)triangle_mesh.indices.size();
 
         // TODO: Create separate buffers per attribute instead of single bufffer:
         // better cache coherency when working only with subset of vertex attributes,
         // also it will match Triangle_Mesh data layout, so no conversion will be needed.
-        std::vector<GPU_Vertex> gpu_vertices(gpu_mesh.model_vertex_count);
-        for (int k = 0; k < gpu_mesh.model_vertex_count; k++) {
+        std::vector<GPU_Vertex> gpu_vertices(gpu_mesh.vertex_count);
+        for (size_t k = 0; k < gpu_mesh.vertex_count; k++) {
             gpu_vertices[k].position = triangle_mesh.vertices[k];
             gpu_vertices[k].normal = triangle_mesh.normals[k];
             if (!triangle_mesh.uvs.empty())
@@ -243,10 +243,16 @@ void Renderer::load_project(const std::string& input_file) {
         }
 
         const VkDeviceSize vertex_buffer_size = gpu_vertices.size() * sizeof(GPU_Vertex);
-        gpu_mesh.vertex_buffer = vk_create_buffer(vertex_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, gpu_vertices.data(), "vertex_buffer");
+        VkBufferUsageFlags vertex_usage_flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+
+        gpu_mesh.vertex_buffer = vk_create_buffer(vertex_buffer_size, vertex_usage_flags, gpu_vertices.data(), "vertex_buffer");
 
         const VkDeviceSize index_buffer_size = triangle_mesh.indices.size() * sizeof(triangle_mesh.indices[0]);
-        gpu_mesh.index_buffer = vk_create_buffer(index_buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, triangle_mesh.indices.data(), "index_buffer");
+        VkBufferUsageFlags index_usage_flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+
+        gpu_mesh.index_buffer = vk_create_buffer(index_buffer_size, index_usage_flags, triangle_mesh.indices.data(), "index_buffer");
 
         // TODO: this is wrong! render objects list should not be indexed by geometry index. 
         // Will be fixed when gpu renderer will support Render_Objects (i.e. instancing).
@@ -300,7 +306,7 @@ void Renderer::load_project(const std::string& input_file) {
 
         {
             gpu_scene.material_descriptor_set_layout = Descriptor_Set_Layout()
-                .storage_buffer(0, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_COMPUTE_BIT) // lambertian materials
+                .storage_buffer(0, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_COMPUTE_BIT) // lambertian materials
                 .create("material_descriptor_set_layout");
 
             VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
@@ -315,11 +321,11 @@ void Renderer::load_project(const std::string& input_file) {
 
         {
             gpu_scene.base_descriptor_set_layout = Descriptor_Set_Layout()
-                .sampled_image_array(0, (uint32_t)gpu_scene.images_2d.size(), VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
-                .sampler(1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
-                .storage_buffer(2, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // instance buffer
-                .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // index buffers
-                .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV) // vertex buffers
+                .sampled_image_array(0, (uint32_t)gpu_scene.images_2d.size(), VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
+                .sampler(1, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
+                .storage_buffer(2, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) // instance buffer
+                .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) // index buffers
+                .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) // vertex buffers
                 .create("base_descriptor_set_layout");
 
             VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
@@ -341,11 +347,11 @@ void Renderer::load_project(const std::string& input_file) {
             for (auto [i, gpu_mesh] : enumerate(gpu_meshes)) {
                 vertex_buffer_infos[i].buffer = gpu_mesh.vertex_buffer.handle;
                 vertex_buffer_infos[i].offset = 0;
-                vertex_buffer_infos[i].range = gpu_mesh.model_vertex_count * sizeof(GPU_Vertex);
+                vertex_buffer_infos[i].range = gpu_mesh.vertex_count * sizeof(GPU_Vertex);
 
                 index_buffer_infos[i].buffer = gpu_mesh.index_buffer.handle;
                 index_buffer_infos[i].offset = 0;
-                index_buffer_infos[i].range = gpu_mesh.model_index_count * sizeof(uint32_t);
+                index_buffer_infos[i].range = gpu_mesh.index_count * sizeof(uint32_t);
             }
 
             Descriptor_Writes(gpu_scene.base_descriptor_set)
@@ -388,9 +394,9 @@ void Renderer::load_project(const std::string& input_file) {
         }
         {
         gpu_scene.light_descriptor_set_layout = Descriptor_Set_Layout()
-            .storage_buffer(POINT_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
-            .storage_buffer(DIRECTIONAL_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
-            .storage_buffer(DIFFUSE_RECTANGULAR_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV)
+            .storage_buffer(POINT_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
+            .storage_buffer(DIRECTIONAL_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
+            .storage_buffer(DIFFUSE_RECTANGULAR_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
             .create("light_descriptor_set_layout");
 
         VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
@@ -548,7 +554,7 @@ void Renderer::draw_frame() {
             gpu_scene.material_descriptor_set,
             gpu_scene.light_descriptor_set
         };
-        vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, gpu_scene.per_frame_pipeline_layout, 0, (uint32_t)std::size(per_frame_sets), per_frame_sets, 0, nullptr);
+        vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, gpu_scene.per_frame_pipeline_layout, 0, (uint32_t)std::size(per_frame_sets), per_frame_sets, 0, nullptr);
         draw_raytraced_image();
     }
 

@@ -3,13 +3,12 @@
 #include "renderer/acceleration_structure.h"
 
 struct Matrix3x4;
-struct Scene_Object;
 struct Rt_Uniform_Buffer;
 struct Scene;
 struct Kernel_Context;
 
 struct Raytrace_Scene {
-    VkPhysicalDeviceRayTracingPropertiesNV properties;
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR properties;
     Vk_Intersection_Accelerator accelerator;
     Vk_Buffer mesh_materials;
 
@@ -37,4 +36,3 @@ struct Raytrace_Scene {
 private:
     void create_pipeline(const Kernel_Context& ctx, const std::vector<GPU_Mesh>& gpu_meshes);
 };
-

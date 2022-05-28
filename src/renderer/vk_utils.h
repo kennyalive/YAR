@@ -28,15 +28,9 @@ struct Descriptor_Writes {
         VkAccelerationStructureKHR handle; // referenced by accel
     };
 
-    struct Accel_Info_NV {
-        VkWriteDescriptorSetAccelerationStructureNV accel;
-        VkAccelerationStructureNV handle; // referenced by accel
-    };
-
     union Resource_Info {
         VkDescriptorImageInfo image;
         VkDescriptorBufferInfo buffer;
-        Accel_Info_NV accel_info_nv;
         Accel_Info accel_info;
     };
 
@@ -60,7 +54,6 @@ struct Descriptor_Writes {
     Descriptor_Writes& uniform_buffer(uint32_t binding, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
     Descriptor_Writes& storage_buffer(uint32_t binding, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize range);
     Descriptor_Writes& storage_buffer_array(uint32_t binding, uint32_t array_size, const VkDescriptorBufferInfo* buffer_infos);
-    Descriptor_Writes& accelerator(uint32_t binding, VkAccelerationStructureNV acceleration_structure);
     Descriptor_Writes& accelerator(uint32_t binding, VkAccelerationStructureKHR acceleration_structure);
     void commit();
 };
@@ -83,7 +76,6 @@ struct Descriptor_Set_Layout {
     Descriptor_Set_Layout& storage_buffer(uint32_t binding, VkShaderStageFlags stage_flags);
     Descriptor_Set_Layout& storage_buffer_array(uint32_t binding, uint32_t array_size, VkShaderStageFlags stage_flags);
     Descriptor_Set_Layout& accelerator(uint32_t binding, VkShaderStageFlags stage_flags);
-    Descriptor_Set_Layout& accelerator_nv(uint32_t binding, VkShaderStageFlags stage_flags);
     VkDescriptorSetLayout create(const char* name);
 };
 

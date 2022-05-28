@@ -23,8 +23,8 @@ struct Ray {
 
 #ifdef RGEN_SHADER
 vec3 get_direction(vec2 film_position) {
-    vec2 uv = 2.0 * (film_position / vec2(gl_LaunchSizeNV.xy)) - 1.0;
-    float aspect_ratio = float(gl_LaunchSizeNV.x) / float(gl_LaunchSizeNV.y);
+    vec2 uv = 2.0 * (film_position / vec2(gl_LaunchSizeEXT.xy)) - 1.0;
+    float aspect_ratio = float(gl_LaunchSizeEXT.x) / float(gl_LaunchSizeEXT.y);
 
     float right = uv.x *  aspect_ratio * tan_fovy_over_2;
     float up = -uv.y * tan_fovy_over_2;
@@ -74,14 +74,14 @@ float compute_texture_lod(Vertex v0, Vertex v1, Vertex v2, vec3 rx_dir, vec3 ry_
     // compute offsets from main intersection point to approximated intersections of auxilary rays
     vec3 dpdx, dpdy;
     {
-        vec3 p = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
+        vec3 p = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
         float plane_d = -dot(face_normal, p);
 
-        float tx = ray_plane_intersection(gl_WorldRayOriginNV, rx_dir, face_normal, plane_d);
-        float ty = ray_plane_intersection(gl_WorldRayOriginNV, ry_dir, face_normal, plane_d);
+        float tx = ray_plane_intersection(gl_WorldRayOriginEXT, rx_dir, face_normal, plane_d);
+        float ty = ray_plane_intersection(gl_WorldRayOriginEXT, ry_dir, face_normal, plane_d);
 
-        vec3 px = gl_WorldRayOriginNV + rx_dir * tx;
-        vec3 py = gl_WorldRayOriginNV + ry_dir * ty;
+        vec3 px = gl_WorldRayOriginEXT + rx_dir * tx;
+        vec3 py = gl_WorldRayOriginEXT + ry_dir * ty;
 
         dpdx = px - p;
         dpdy = py - p;
