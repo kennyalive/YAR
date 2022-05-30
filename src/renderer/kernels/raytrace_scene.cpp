@@ -177,18 +177,10 @@ void Raytrace_Scene::create_pipeline(const Kernel_Context& ctx, const std::vecto
         VK_CHECK(vkCreateRayTracingPipelinesKHR(vk.device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
     }
 
-    // descriptor set
-    {
-        VkDescriptorSetAllocateInfo desc { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-        desc.descriptorPool = vk.descriptor_pool;
-        desc.descriptorSetCount = 1;
-        desc.pSetLayouts = &descriptor_set_layout;
-        VK_CHECK(vkAllocateDescriptorSets(vk.device, &desc, &descriptor_set));
-
-        Descriptor_Writes(descriptor_set)
-            .accelerator(1, accelerator.top_level_accel.aceleration_structure)
-            .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer));
-    }
+    descriptor_set = allocate_descriptor_set(descriptor_set_layout);
+    Descriptor_Writes(descriptor_set)
+        .accelerator(1, accelerator.top_level_accel.aceleration_structure)
+        .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer));
 }
 
 void Raytrace_Scene::dispatch(float fovy, bool spp4, bool z_is_up)

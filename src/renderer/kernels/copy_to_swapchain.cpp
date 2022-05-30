@@ -41,15 +41,8 @@ void Copy_To_Swapchain::update_resolution_dependent_descriptors(VkImageView outp
         size_t n = vk.swapchain_info.images.size() - sets.size();
         for (size_t i = 0; i < n; i++)
         {
-            VkDescriptorSetAllocateInfo alloc_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-            alloc_info.descriptorPool     = vk.descriptor_pool;
-            alloc_info.descriptorSetCount = 1;
-            alloc_info.pSetLayouts        = &set_layout;
-
-            VkDescriptorSet set;
-            VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &set));
+            VkDescriptorSet set = allocate_descriptor_set(set_layout);
             sets.push_back(set);
-
             Descriptor_Writes(set).sampler(0, point_sampler);
         }
     }

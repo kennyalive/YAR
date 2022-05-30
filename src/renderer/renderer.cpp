@@ -309,12 +309,7 @@ void Renderer::load_project(const std::string& input_file) {
                 .storage_buffer(0, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_COMPUTE_BIT) // lambertian materials
                 .create("material_descriptor_set_layout");
 
-            VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-            alloc_info.descriptorPool = vk.descriptor_pool;
-            alloc_info.descriptorSetCount = 1;
-            alloc_info.pSetLayouts = &gpu_scene.material_descriptor_set_layout;
-            VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &gpu_scene.material_descriptor_set));
-
+            gpu_scene.material_descriptor_set = allocate_descriptor_set(gpu_scene.material_descriptor_set_layout);
             Descriptor_Writes(gpu_scene.material_descriptor_set)
                 .storage_buffer(0, gpu_scene.lambertian_material_buffer.handle, 0, VK_WHOLE_SIZE);
         }
@@ -328,11 +323,7 @@ void Renderer::load_project(const std::string& input_file) {
                 .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR) // vertex buffers
                 .create("base_descriptor_set_layout");
 
-            VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-            alloc_info.descriptorPool = vk.descriptor_pool;
-            alloc_info.descriptorSetCount = 1;
-            alloc_info.pSetLayouts = &gpu_scene.base_descriptor_set_layout;
-            VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &gpu_scene.base_descriptor_set));
+            gpu_scene.base_descriptor_set = allocate_descriptor_set(gpu_scene.base_descriptor_set_layout);
 
             std::vector<VkDescriptorImageInfo> image_infos(gpu_scene.images_2d.size());
             for (auto[i, image] : enumerate(gpu_scene.images_2d)) {
@@ -392,52 +383,35 @@ void Renderer::load_project(const std::string& input_file) {
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 lights.data(), "diffuse_rectangular_light_buffer");
         }
-        {
+
         gpu_scene.light_descriptor_set_layout = Descriptor_Set_Layout()
             .storage_buffer(POINT_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
             .storage_buffer(DIRECTIONAL_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
             .storage_buffer(DIFFUSE_RECTANGULAR_LIGHT_BINDING, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
             .create("light_descriptor_set_layout");
 
-        VkDescriptorSetAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
-        alloc_info.descriptorPool = vk.descriptor_pool;
-        alloc_info.descriptorSetCount = 1;
-        alloc_info.pSetLayouts = &gpu_scene.light_descriptor_set_layout;
-        VK_CHECK(vkAllocateDescriptorSets(vk.device, &alloc_info, &gpu_scene.light_descriptor_set));
-
+        gpu_scene.light_descriptor_set = allocate_descriptor_set(gpu_scene.light_descriptor_set_layout);
         Descriptor_Writes(gpu_scene.light_descriptor_set)
             .storage_buffer(POINT_LIGHT_BINDING, gpu_scene.point_lights.handle, 0, VK_WHOLE_SIZE)
             .storage_buffer(DIRECTIONAL_LIGHT_BINDING, gpu_scene.directional_lights.handle, 0, VK_WHOLE_SIZE)
             .storage_buffer(DIFFUSE_RECTANGULAR_LIGHT_BINDING, gpu_scene.diffuse_rectangular_lights.handle, 0, VK_WHOLE_SIZE);
-        }
     }
 
     kernel_context.base_descriptor_set_layout = gpu_scene.base_descriptor_set_layout;
     kernel_context.light_descriptor_set_layout = gpu_scene.light_descriptor_set_layout;
     kernel_context.material_descriptor_set_layout = gpu_scene.material_descriptor_set_layout;
 
-    // Per-frame pipeline layout.
-    {
-        VkDescriptorSetLayout set_layouts[] = {
+    gpu_scene.per_frame_pipeline_layout = create_pipeline_layout(
+        {
             gpu_scene.base_descriptor_set_layout,
             gpu_scene.material_descriptor_set_layout,
             gpu_scene.light_descriptor_set_layout,
-        };
-
-        VkPushConstantRange push_constant_ranges[1];
-        push_constant_ranges[0].stageFlags = VK_SHADER_STAGE_ALL;
-        push_constant_ranges[0].offset = 0;
-        push_constant_ranges[0].size = Compatible_Layout_Push_Constant_Count * sizeof(uint32_t);
-
-        VkPipelineLayoutCreateInfo create_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        create_info.setLayoutCount = (uint32_t)std::size(set_layouts);
-        create_info.pSetLayouts = set_layouts;
-        create_info.pushConstantRangeCount = (uint32_t)std::size(push_constant_ranges);
-        create_info.pPushConstantRanges = push_constant_ranges;
-
-        VK_CHECK(vkCreatePipelineLayout(vk.device, &create_info, nullptr, &gpu_scene.per_frame_pipeline_layout));
-        vk_set_debug_name(gpu_scene.per_frame_pipeline_layout, "per_frame_pipeline_layout");
-    }
+        },
+        {
+            VkPushConstantRange{VK_SHADER_STAGE_ALL, 0, Compatible_Layout_Push_Constant_Count * sizeof(uint32_t)}
+        },
+        "per_frame_pipeline_layout"
+    );
 
     patch_materials.create(gpu_scene.material_descriptor_set_layout);
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
