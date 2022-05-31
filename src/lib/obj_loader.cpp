@@ -6,8 +6,6 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny/tiny_obj_loader.h>
 
-#include <unordered_map>
-
 namespace {
 struct Mesh_Vertex {
     Vector3 pos;

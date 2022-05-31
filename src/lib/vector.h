@@ -2,8 +2,6 @@
 
 #include "common.h"
 
-#include <cmath>
-
 struct Vector2;
 struct Vector2i;
 struct Vector4;
