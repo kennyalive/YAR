@@ -44,5 +44,6 @@ struct Raytracer_Config {
     int x_pixel_sample_count = 1;
     int y_pixel_sample_count = 1;
 
+    float film_radiance_scale = 1.f;
     float max_rgb_component_value_of_film_sample = Infinity;
 };

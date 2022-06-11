@@ -653,6 +653,7 @@ Scene load_pbrt_scene(const YAR_Project& project) {
         scene.output_filename = pbrt_film->fileName;
         scene.film_resolution.x = pbrt_film->resolution.x;
         scene.film_resolution.y = pbrt_film->resolution.y;
+        scene.raytracer_config.film_radiance_scale = pbrt_film->scale;
         scene.raytracer_config.max_rgb_component_value_of_film_sample = pbrt_film->maxComponentValue;
     }
 

@@ -431,6 +431,8 @@ static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int t
                 float max_component = std::max(radiance.r, std::max(radiance.g, radiance.b));
                 if (max_component > max_component_limit)
                     radiance *= (max_component_limit / max_component);
+                if (scene_ctx.raytracer_config.film_radiance_scale != 1.f)
+                    radiance *= scene_ctx.raytracer_config.film_radiance_scale;
 
                 tile.add_sample(film.filter, film_pos, radiance);
 
