@@ -35,6 +35,8 @@ namespace pbrt {
 
       if (pbrt->film->hasParam1f("maxsampleluminance"))
           ours->film->maxComponentValue = pbrt->film->getParam1f("maxsampleluminance");
+      if (pbrt->film->hasParam1f("scale"))
+          ours->film->scale = pbrt->film->getParam1f("scale");
     } else {
       std::cout << "warning: could not determine film resolution from pbrt scene" << std::endl;
     }

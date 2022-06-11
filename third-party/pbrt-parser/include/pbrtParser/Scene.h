@@ -1112,6 +1112,8 @@ namespace pbrt {
       to. may be empty if not set */
     std::string        fileName;
 
+    float scale = 1.f;
+
     float maxComponentValue = std::numeric_limits<float>::infinity();
   };
 
