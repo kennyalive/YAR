@@ -78,18 +78,20 @@ void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, cons
         const Matrix3x4& object_to_world = intersection.scene_object->object_to_world_transform;
         position = transform_point (object_to_world, position);
 
-        normal = transform_vector(object_to_world, normal * intersection.scene_object->inv_scale_squared);
+        const Matrix3x4& object_to_world_normal = intersection.scene_object->object_to_world_normal_transform;
+
+        normal = transform_vector(object_to_world_normal, normal);
         float length_of_scaled_normal;
         normal.normalize(&length_of_scaled_normal);
 
-        geometric_normal = transform_vector(object_to_world, geometric_normal * intersection.scene_object->inv_scale_squared);
+        geometric_normal = transform_vector(object_to_world_normal, geometric_normal);
         geometric_normal.normalize();
 
         dpdu = transform_vector(object_to_world, dpdu);
         dpdv = transform_vector(object_to_world, dpdv);
 
-        dndu = transform_vector(object_to_world, dndu * intersection.scene_object->inv_scale_squared);
-        dndv = transform_vector(object_to_world, dndv * intersection.scene_object->inv_scale_squared);
+        dndu = transform_vector(object_to_world_normal, dndu);
+        dndv = transform_vector(object_to_world_normal, dndv);
         // If normal had non-unit length after object_to_world transform due to scaling then in
         // addition to normal normalization we also have to scale normal derivatives by the same
         // magnitude to ensure they represent the same change in normal direction.

@@ -51,6 +51,18 @@ bool Matrix3x4::is_identity() const {
     return true;
 }
 
+bool Matrix3x4::is_identity(float epsilon) const
+{
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 4; j++) {
+            float diff = std::abs(a[i][j] - (i == j ? 1.f : 0.f));
+            if (diff > epsilon)
+                return false;
+        }
+    }
+    return true;
+}
+
 bool Matrix3x4::is_zero() const {
     const float* p = &a[0][0];
     for (int i = 0; i < 12; i++, p++)
@@ -248,20 +260,56 @@ Matrix4x4 perspective_transform_opengl_z01(float fovy_radians, float aspect_rati
     return proj;
 }
 
-Matrix3x4 get_inverse_transform(const Matrix3x4& m) {
-    Vector3 scale = get_scale_from_transform(m);
-    Vector3 inv_scale = Vector3(1) / scale;
+Matrix3x4 get_inverse_transform(const Matrix3x4& m)
+{
+    float a[3][7];
 
-    Vector3 x_axis = inv_scale.x * m.get_column(0);
-    Vector3 y_axis = inv_scale.y * m.get_column(1);
-    Vector3 z_axis = inv_scale.z * m.get_column(2);
-    Vector3 origin = m.get_column(3);
+    a[0][0] = m.a[0][0]; a[0][1] = m.a[0][1]; a[0][2] = m.a[0][2]; a[0][3] = m.a[0][3];
+    a[1][0] = m.a[1][0]; a[1][1] = m.a[1][1]; a[1][2] = m.a[1][2]; a[1][3] = m.a[1][3];
+    a[2][0] = m.a[2][0]; a[2][1] = m.a[2][1]; a[2][2] = m.a[2][2]; a[2][3] = m.a[2][3];
 
-    Matrix3x4 m_inv;
-    m_inv.set_row(0, inv_scale.x * Vector4(x_axis, -dot(x_axis, origin)));
-    m_inv.set_row(1, inv_scale.y * Vector4(y_axis, -dot(y_axis, origin)));
-    m_inv.set_row(2, inv_scale.z * Vector4(z_axis, -dot(z_axis, origin)));
-    return m_inv;
+    a[0][4] = 1; a[0][5] = 0; a[0][6] = 0;
+    a[1][4] = 0; a[1][5] = 1; a[1][6] = 0;
+    a[2][4] = 0; a[2][5] = 0; a[2][6] = 1;
+
+    for (int i = 0; i < 3; i++) {
+        float big = std::abs(a[i][i]);
+        int i_pivot = i;
+
+        for (int i2 = i + 1; i2 < 3; i2++) {
+            if (std::abs(a[i2][i]) > big) {
+                big = std::abs(a[i2][i]);
+                i_pivot = i2;
+            }
+        }
+        ASSERT(big != 0.f);
+        if (i_pivot != i) {
+            for (int k = i; k < 7; k++)
+                std::swap(a[i][k], a[i_pivot][k]);
+        }
+
+        float inv_pivot = 1.f / a[i][i];
+        for (int k = i + 1; k < 7; k++) {
+            a[i][k] *= inv_pivot;
+        }
+        for (int i2 = 0; i2 < 3; i2++) {
+            if (i2 != i) {
+                float coeff = -a[i2][i];
+                for (int k = i + 1; k < 7; k++)
+                    a[i2][k] += a[i][k] * coeff;
+            }
+        }
+    }
+
+    Matrix3x4 inv;
+    for (int i = 0; i < 3; i++) {
+        for (int k = 0; k < 3; k++) {
+            inv.a[i][k] = a[i][k + 4];
+        }
+        inv.a[i][3] = -a[i][3];
+    }
+    ASSERT((inv * m).is_identity(1e-4f));
+    return inv;
 }
 
 Matrix3x4 get_mirrored_transform(const Matrix3x4& m, int flip_axis) {
@@ -282,18 +330,6 @@ Matrix3x4 get_mirrored_transform(const Matrix3x4& m, int flip_axis) {
     m2.a[flip_axis][2] = -m2.a[flip_axis][2];
     m2.a[flip_axis][3] = -m2.a[flip_axis][3];
     return m2;
-}
-
-Vector3 get_scale_from_transform(const Matrix3x4& m) {
-    Vector3 scale;
-    for (int i = 0; i < 3; i++) {
-        float axis_length = m.get_column(i).length();
-        ASSERT(axis_length != 0.f);
-        // If scale has small deviation from 1.0 then assume it's due to
-        // rounding error and in that case force scale to be exactly 1.0.
-        scale[i] = (std::abs(axis_length - 1.f) < 1e-6f) ? 1.f : axis_length;
-    }
-    return scale;
 }
 
 bool is_transform_changes_handedness(const Matrix3x4& m) {

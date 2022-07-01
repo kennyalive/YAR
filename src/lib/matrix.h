@@ -14,6 +14,7 @@ struct Matrix3x4 {
     Vector3 get_column(int column) const;
     Vector4 get_row(int row) const;
     bool is_identity() const;
+    bool is_identity(float epsilon) const;
     bool is_zero() const;
 };
 
@@ -57,7 +58,6 @@ Matrix3x4 get_inverse_transform(const Matrix3x4& m);
 // an axis and transform is computed by this function.
 Matrix3x4 get_mirrored_transform(const Matrix3x4& m, int flip_axis);
 
-Vector3 get_scale_from_transform(const Matrix3x4& m);
 bool is_transform_changes_handedness(const Matrix3x4& m);
 
 Vector3 transform_point(const Matrix3x4& m, Vector3 p);
