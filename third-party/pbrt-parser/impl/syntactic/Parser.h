@@ -46,6 +46,7 @@ namespace pbrt {
       }
       bool startActive { true };
       bool endActive   { true };
+      bool nonUnitW    { false };
     };
 
   
@@ -127,9 +128,10 @@ namespace pbrt {
       Token peek(unsigned int ahead=0);
 
       // add additional transform to current transform
-      void addTransform(const affine3f &xfm) {
+      void addTransform(const affine3f &xfm, bool nonUnitW = false) {
         if (ctm.startActive) (math::affine3f&)ctm.atStart = (math::affine3f&)ctm.atStart * (const math::affine3f&)xfm;
         if (ctm.endActive)   (math::affine3f&)ctm.atEnd   = (math::affine3f&)ctm.atEnd * (const math::affine3f&)xfm;
+        ctm.nonUnitW = nonUnitW;
       }
       void setTransform(const affine3f &xfm) {
         if (ctm.startActive) (math::affine3f&)ctm.atStart = (const math::affine3f&)xfm;

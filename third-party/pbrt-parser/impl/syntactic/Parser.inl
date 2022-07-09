@@ -360,12 +360,17 @@ namespace pbrt {
       if (token == "Transform") {
         next(); // '['
         affine3f xfm;
-        xfm.l.vx = parseVec3f(); next();
-        xfm.l.vy = parseVec3f(); next();
-        xfm.l.vz = parseVec3f(); next();
-        xfm.p    = parseVec3f(); next();
+        xfm.l.vx = parseVec3f(); float m30 = parseFloat();
+        xfm.l.vy = parseVec3f(); float m31 = parseFloat();
+        xfm.l.vz = parseVec3f(); float m32 = parseFloat();
+        xfm.p = parseVec3f();    float m33 = parseFloat();
+
+        assert(m30 == 0.f && m31 == 0.f && m32 == 0.f);
+        // m33 could be not equal to 1.0 (for example, structuresynth\arcsphere.pbrt).
+        // We don't support such transformations and corresponding object instances will be discarded.
+
         next(); // ']'
-        addTransform(xfm);
+        addTransform(xfm, std::abs(m33 - 1.f) > 1e-3f);
         return true;
       }
       if (token == "ActiveTransform") {
@@ -627,6 +632,10 @@ namespace pbrt {
         // -------------------------------------------------------
         if (token == "ObjectInstance") {
           std::string name = next().text;
+
+          if (ctm.nonUnitW)
+              continue;
+
           std::shared_ptr<Object> object = findNamedObject(name,1);
           std::shared_ptr<Object::Instance> inst
             = std::make_shared<Object::Instance>(object,ctm);
