@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+        <PropertyPageSchema Include=" $(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml"/>
+        <AvailableItemName Include="DxcCompile">
+            <Targets>DxcCompile</Targets>
+        </AvailableItemName>
+    </ItemGroup>
+
+    <Target
+        Name="DxcCompile"
+        Condition="'@(DxcCompile)' != ''"
+        BeforeTargets="ClCompile">
+
+        <Message Importance="High" Text="Compiling shaders" />
+
+        <!-- Find all shader headers (.hlsli files) -->
+        <ItemGroup>
+            <ShaderHeader Include="*.hlsli" />
+        </ItemGroup>
+        <PropertyGroup>
+            <ShaderHeaders>@(ShaderHeader)</ShaderHeaders>
+        </PropertyGroup>
+
+        <!-- Setup metadata for custom build tool -->
+        <ItemGroup>
+            <DxcCompile>
+                <Message>%(Filename)%(Extension)</Message>
+                <Command>
+                     %(DxcCompile.DxcPath) %(Identity) -spirv -E %(DxcCompile.EntryPointName) -T %(DxcCompile.ShaderType)_%(DxcCompile.ShaderModel) -Fo %(DxcCompile.ObjectFileName) %(DxcCompile.AdditionalOptions)
+                </Command>
+                <AdditionalInputs>$(ShaderHeaders)</AdditionalInputs>
+                <Outputs>%(DxcCompile.ObjectFileName)</Outputs>
+            </DxcCompile>
+        </ItemGroup>
+
+        <!-- Compile by forwarding to the Custom Build Tool infrastructure,
+        so it will take care of .tlogs and error/warning parsing -->
+        <CustomBuild
+            Sources="@(DxcCompile)"
+            MinimalRebuildFromTracking="true"
+            TrackerLogDirectory="$(TLogLocation)"
+            ErrorListRegex="(?'FILENAME'.+):(?'LINE'\d+):(?'COLUMN'\d+): (?'CATEGORY'error|warning): (?'TEXT'.*)">
+        </CustomBuild>
+    </Target>
+
+</Project>

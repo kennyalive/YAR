@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions
+    xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+    <Rule
+        Name="DXC"
+        PageTemplate="tool"
+        DisplayName="DXC Compiler"
+        SwitchPrefix="-"
+        Separator=" "
+        Order="300"
+        xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+        <Rule.Categories>
+            <Category Name="General" DisplayName="General" />
+            <Category Name="Output Files" DisplayName="Output Files" />
+            <Category Name="Command Line" DisplayName="Command Line" Subtype="CommandLine" />
+        </Rule.Categories>
+
+        <Rule.DataSource>
+            <DataSource Persistence="ProjectFile" ItemType="DxcCompile" Label="" HasConfigurationCondition="true" />
+        </Rule.DataSource>
+
+        <StringProperty Name="DxcPath"
+            DisplayName="DXC Path"
+            Description="Path to the DXC compiler executable"
+            Category="General"
+            IncludeInCommandLine="false">
+        </StringProperty>
+
+        <StringProperty Name="EntryPointName"
+            DisplayName="Entrypoint Name"
+            Description="Specifies the name of the entry point for the shader (-E &lt;name&gt;)"
+            Category="General"
+            Switch="E">
+        </StringProperty>
+
+        <EnumProperty Name="ShaderType"
+            DisplayName="Shader Type"
+            Description="Specifies the type of shader. Profile (-T) switch is a combination of Shader Type and Shader Model"
+            Category="General">
+            <EnumValue Name="vs" DisplayName="Vertex Shader" />
+            <EnumValue Name="ps" DisplayName="Pixel Shader" />
+            <EnumValue Name="cs" DisplayName="Compute Shader" />
+            <EnumValue Name="lib" DisplayName="Library" />
+        </EnumProperty>
+
+        <EnumProperty Name="ShaderModel"
+            DisplayName="Shader Model"
+            Description="Specifies the shader model. Profile (-T) switch is a combination of Shader Type and Shader Model"
+            Category="General">
+            <EnumValue Name="6_0" DisplayName="6_0" />
+            <EnumValue Name="6_1" DisplayName="6_1" />
+            <EnumValue Name="6_2" DisplayName="6_2" />
+            <EnumValue Name="6_4" DisplayName="6_4" />
+            <EnumValue Name="6_5" DisplayName="6_5" />
+            <EnumValue Name="6_3" DisplayName="6_3" />
+            <EnumValue Name="6_6" DisplayName="6_6" />
+        </EnumProperty>
+
+        <StringProperty
+            Name="ObjectFileName"
+            DisplayName="Object File Name"
+            Description="Specifies a name for object file. (-Fo &lt;name&gt;)."
+            Category="Output Files"
+            Switch="Fo">
+        </StringProperty>
+
+        <StringProperty
+            Name="AdditionalOptions"
+            DisplayName="Additional Options"
+            Description="Additional Options."
+            Category="Command Line">
+        </StringProperty>
+    </Rule>
+
+    <ContentType
+        Name="HLSL"
+        DisplayName="DXC Compiler"
+        ItemType="DxcCompile" />
+    <ItemType
+        Name="DxcCompile"
+        DisplayName="DXC Compiler" />
+    <FileExtension
+        Name=".hlsl"
+        ContentType="HLSL" />
+
+</ProjectSchemaDefinitions>
