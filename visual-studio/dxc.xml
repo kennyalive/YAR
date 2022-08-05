@@ -52,9 +52,9 @@
             <EnumValue Name="6_0" DisplayName="6_0" />
             <EnumValue Name="6_1" DisplayName="6_1" />
             <EnumValue Name="6_2" DisplayName="6_2" />
+            <EnumValue Name="6_3" DisplayName="6_3" />
             <EnumValue Name="6_4" DisplayName="6_4" />
             <EnumValue Name="6_5" DisplayName="6_5" />
-            <EnumValue Name="6_3" DisplayName="6_3" />
             <EnumValue Name="6_6" DisplayName="6_6" />
         </EnumProperty>
 
