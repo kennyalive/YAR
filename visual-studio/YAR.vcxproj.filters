@@ -115,8 +115,10 @@
     <CustomBuild Include="..\src\shaders\raytrace_scene_shadow_ray.rchit.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="..\src\shaders\apply_tone_mapping.comp.glsl">
+  </ItemGroup>
+  <ItemGroup>
+    <DxcCompile Include="..\src\shaders\apply_tone_mapping.hlsl">
       <Filter>shaders</Filter>
-    </CustomBuild>
+    </DxcCompile>
   </ItemGroup>
 </Project>

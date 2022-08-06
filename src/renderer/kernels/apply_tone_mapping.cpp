@@ -7,9 +7,7 @@
 
 void Apply_Tone_Mapping::create() {
     set_layout = Descriptor_Set_Layout()
-        .sampler(0, VK_SHADER_STAGE_COMPUTE_BIT)
-        .sampled_image(1, VK_SHADER_STAGE_COMPUTE_BIT)
-        .storage_image(2, VK_SHADER_STAGE_COMPUTE_BIT)
+        .storage_image(0, VK_SHADER_STAGE_COMPUTE_BIT)
         .create("apply_tone_mapping_set_layout");
 
     pipeline_layout = create_pipeline_layout(
@@ -17,30 +15,18 @@ void Apply_Tone_Mapping::create() {
         { VkPushConstantRange{VK_SHADER_STAGE_COMPUTE_BIT, 0, 8 /*uint32 width + uint32 height*/} },
         "apply_tone_mapping_pipeline_layout");
 
-    pipeline = create_compute_pipeline("spirv/apply_tone_mapping.comp.spv", pipeline_layout, "apply_tone_mapping_pipeline_layout");
-
-    // point sampler
-    {
-        VkSamplerCreateInfo create_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-        VK_CHECK(vkCreateSampler(vk.device, &create_info, nullptr, &point_sampler));
-        vk_set_debug_name(point_sampler, "point_sampler");
-    }
-
+    pipeline = create_compute_pipeline("spirv/apply_tone_mapping.spv", pipeline_layout, "apply_tone_mapping_pipeline_layout");
     descriptor_set = allocate_descriptor_set(set_layout);
-    Descriptor_Writes(descriptor_set).sampler(0, point_sampler);
 }
 
 void Apply_Tone_Mapping::destroy() {
     vkDestroyDescriptorSetLayout(vk.device, set_layout, nullptr);
     vkDestroyPipelineLayout(vk.device, pipeline_layout, nullptr);
     vkDestroyPipeline(vk.device, pipeline, nullptr);
-    vkDestroySampler(vk.device, point_sampler, nullptr);
 }
 
 void Apply_Tone_Mapping::update_resolution_dependent_descriptors(VkImageView output_image_view) {
-    Descriptor_Writes(descriptor_set)
-        .sampled_image(1, output_image_view, VK_IMAGE_LAYOUT_GENERAL)
-        .storage_image(2, output_image_view);
+    Descriptor_Writes(descriptor_set).storage_image(0, output_image_view);
 }
 
 void Apply_Tone_Mapping::dispatch() {

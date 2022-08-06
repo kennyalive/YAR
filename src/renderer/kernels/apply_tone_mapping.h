@@ -6,7 +6,6 @@ struct Apply_Tone_Mapping {
     VkDescriptorSetLayout set_layout;
     VkPipelineLayout pipeline_layout;
     VkPipeline pipeline;
-    VkSampler point_sampler;
     VkDescriptorSet descriptor_set;
 
     void create();

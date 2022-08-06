@@ -84,6 +84,9 @@
     <CustomBuild>
       <LinkObjects>false</LinkObjects>
     </CustomBuild>
+    <DxcCompile>
+      <ObjectFileName>$(ProjectDir)..\data\spirv\%(Filename).spv</ObjectFileName>
+    </DxcCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -122,6 +125,9 @@
     <CustomBuild>
       <LinkObjects>false</LinkObjects>
     </CustomBuild>
+    <DxcCompile>
+      <ObjectFileName>$(ProjectDir)..\data\spirv\%(Filename).spv</ObjectFileName>
+    </DxcCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\renderer\acceleration_structure.cpp" />
@@ -157,11 +163,6 @@
     <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\src\shaders\apply_tone_mapping.comp.glsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </CustomBuild>
     <None Include="..\src\shaders\common.glsl" />
     <CustomBuild Include="..\src\shaders\copy_to_swapchain.comp.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
@@ -201,6 +202,12 @@
     </CustomBuild>
     <None Include="..\src\shaders\rt_utils.glsl" />
     <None Include="..\src\shaders\shading_context.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <DxcCompile Include="..\src\shaders\apply_tone_mapping.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cs</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cs</ShaderType>
+    </DxcCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
