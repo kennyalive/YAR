@@ -62,6 +62,13 @@ void Renderer::initialize(GLFWwindow* window, bool enable_validation_layers) {
         printf("  maxRayHitAttributeSize = %u\n", raytrace_scene.properties.maxRayHitAttributeSize);
     }
 
+    // point sampler
+    {
+        VkSamplerCreateInfo create_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+        VK_CHECK(vkCreateSampler(vk.device, &create_info, nullptr, &point_sampler));
+        vk_set_debug_name(point_sampler, "point_sampler");
+    }
+
     create_render_passes();
     apply_tone_mapping.create();
     copy_to_swapchain.create();
@@ -128,6 +135,8 @@ void Renderer::shutdown() {
         mesh.index_buffer.destroy();
     }
     gpu_meshes.clear();
+
+    vkDestroySampler(vk.device, point_sampler, nullptr);
 
     for (Vk_Image& image : gpu_scene.images_2d)
         image.destroy();
@@ -347,7 +356,7 @@ void Renderer::load_project(const std::string& input_file) {
 
             Descriptor_Writes(gpu_scene.base_descriptor_set)
                 .sampled_image_array(0, (uint32_t)gpu_scene.images_2d.size(), image_infos.data())
-                .sampler(1, copy_to_swapchain.point_sampler)
+                .sampler(1, point_sampler)
                 .storage_buffer(2, gpu_scene.instance_info_buffer.handle, 0, VK_WHOLE_SIZE)
                 .storage_buffer_array(3, (uint32_t)gpu_meshes.size(), index_buffer_infos.data())
                 .storage_buffer_array(4, (uint32_t)gpu_meshes.size(), vertex_buffer_infos.data());

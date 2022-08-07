@@ -164,11 +164,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\shaders\common.glsl" />
-    <CustomBuild Include="..\src\shaders\copy_to_swapchain.comp.glsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </CustomBuild>
     <CustomBuild Include="..\src\shaders\raytrace_scene.rchit.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
@@ -205,6 +200,10 @@
   </ItemGroup>
   <ItemGroup>
     <DxcCompile Include="..\src\shaders\apply_tone_mapping.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cs</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cs</ShaderType>
+    </DxcCompile>
+    <DxcCompile Include="..\src\shaders\copy_to_swapchain.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cs</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cs</ShaderType>
     </DxcCompile>

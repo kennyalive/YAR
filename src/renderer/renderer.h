@@ -54,6 +54,8 @@ private:
 
     Kernel_Context kernel_context;
 
+    VkSampler point_sampler = VK_NULL_HANDLE;
+
     std::vector<GPU_Mesh> gpu_meshes;
 
     struct GPU_Scene_Resources {
