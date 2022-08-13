@@ -7,4 +7,8 @@ struct Ray_Payload {
     float3 color;
 };
 
+struct Shadow_Ray_Payload {
+    float shadow_factor; // 0.0 or 1.0
+};
+
 #endif
