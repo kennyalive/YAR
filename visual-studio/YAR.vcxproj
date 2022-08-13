@@ -174,16 +174,12 @@
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
-    <CustomBuild Include="..\src\shaders\raytrace_scene.rmiss.glsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </CustomBuild>
     <CustomBuild Include="..\src\shaders\raytrace_scene_shadow_ray.rchit.glsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
+    <None Include="..\src\shaders\common.hlsli" />
     <None Include="..\src\shaders\compute_bsdf.glsl" />
     <None Include="..\src\shaders\direct_lighting.glsl" />
     <None Include="..\src\shaders\geometry.glsl" />
@@ -191,6 +187,7 @@
     <None Include="..\src\shaders\light_resources.glsl" />
     <None Include="..\src\shaders\material_resources.glsl" />
     <None Include="..\src\shaders\rt_utils.glsl" />
+    <None Include="..\src\shaders\rt_utils.hlsli" />
     <None Include="..\src\shaders\shading_context.glsl" />
   </ItemGroup>
   <ItemGroup>
@@ -201,6 +198,10 @@
     <DxcCompile Include="..\src\shaders\copy_to_swapchain.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cs</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cs</ShaderType>
+    </DxcCompile>
+    <DxcCompile Include="..\src\shaders\raytrace_scene.miss.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib</ShaderType>
     </DxcCompile>
     <None Include="..\src\shaders\material_resources.hlsli">
       <FileType>Document</FileType>

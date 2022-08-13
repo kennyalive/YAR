@@ -102,7 +102,7 @@ void Raytrace_Scene::create_pipeline(const Kernel_Context& ctx, const std::vecto
     // pipeline
     {
         Shader_Module rgen_shader("spirv/raytrace_scene.rgen.spv");
-        Shader_Module miss_shader("spirv/raytrace_scene.rmiss.spv");
+        Shader_Module miss_shader("spirv/raytrace_scene.miss.spv");
         Shader_Module chit_shader("spirv/raytrace_scene.rchit.spv");
         Shader_Module shadow_ray_chit_shader("spirv/raytrace_scene_shadow_ray.rchit.spv");
 

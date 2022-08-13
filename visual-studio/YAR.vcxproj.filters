@@ -104,15 +104,18 @@
     <None Include="..\src\shaders\shared_main.hlsli">
       <Filter>shaders</Filter>
     </None>
+    <None Include="..\src\shaders\rt_utils.hlsli">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\src\shaders\common.hlsli">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\src\shaders\raytrace_scene.rchit.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
     <CustomBuild Include="..\src\shaders\raytrace_scene.rgen.glsl">
-      <Filter>shaders</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\src\shaders\raytrace_scene.rmiss.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
     <CustomBuild Include="..\src\shaders\raytrace_scene_shadow_ray.rchit.glsl">
@@ -127,6 +130,9 @@
       <Filter>shaders</Filter>
     </DxcCompile>
     <DxcCompile Include="..\src\shaders\patch_materials.hlsl">
+      <Filter>shaders</Filter>
+    </DxcCompile>
+    <DxcCompile Include="..\src\shaders\raytrace_scene.miss.hlsl">
       <Filter>shaders</Filter>
     </DxcCompile>
   </ItemGroup>
