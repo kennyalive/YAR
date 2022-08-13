@@ -16,7 +16,7 @@
 
         <!-- Find all shader headers (.hlsli files) -->
         <ItemGroup>
-            <ShaderHeader Include="*.hlsli" />
+            <ShaderHeader Include="$(MSBuildThisFileDirectory)../src/shaders/*.hlsli" />
         </ItemGroup>
         <PropertyGroup>
             <ShaderHeaders>@(ShaderHeader)</ShaderHeaders>
