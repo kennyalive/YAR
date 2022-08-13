@@ -115,9 +115,6 @@
     <CustomBuild Include="..\src\shaders\raytrace_scene.rchit.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
-    <CustomBuild Include="..\src\shaders\raytrace_scene.rgen.glsl">
-      <Filter>shaders</Filter>
-    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <DxcCompile Include="..\src\shaders\apply_tone_mapping.hlsl">
@@ -133,6 +130,9 @@
       <Filter>shaders</Filter>
     </DxcCompile>
     <DxcCompile Include="..\src\shaders\raytrace_scene_shadow_ray.chit.hlsl">
+      <Filter>shaders</Filter>
+    </DxcCompile>
+    <DxcCompile Include="..\src\shaders\raytrace_scene.rgen.hlsl">
       <Filter>shaders</Filter>
     </DxcCompile>
   </ItemGroup>

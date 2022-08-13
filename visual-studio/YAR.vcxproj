@@ -169,11 +169,6 @@
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </CustomBuild>
-    <CustomBuild Include="..\src\shaders\raytrace_scene.rgen.glsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </CustomBuild>
     <None Include="..\src\shaders\common.hlsli" />
     <None Include="..\src\shaders\compute_bsdf.glsl" />
     <None Include="..\src\shaders\direct_lighting.glsl" />
@@ -195,6 +190,10 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cs</ShaderType>
     </DxcCompile>
     <DxcCompile Include="..\src\shaders\raytrace_scene.miss.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib</ShaderType>
+    </DxcCompile>
+    <DxcCompile Include="..\src\shaders\raytrace_scene.rgen.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib</ShaderType>
     </DxcCompile>

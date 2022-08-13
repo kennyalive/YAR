@@ -27,7 +27,7 @@
             <DxcCompile>
                 <Message>%(Filename)%(Extension)</Message>
                 <Command>
-                     %(DxcCompile.DxcPath) %(Identity) -spirv -fspv-target-env=vulkan1.3 -E %(DxcCompile.EntryPointName) -T %(DxcCompile.ShaderType)_%(DxcCompile.ShaderModel) -Fo %(DxcCompile.ObjectFileName) %(DxcCompile.AdditionalOptions)
+                     %(DxcCompile.DxcPath) %(Identity) -Zpr -spirv -fspv-target-env=vulkan1.3 -E %(DxcCompile.EntryPointName) -T %(DxcCompile.ShaderType)_%(DxcCompile.ShaderModel) -Fo %(DxcCompile.ObjectFileName) %(DxcCompile.AdditionalOptions)
                 </Command>
                 <AdditionalInputs>$(ShaderHeaders)</AdditionalInputs>
                 <Outputs>%(DxcCompile.ObjectFileName)</Outputs>

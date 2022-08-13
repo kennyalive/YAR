@@ -11,6 +11,8 @@
 #endif
 static const int LAMBERTIAN_MATERIAL_BINDING = 0;
 
+#define KERNEL_SET_0 3
+
 // Default texture indices.
 static const int Black_2D_Texture_Index = 0;
 static const int White_2D_Texture_Index = 1;

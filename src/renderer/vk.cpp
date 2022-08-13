@@ -181,11 +181,13 @@ static void create_device(GLFWwindow* window) {
 
             assert(is_extension_supported(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME));
             assert(is_extension_supported(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME));
+            assert(is_extension_supported(VK_KHR_RAY_QUERY_EXTENSION_NAME));
             assert(is_extension_supported(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME));
 
             device_extensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
             device_extensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
             device_extensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+            device_extensions.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
         }
 
         const float priority = 1.0;
@@ -222,6 +224,10 @@ static void create_device(GLFWwindow* window) {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR };
         ray_tracing_pipeline_features.rayTracingPipeline = VK_TRUE;
 
+        VkPhysicalDeviceRayQueryFeaturesKHR ray_query_features{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR };
+        ray_query_features.rayQuery = VK_TRUE;
+
         VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features{
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT };
         robustness2_features.nullDescriptor = VK_TRUE;
@@ -232,7 +238,8 @@ static void create_device(GLFWwindow* window) {
         descriptor_indexing_features.pNext = &maintenance4_features;
         maintenance4_features.pNext = &acceleration_structure_features;
         acceleration_structure_features.pNext = &ray_tracing_pipeline_features;
-        ray_tracing_pipeline_features.pNext = &robustness2_features;
+        ray_tracing_pipeline_features.pNext = &ray_query_features;
+        ray_query_features.pNext = &robustness2_features;
 
         VkPhysicalDeviceFeatures2 features2 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
         features2.pNext = &buffer_device_address_features;
