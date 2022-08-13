@@ -10,7 +10,7 @@ void Patch_Materials::create(VkDescriptorSetLayout material_descriptor_set_layou
         "patch_materials_pipeline_layout"
     );
 
-    pipeline = create_compute_pipeline("spirv/patch_materials.comp.spv", pipeline_layout,
+    pipeline = create_compute_pipeline("spirv/patch_materials.spv", pipeline_layout,
         "patch_materials_pipeline");
 }
 

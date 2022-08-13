@@ -95,11 +95,17 @@
     <None Include="..\src\shaders\shading_context.glsl">
       <Filter>shaders</Filter>
     </None>
+    <None Include="..\src\shaders\material_resources.hlsli">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\src\shaders\shared_material.hlsli">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\src\shaders\shared_main.hlsli">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\src\shaders\patch_materials.comp.glsl">
-      <Filter>shaders</Filter>
-    </CustomBuild>
     <CustomBuild Include="..\src\shaders\raytrace_scene.rchit.glsl">
       <Filter>shaders</Filter>
     </CustomBuild>
@@ -118,6 +124,9 @@
       <Filter>shaders</Filter>
     </DxcCompile>
     <DxcCompile Include="..\src\shaders\copy_to_swapchain.hlsl">
+      <Filter>shaders</Filter>
+    </DxcCompile>
+    <DxcCompile Include="..\src\shaders\patch_materials.hlsl">
       <Filter>shaders</Filter>
     </DxcCompile>
   </ItemGroup>
