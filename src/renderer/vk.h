@@ -52,7 +52,7 @@ struct GLFWwindow;
 
 // Initializes VK_Instance structure.
 // After calling this function we get fully functional vulkan subsystem.
-void vk_initialize(GLFWwindow* window, bool enable_validation_layers);
+void vk_initialize(GLFWwindow* window, bool vsync, bool enable_validation_layers);
 
 // Shutdown vulkan subsystem by releasing resources acquired by Vk_Instance.
 void vk_shutdown();

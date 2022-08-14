@@ -281,7 +281,7 @@ void Vk_Buffer::destroy() {
     *this = Vk_Buffer{};
 }
 
-void vk_initialize(GLFWwindow* window, bool enable_validation_layers) {
+void vk_initialize(GLFWwindow* window, bool vsync, bool enable_validation_layers) {
     VK_CHECK(volkInitialize());
     uint32_t instance_version = volkGetInstanceVersion();
 
@@ -437,7 +437,7 @@ void vk_initialize(GLFWwindow* window, bool enable_validation_layers) {
         } ();
     }
 
-    vk_create_swapchain(true);
+    vk_create_swapchain(vsync);
 
     // Query pool.
     {

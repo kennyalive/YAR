@@ -33,7 +33,7 @@ static VkFormat get_depth_image_format() {
 }
 
 void Renderer::initialize(GLFWwindow* window, bool enable_validation_layers) {
-    vk_initialize(window, enable_validation_layers);
+    vk_initialize(window, ui.vsync, enable_validation_layers);
 
     // Device properties.
     {

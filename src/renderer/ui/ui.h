@@ -12,7 +12,7 @@ struct UI {
     };
     UI_Result ui_result;
     bool show_ui = true;
-    bool vsync = true;
+    bool vsync = false;
 
     bool* spp4 = nullptr;
     const GPU_Time_Scope* frame_time_scope = nullptr;
