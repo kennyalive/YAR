@@ -2,8 +2,6 @@
 #define RT_UTILS_HLSL
 
 struct Ray_Payload {
-    float3 rx_dir;
-    float3 ry_dir;
     float3 color;
 };
 
@@ -14,8 +12,6 @@ struct Shadow_Ray_Payload {
 struct Ray {
     float3 origin;
     float3 dir;
-    float3 rx_dir;
-    float3 ry_dir;
 };
 
 #ifdef RGEN_SHADER
@@ -42,8 +38,6 @@ Ray generate_ray(float3x4 camera_to_world, float2 film_position)
     Ray ray;
     ray.origin  = camera_to_world._m03_m13_m23;
     ray.dir     = mul(camera_to_world, float4(get_direction(film_position), 0));
-    ray.rx_dir  = mul(camera_to_world, float4(get_direction(float2(film_position.x + 1.f, film_position.y)), 0));
-    ray.ry_dir  = mul(camera_to_world, float4(get_direction(float2(film_position.x, film_position.y + 1.f)), 0));
     return ray;
 }
 #endif // RGEN_SHADER

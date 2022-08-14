@@ -29,17 +29,15 @@ static const float tmax = 1e+3f;
 
 float3 trace_ray(float2 sample_pos)
 {
-    Ray_Payload payload;
     Ray ray = generate_ray(camera_to_world, sample_pos);
-    payload.rx_dir = ray.rx_dir;
-    payload.ry_dir = ray.ry_dir;
     
     RayDesc ray_desc;
     ray_desc.Origin = ray.origin;
     ray_desc.TMin = tmin;
     ray_desc.Direction = ray.dir;
     ray_desc.TMax = tmax;
-    
+
+    Ray_Payload payload;
     TraceRay(accel, RAY_FLAG_FORCE_OPAQUE, 0xffu, 0, 0, 0, ray_desc, payload);
     return payload.color;
 }
