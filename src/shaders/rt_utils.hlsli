@@ -9,6 +9,12 @@ struct Shadow_Ray_Payload {
     float shadow_factor; // 0.0 or 1.0
 };
 
+struct Vertex {
+    float3 p;
+    float3 n;
+    float2 uv;
+};
+
 struct Ray {
     float3 origin;
     float3 dir;

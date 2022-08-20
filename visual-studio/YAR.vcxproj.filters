@@ -89,9 +89,6 @@
     <None Include="..\src\shaders\material_resources.glsl">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\direct_lighting.glsl">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="..\src\shaders\shading_context.glsl">
       <Filter>shaders</Filter>
     </None>
@@ -110,11 +107,24 @@
     <None Include="..\src\shaders\common.hlsli">
       <Filter>shaders</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="..\src\shaders\raytrace_scene.rchit.glsl">
+    <None Include="..\src\shaders\shading_context.hlsli">
       <Filter>shaders</Filter>
-    </CustomBuild>
+    </None>
+    <None Include="..\src\shaders\base_resources.hlsli">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\src\shaders\light_resources.hlsli">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\src\shaders\shared_light.hlsli">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\src\shaders\direct_lighting.hlsli">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="..\src\shaders\evaluate_bsdf.hlsli">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <DxcCompile Include="..\src\shaders\apply_tone_mapping.hlsl">
@@ -133,6 +143,9 @@
       <Filter>shaders</Filter>
     </DxcCompile>
     <DxcCompile Include="..\src\shaders\raytrace_scene.rgen.hlsl">
+      <Filter>shaders</Filter>
+    </DxcCompile>
+    <DxcCompile Include="..\src\shaders\raytrace_scene.chit.hlsl">
       <Filter>shaders</Filter>
     </DxcCompile>
   </ItemGroup>
