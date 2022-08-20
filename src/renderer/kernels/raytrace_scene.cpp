@@ -5,8 +5,8 @@
 #include "renderer/geometry.h"
 #include "renderer/kernel_context.h"
 #include "renderer/vk_utils.h"
-#include "shaders/shared_main.h"
-#include "shaders/shared_light.h"
+#include "shaders/shared_main.hlsli"
+#include "shaders/shared_light.hlsli"
 #include "lib/scene.h"
 
 struct Rt_Uniform_Buffer {

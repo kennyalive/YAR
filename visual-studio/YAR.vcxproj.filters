@@ -26,9 +26,6 @@
   <ItemGroup>
     <ClInclude Include="..\src\std.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
-    <ClInclude Include="..\src\shaders\shared_light.h">
-      <Filter>shaders</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\renderer\kernels\copy_to_swapchain.h">
       <Filter>kernels</Filter>
     </ClInclude>
@@ -39,13 +36,7 @@
       <Filter>kernels</Filter>
     </ClInclude>
     <ClInclude Include="..\src\renderer\acceleration_structure.h" />
-    <ClInclude Include="..\src\shaders\shared_main.h">
-      <Filter>shaders</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\renderer\kernel_context.h" />
-    <ClInclude Include="..\src\shaders\shared_material.h">
-      <Filter>shaders</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\renderer\geometry.h" />
     <ClInclude Include="..\src\renderer\ui\ui.h">
       <Filter>ui</Filter>
@@ -68,30 +59,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\shaders\common.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\rt_utils.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\geometry.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\compute_bsdf.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\base_resources.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\light_resources.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\material_resources.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\shading_context.glsl">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="..\src\shaders\material_resources.hlsli">
       <Filter>shaders</Filter>
     </None>

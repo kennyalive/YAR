@@ -5,9 +5,9 @@
 #include "geometry.h"
 #include "vk.h"
 #include "vk_utils.h"
-#include "shaders/shared_main.h"
-#include "shaders/shared_light.h"
-#include "shaders/shared_material.h"
+#include "shaders/shared_main.hlsli"
+#include "shaders/shared_light.hlsli"
+#include "shaders/shared_material.hlsli"
 
 #include "reference/reference_renderer.h"
 #include "lib/matrix.h"

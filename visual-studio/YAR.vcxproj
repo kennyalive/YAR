@@ -133,26 +133,15 @@
     <ClInclude Include="..\src\renderer\ui\ui.h" />
     <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\renderer\vk_utils.h" />
-    <ClInclude Include="..\src\shaders\shared_light.h" />
-    <ClInclude Include="..\src\shaders\shared_main.h" />
-    <ClInclude Include="..\src\shaders\shared_material.h" />
     <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\shaders\base_resources.hlsli" />
-    <None Include="..\src\shaders\common.glsl" />
     <None Include="..\src\shaders\common.hlsli" />
-    <None Include="..\src\shaders\compute_bsdf.glsl" />
     <None Include="..\src\shaders\evaluate_bsdf.hlsli" />
     <None Include="..\src\shaders\direct_lighting.hlsli" />
-    <None Include="..\src\shaders\geometry.glsl" />
-    <None Include="..\src\shaders\base_resources.glsl" />
-    <None Include="..\src\shaders\light_resources.glsl" />
     <None Include="..\src\shaders\light_resources.hlsli" />
-    <None Include="..\src\shaders\material_resources.glsl" />
-    <None Include="..\src\shaders\rt_utils.glsl" />
     <None Include="..\src\shaders\rt_utils.hlsli" />
-    <None Include="..\src\shaders\shading_context.glsl" />
   </ItemGroup>
   <ItemGroup>
     <DxcCompile Include="..\src\shaders\apply_tone_mapping.hlsl">
