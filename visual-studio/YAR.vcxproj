@@ -72,18 +72,6 @@
     <Manifest>
       <AdditionalManifestFiles>DeclareDPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
-    <CustomBuild>
-      <Command>$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V --target-env vulkan1.2 -o $(ProjectDir)..\data\spirv\%(Filename).spv &amp;&amp; $(VULKAN_SDK)\Bin\spirv-opt $(ProjectDir)..\data\spirv\%(Filename).spv -O --strip-debug -o $(ProjectDir)..\data\spirv\%(Filename).spv</Command>
-    </CustomBuild>
-    <CustomBuild>
-      <Outputs>$(ProjectDir)..\data\spirv\%(Filename).spv</Outputs>
-    </CustomBuild>
-    <CustomBuild>
-      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl;$(ProjectDir)..\src\shaders\geometry.glsl;$(ProjectDir)..\src\shaders\base_resources.glsl;$(ProjectDir)..\src\shaders\light_resources.glsl;$(ProjectDir)..\src\shaders\material_resources.glsl;$(ProjectDir)..\src\shaders\compute_bsdf.glsl;$(ProjectDir)..\src\shaders\direct_lighting.glsl;$(ProjectDir)..\src\shaders\shading_context.glsl</AdditionalInputs>
-    </CustomBuild>
-    <CustomBuild>
-      <LinkObjects>false</LinkObjects>
-    </CustomBuild>
     <DxcCompile>
       <ObjectFileName>$(ProjectDir)..\data\spirv\%(Filename).spv</ObjectFileName>
     </DxcCompile>
@@ -113,18 +101,6 @@
     <Manifest>
       <AdditionalManifestFiles>DeclareDPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
-    <CustomBuild>
-      <Command>$(VULKAN_SDK)\Bin\glslangValidator %(FullPath) -V --target-env vulkan1.2 -o $(ProjectDir)..\data\spirv\%(Filename).spv &amp;&amp; $(VULKAN_SDK)\Bin\spirv-opt $(ProjectDir)..\data\spirv\%(Filename).spv -O --strip-debug -o $(ProjectDir)..\data\spirv\%(Filename).spv</Command>
-    </CustomBuild>
-    <CustomBuild>
-      <Outputs>$(ProjectDir)..\data\spirv\%(Filename).spv</Outputs>
-    </CustomBuild>
-    <CustomBuild>
-      <AdditionalInputs>$(ProjectDir)..\src\shaders\rt_utils.glsl;$(ProjectDir)..\src\shaders\common.glsl;$(ProjectDir)..\src\shaders\geometry.glsl;$(ProjectDir)..\src\shaders\base_resources.glsl;$(ProjectDir)..\src\shaders\light_resources.glsl;$(ProjectDir)..\src\shaders\material_resources.glsl;$(ProjectDir)..\src\shaders\compute_bsdf.glsl;$(ProjectDir)..\src\shaders\direct_lighting.glsl;$(ProjectDir)..\src\shaders\shading_context.glsl</AdditionalInputs>
-    </CustomBuild>
-    <CustomBuild>
-      <LinkObjects>false</LinkObjects>
-    </CustomBuild>
     <DxcCompile>
       <ObjectFileName>$(ProjectDir)..\data\spirv\%(Filename).spv</ObjectFileName>
     </DxcCompile>
