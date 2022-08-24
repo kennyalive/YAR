@@ -24,7 +24,7 @@ static void clip_bounds(const Triangle_Mesh& mesh, uint32_t triangle_index, floa
 
     // sort triangle vertices along the split dimension
     Vector3 p[3];
-    mesh.get_triangle(triangle_index, p[0], p[1], p[2]);
+    mesh.get_positions(triangle_index, p);
 
     if (p[1][axis] < p[0][axis])
         std::swap(p[1], p[0]);

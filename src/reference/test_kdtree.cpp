@@ -105,15 +105,15 @@ static void benchmark_geometry_kdtree(const KdTree& kdtree, const Operation_Info
 
         if (hit_found) {
             const Triangle_Intersection& ti = isect.triangle_intersection;
-            Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
+            Vector3 hit_pos = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
 
-            Vector3 p0, p1, p2;
-            ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);
-            Vector3 ng = cross(p1 - p0, p2 - p0).normalized();
+            Vector3 p[3];
+            ti.mesh->get_positions(ti.triangle_index, p);
+            Vector3 ng = cross(p[1] - p[0], p[2] - p[0]).normalized();
             ng = dot(ng, -ray.direction) < 0 ? -ng : ng;
-            p = offset_ray_origin(p, ng);
+            hit_pos = offset_ray_origin(hit_pos, ng);
 
-            last_hit_position = p;
+            last_hit_position = hit_pos;
             last_hit_normal = ng;
         }
 
@@ -178,15 +178,15 @@ static void validate_triangle_mesh_kdtree(const KdTree& kdtree, const Operation_
 
         if (kdtree_intersection.t != Infinity) {
             const Triangle_Intersection& ti = kdtree_intersection.triangle_intersection;
-            Vector3 p = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
+            Vector3 hit_pos = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
 
-            Vector3 p0, p1, p2;
-            ti.mesh->get_triangle(ti.triangle_index, p0, p1, p2);
-            Vector3 ng = cross(p1 - p0, p2 - p0).normalized();
+            Vector3 p[3];
+            ti.mesh->get_positions(ti.triangle_index, p);
+            Vector3 ng = cross(p[1] - p[0], p[2] - p[0]).normalized();
             ng = dot(ng, -ray.direction) < 0 ? -ng : ng;
-            p = offset_ray_origin(p, ng);
+            hit_pos = offset_ray_origin(hit_pos, ng);
 
-            last_hit_position = p;
+            last_hit_position = hit_pos;
             last_hit_normal = ng;
         }
     }

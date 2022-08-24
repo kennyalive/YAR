@@ -12,15 +12,15 @@ constexpr int max_traversal_depth = 40;
 static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
 {
     auto data = static_cast<const Triangle_Mesh_Geometry_Data*>(geometry_data);
-    Vector3 p0, p1, p2;
-    data->mesh->get_triangle(primitive_index, p0, p1, p2);
+    Vector3 p[3];
+    data->mesh->get_positions(primitive_index, p);
 
     Vector3 b;
-    float t = intersect_triangle_watertight(ray, p0, p1, p2, &b);
+    float t = intersect_triangle_watertight(ray, p[0], p[1], p[2], &b);
 
     if (t < intersection.t) {
         // Check for degenerate triangle.
-        Vector3 normal_direction = cross(p1 - p0, p2 - p0);
+        Vector3 normal_direction = cross(p[1] - p[0], p[2] - p[0]);
         if (normal_direction.length_squared() == 0.f)
             return;
         
