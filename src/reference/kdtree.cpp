@@ -26,6 +26,7 @@ static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* ge
         
         // Do alpha test.
         if (data->alpha_texture != nullptr) {
+            ASSERT(!data->mesh->uvs.empty());
             Vector2 uv = data->mesh->get_uv(primitive_index, b);
             ColorRGB alpha = data->alpha_texture->sample_bilinear(uv, 0, Wrap_Mode::repeat);
             if (alpha.r == 0.f)

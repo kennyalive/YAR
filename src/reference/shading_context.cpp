@@ -63,9 +63,11 @@ void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, cons
     wo = -ray.direction.normalized();
 
     // Geometry_Type-specific initialization.
-    //
-    // The following fields should be initialized: P, N, Ng, UV, dPdu, dPdv, dNdu, dNdv.
     // The values should be calculated in the local coordinate system of the object.
+    // The following fields should be initialized:
+    //  * position
+    //  * geometric_normal, normal
+    //  * has_uv_parameterization, uv, dpdu, dpdv, dndu, dndv
     if (intersection.geometry_type == Geometry_Type::triangle_mesh) {
         init_from_triangle_mesh_intersection(intersection.triangle_intersection);
     }
@@ -130,50 +132,7 @@ void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, cons
     );
 
     if (differential_rays)
-    {
-        has_dxdy_derivatives = true;
-
-        // Position derivatives.
-        {
-            float plane_d = -dot(normal, position);
-
-            float tx = ray_plane_intersection(differential_rays->dx_ray, normal, plane_d);
-            if (std::abs(tx) != Infinity) {
-                Vector3 px = differential_rays->dx_ray.get_point(tx);
-                dpdx = px - position;
-            }
-
-            float ty = ray_plane_intersection(differential_rays->dy_ray, normal, plane_d);
-            if (std::abs(ty) != Infinity) {
-                Vector3 py = differential_rays->dy_ray.get_point(ty);
-                dpdy = py - position;
-            }
-        }
-
-        // Direction derivatives
-        dwo_dx = (-differential_rays->dx_ray.direction) - wo;
-        dwo_dy = (-differential_rays->dy_ray.direction) - wo;
-
-        // dudx/dvdx/dudy/dvdy
-        calculate_UV_derivates();
-
-        // When differential rays are tracked for a sequence of specular bounces they are becoming
-        // progressively worse approximation for a pixel footprint and so the derived values.
-        // Here's a sanity check that disables differential rays functionality for implausible values.
-        //
-        // NOTE: this code is mostly designed to prevent unstable numerical calculations (which triggers asserts)
-        // but is not a mean to disable bad differential rays early enough.
-        // Raytracer_Config::max_differential_ray_specular_bounces should be used instead.
-        if (std::abs(dudx) > 1e9f ||
-            std::abs(dvdx) > 1e9f ||
-            std::abs(dudy) > 1e9f ||
-            std::abs(dvdy) > 1e9f)
-        {
-            has_dxdy_derivatives = false;
-            dpdx = dpdy = dwo_dx = dwo_dy = Vector3{};
-            dudx = dvdx = dudy = dvdy = 0.f;
-        }
-    }
+        calculate_dxdy_derivatives(*differential_rays);
 
     // Adjustment of shading normal invalidates dndu/dndv. For now it's not clear to which degree
     // it could be an issue (in most cases shading normals are left unchanged). Until further evidence
@@ -208,54 +167,104 @@ void Shading_Context::initialize_scattering(Thread_Context& thread_ctx, float u)
         bsdf = create_bsdf(thread_ctx, material);
 }
 
-void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Intersection& ti) {
-    position = ti.mesh->get_position(ti.triangle_index, ti.barycentrics);
-    normal = ti.mesh->get_normal(ti.triangle_index, ti.barycentrics);
-    uv = ti.mesh->get_uv(ti.triangle_index, ti.barycentrics);
-    
+void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Intersection& ti)
+{
     Vector3 p[3];
     ti.mesh->get_positions(ti.triangle_index, p);
+    position = barycentric_interpolate(p, ti.barycentrics);
     geometric_normal = cross(p[1] - p[0], p[2] - p[0]).normalized();
+    normal = geometric_normal;
 
-
-    Vector2 uvs[3];
-    ti.mesh->get_uvs(ti.triangle_index, uvs);
-    float a[2][2] = {
-        { uvs[1].u - uvs[0].u, uvs[1].v - uvs[0].v },
-        { uvs[2].u - uvs[0].u, uvs[2].v - uvs[0].v }
-    };
-
-    // dpdu/dpdv
-    {
-        Vector3 b[2] = {
-            p[1] - p[0],
-            p[2] - p[0]
-        };
-        // If equation cannot be solved then dpdu/dpdv stay initialized to zero.
-        solve_linear_system_2x2(a, b, &dpdu, &dpdv);
+    Vector3 n[3];
+    if (!ti.mesh->normals.empty()) {
+        ti.mesh->get_normals(ti.triangle_index, n);
+        normal = barycentric_interpolate(n, ti.barycentrics);
     }
-    // dndu/dndv
-    {
-        Vector3 normals[3];
-        ti.mesh->get_normals(ti.triangle_index, normals);
-        Vector3 b[2] = {
-            normals[1] - normals[0],
-            normals[2] - normals[0]
+
+    if (!ti.mesh->uvs.empty()) {
+        has_uv_parameterization = true;
+        Vector2 uvs[3];
+        ti.mesh->get_uvs(ti.triangle_index, uvs);
+        uv = barycentric_interpolate(uvs, ti.barycentrics);
+
+        float a[2][2] = {
+            { uvs[1].u - uvs[0].u, uvs[1].v - uvs[0].v },
+            { uvs[2].u - uvs[0].u, uvs[2].v - uvs[0].v }
         };
-        // If equation cannot be solved then dndu/dndv stay initialized to zero.
-        solve_linear_system_2x2(a, b, &dndu, &dndv);
+
+        Vector3 bp[2] = { p[1] - p[0], p[2] - p[0] };
+        solve_linear_system_2x2(a, bp, &dpdu, &dpdv);
+
+        Vector3 bn[2] = { n[1] - n[0], n[2] - n[0] };
+        solve_linear_system_2x2(a, bn, &dndu, &dndv);
     }
 }
 
-void Shading_Context::calculate_UV_derivates() {
-    // We need to solve these two linear systems (PBRT, 10.1.1):
-    //  dPdx = dPdu * dUdx + dPdv * dVdx (3 equations)
-    //  dPdy = dPdu * dUdy + dPdv * dVdy (3 equations)
+void Shading_Context::calculate_dxdy_derivatives(const Differential_Rays& differential_rays)
+{
+    if (!has_uv_parameterization)
+        return;
+
+    // NOTE: dpdx, dpdy, dwo_dx, dwo_dy derivatives do not depend on uv parameterization
+    // and are computed from differential rays alone. We can rework the logic here and
+    // to have them available even if uv derivatives are not available.
     //
+    // Also it looks that computation of differential rays for specular reflection
+    // and transmission fundamentally does not require uv parameterization. Currently
+    // we rely on it to compute dndx/dndy using chain rule but the intuition that we can
+    // compute directly since we know how normal changes when we change position,
+    // (some form of dn/dp) and we also have dpdx/dpdy.
+
+    has_dxdy_derivatives = true;
+
+    // Position derivatives.
+    float plane_d = -dot(normal, position);
+    float tx = ray_plane_intersection(differential_rays.dx_ray, normal, plane_d);
+    if (std::abs(tx) != Infinity) {
+        Vector3 px = differential_rays.dx_ray.get_point(tx);
+        dpdx = px - position;
+    }
+    float ty = ray_plane_intersection(differential_rays.dy_ray, normal, plane_d);
+    if (std::abs(ty) != Infinity) {
+        Vector3 py = differential_rays.dy_ray.get_point(ty);
+        dpdy = py - position;
+    }
+
+    // Direction derivatives.
+    dwo_dx = (-differential_rays.dx_ray.direction) - wo;
+    dwo_dy = (-differential_rays.dy_ray.direction) - wo;
+
+    // UV derivatives.
+    calculate_uv_derivates();
+
+    // When differential rays are tracked for a sequence of specular bounces they are becoming
+    // progressively worse approximation for a pixel footprint and so the derived values.
+    // Here's a sanity check that disables differential rays functionality for implausible values.
+    //
+    // NOTE: this code is mostly designed to prevent unstable numerical calculations (which triggers asserts)
+    // but is not a mean to disable bad differential rays early enough.
+    // Raytracer_Config::max_differential_ray_specular_bounces should be used instead.
+    if (std::abs(dudx) > 1e9f ||
+        std::abs(dvdx) > 1e9f ||
+        std::abs(dudy) > 1e9f ||
+        std::abs(dvdy) > 1e9f)
+    {
+        has_dxdy_derivatives = false;
+        dpdx = dpdy = dwo_dx = dwo_dy = Vector3{};
+        dudx = dvdx = dudy = dvdy = 0.f;
+    }
+}
+
+void Shading_Context::calculate_uv_derivates()
+{
+    // We need to solve these two linear systems (PBRT 3, 10.1.1):
+    //  dpdx = dpdu * dudx + dpdv * dvdx (3 equations)
+    //  dpdy = dpdu * dudy + dpdv * dvdy (3 equations)
+
     // In a system of 3 linear equations with 2 unknown variables it's
-    // possible that one equation is degenerate. Here we get rid of equation
-    // with the highest chance to be degenerate.
-    int dim0 = 0, dim1 = 1;
+    // possible that one equation is degenerate. Here we get rid of the
+    // equation with the highest chance to be degenerate.
+    int dim0, dim1;
     {
         Vector3 a = normal.abs();
         if (a.x > a.y && a.x > a.z) {
@@ -266,7 +275,12 @@ void Shading_Context::calculate_UV_derivates() {
             dim0 = 0;
             dim1 = 2;
         }
+        else {
+            dim0 = 0;
+            dim1 = 1;
+        }
     }
+
     float a[2][2] = {
         { dpdu[dim0], dpdv[dim0] },
         { dpdu[dim1], dpdv[dim1] }
@@ -279,12 +293,13 @@ void Shading_Context::calculate_UV_derivates() {
         dpdy[dim0],
         dpdy[dim1]
     };
-    // If equation cannot be solved then derivative stay initialized to zero.
+    // If equation cannot be solved then derivatives stay initialized to zero.
     solve_linear_system_2x2(a, bx, &dudx, &dvdx);
     solve_linear_system_2x2(a, by, &dudy, &dvdy);
 }
 
-float Shading_Context::compute_texture_lod(int mip_count, const Vector2& uv_scale) const {
+float Shading_Context::compute_texture_lod(int mip_count, const Vector2& uv_scale) const
+{
     Vector2 dUVdx_scaled = Vector2(dudx, dvdx) * uv_scale;
     Vector2 dUVdy_scaled = Vector2(dudy, dvdy) * uv_scale;
 
@@ -300,7 +315,8 @@ float Shading_Context::compute_texture_lod(int mip_count, const Vector2& uv_scal
     return std::max(0.f, mip_count - 1 + log2(std::clamp(filter_width, 1e-6f, 1.0f)));
 }
 
-Vector3 Shading_Context::local_to_world(const Vector3& local_direction) const {
+Vector3 Shading_Context::local_to_world(const Vector3& local_direction) const
+{
     return Vector3{
         tangent1.x * local_direction.x + tangent2.x * local_direction.y + normal.x * local_direction.z,
         tangent1.y * local_direction.x + tangent2.y * local_direction.y + normal.y * local_direction.z,
@@ -308,7 +324,8 @@ Vector3 Shading_Context::local_to_world(const Vector3& local_direction) const {
     };
 }
 
-Vector3 Shading_Context::world_to_local(const Vector3& world_direction) const {
+Vector3 Shading_Context::world_to_local(const Vector3& world_direction) const
+{
     return Vector3 { 
         dot(world_direction, tangent1),
         dot(world_direction, tangent2),
@@ -318,6 +335,7 @@ Vector3 Shading_Context::world_to_local(const Vector3& world_direction) const {
 
 Differential_Rays Shading_Context::compute_differential_rays_for_specular_reflection(const Ray& reflected_ray) const
 {
+    ASSERT(has_dxdy_derivatives);
     const float dot_wo_n = dot(wo, normal);
 
     Ray dx_ray { reflected_ray.origin + dpdx };
@@ -337,6 +355,7 @@ Differential_Rays Shading_Context::compute_differential_rays_for_specular_reflec
 
 Differential_Rays Shading_Context::compute_differential_rays_for_specular_transmission(const Ray& transmitted_ray, float etaI_over_etaT) const
 {
+    ASSERT(has_dxdy_derivatives);
     const float eta = etaI_over_etaT;
     float cos_o = dot(wo, normal);
     ASSERT(cos_o > 0.f);

@@ -29,7 +29,6 @@ Triangle_Mesh create_cube_mesh(float s) {
         4, 5, 6,
         6, 7, 4
     };
-    mesh.uvs.resize(8);
     Normal_Calculation_Params params;
     params.use_crease_angle = true;
     params.crease_angle = radians(5.f);

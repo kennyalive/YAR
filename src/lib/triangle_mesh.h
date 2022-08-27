@@ -33,7 +33,7 @@ struct Triangle_Mesh {
     {
         Vector3 p[3];
         get_positions(triangle_index, p);
-        return barycentrics[0]*p[0] + barycentrics[1]*p[1] + barycentrics[2]*p[2];
+        return barycentric_interpolate(p, barycentrics);
     }
 
     void get_normals(uint32_t triangle_index, Vector3 n[3]) const
@@ -48,7 +48,7 @@ struct Triangle_Mesh {
     {
         Vector3 n[3];
         get_normals(triangle_index, n);
-        return (barycentrics[0]*n[0] + barycentrics[1]*n[1] + barycentrics[2]*n[2]).normalized();
+        return barycentric_interpolate(n, barycentrics);
     }
 
     void get_uvs(uint32_t triangle_index, Vector2 uv[3]) const
@@ -63,7 +63,7 @@ struct Triangle_Mesh {
     {
         Vector2 uv[3];
         get_uvs(triangle_index, uv);
-        return barycentrics[0] * uv[0] + barycentrics[1] * uv[1] + barycentrics[2] * uv[2];
+        return barycentric_interpolate(uv, barycentrics);
     }
 
     Bounding_Box get_triangle_bounds(uint32_t triangle_index) const

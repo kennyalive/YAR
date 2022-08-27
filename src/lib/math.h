@@ -140,3 +140,12 @@ void shuffle(T* data, int n, RNG& rng) {
         std::swap(data[i-1], data[k]);
     }
 }
+
+template <typename T>
+T barycentric_interpolate(const T values[3], const Vector3& barycentrics)
+{
+    return
+        barycentrics.x * values[0] +
+        barycentrics.y * values[1] +
+        barycentrics.z * values[2];
+}

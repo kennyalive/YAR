@@ -392,32 +392,39 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
         mesh.indices[i * 3 + 2] = triangle_indices.z;
     }
 
-    bool has_normals = !pbrt_mesh->normal.empty();
-
     mesh.vertices.resize(pbrt_mesh->vertex.size());
-    mesh.normals.resize(pbrt_mesh->vertex.size());
-    mesh.uvs.resize(pbrt_mesh->vertex.size());
-    ASSERT(!has_normals || pbrt_mesh->vertex.size() == pbrt_mesh->normal.size());
     for (size_t i = 0; i < pbrt_mesh->vertex.size(); i++) {
         mesh.vertices[i] = Vector3(&pbrt_mesh->vertex[i].x);
+    }
 
-        if (has_normals)
-            mesh.normals[i] = Vector3(&pbrt_mesh->normal[i].x);
+    if (!pbrt_mesh->normal.empty()) {
+        ASSERT(pbrt_mesh->normal.size() == pbrt_mesh->vertex.size());
+        mesh.normals.reserve(pbrt_mesh->normal.size());
+        for (const pbrt::vec3f& normal : pbrt_mesh->normal)
+            mesh.normals.push_back(Vector3(&normal.x));
+    }
 
-        if (pbrt_mesh->texcoord.size())
-            mesh.uvs[i] = Vector2(&pbrt_mesh->texcoord[i].x);
-        else
-            mesh.uvs[i] = Vector2_Zero;
+    if (!pbrt_mesh->texcoord.empty()) {
+        ASSERT(pbrt_mesh->texcoord.size() == pbrt_mesh->vertex.size());
+        mesh.uvs.reserve(pbrt_mesh->texcoord.size());
+        for (const pbrt::vec2f& texcoord : pbrt_mesh->texcoord)
+            mesh.uvs.push_back(Vector2(&texcoord.x));
+    }
+    else if (mesh.vertices.size() == 4) {
+        // TODO: one improvement might be to use these default values only
+        // if mesh material uses parameterization, for example, if texture
+        // is used. How to determine this in a simple and robust way?
+        mesh.uvs = {
+            Vector2(0, 0),
+            Vector2(1, 0),
+            Vector2(1, 1),
+            Vector2(1, 0) // not a typo, follows pbrt defaults
+        };
     }
 
     mesh.remove_degenerate_triangles();
     if (mesh.indices.empty())
         return Null_Geometry;
-
-    if (!has_normals) {
-        Normal_Calculation_Params normal_params;
-        calculate_normals(normal_params, mesh);
-    }
 
     if (auto alpha_texture_it = pbrt_mesh->textures.find("alpha");
         alpha_texture_it != pbrt_mesh->textures.end())

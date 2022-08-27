@@ -15,9 +15,16 @@ struct BSDF;
 struct Shading_Context {
     Vector3 wo; // outgoing direction
     Vector3 position; // shading point position in world coordinates
-    Vector3 normal; // shading normal
-    Vector2 uv; // surface uv parameterization
     Vector3 geometric_normal;
+    Vector3 normal; // shading normal
+
+    // Surface UV parameterization.
+    bool has_uv_parameterization = false;
+    Vector2 uv; 
+    Vector3 dpdu;
+    Vector3 dpdv;
+    Vector3 dndu;
+    Vector3 dndv;
 
     // This renderer is built in such a way that in most cases it is not sensitive to the normal
     // orientation convention (internally we flip normal if necessary, so it is always in the
@@ -34,14 +41,8 @@ struct Shading_Context {
     Vector3 ray_origin_for_positive_normal_direction;
     Vector3 ray_origin_for_negative_normal_direction;
 
-    Vector3 dpdu;
-    Vector3 dpdv;
-    Vector3 dndu;
-    Vector3 dndv;
-
-    // If true then dx/dy derivatives are available. Otherwise they are set to zero.
+    // dx/dy derivatives. They are defined relative to the average distance between samples (not pixels!).
     bool has_dxdy_derivatives = false;
-    // The dx/dy derivatives are defined with respect to an average distance between the samples (not pixels!).
     Vector3 dpdx;
     Vector3 dpdy;
     Vector3 dwo_dx;
@@ -108,7 +109,9 @@ struct Shading_Context {
 
 private:
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti);
-    void calculate_UV_derivates();
+
+    void calculate_dxdy_derivatives(const Differential_Rays& differential_rays);
+    void calculate_uv_derivates();
 };
 
 // Trace ray against scene geometry and initializes shading context for intersection point (if any).
