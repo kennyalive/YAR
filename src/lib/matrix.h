@@ -15,6 +15,7 @@ struct Matrix3x4 {
     Vector4 get_row(int row) const;
     bool is_identity() const;
     bool is_identity(float epsilon) const;
+    bool is_identity(float epsilon_3x3, float epsilon_translation) const;
     bool is_zero() const;
 };
 
