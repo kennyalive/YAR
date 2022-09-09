@@ -124,11 +124,17 @@ Scene load_scene(const std::string& input_file) {
     return scene;
 }
 
-int add_scene_texture(const std::string& texture_file_name, Scene* scene) {
-    for (int i = 0; i < (int)scene->texture_names.size(); i++) {
-        if (scene->texture_names[i] == texture_file_name)
-            return i;
+int add_scene_texture(const Texture_Descriptor& texture_desc, Scene* scene)
+{
+    for (size_t i = 0; i < scene->texture_descriptors.size(); i++) {
+        if (scene->texture_descriptors[i] == texture_desc)
+            return (int)i;
     }
-    scene->texture_names.push_back(texture_file_name);
-    return (int)scene->texture_names.size() - 1;
+    scene->texture_descriptors.push_back(texture_desc);
+    return (int)scene->texture_descriptors.size() - 1;
+}
+
+int add_scene_texture(const std::string& file_name, Scene* scene)
+{
+    return add_scene_texture(Texture_Descriptor{ .file_name = file_name }, scene);
 }

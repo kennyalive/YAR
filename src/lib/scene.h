@@ -12,6 +12,13 @@ enum class Scene_Type {
     obj,
 };
 
+struct Texture_Descriptor {
+    std::string file_name;
+    float scale = 1.f;
+
+    bool operator==(const Texture_Descriptor&) const = default;
+};
+
 struct Scene {
     Scene_Type type;
     std::string path;
@@ -33,8 +40,7 @@ struct Scene {
     // Predefined camera positions.
     std::vector<Matrix3x4> view_points;
 
-    // The list of textures used in the scene.
-    std::vector<std::string> texture_names;
+    std::vector<Texture_Descriptor> texture_descriptors;
 
     //
     // Description of the virtual environment.

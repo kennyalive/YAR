@@ -6,12 +6,15 @@
 #include "lib/vector.h"
 
 static float lanczos_reconstruction_filter(float x, float radius) {
-    x = std::abs(x); // abs here is only to simplify comparisons, the function
-                     // itself is symmetrical
+    // Take absolute value only to simplify comparisons below.
+    // The function itself is symmetrical, so sign does not matter.
+    x = std::abs(x); 
+
     if (x < 1e-5f) 
         return 1.f;
     if (x >= radius)
         return 0.f;
+
     x *= Pi;
     return radius * std::sin(x) * std::sin(x/radius) / (x*x);
 }
@@ -142,13 +145,33 @@ static inline float evaluate_pre_aliasing_filter(Filter_Type filter, float x, fl
     }
 }
 
+// Negative filter weights and rounding errors can result in values outside of supported range.
+static void clamp_pixel_values(std::vector<ColorRGB>& pixels, bool is_hdr_image)
+{
+    if (is_hdr_image) {
+        for (ColorRGB& p : pixels) {
+            p.r = std::max(0.f, p.r);
+            p.g = std::max(0.f, p.g);
+            p.b = std::max(0.f, p.b);
+        }
+    }
+    else {
+        for (ColorRGB& p : pixels) {
+            p.r = std::clamp(p.r, 0.f, 1.f);
+            p.g = std::clamp(p.g, 0.f, 1.f);
+            p.b = std::clamp(p.b, 0.f, 1.f);
+        }
+    }
+}
+
 // Wrap mode note: For filters with radius > 1.5 mipmap generation algorithm
 // should take into account texture wrap mode. The drawback of such correct
 // implementation is a dependency between the texture's content and the texture
 // addressing mode. Current implementation assumes clamp to edge texture
 // addressing mode and will produce slightly incorrect pixels on the edges for
 // samplers that use non-clamp addressing.
-static Image generate_mip_level_with_separable_filter(const Image& base_image, int mip_level_to_generate, Filter_Type filter)
+static Image generate_mip_level_with_separable_filter(const Image& base_image, int mip_level_to_generate,
+    Filter_Type filter, bool is_hdr_image)
 {
     // for box filter each mip is generated directly from the previous one
     ASSERT(filter != Filter_Type::box);
@@ -201,12 +224,7 @@ static Image generate_mip_level_with_separable_filter(const Image& base_image, i
             }
         }
     }
-
-    for (ColorRGB& p : result.data) {
-        p.r = std::clamp(p.r, 0.f, 1.f);
-        p.g = std::clamp(p.g, 0.f, 1.f);
-        p.b = std::clamp(p.b, 0.f, 1.f);
-    }
+    clamp_pixel_values(result.data, is_hdr_image);
     return result;
 }
 
@@ -257,7 +275,7 @@ void Image_Texture::initialize_from_file(const std::string& image_path, const Im
         upsample_base_level_to_power_of_two_resolution(!is_hdr_image);
 
     if (params.generate_mips) {
-        generate_mips(params.mip_filter);
+        generate_mips(params.mip_filter, is_hdr_image);
         // DEBUG
         #if 0
         for (int i = 0; i < int(mips.size()); i++) {
@@ -268,7 +286,14 @@ void Image_Texture::initialize_from_file(const std::string& image_path, const Im
     }
 }
 
-void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool clamp_color_values) {
+void Image_Texture::scale_all_mips(float s)
+{
+    for (Image& image : mips)
+        for (ColorRGB& pixel : image.data)
+            pixel *= s;
+}
+
+void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool is_hdr_image) {
     struct Resample_Weight {
         int first_pixel;
         float pixel_weight[4]; // weights for 4 consecutive pixels covered by the filter kernel
@@ -338,24 +363,17 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool clamp_co
         mips[0].height = new_height;
         mips[0].data.swap(texels);
     }
-
-    if (clamp_color_values) {
-        for (ColorRGB& t : mips[0].data) {
-            t.r = std::clamp(t.r, 0.f, 1.f);
-            t.g = std::clamp(t.g, 0.f, 1.f);
-            t.b = std::clamp(t.b, 0.f, 1.f);
-        }
-    }
+    clamp_pixel_values(mips[0].data, is_hdr_image);
 }
 
-void Image_Texture::generate_mips(Filter_Type filter) {
+void Image_Texture::generate_mips(Filter_Type filter, bool is_hdr_image) {
     for (int i = 1; i < int(mips.size()); i++) {
         if (filter == Filter_Type::box) {
             mips[i] = generate_next_mip_level_with_box_filter(mips[i - 1]);
         }
         else {
             int src_mip = (i > 4) ? 4 : 0; // optimization: only top few mips are generated directly from the base mip.
-            mips[i] = generate_mip_level_with_separable_filter(mips[src_mip], i - src_mip, filter);
+            mips[i] = generate_mip_level_with_separable_filter(mips[src_mip], i - src_mip, filter, is_hdr_image);
         }
     }
 }

@@ -26,15 +26,19 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
     Image_Texture::Init_Params init_params;
     init_params.generate_mips = true;
 
-    scene_ctx.textures.reserve(scene.texture_names.size());
-    for (const std::string& texture_name : scene.texture_names) {
-        std::string path = (fs::path(scene.path).parent_path() / texture_name).string();
+    scene_ctx.textures.reserve(scene.texture_descriptors.size());
+    for (const Texture_Descriptor& texture_desc : scene.texture_descriptors) {
+        std::string path = (fs::path(scene.path).parent_path() / texture_desc.file_name).string();
         std::string ext = get_extension(path);
 
         init_params.decode_srgb = (ext != ".exr" && ext != ".pfm");
 
         Image_Texture texture;
         texture.initialize_from_file(path, init_params);
+
+        if (texture_desc.scale != 1.f)
+            texture.scale_all_mips(texture_desc.scale);
+
         scene_ctx.textures.push_back(std::move(texture));
     }
 

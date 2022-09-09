@@ -89,6 +89,7 @@ struct Coated_Diffuse_Material {
     Float_Parameter roughness; // roughness of the glossy layer
     RGB_Parameter r0; // reflectance of the glossy layer at normal incident angle
     RGB_Parameter diffuse_reflectance; // reflectance of the diffuse layer
+    Float_Parameter bump_map;
     bool operator==(const Coated_Diffuse_Material&) const = default;
 };
 

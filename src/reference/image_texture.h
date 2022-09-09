@@ -28,6 +28,8 @@ public:
     };
 
     void initialize_from_file(const std::string& image_path, const Init_Params& params);
+    void scale_all_mips(float s);
+
     const std::vector<Image>& get_mips() const { return mips; }
 
     ColorRGB sample_nearest(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const;
@@ -36,8 +38,8 @@ public:
     ColorRGB sample_EWA(Vector2 uv, Vector2 uv_axis1, Vector2 uv_axis2, Wrap_Mode wrap_mode, float max_anisotropy) const;
 
 private:
-    void upsample_base_level_to_power_of_two_resolution(bool clamp_color_values);
-    void generate_mips(Filter_Type filter);
+    void upsample_base_level_to_power_of_two_resolution(bool is_hdr_image);
+    void generate_mips(Filter_Type filter, bool is_hdr_image);
 
 private:
     std::vector<Image> mips;

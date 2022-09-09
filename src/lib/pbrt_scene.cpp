@@ -157,6 +157,29 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
         ColorRGB xyz = sRGB_to_XYZ(ColorRGB(&constant_texture->value.x));
         set_constant_parameter(param, xyz[1]);
     }
+    else if (auto scale_texture = std::dynamic_pointer_cast<pbrt::ScaleTexture>(pbrt_texture);
+        scale_texture != nullptr)
+    {
+        ASSERT(scale_texture->tex1 != nullptr);
+        ASSERT(scale_texture->tex2 == nullptr);
+        ASSERT(Vector3(&scale_texture->scale1.x) == Vector3(1));
+        ASSERT(scale_texture->scale2.x == scale_texture->scale2.y && scale_texture->scale2.y == scale_texture->scale2.z);
+
+        auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(scale_texture->tex1);
+        ASSERT(image_texture != nullptr);
+
+        int texture_index = add_scene_texture(
+            Texture_Descriptor{
+                .file_name = image_texture->fileName,
+                .scale = scale_texture->scale2.x,
+            },
+            scene
+        );
+        set_texture_parameter(param, texture_index);
+
+        param.u_scale = image_texture->uscale;
+        param.v_scale = image_texture->vscale;
+    }
     else
         error("Unsupported pbrt texture type");
 
@@ -311,7 +334,6 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
     if (auto coated_diffuse = std::dynamic_pointer_cast<pbrt::SubstrateMaterial>(pbrt_material)) {
         ASSERT(coated_diffuse->map_uRoughness == nullptr);
         ASSERT(coated_diffuse->map_vRoughness == nullptr);
-        ASSERT(coated_diffuse->map_bump == nullptr);
 
         ASSERT(coated_diffuse->uRoughness == coated_diffuse->vRoughness);
         float roughness = pbrt_roughness_to_disney_roughness(coated_diffuse->uRoughness, coated_diffuse->remapRoughness);
@@ -328,6 +350,9 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
             mtl.diffuse_reflectance = import_pbrt_texture_rgb(coated_diffuse->map_kd, scene);
         else
             set_constant_parameter(mtl.diffuse_reflectance, ColorRGB(&coated_diffuse->kd.x));
+
+        if (coated_diffuse->map_bump)
+            mtl.bump_map = import_pbrt_texture_float(coated_diffuse->map_bump, scene);
 
         return add_material<Material_Type::coated_diffuse>(materials, mtl);
     }
