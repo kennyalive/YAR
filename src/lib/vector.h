@@ -231,6 +231,12 @@ struct Vector2 {
         return (&x)[index];
     }
 
+    Vector2& operator*=(const Vector2& v) {
+        x *= v.x;
+        y *= v.y;
+        return *this;
+    }
+
     Vector2& operator*=(float t) {
         x *= t;
         y *= t;
