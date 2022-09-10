@@ -272,7 +272,7 @@ void Image_Texture::initialize_from_file(const std::string& image_path, const Im
 
     // Ensure that base mip level has power of two resolution.
     if (!is_power_of_2(mips[0].width) || !is_power_of_2(mips[0].height))
-        upsample_base_level_to_power_of_two_resolution(!is_hdr_image);
+        upsample_base_level_to_power_of_two_resolution(is_hdr_image);
 
     if (params.generate_mips) {
         generate_mips(params.mip_filter, is_hdr_image);
