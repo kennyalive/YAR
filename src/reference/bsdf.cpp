@@ -12,20 +12,6 @@
 
 static bool ggx_sample_visible_normals = false;
 
-inline Vector3 sample_microfacet_normal(const Shading_Context& shading_ctx, Vector2 u, const Vector3& wo, float alpha) {
-    Vector3 wh_local;
-    if (ggx_sample_visible_normals) {
-        Vector3 wo_local = shading_ctx.world_to_local(wo);
-        wh_local = GGX_sample_visible_microfacet_normal(u, wo_local, alpha, alpha);
-    }
-    else {
-        wh_local = GGX_sample_microfacet_normal(u, alpha);
-    }
-    Vector3 wh = shading_ctx.local_to_world(wh_local);
-    ASSERT(dot(wh, shading_ctx.normal) >= 0.f);
-    return wh;
-}
-
 inline float calculate_microfacet_wi_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha) {
     float wh_pdf;
     if (ggx_sample_visible_normals)
@@ -41,9 +27,43 @@ inline float calculate_microfacet_wi_pdf(const Vector3& wo, const Vector3& wh, c
 }
 
 BSDF::BSDF(const Shading_Context& shading_ctx)
-    : shading_ctx(&shading_ctx)
-    , n(shading_ctx.normal)
+    : normal(shading_ctx.normal)
+    , tangent(shading_ctx.tangent)
+    , bitangent(shading_ctx.bitangent)
 {
+}
+
+Vector3 BSDF::local_to_world(const Vector3& local_direction) const
+{
+    return Vector3{
+        tangent.x * local_direction.x + bitangent.x * local_direction.y + normal.x * local_direction.z,
+        tangent.y * local_direction.x + bitangent.y * local_direction.y + normal.y * local_direction.z,
+        tangent.z * local_direction.x + bitangent.z * local_direction.y + normal.z * local_direction.z
+    };
+}
+
+Vector3 BSDF::world_to_local(const Vector3& world_direction) const
+{
+    return Vector3 { 
+        dot(world_direction, tangent),
+        dot(world_direction, bitangent),
+        dot(world_direction, normal)
+    };
+}
+
+Vector3 BSDF::sample_microfacet_normal(Vector2 u, const Vector3& wo, float alpha) const
+{
+    Vector3 wh_local;
+    if (ggx_sample_visible_normals) {
+        Vector3 wo_local = world_to_local(wo);
+        wh_local = GGX_sample_visible_microfacet_normal(u, wo_local, alpha, alpha);
+    }
+    else {
+        wh_local = GGX_sample_microfacet_normal(u, alpha);
+    }
+    Vector3 wh = local_to_world(wh_local);
+    ASSERT(dot(wh, normal) >= 0.f);
+    return wh;
 }
 
 //
@@ -62,14 +82,14 @@ ColorRGB Lambertian_BRDF::evaluate(const Vector3& /*wo*/, const Vector3& /*wi*/)
 
 ColorRGB Lambertian_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
     Vector3 local_dir = sample_hemisphere_cosine(u);
-    *wi = shading_ctx->local_to_world(local_dir);
+    *wi = local_to_world(local_dir);
     *pdf = Lambertian_BRDF::pdf(wo, *wi);
     return Pi_Inv * reflectance;
 }
 
 float Lambertian_BRDF::pdf(const Vector3& /*wo*/, const Vector3& wi) const {
-    ASSERT(dot(n, wi) >= 0.f);
-    return dot(n, wi) / Pi; // pdf for cosine-weighted hemisphere sampling
+    ASSERT(dot(normal, wi) >= 0.f);
+    return dot(normal, wi) / Pi; // pdf for cosine-weighted hemisphere sampling
 }
 
 //
@@ -96,30 +116,30 @@ ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
 
     ColorRGB F = conductor_fresnel(cos_theta_i, eta_i, eta_t, k_t);
 
-    float D = GGX_Distribution::D(wh, n, alpha);
-    float G = GGX_Distribution::G(wi, wo, n, alpha);
+    float D = GGX_Distribution::D(wh, normal, alpha);
+    float G = GGX_Distribution::G(wi, wo, normal, alpha);
     
-    ColorRGB f = (G * D) * F / (4.f * dot(n, wo) * dot(n, wi));
+    ColorRGB f = (G * D) * F / (4.f * dot(normal, wo) * dot(normal, wi));
     return f;
 }
 
 ColorRGB Metal_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
     ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u);
 
-    Vector3 wh = sample_microfacet_normal(*shading_ctx, u, wo, alpha);
+    Vector3 wh = sample_microfacet_normal(u, wo, alpha);
     *wi = reflect(wo, wh);
 
-    if (dot(n, *wi) <= 0.f)
+    if (dot(normal, *wi) <= 0.f)
         return Color_Black;
 
-    *pdf = calculate_microfacet_wi_pdf(wo, wh, n, alpha);
+    *pdf = calculate_microfacet_wi_pdf(wo, wh, normal, alpha);
     return evaluate(wo, *wi);
 }
 
 float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
-    ASSERT(dot(n, wi) >= 0.f);
+    ASSERT(dot(normal, wi) >= 0.f);
     Vector3 wh = (wo + wi).normalized();
-    return calculate_microfacet_wi_pdf(wo, wh, n, alpha);
+    return calculate_microfacet_wi_pdf(wo, wh, normal, alpha);
 }
 
 //
@@ -146,10 +166,10 @@ ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
 
     ColorRGB F = schlick_fresnel(ColorRGB(0.04f), cos_theta_i);
 
-    float D = GGX_Distribution::D(wh, n, alpha);
-    float G = GGX_Distribution::G(wi, wo, n, alpha);
+    float D = GGX_Distribution::D(wh, normal, alpha);
+    float G = GGX_Distribution::G(wi, wo, normal, alpha);
 
-    ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(n, wo) * dot(n, wi));
+    ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(normal, wo) * dot(normal, wi));
     ColorRGB diffuse_brdf = diffuse_reflectance * Pi_Inv;
     return diffuse_brdf + specular_brdf;
 }
@@ -160,15 +180,15 @@ ColorRGB Plastic_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* 
         u[0] *= 2.f; // remap u[0] to [0, 1) range
 
         Vector3 local_dir = sample_hemisphere_cosine(u);
-        *wi = shading_ctx->local_to_world(local_dir);
+        *wi = local_to_world(local_dir);
     }
     else { // sample specular
         u[0] = (u[0] - 0.5f) * 2.f; // remap u[0] to [0, 1) range
-        Vector3 wh = sample_microfacet_normal(*shading_ctx, u, wo, alpha);
+        Vector3 wh = sample_microfacet_normal(u, wo, alpha);
         *wi = reflect(wo, wh);
     }
 
-    if (dot(n, *wi) <= 0.f)
+    if (dot(normal, *wi) <= 0.f)
         return Color_Black;
 
     *pdf = Plastic_BRDF::pdf(wo, *wi);
@@ -177,11 +197,11 @@ ColorRGB Plastic_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* 
 
 float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 {
-    ASSERT(dot(n, wi) >= 0.f);
-    float diffuse_pdf = dot(n, wi) / Pi;
+    ASSERT(dot(normal, wi) >= 0.f);
+    float diffuse_pdf = dot(normal, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, n, alpha);
+    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, normal, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + spec_pdf);
     return pdf;
@@ -212,15 +232,15 @@ ColorRGB Ashikhmin_Shirley_Phong_BRDF::evaluate(const Vector3& wo, const Vector3
     ASSERT(cos_theta_i >= 0);
 
     ColorRGB F = schlick_fresnel(r0, cos_theta_i);
-    float D = GGX_Distribution::D(wh, n, alpha);
+    float D = GGX_Distribution::D(wh, normal, alpha);
 
-    ColorRGB specular_brdf = F * (D / (4.f * cos_theta_i * std::max(dot(n, wo), dot(n, wi))));
+    ColorRGB specular_brdf = F * (D / (4.f * cos_theta_i * std::max(dot(normal, wo), dot(normal, wi))));
 
     auto pow5 = [](float v) { return (v * v) * (v * v) * v; };
 
     ColorRGB diffuse_brdf =
             (diffuse_reflectance * (ColorRGB(1.f) - r0)) *
-            (28.f / (23.f*Pi) * (1.f - pow5(1.f - 0.5f * dot(n, wi))) * (1.f - pow5(1.f - 0.5f * dot(n, wo))));
+            (28.f / (23.f*Pi) * (1.f - pow5(1.f - 0.5f * dot(normal, wi))) * (1.f - pow5(1.f - 0.5f * dot(normal, wo))));
 
     return diffuse_brdf + specular_brdf;
 }
@@ -230,15 +250,15 @@ ColorRGB Ashikhmin_Shirley_Phong_BRDF::sample(Vector2 u, const Vector3& wo, Vect
         u[0] *= 2.f; // remap u[0] to [0, 1) range
 
         Vector3 local_dir = sample_hemisphere_cosine(u);
-        *wi = shading_ctx->local_to_world(local_dir);
+        *wi = local_to_world(local_dir);
     }
     else { // sample specular
         u[0] = (u[0] - 0.5f) * 2.f; // remap u[0] to [0, 1) range
-        Vector3 wh = sample_microfacet_normal(*shading_ctx, u, wo, alpha);
+        Vector3 wh = sample_microfacet_normal(u, wo, alpha);
         *wi = reflect(wo, wh);
     }
 
-    if (dot(n, *wi) <= 0.f)
+    if (dot(normal, *wi) <= 0.f)
         return Color_Black;
 
     *pdf = Ashikhmin_Shirley_Phong_BRDF::pdf(wo, *wi);
@@ -246,11 +266,11 @@ ColorRGB Ashikhmin_Shirley_Phong_BRDF::sample(Vector2 u, const Vector3& wo, Vect
 }
 
 float Ashikhmin_Shirley_Phong_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
-    ASSERT(dot(n, wi) >= 0.f);
-    float diffuse_pdf = dot(n, wi) / Pi;
+    ASSERT(dot(normal, wi) >= 0.f);
+    float diffuse_pdf = dot(normal, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, n, alpha);
+    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, normal, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + spec_pdf);
     return pdf;
@@ -281,9 +301,9 @@ ColorRGB Pbrt3_Uber_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
     float cos_theta_i = dot(wi, wh);
     ASSERT(cos_theta_i >= 0);
     float F = dielectric_fresnel(cos_theta_i, index_of_refraction);
-    float D = GGX_Distribution::D(wh, n, alpha);
-    float G = GGX_Distribution::G(wi, wo, n, alpha);
-    float f = (G * D * F) / (4.f * dot(n, wo) * dot(n, wi));
+    float D = GGX_Distribution::D(wh, normal, alpha);
+    float G = GGX_Distribution::G(wi, wo, normal, alpha);
+    float f = (G * D * F) / (4.f * dot(normal, wo) * dot(normal, wi));
     ColorRGB specular_brdf = f * specular_reflectance * opacity;
 
     return diffuse_brdf + specular_brdf;
@@ -294,15 +314,15 @@ ColorRGB Pbrt3_Uber_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, floa
     if (u[0] < 0.5f) { // sample diffuse
         u[0] *= 2.f; // remap u[0] to [0, 1) range
         Vector3 local_dir = sample_hemisphere_cosine(u);
-        *wi = shading_ctx->local_to_world(local_dir);
+        *wi = local_to_world(local_dir);
     }
     else { // sample specular
         u[0] = (u[0] - 0.5f) * 2.f; // remap u[0] to [0, 1) range
-        Vector3 wh = sample_microfacet_normal(*shading_ctx, u, wo, alpha);
+        Vector3 wh = sample_microfacet_normal(u, wo, alpha);
         *wi = reflect(wo, wh);
     }
 
-    if (dot(n, *wi) <= 0.f)
+    if (dot(normal, *wi) <= 0.f)
         return Color_Black;
 
     *pdf = Pbrt3_Uber_BRDF::pdf(wo, *wi);
@@ -311,11 +331,11 @@ ColorRGB Pbrt3_Uber_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, floa
 
 float Pbrt3_Uber_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 {
-    ASSERT(dot(n, wi) >= 0.f);
-    float diffuse_pdf = dot(n, wi) / Pi;
+    ASSERT(dot(normal, wi) >= 0.f);
+    float diffuse_pdf = dot(normal, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float specular_pdf = calculate_microfacet_wi_pdf(wo, wh, n, alpha);
+    float specular_pdf = calculate_microfacet_wi_pdf(wo, wh, normal, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + specular_pdf);
     return pdf;

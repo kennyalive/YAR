@@ -18,6 +18,11 @@ struct Shading_Context {
     Vector3 geometric_normal;
     Vector3 normal; // shading normal
 
+    // Tangent vectors for shading geometry.
+    // (tangent, bitangent, normal) is right-handed orthogonal coordinate system.
+    Vector3 tangent;
+    Vector3 bitangent;
+
     // Surface UV parameterization.
     bool has_uv_parameterization = false;
     Vector2 uv; 
@@ -51,11 +56,6 @@ struct Shading_Context {
     float dvdx = 0.f;
     float dudy = 0.f;
     float dvdy = 0.f;
-
-    // Tangent vectors for shading geometry.
-    // (tangent1, tangent2, N) triplet forms right-handed orthonormal coordinate system.
-    Vector3 tangent1;
-    Vector3 tangent2;
 
     Material_Handle material;
     Light_Handle area_light;
@@ -91,11 +91,6 @@ struct Shading_Context {
     void initialize_scattering(Thread_Context& thread_ctx, float u);
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
-
-    // Transformation of directions between local coordinate system defined
-    // by the normal and two tangent vectors and world space coordinate system.
-    Vector3 local_to_world(const Vector3& local_direction) const;
-    Vector3 world_to_local(const Vector3& world_direction) const;
 
     Differential_Rays compute_differential_rays_for_specular_reflection(const Ray& reflected_ray) const;
     Differential_Rays compute_differential_rays_for_specular_transmission(const Ray& transmitted_ray, float etaI_over_etaT) const;

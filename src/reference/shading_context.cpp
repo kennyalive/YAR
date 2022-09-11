@@ -140,12 +140,12 @@ void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, cons
     shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &normal);
 
     if (dpdu != Vector3_Zero) {
-        tangent2 = cross(normal, dpdu).normalized();
-        tangent1 = cross(tangent2, normal);
+        bitangent = cross(normal, dpdu).normalized();
+        tangent = cross(bitangent, normal);
     }
     else {
         ASSERT(dpdv == Vector3_Zero); // consistency check, expect both derivatives are zero
-        coordinate_system_from_vector(normal, &tangent1, &tangent2);
+        coordinate_system_from_vector(normal, &tangent, &bitangent);
     }
 
     material = intersection.scene_object->material;
@@ -313,24 +313,6 @@ float Shading_Context::compute_texture_lod(int mip_count, const Vector2& uv_scal
     float filter_width = std::max(dUVdx_scaled.length(), dUVdy_scaled.length());
 
     return std::max(0.f, mip_count - 1 + log2(std::clamp(filter_width, 1e-6f, 1.0f)));
-}
-
-Vector3 Shading_Context::local_to_world(const Vector3& local_direction) const
-{
-    return Vector3{
-        tangent1.x * local_direction.x + tangent2.x * local_direction.y + normal.x * local_direction.z,
-        tangent1.y * local_direction.x + tangent2.y * local_direction.y + normal.y * local_direction.z,
-        tangent1.z * local_direction.x + tangent2.z * local_direction.y + normal.z * local_direction.z
-    };
-}
-
-Vector3 Shading_Context::world_to_local(const Vector3& world_direction) const
-{
-    return Vector3 { 
-        dot(world_direction, tangent1),
-        dot(world_direction, tangent2),
-        dot(world_direction, normal)
-    };
 }
 
 Differential_Rays Shading_Context::compute_differential_rays_for_specular_reflection(const Ray& reflected_ray) const

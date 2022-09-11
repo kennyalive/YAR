@@ -13,12 +13,21 @@ struct BSDF {
 
     BSDF(const Shading_Context& shading_ctx);
 
-    const Shading_Context* shading_ctx;
-    const Vector3 n; // shading normal (extracted from shading_ctx)
-
     // types of scattering modeled by this bsdf
     bool reflection_scattering = false;
     bool transmission_scattering = false;
+
+    Vector3 normal;
+    Vector3 tangent;
+    Vector3 bitangent;
+
+protected:
+    // Transformation of directions between local coordinate system defined
+    // by the normal and two tangent vectors and world space coordinate system.
+    Vector3 local_to_world(const Vector3& local_direction) const;
+    Vector3 world_to_local(const Vector3& world_direction) const;
+
+    Vector3 sample_microfacet_normal(Vector2 u, const Vector3& wo, float alpha) const;
 };
 
 struct Lambertian_BRDF : public BSDF {
