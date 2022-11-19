@@ -215,7 +215,7 @@ Material_Handle add_material(Materials& materials, const Material& material)
         materials_of_given_type = &materials.pbrt3_uber;
     }
     else {
-        static_assert(false, "add_material: Unexpected Material_Type value");
+        static_assert(dependent_false_v<Material>, "add_material: Unexpected Material_Type");
     }
 
     // Check if we already have this material registered. If yes, then return the existing handle.

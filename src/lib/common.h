@@ -193,3 +193,7 @@ inline void free_aligned_memory(void* ptr)
 #error free_aligned_memory is not implemented
 #endif
 }
+
+// Workaround for static_assert(false). It should be used like this: static_assert(dependent_false_v<T>)
+template<typename>
+inline constexpr bool dependent_false_v = false;
