@@ -541,10 +541,19 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
     return shape;
 }
 
-static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const Matrix3x4& instance_transfrom, Scene* scene) {
+static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const Matrix3x4& instance_transfrom, Scene* scene)
+{
+    auto point_light = std::dynamic_pointer_cast<pbrt::PointLightSource>(pbrt_light);
+    if (point_light) {
+        ASSERT(point_light->Ispectrum.spd.empty()); // do not support this yet
+        Point_Light light;
+        light.position = Vector3(&point_light->from.x);
+        light.intensity = ColorRGB(&point_light->I.x) * ColorRGB(&point_light->scale.x);
+        scene->lights.point_lights.push_back(light);
+    }
+
     auto distant_light = std::dynamic_pointer_cast<pbrt::DistantLightSource>(pbrt_light);
-    if (distant_light)
-    {
+    if (distant_light) {
         Vector3 light_vec = Vector3(&distant_light->from.x) - Vector3(&distant_light->to.x);
         light_vec = transform_vector(instance_transfrom, light_vec);
 
