@@ -343,34 +343,40 @@ float Pbrt3_Uber_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
+    Shading_Context& shading_ctx = thread_ctx.shading_context;
     switch (material.type) {
     case Material_Type::lambertian:
     {
         const Lambertian_Material& params = scene_ctx.materials.lambertian[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Lambertian_BRDF>();
         return new (bsdf_allocation) Lambertian_BRDF(thread_ctx, params);
     }
     case Material_Type::metal:
     {
         const Metal_Material& params = scene_ctx.materials.metal[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Metal_BRDF>();
         return new (bsdf_allocation) Metal_BRDF(thread_ctx, params);
     }
     case Material_Type::plastic:
     {
         const Plastic_Material& params = scene_ctx.materials.plastic[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Plastic_BRDF>();
         return new (bsdf_allocation) Plastic_BRDF(thread_ctx, params);
     }
     case Material_Type::coated_diffuse:
     {
         const Coated_Diffuse_Material& params = scene_ctx.materials.coated_diffuse[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Ashikhmin_Shirley_Phong_BRDF>();
         return new (bsdf_allocation) Ashikhmin_Shirley_Phong_BRDF(thread_ctx, params);
     }
     case Material_Type::pbrt3_uber:
     {
         const Pbrt3_Uber_Material& params = scene_ctx.materials.pbrt3_uber[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Uber_BRDF>();
         return new (bsdf_allocation) Pbrt3_Uber_BRDF(thread_ctx, params);
     }

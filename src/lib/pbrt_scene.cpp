@@ -262,6 +262,9 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         else 
             set_constant_parameter(mtl.reflectance, ColorRGB(&matte->kd.x));
 
+        if (matte->map_bump)
+            mtl.bump_map = import_pbrt_texture_float(matte->map_bump, scene);
+
         return add_material<Material_Type::lambertian>(materials, mtl);
     }
 
@@ -367,7 +370,6 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         ASSERT(uber->vRoughness == 0.f);
         ASSERT(uber->map_vRoughness == nullptr);
         ASSERT(uber->map_roughness == nullptr);
-        ASSERT(uber->map_bump == nullptr);
 
         Pbrt3_Uber_Material mtl;
 
@@ -390,6 +392,9 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         mtl.opacity = init_rgb_parameter_from_texture_or_constant(scene, uber->map_opacity, uber->opacity);
         if (mtl.opacity.texture_index >= 0 || mtl.opacity.constant_value != Color_White)
             mtl.components[mtl.component_count++] = Pbrt3_Uber_Material::OPACITY;
+
+        if (uber->map_bump)
+            mtl.bump_map = import_pbrt_texture_float(uber->map_bump, scene);
 
         ASSERT(mtl.component_count <= std::size(mtl.components));
 

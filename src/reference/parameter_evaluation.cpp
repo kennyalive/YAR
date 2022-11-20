@@ -34,6 +34,13 @@ ColorRGB evaluate_rgb_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vect
     return texture.sample_EWA(uv, duvdx, duvdy, Wrap_Mode::repeat, 32.f);
 }
 
+ColorRGB evaluate_rgb_parameter(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const RGB_Parameter& param)
+{
+    Vector2 duvdx = Vector2(shading_ctx.dudx, shading_ctx.dvdx);
+    Vector2 duvdy = Vector2(shading_ctx.dudy, shading_ctx.dvdy);
+    return evaluate_rgb_parameter(scene_ctx, shading_ctx.uv, duvdx, duvdy, param);
+}
+
 // DEPRECATED
 ColorRGB evaluate_rgb_parameter(const Thread_Context& thread_ctx, const RGB_Parameter& param)
 {
@@ -69,7 +76,16 @@ float evaluate_float_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vecto
     // D. EWA
     duvdx *= uv_scale;
     duvdy *= uv_scale;
-    return texture.sample_EWA(uv, duvdx, duvdy, Wrap_Mode::repeat, 32.f).r;
+    ColorRGB rgb = texture.sample_EWA(uv, duvdx, duvdy, Wrap_Mode::repeat, 32.f);
+    float luminance = rgb.luminance();
+    return luminance;
+}
+
+float evaluate_float_parameter(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const Float_Parameter& param)
+{
+    Vector2 duvdx = Vector2(shading_ctx.dudx, shading_ctx.dvdx);
+    Vector2 duvdy = Vector2(shading_ctx.dudy, shading_ctx.dvdy);
+    return evaluate_float_parameter(scene_ctx, shading_ctx.uv, duvdx, duvdy, param);
 }
 
 // DEPRECATED

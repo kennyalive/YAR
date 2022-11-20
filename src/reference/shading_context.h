@@ -9,6 +9,7 @@ struct Intersection;
 struct Triangle_Intersection;
 struct Thread_Context;
 struct BSDF;
+struct Scene_Context;
 
 // Contains all the necessary information to perform shading at the intersection point.
 // There is one instance of Shading_Context per thread.
@@ -101,6 +102,8 @@ struct Shading_Context {
     // trace a new ray.
     Vector3 get_ray_origin_using_control_direction(const Vector3& hemisphere_direction) const;
     Vector3 get_ray_origin_using_control_point(const Vector3& hemisphere_point) const;
+
+    void apply_bump_map(const Scene_Context& scene_ctx, Float_Parameter bump_map);
 
 private:
     void init_from_triangle_mesh_intersection(const Triangle_Intersection& ti);

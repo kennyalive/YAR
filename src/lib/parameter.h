@@ -8,6 +8,7 @@
 
 template <typename Type>
 struct Parameter {
+    bool is_specified = false;
     bool is_constant = false;
     Type constant_value = Type();
     int texture_index = -1;
@@ -28,12 +29,14 @@ struct Float_Parameter : Parameter<float> {
 
 template <typename Parameter_Type, typename Type>
 void set_constant_parameter(Parameter_Type& param, const Type& value) {
+    param.is_specified = true;
     param.is_constant = true;
     param.constant_value = value;
 }
 
 template <typename Parameter_Type>
 void set_texture_parameter(Parameter_Type& param, int texture_index) {
+    param.is_specified = true;
     param.is_constant = false;
     param.texture_index = texture_index;
 }

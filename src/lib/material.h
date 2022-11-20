@@ -33,20 +33,24 @@ constexpr Material_Handle Null_Material = { Material_Type::null_material, -1 };
 constexpr int Material_Type_Count = static_cast<int>(Material_Type::count);
 
 struct Lambertian_Material {
+    Float_Parameter bump_map;
     RGB_Parameter reflectance;
     bool operator==(const Lambertian_Material&) const = default;
 };
 
 struct Perfect_Reflector_Material {
+    Float_Parameter bump_map;
     RGB_Parameter reflectance;
     bool operator==(const Perfect_Reflector_Material&) const = default;
 };
 
 struct Perfect_Refractor_Material {
+    Float_Parameter bump_map;
     Float_Parameter index_of_refraction;
 };
 
 struct Metal_Material {
+    Float_Parameter bump_map;
     Float_Parameter roughness;
 
     // If r0 is defined then we use schlick approximation to compute fresnel,
@@ -79,6 +83,7 @@ struct Metal_Material {
 };
 
 struct Plastic_Material {
+    Float_Parameter bump_map;
     Float_Parameter roughness;
     Float_Parameter r0; // reflectance at normal incident angle
     RGB_Parameter diffuse_reflectance; // SSS reflectance inside plastic
@@ -86,14 +91,15 @@ struct Plastic_Material {
 };
 
 struct Coated_Diffuse_Material {
+    Float_Parameter bump_map;
     Float_Parameter roughness; // roughness of the glossy layer
     RGB_Parameter r0; // reflectance of the glossy layer at normal incident angle
     RGB_Parameter diffuse_reflectance; // reflectance of the diffuse layer
-    Float_Parameter bump_map;
     bool operator==(const Coated_Diffuse_Material&) const = default;
 };
 
 struct Glass_Material {
+    Float_Parameter bump_map;
     RGB_Parameter reflectance;
     RGB_Parameter transmittance;
     Float_Parameter index_of_refraction;
@@ -101,6 +107,7 @@ struct Glass_Material {
 };
 
 struct Pbrt3_Uber_Material {
+    Float_Parameter bump_map;
     RGB_Parameter diffuse_reflectance;
     RGB_Parameter specular_reflectance;
     RGB_Parameter delta_reflectance;

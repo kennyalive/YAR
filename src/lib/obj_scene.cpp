@@ -73,7 +73,14 @@ Scene load_obj_scene(const YAR_Project& project) {
         }
     }
     if (add_default_material) {
-        scene.materials.lambertian.push_back({true, Color_White, -1});
+        scene.materials.lambertian.push_back({ 
+            .reflectance = { {
+                    .is_specified = true,
+                    .is_constant = true,
+                    .constant_value = Color_White
+                }
+            }
+        });
     }
     return scene;
 }

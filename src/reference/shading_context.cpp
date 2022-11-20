@@ -5,6 +5,7 @@
 #include "bsdf.h"
 #include "context.h"
 #include "intersection.h"
+#include "parameter_evaluation.h"
 
 #include "lib/math.h"
 #include "lib/scene_object.h"
@@ -375,6 +376,44 @@ Vector3 Shading_Context::get_ray_origin_using_control_point(const Vector3& hemis
 {
     Vector3 hemisphere_direction = hemisphere_point - position;
     return get_ray_origin_using_control_direction(hemisphere_direction);
+}
+
+void Shading_Context::apply_bump_map(const Scene_Context& scene_ctx, Float_Parameter bump_map)
+{
+    if (bump_map.is_specified) {
+        float height = evaluate_float_parameter(scene_ctx, *this, bump_map);
+
+        Vector2 duvdx = Vector2(dudx, dvdx);
+        Vector2 duvdy = Vector2(dudy, dvdy);
+
+        float du = 0.5f * (std::abs(dudx) + std::abs(dudy));
+        if (du == 0.f) du = 0.0005f;
+        Vector2 uv_du = uv + Vector2(du, 0);
+        float height_du = evaluate_float_parameter(scene_ctx, uv_du, duvdx, duvdy, bump_map);
+
+        float dv = 0.5f * (std::abs(dvdx) + std::abs(dvdy));
+        if (dv == 0.f) dv = 0.0005f;
+        Vector2 uv_dv = uv + Vector2(0, dv);
+        float height_dv = evaluate_float_parameter(scene_ctx, uv_dv, duvdx, duvdy, bump_map);
+
+        // bump map offset is relative to the unmodified shading normal direction, as defined by the geometry
+        Vector3 original_shading_normal = original_shading_normal_was_flipped ? -normal : normal;
+
+        Vector3 new_dpdu = dpdu + ((height_du - height) / du) * original_shading_normal;
+        Vector3 new_dpdv = dpdv + ((height_dv - height) / dv) * original_shading_normal;
+
+        Vector3 new_normal = cross(new_dpdu, new_dpdv).normalized();
+        if (dot(new_normal, normal) < 0.f)
+            new_normal = -new_normal;
+
+        shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &new_normal);
+
+        normal = new_normal;
+        bitangent = cross(normal, new_dpdu).normalized();
+        tangent = cross(bitangent, normal);
+        dpdu = new_dpdu;
+        dpdv = new_dpdv;
+    }
 }
 
 bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays* differential_rays)
