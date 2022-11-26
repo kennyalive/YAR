@@ -136,6 +136,13 @@ bool Image::load_from_file(const std::string file_path, bool decode_srgb, bool* 
     return true;
 }
 
+void Image::init_from_constant_value(int width, int height, const ColorRGB color)
+{
+    this->width = width;
+    this->height = height;
+    data.resize(width * height, color);
+}
+
 bool Image::write_tga(const std::string& file_path) const {
     ASSERT(int(data.size()) == width * height);
     std::vector<uint8_t> srgb_image(data.size() * 3);

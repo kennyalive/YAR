@@ -14,7 +14,6 @@ struct Environment_Light_Sampler {
     Distribution_2D radiance_distribution;
 
     ColorRGB sample(Vector2 u, Vector3* wi, float* pdf) const;
-
     ColorRGB get_unfiltered_radiance_for_direction(const Vector3& world_direction) const;
     ColorRGB get_filtered_radiance_for_direction(const Vector3& world_direction) const;
     float pdf(const Vector3& world_direction) const;

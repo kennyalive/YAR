@@ -12,6 +12,7 @@ struct Image {
     Image(int width, int height);
 
     bool load_from_file(const std::string file_path, bool decode_srgb = false, bool* is_hdr_image = nullptr);
+    void init_from_constant_value(int width, int height, const ColorRGB color);
     bool write_tga(const std::string& file_path) const;
     bool write_exr(const std::string& file_path, bool compress_image, const std::vector<_EXRAttribute>& custom_attributes) const;
 

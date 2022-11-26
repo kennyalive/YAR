@@ -28,16 +28,24 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
 
     scene_ctx.textures.reserve(scene.texture_descriptors.size());
     for (const Texture_Descriptor& texture_desc : scene.texture_descriptors) {
-        std::string path = (fs::path(scene.path).parent_path() / texture_desc.file_name).string();
-        std::string ext = get_extension(path);
-
-        init_params.decode_srgb = (ext != ".exr" && ext != ".pfm");
-
         Image_Texture texture;
-        texture.initialize_from_file(path, init_params);
 
-        if (texture_desc.scale != 1.f)
-            texture.scale_all_mips(texture_desc.scale);
+        if (!texture_desc.file_name.empty()) {
+            std::string path = (fs::path(scene.path).parent_path() / texture_desc.file_name).string();
+            std::string ext = get_extension(path);
+
+            init_params.decode_srgb = (ext != ".exr" && ext != ".pfm");
+            texture.initialize_from_file(path, init_params);
+
+            if (texture_desc.scale != 1.f)
+                texture.scale_all_mips(texture_desc.scale);
+        }
+        else if (texture_desc.is_constant_texture) {
+            texture.initialize_from_constant_value(texture_desc.constant_value);
+        }
+        else {
+            ASSERT(false);
+        }
 
         scene_ctx.textures.push_back(std::move(texture));
     }

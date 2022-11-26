@@ -569,7 +569,18 @@ static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const M
         light.light_to_world = instance_transfrom * to_matrix3x4(infinite_light->transform);
         light.world_to_light = get_inverse_transform(light.light_to_world);
         light.scale = ColorRGB(&infinite_light->scale.x) * ColorRGB(&infinite_light->L.x);
-        light.environment_map_index = add_scene_texture(infinite_light->mapName, scene);
+
+        if (!infinite_light->mapName.empty()) {
+            light.environment_map_index = add_scene_texture(infinite_light->mapName, scene);
+        }
+        else {
+            Texture_Descriptor texture_desc{
+                .is_constant_texture = true,
+                .constant_value = Color_White
+            };
+            light.environment_map_index = add_scene_texture(texture_desc, scene);
+        }
+
         light.sample_count = infinite_light->nSamples;
         scene->lights.has_environment_light = true;
     }

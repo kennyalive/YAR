@@ -136,5 +136,6 @@ int add_scene_texture(const Texture_Descriptor& texture_desc, Scene* scene)
 
 int add_scene_texture(const std::string& file_name, Scene* scene)
 {
+    ASSERT(!file_name.empty());
     return add_scene_texture(Texture_Descriptor{ .file_name = file_name }, scene);
 }

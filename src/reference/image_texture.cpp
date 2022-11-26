@@ -286,6 +286,12 @@ void Image_Texture::initialize_from_file(const std::string& image_path, const Im
     }
 }
 
+void Image_Texture::initialize_from_constant_value(const ColorRGB& color)
+{
+    mips.resize(1);
+    mips[0].init_from_constant_value(1, 1, color);
+}
+
 void Image_Texture::scale_all_mips(float s)
 {
     for (Image& image : mips)

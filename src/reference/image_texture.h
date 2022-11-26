@@ -28,6 +28,7 @@ public:
     };
 
     void initialize_from_file(const std::string& image_path, const Init_Params& params);
+    void initialize_from_constant_value(const ColorRGB& color);
     void scale_all_mips(float s);
 
     const std::vector<Image>& get_mips() const { return mips; }

@@ -16,6 +16,9 @@ struct Texture_Descriptor {
     std::string file_name;
     float scale = 1.f;
 
+    bool is_constant_texture = false;
+    ColorRGB constant_value = Color_Black;
+
     bool operator==(const Texture_Descriptor&) const = default;
 };
 
