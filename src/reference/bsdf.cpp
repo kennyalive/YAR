@@ -26,6 +26,29 @@ inline float calculate_microfacet_wi_pdf(const Vector3& wo, const Vector3& wh, c
     return wi_pdf;
 }
 
+// Mapping from pbrt3.
+static float roughness_to_alpha(float roughness)
+{
+    // 'roughness' is a user-friendly value from [0..1] range and we need to remap it to
+    // represent 'alpha' parameter from microfacet distribution.
+
+    // TODO: assert is disabled for now, because some materials violate this.
+    // Do we need a warning here?
+    //ASSERT(roughness >= 0.f && roughness <= 1.f);
+
+    roughness = std::max(roughness, 1e-3f);
+    float x = std::log(roughness);
+
+    float alpha =
+        1.621420000f +
+        0.819955000f * x +
+        0.173400000f * x * x +
+        0.017120100f * x * x * x +
+        0.000640711f * x * x * x * x;
+
+    return alpha;
+}
+
 BSDF::BSDF(const Shading_Context& shading_ctx)
     : normal(shading_ctx.normal)
     , tangent(shading_ctx.tangent)
@@ -101,7 +124,10 @@ Metal_BRDF::Metal_BRDF(const Thread_Context& thread_ctx, const Metal_Material& m
     reflection_scattering = true;
 
     float roughness = evaluate_float_parameter(thread_ctx, material.roughness);
-    alpha = roughness * roughness;
+    if (material.roughness_is_alpha)
+        alpha = roughness;
+    else
+        alpha = roughness_to_alpha(roughness);
 
     eta_i = evaluate_float_parameter(thread_ctx, material.eta_i);
     eta_t = evaluate_rgb_parameter(thread_ctx, material.eta);
@@ -151,7 +177,10 @@ Plastic_BRDF::Plastic_BRDF(const Thread_Context& thread_ctx, const Plastic_Mater
     reflection_scattering = true;
 
     float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
-    alpha = roughness * roughness;
+    if (params.roughness_is_alpha)
+        alpha = roughness;
+    else
+        alpha = roughness_to_alpha(roughness);
 
     r0 = evaluate_float_parameter(thread_ctx, params.r0);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
@@ -219,7 +248,10 @@ Ashikhmin_Shirley_Phong_BRDF::Ashikhmin_Shirley_Phong_BRDF(const Thread_Context&
     reflection_scattering = true;
 
     float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
-    alpha = roughness * roughness;
+    if (params.roughness_is_alpha)
+        alpha = roughness;
+    else
+        alpha = roughness_to_alpha(roughness);
 
     r0 = evaluate_rgb_parameter(thread_ctx, params.r0);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
@@ -288,7 +320,10 @@ Pbrt3_Uber_BRDF::Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_U
     specular_reflectance = evaluate_rgb_parameter(thread_ctx, params.specular_reflectance);
 
     float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
-    alpha = roughness * roughness;
+    if (params.roughness_is_alpha)
+        alpha = roughness;
+    else
+        alpha = roughness_to_alpha(roughness);
 
     index_of_refraction = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
 }

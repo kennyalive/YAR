@@ -51,7 +51,12 @@ struct Perfect_Refractor_Material {
 
 struct Metal_Material {
     Float_Parameter bump_map;
+
     Float_Parameter roughness;
+
+    // If true, roughness represents a microfacet alpha parameter.
+    // Otherwise it's a roughness material property with values in the range [0..1].
+    bool roughness_is_alpha = false;
 
     // If r0 is defined then we use schlick approximation to compute fresnel,
     // otherwise eta/k are used to evaluate full fresnel equations.
@@ -84,7 +89,13 @@ struct Metal_Material {
 
 struct Plastic_Material {
     Float_Parameter bump_map;
+
     Float_Parameter roughness;
+
+    // If true, roughness represents a microfacet alpha parameter.
+    // Otherwise it's a roughness material property with values in the range [0..1].
+    bool roughness_is_alpha = false;
+
     Float_Parameter r0; // reflectance at normal incident angle
     RGB_Parameter diffuse_reflectance; // SSS reflectance inside plastic
     bool operator==(const Plastic_Material&) const = default;
@@ -92,7 +103,13 @@ struct Plastic_Material {
 
 struct Coated_Diffuse_Material {
     Float_Parameter bump_map;
+
     Float_Parameter roughness; // roughness of the glossy layer
+
+    // If true, roughness represents a microfacet alpha parameter.
+    // Otherwise it's a roughness material property with values in the range [0..1].
+    bool roughness_is_alpha = false;
+
     RGB_Parameter r0; // reflectance of the glossy layer at normal incident angle
     RGB_Parameter diffuse_reflectance; // reflectance of the diffuse layer
     bool operator==(const Coated_Diffuse_Material&) const = default;
@@ -123,6 +140,11 @@ struct Pbrt3_Uber_Material {
     RGB_Parameter opacity;
 
     Float_Parameter roughness;
+
+    // If true, roughness represents a microfacet alpha parameter.
+    // Otherwise it's a roughness material property with values in the range [0..1].
+    bool roughness_is_alpha = false;
+
     Float_Parameter index_of_refraction;
 
     // NOTE: the following are the derived fields. It's not mandatory to store them
