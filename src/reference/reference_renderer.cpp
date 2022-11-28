@@ -23,31 +23,60 @@ constexpr int time_category_field_width = 21; // for printf 'width' specifier
 static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
 {
     // Load textures.
-    Image_Texture::Init_Params init_params;
-    init_params.generate_mips = true;
+    if (!scene.texture_descriptors.empty()) {
+        std::atomic_int texture_counter{ 0 };
+        scene_ctx.textures.resize(scene.texture_descriptors.size());
 
-    scene_ctx.textures.reserve(scene.texture_descriptors.size());
-    for (const Texture_Descriptor& texture_desc : scene.texture_descriptors) {
-        Image_Texture texture;
+        Image_Texture::Init_Params init_params;
+        init_params.generate_mips = true;
 
-        if (!texture_desc.file_name.empty()) {
-            std::string path = (fs::path(scene.path).parent_path() / texture_desc.file_name).string();
-            std::string ext = get_extension(path);
+        auto load_texture_thread_func = [
+            &scene,
+            &scene_ctx,
+            &init_params,
+            &texture_counter
+        ]
+        {
+            initialize_fp_state();
+            int index = texture_counter.fetch_add(1);
+            while (index < scene.texture_descriptors.size()) {
+                const Texture_Descriptor& texture_desc = scene.texture_descriptors[index];
+                Image_Texture texture;
 
-            init_params.decode_srgb = (ext != ".exr" && ext != ".pfm");
-            texture.initialize_from_file(path, init_params);
+                if (!texture_desc.file_name.empty()) {
+                    std::string path = (fs::path(scene.path).parent_path() / texture_desc.file_name).string();
+                    std::string ext = get_extension(path);
 
-            if (texture_desc.scale != 1.f)
-                texture.scale_all_mips(texture_desc.scale);
+                    init_params.decode_srgb = (ext != ".exr" && ext != ".pfm");
+                    texture.initialize_from_file(path, init_params);
+
+                    if (texture_desc.scale != 1.f)
+                        texture.scale_all_mips(texture_desc.scale);
+                }
+                else if (texture_desc.is_constant_texture) {
+                    texture.initialize_from_constant_value(texture_desc.constant_value);
+                }
+                else {
+                    ASSERT(false);
+                }
+                scene_ctx.textures[index] = std::move(texture);
+                index = texture_counter.fetch_add(1);
+            }
+        };
+
+        // Start loading threads.
+        {
+            int thread_count = std::max(1, (int)std::thread::hardware_concurrency());
+            thread_count = std::min(thread_count, (int)scene.texture_descriptors.size());
+
+            std::vector<std::jthread> threads;
+            threads.reserve(thread_count - 1);
+
+            for (int i = 0; i < thread_count - 1; i++) {
+                threads.push_back(std::jthread(load_texture_thread_func));
+            }
+            load_texture_thread_func();
         }
-        else if (texture_desc.is_constant_texture) {
-            texture.initialize_from_constant_value(texture_desc.constant_value);
-        }
-        else {
-            ASSERT(false);
-        }
-
-        scene_ctx.textures.push_back(std::move(texture));
     }
 
     // Init environment map sampling.
