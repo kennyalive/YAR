@@ -34,6 +34,14 @@ namespace pbrt {
     }
   }
 
+// From pbrt3 source code
+bool HasExtension(const std::string& value, const std::string& ending) {
+    if (ending.size() > value.size()) return false;
+    return std::equal(
+        ending.rbegin(), ending.rend(), value.rbegin(),
+        [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+}
+
   Texture::SP SemanticParser::createTexture_image(pbrt::syntactic::Texture::SP in)
   {
     const std::string fileName = in->getParamString("filename");
@@ -45,6 +53,9 @@ namespace pbrt {
       tex->uscale = in->getParam1f("uscale");
     if (in->hasParam1f("vscale"))
       tex->vscale = in->getParam1f("vscale");
+
+    bool defaultGamma = HasExtension(fileName, ".tga") || HasExtension(fileName, ".png");
+    tex->gamma = in->getParamBool("gamma", defaultGamma);
     return tex;
   }
   

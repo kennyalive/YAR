@@ -293,6 +293,7 @@ namespace pbrt {
     std::string fileName;
     float uscale = 1.f;
     float vscale = 1.f;
+    bool gamma = false;
   };
   
   /*! a texture defined by a disney ptex file. these are kind-of like
