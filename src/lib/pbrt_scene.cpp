@@ -97,7 +97,11 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
     if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture);
         image_texture != nullptr)
     {
-        int texture_index = add_scene_texture(image_texture->fileName, scene);
+        Texture_Descriptor texture_desc{
+            .file_name = image_texture->fileName,
+            .decode_srgb = image_texture->gamma
+        };
+        int texture_index = add_scene_texture(texture_desc, scene);
         set_texture_parameter(param, texture_index);
 
         param.u_scale = image_texture->uscale;
@@ -120,7 +124,11 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
     if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture);
         image_texture != nullptr)
     {
-        int texture_index = add_scene_texture(image_texture->fileName, scene);
+        Texture_Descriptor texture_desc{
+            .file_name = image_texture->fileName,
+            .decode_srgb = image_texture->gamma
+        };
+        int texture_index = add_scene_texture(texture_desc, scene);
         set_texture_parameter(param, texture_index);
 
         param.u_scale = image_texture->uscale;

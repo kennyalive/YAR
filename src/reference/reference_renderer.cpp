@@ -47,7 +47,7 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
                     std::string path = (fs::path(scene.path).parent_path() / texture_desc.file_name).string();
                     std::string ext = get_extension(path);
 
-                    init_params.decode_srgb = (ext != ".exr" && ext != ".pfm");
+                    init_params.decode_srgb = texture_desc.decode_srgb;
                     texture.initialize_from_file(path, init_params);
 
                     if (texture_desc.scale != 1.f)
