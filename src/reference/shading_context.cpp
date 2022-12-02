@@ -14,8 +14,10 @@
 //  "The Iray Light Transport Simulation and Rendering System", Keller et al. 2017
 // Returns true if shading normal was modified and false otherwise.
 static bool adjust_shading_normal(const Vector3& wo, const Vector3& ng, Vector3* n) {
-    // check renderer convention: shading frame is oriented in such way that Wo is in the positive hemisphere
+    // renderer convention: 'wo' direction is in the hemisphere of the geometric normal
     ASSERT(dot(wo, ng) >= 0.f);
+    // renderer convention: shading normal is in the hemisphere of the geometric normal
+    ASSERT(dot(*n, ng) >= 0.f);
 
     Vector3 R = reflect(wo, *n);
 
@@ -34,25 +36,28 @@ static bool adjust_shading_normal(const Vector3& wo, const Vector3& ng, Vector3*
     }
 
     float b = dot(*n, ng);
-    ASSERT(b > 0.f);
+
+    Vector3 tangent;
+    if (b > 1e-4f) {
+        float distance_to_surface_along_normal = std::abs(a) / b;
+        tangent = R + distance_to_surface_along_normal * (*n);
+        tangent.normalize();
+    }
+    else {
+        // For small 'b' (especially when it's zero) it's numerically challenging to compute 'tangent' as we do above.
+        // For this configuration shading normal is almost tangential, so use it as a tangent vector.
+        tangent = *n;
+    }
 
     // This epsilon pulls tangent vector up a bit, so it's not strictly parallel to the surface.
     // In the scenario of ideal specular reflection it helps to avoid self intersection.
-    float epsilon = 1e-4f;
+    const float epsilon = 1e-4f;
+    tangent += epsilon * ng;
+    ASSERT(dot(tangent, ng) > 0.f);
 
-    float distance_to_surface_along_normal = std::abs(a)/b;
-    Vector3 tangent = R + (distance_to_surface_along_normal + epsilon) * (*n);
-    tangent.normalize();
-
-    // Check that tangent vector is either above the surface or only a little bit below it.
-    // The second scenario is still possible in rare situations due to finite FP precision when we have
-    // extreme orientation of the shading normal N relative to the geometric normal Ng (almost orthogonal).
-    // This is not a problem per se, because tangent vector only provides characteristic orientation.
-    ASSERT(dot(tangent, ng) > -1e-5f);
-
-    Vector3 new_N = (wo + tangent).normalized();
-    ASSERT(dot(wo, new_N) >= 0.f);
-    *n = new_N;
+    Vector3 new_n = (wo + tangent).normalized();
+    ASSERT(dot(wo, new_n) >= 0.f);
+    *n = new_n;
     return true;
 }
 
@@ -194,7 +199,9 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
         };
 
         Vector3 bp[2] = { p[1] - p[0], p[2] - p[0] };
-        solve_linear_system_2x2(a, bp, &dpdu, &dpdv);
+        if (!solve_linear_system_2x2(a, bp, &dpdu, &dpdv)) {
+            coordinate_system_from_vector(geometric_normal, &dpdu, &dpdv);
+        }
 
         Vector3 bn[2] = { n[1] - n[0], n[2] - n[0] };
         solve_linear_system_2x2(a, bn, &dndu, &dndv);
@@ -401,9 +408,10 @@ void Shading_Context::apply_bump_map(const Scene_Context& scene_ctx, Float_Param
 
         Vector3 new_dpdu = dpdu + ((height_du - height) / du) * original_shading_normal;
         Vector3 new_dpdv = dpdv + ((height_dv - height) / dv) * original_shading_normal;
-
         Vector3 new_normal = cross(new_dpdu, new_dpdv).normalized();
-        if (dot(new_normal, normal) < 0.f)
+
+        // renderer convention: shading normals should be in the hemisphere of the geometric normal.
+        if (dot(new_normal, geometric_normal) < 0)
             new_normal = -new_normal;
 
         shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &new_normal);
