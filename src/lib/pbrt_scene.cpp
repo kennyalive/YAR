@@ -709,6 +709,20 @@ Scene load_pbrt_scene(const YAR_Project& project) {
         scene.output_filename = pbrt_film->fileName;
         scene.film_resolution.x = pbrt_film->resolution.x;
         scene.film_resolution.y = pbrt_film->resolution.y;
+
+        // Initialize render region.
+        {
+            // Invert computations for x axis to take into account that we use right-handed CS versus left-handed in pbrt.
+            int render_region_x0 = scene.film_resolution.x - pbrt_film->cropWindow.z;
+            int render_region_x1 = scene.film_resolution.x - pbrt_film->cropWindow.x;
+
+            int render_region_y0 = pbrt_film->cropWindow.y;
+            int render_region_y1 = pbrt_film->cropWindow.w;
+
+            scene.render_region.p0 = Vector2i{ render_region_x0, render_region_y0 };
+            scene.render_region.p1 = Vector2i{ render_region_x1, render_region_y1 };
+        }
+
         scene.raytracer_config.film_radiance_scale = pbrt_film->scale;
         scene.raytracer_config.max_rgb_component_value_of_film_sample = pbrt_film->maxComponentValue;
     }
