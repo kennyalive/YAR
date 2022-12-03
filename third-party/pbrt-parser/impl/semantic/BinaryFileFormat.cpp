@@ -309,7 +309,7 @@ namespace pbrt {
       case TYPE_HAIR_MATERIAL:
         return std::make_shared<HairMaterial>();
       case TYPE_FILM:
-        return std::make_shared<Film>(vec2i(0));
+        return std::make_shared<Film>(vec2i(0), vec4i(0));
       case TYPE_CAMERA:
         return std::make_shared<Camera>();
       case TYPE_TRIANGLE_MESH:

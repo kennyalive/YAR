@@ -31,7 +31,27 @@ namespace pbrt {
         
       resolution.x = pbrt->film->findParam<int>("xresolution")->get(0);
       resolution.y = pbrt->film->findParam<int>("yresolution")->get(0);
-      ours->film = std::make_shared<Film>(resolution,fileName);
+      vec4i cropWindow;
+      if (pbrt->film->hasParam4f("cropwindow")) {
+          auto cropWindowParams = pbrt->film->findParam<float>("cropwindow");
+
+          float crop_x0 = cropWindowParams->get(0);
+          float crop_y0 = cropWindowParams->get(2);
+          float crop_x1 = cropWindowParams->get(1);
+          float crop_y1 = cropWindowParams->get(3);
+
+          cropWindow.x = (int)std::ceil(resolution.x * crop_x0);
+          cropWindow.y = (int)std::ceil(resolution.y * crop_y0);
+          cropWindow.z = (int)std::ceil(resolution.x * crop_x1);
+          cropWindow.w = (int)std::ceil(resolution.y * crop_y1);
+      }
+      else {
+          cropWindow.x = 0;
+          cropWindow.y = 0;
+          cropWindow.z = resolution.x;
+          cropWindow.w = resolution.y;
+      }
+      ours->film = std::make_shared<Film>(resolution, cropWindow, fileName);
 
       if (pbrt->film->hasParam1f("maxsampleluminance"))
           ours->film->maxComponentValue = pbrt->film->getParam1f("maxsampleluminance");

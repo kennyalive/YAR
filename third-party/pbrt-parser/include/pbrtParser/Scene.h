@@ -1096,8 +1096,9 @@ namespace pbrt {
       more consise, and easier to read */
     typedef std::shared_ptr<Film> SP;
 
-    Film(const vec2i &resolution, const std::string &fileName="")
+    Film(const vec2i &resolution, const vec4i& cropWindow, const std::string &fileName="")
       : resolution(resolution),
+        cropWindow(cropWindow),
         fileName(fileName)
     {}
 
@@ -1109,6 +1110,7 @@ namespace pbrt {
     virtual void readFrom(BinaryReader &) override;
     
     vec2i              resolution;
+    vec4i              cropWindow;
     /*! some files do specify the desired filename to be written
       to. may be empty if not set */
     std::string        fileName;
