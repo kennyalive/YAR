@@ -9,8 +9,12 @@ struct Ray;
 struct Scene_Object;
 class Image_Texture;
 
-// 8 byte kd-tree node.
-// KdTree is a linear array of nodes + an array of primitive indices referenced by the nodes.
+// 8 byte KdTree node. KdTree is a linear array of nodes.
+// There are three types of nodes:
+// - internal node. It's non-terminal node that has two children.
+// - leaf node. This node has no children and it overlaps zero or more geometric primitives.
+// - node that stores indices. When leaf node references more than one primitive then it
+//   allocates few subsequent nodes as a storage area for primitive indices.
 struct KdNode {
     uint32_t word0;
     uint32_t word1;
@@ -48,6 +52,9 @@ struct KdNode {
         return word0 >> 2;
     }
 
+    // IMPORTANT: this method should be called only on KdNode that resides in KdTree::nodes array.
+    // Calling this method on a copy of KdNode will return an address that points to a random region
+    // of memory when the number of leaf primitives > 1.
     const uint32_t* get_primitive_indices_array() const {
         ASSERT(is_leaf());
         return &word1;

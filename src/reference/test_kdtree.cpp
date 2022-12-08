@@ -216,6 +216,32 @@ static std::vector<Triangle_Mesh> create_custom_meshes() {
         };
         meshes.push_back(std::move(mesh));
     }
+    // mesh 1
+    {
+        Triangle_Mesh mesh;
+        mesh.vertices = {
+            {20.2507000f, -0.266158998f,  0.00341462996f },
+            {23.1791992f, -0.266160011f,  0.00341462996f },
+            {23.1791992f,  0.330767006f,  0.00341462996f },
+            {23.1791992f,  0.330767006f,  0.00341462996f },
+            {20.2507000f,  0.330767989f,  0.00341462996f },
+            {20.2507000f, -0.266158998f,  0.00341462996f },
+            {20.2507000f,  0.330767989f,  0.00341462996f },
+            {23.1791992f,  0.330767006f,  0.00341462996f },
+            {23.2245998f,  3.162070040f,  0.00000000000f },
+            {23.1784992f, -0.306407005f,  0.00000000000f },
+            {20.2558002f, -0.306566000f,  0.00000000000f },
+            {20.2595005f, -0.323619992f, -0.01705360040f }
+        };
+        mesh.indices = {
+            0, 1, 2,
+            3, 4, 5,
+            6, 7, 8,
+            9, 10, 11
+        };
+        meshes.push_back(std::move(mesh));
+    }
+
     return meshes;
 }
 
@@ -225,6 +251,7 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
 
     std::vector<Operation_Info> infos{
         {"", &custom_meshes[0], "<mesh to test FP bug fix in clip_bounds function>", 100'000},
+        {"", &custom_meshes[1], "<mesh to test FP bug when thin node is skipped during traversal>", 100'000},
         {"../data/test-files/teapot.obj", nullptr, "", 100'000},
         {"../data/test-files/bunny.obj", nullptr, "", 10'000},
         {"../data/test-files/dragon.obj", nullptr, "", 5'000},

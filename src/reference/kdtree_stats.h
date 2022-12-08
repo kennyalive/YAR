@@ -28,3 +28,4 @@ struct KdTree;
 KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree);
 std::vector<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32_t node_index);
 void kdtree_print_primitive_subdivisions_from_root_to_leaves(const KdTree& kdtree);
+void kdtree_print_structure(const KdTree& kdtree);

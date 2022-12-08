@@ -118,20 +118,20 @@ static std::vector<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree,
 {
     std::vector<uint32_t> subtree_primitive_indices;
 
-    const KdNode node = kdtree.nodes[node_index];
-    if (node.is_leaf()) {
-        const uint32_t pc = node.get_primitive_count();
+    const KdNode* node = &kdtree.nodes[node_index];
+    if (node->is_leaf()) {
+        const uint32_t pc = node->get_primitive_count();
         subtree_primitive_indices.resize(pc);
         node_index_to_primitive_count[node_index] = pc;
         for (uint32_t k = 0; k < pc; k++) {
-            subtree_primitive_indices[k] = node.get_primitive_indices_array()[k];
+            subtree_primitive_indices[k] = node->get_primitive_indices_array()[k];
         }
     }
     else {
         uint32_t below_node = node_index + 1;
         auto below_primitive_indices = get_subtree_primitive_indices(kdtree, below_node, node_index_to_primitive_count);
 
-        uint32_t above_node = node.get_above_child();
+        uint32_t above_node = node->get_above_child();
         auto above_primitive_indices = get_subtree_primitive_indices(kdtree, above_node, node_index_to_primitive_count);
 
         std::set_union(below_primitive_indices.begin(), below_primitive_indices.end(),
@@ -174,6 +174,54 @@ void kdtree_print_primitive_subdivisions_from_root_to_leaves(const KdTree& kdtre
     std::unordered_map<uint32_t, uint32_t> node_index_to_primitive_count;
     get_subtree_primitive_indices(kdtree, 0, node_index_to_primitive_count);
     print_primitive_subdivisions_for_subtree(kdtree, "", 0, node_index_to_primitive_count);
+}
+
+static void print_node_info(const KdTree& kdtree, uint32_t node_index, const Bounding_Box& bbox, int offset)
+{
+    auto print_bbox = [&bbox, offset]() {
+        printf("%*smin (% .11f, % .11f, % .11f)\n", offset, "", bbox.min_p.x, bbox.min_p.y, bbox.min_p.z);
+        printf("%*smax (% .11f, % .11f, % .11f)\n", offset, "", bbox.max_p.x, bbox.max_p.y, bbox.max_p.z);
+    };
+
+    const KdNode* node = &kdtree.nodes[node_index];
+    if (node->is_leaf()) {
+        printf("%*s(%u)[leaf] ", offset, "", node_index);
+        uint32_t primitive_count = node->get_primitive_count();
+        if (primitive_count == 0) {
+            printf("empty\n");
+        }
+        else {
+            const uint32_t* primitive_indices = node->get_primitive_indices_array();
+            printf("primitives: ");
+            for (uint32_t i = 0; i < primitive_count; i++)
+                printf("%u%s", primitive_indices[i], i != primitive_count - 1 ? ", " : "\n");
+        }
+        print_bbox();
+        printf("\n");
+    }
+    else {
+        uint32_t below_child = node_index + 1;
+        uint32_t above_child = node->get_above_child();
+        printf("%*s(%u)[node] children: (%u) and (%u), split axis: %d, split position: %.9f\n", offset, "", node_index,
+            below_child, above_child, node->get_split_axis(), node->get_split_position());
+        print_bbox();
+
+        offset += 4;
+
+        printf("\n");
+        Bounding_Box below_bbox = bbox;
+        below_bbox.max_p[node->get_split_axis()] = node->get_split_position();
+        print_node_info(kdtree, below_child, below_bbox, offset);
+
+        Bounding_Box above_bbox = bbox;
+        above_bbox.min_p[node->get_split_axis()] = node->get_split_position();
+        print_node_info(kdtree, above_child, above_bbox, offset);
+    }
+}
+
+void kdtree_print_structure(const KdTree& kdtree)
+{
+    print_node_info(kdtree, 0, kdtree.bounds, 0);
 }
 
 void KdTree_Stats::print()

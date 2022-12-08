@@ -166,10 +166,10 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
 {
 #ifdef BRUTE_FORCE_INTERSECTION
     uint32_t primitive_count = 0;
-    if (intersector == &intersect_triangle_mesh_kdtree_leaf_primitive)
+    if (intersector == &intersect_triangle_mesh_geometry_data)
         primitive_count = static_cast<const Triangle_Mesh_Geometry_Data*>(geometry_data)->mesh->get_triangle_count();
     else
-        primitive_count = (uint32_t)static_cast<const Scene_KdTree_Data*>(geometry_data)->scene_objects->size();
+        primitive_count = (uint32_t)static_cast<const Scene_Geometry_Data*>(geometry_data)->scene_objects->size();
 
     float tmax = intersection.t;
     for (uint32_t i = 0; i < primitive_count; i++) {
