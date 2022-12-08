@@ -219,17 +219,22 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
                     second_child = below_child;
                 }
 
-                // Select node to traverse next.
-                float t_split = distance_to_split_plane * inv_direction[axis]; 
-                ASSERT(t_split != 0.f); // because distance_to_split_plane != 0
+                float t_split = distance_to_split_plane * inv_direction[axis];
 
-                if (t_split >= t_max || t_split < 0.0) {
+                // distance_to_split_plane != 0 => t_split can't be zero.
+                // This ensures that when ray direction is parallel to the splitting plane then
+                // t_split can't be NaN (0 * inf results in NaN) but evaluates to +inf/-inf,
+                // and using t_split == +inf/-inf in the following code produces correct result.
+                ASSERT(t_split != 0.f);
+
+                // Select node to traverse next.
+                if (t_split > t_max || t_split < 0.0) {
                     node = first_child;
                 }
-                else if (t_split <= t_min) { // 0 < t_split <= t_min
+                else if (t_split < t_min) { // 0 < t_split < t_min
                     node = second_child;
                 }
-                else { // t_min < t_split < t_max
+                else { // t_min <= t_split <= t_max
                     ASSERT(traversal_stack_size < max_traversal_depth);
                     traversal_stack[traversal_stack_size].node = second_child;
                     traversal_stack[traversal_stack_size].t_max = t_max;
