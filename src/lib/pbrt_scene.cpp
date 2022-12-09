@@ -407,7 +407,7 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
 
     // Default material.
     Lambertian_Material mtl;
-    set_constant_parameter(mtl.reflectance, ColorRGB{ 0.5f, 0.5f, 0.5f });
+    set_constant_parameter(mtl.reflectance, ColorRGB{ 1.f, 0.f, 0.f });
     return add_material<Material_Type::lambertian>(materials, mtl);
 }
 
@@ -542,17 +542,34 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
 
 static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const Matrix3x4& instance_transfrom, Scene* scene)
 {
-    auto point_light = std::dynamic_pointer_cast<pbrt::PointLightSource>(pbrt_light);
-    if (point_light) {
-        ASSERT(point_light->Ispectrum.spd.empty()); // do not support this yet
+    if (auto point_light = std::dynamic_pointer_cast<pbrt::PointLightSource>(pbrt_light);
+        point_light)
+    {
+        ASSERT(point_light->Ispectrum.spd.empty()); // not supported yet
         Point_Light light;
         light.position = Vector3(&point_light->from.x);
         light.intensity = ColorRGB(&point_light->I.x) * ColorRGB(&point_light->scale.x);
         scene->lights.point_lights.push_back(light);
+        return;
     }
 
-    auto distant_light = std::dynamic_pointer_cast<pbrt::DistantLightSource>(pbrt_light);
-    if (distant_light) {
+    if (auto spot_light = std::dynamic_pointer_cast<pbrt::SpotLightSource>(pbrt_light); 
+        spot_light)
+    {
+        ASSERT(spot_light->Ispectrum.spd.empty()); // not supported yet
+        Spot_Light light;
+        light.position = Vector3(&spot_light->from.x);
+        light.direction = (Vector3(&spot_light->to.x) - Vector3(&spot_light->from.x)).normalized();
+        light.cone_angle = radians(spot_light->coneAngle);
+        light.penumbra_angle = radians(spot_light->coneDeltaAngle);
+        light.intensity = ColorRGB(&spot_light->I.x) * ColorRGB(&spot_light->scale.x);
+        scene->lights.spot_lights.push_back(light);
+        return;
+    }
+
+    if (auto distant_light = std::dynamic_pointer_cast<pbrt::DistantLightSource>(pbrt_light);
+        distant_light)
+    {
         Vector3 light_vec = Vector3(&distant_light->from.x) - Vector3(&distant_light->to.x);
         light_vec = transform_vector(instance_transfrom, light_vec);
 
@@ -560,10 +577,12 @@ static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const M
         light.direction = light_vec.normalized();
         light.irradiance = ColorRGB(&distant_light->L.x) * ColorRGB(&distant_light->scale.x);
         scene->lights.directional_lights.push_back(light);
+        return;
     }
 
-    auto infinite_light = std::dynamic_pointer_cast<pbrt::InfiniteLightSource>(pbrt_light);
-    if (infinite_light) {
+    if (auto infinite_light = std::dynamic_pointer_cast<pbrt::InfiniteLightSource>(pbrt_light);
+        infinite_light)
+    {
         Environment_Light& light = scene->lights.environment_light;
         light.light_to_world = instance_transfrom * to_matrix3x4(infinite_light->transform);
         light.world_to_light = get_inverse_transform(light.light_to_world);
@@ -582,7 +601,10 @@ static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const M
 
         light.sample_count = infinite_light->nSamples;
         scene->lights.has_environment_light = true;
+        return;
     }
+
+    ASSERT(false); // unsupported light type
 }
 
 static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {

@@ -45,6 +45,48 @@ static ColorRGB direct_lighting_from_point_light(const Scene_Context& scene_ctx,
     return L;
 }
 
+static ColorRGB direct_lighting_from_spot_light(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
+    const Spot_Light& light)
+{
+    Vector3 position = shading_ctx.get_ray_origin_using_control_point(light.position);
+    Vector3 vector_to_light = light.position - position;
+    float distance_to_light = vector_to_light.length();
+
+    Vector3 wi = vector_to_light / distance_to_light;
+
+    float cone_cos = std::cos(light.cone_angle);
+    float wi_cos = dot(-wi, light.direction);
+    if (wi_cos < cone_cos)
+        return Color_Black; // outside of light cone
+
+    float penumbra_attenuation = 1.f;
+    float penumbra_cos = std::cos(std::max(0.f, light.cone_angle - light.penumbra_angle));
+    if (wi_cos < penumbra_cos) {
+        float k = (wi_cos - cone_cos) / (penumbra_cos - cone_cos);
+        penumbra_attenuation = (k * k) * (k * k);
+    }
+
+    float n_dot_wi = dot(shading_ctx.normal, wi);
+
+    bool scattering_possible =
+        n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
+        n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
+    if (!scattering_possible)
+        return Color_Black;
+
+    ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
+    if (f.is_black())
+        return Color_Black;
+
+    Ray light_visibility_ray{ position, wi };
+    bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_light * (1.f - 1e-5f));
+    if (occluded)
+        return Color_Black;
+
+    ColorRGB L = (light.intensity * f) * (penumbra_attenuation * std::abs(n_dot_wi) / (distance_to_light * distance_to_light));
+    return L;
+}
+
 static ColorRGB direct_lighting_from_directional_light(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
     const Directional_Light& light)
 {
@@ -411,6 +453,12 @@ ColorRGB estimate_direct_lighting_from_single_sample(const Thread_Context& threa
         return (float)scene_ctx.lights.total_light_count * direct_lighting_from_point_light(scene_ctx, shading_ctx, light);
     }
     light_index -= (int)scene_ctx.lights.point_lights.size();
+
+    if (light_index < scene_ctx.lights.spot_lights.size()) {
+        const Spot_Light& light = scene_ctx.lights.spot_lights[light_index];
+        return (float)scene_ctx.lights.total_light_count * direct_lighting_from_spot_light(scene_ctx, shading_ctx, light);
+    }
+    light_index -= (int)scene_ctx.lights.spot_lights.size();
 
     if (light_index < scene_ctx.lights.directional_lights.size()) {
         const Directional_Light& light = scene_ctx.lights.directional_lights[light_index];

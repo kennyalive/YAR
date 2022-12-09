@@ -24,6 +24,7 @@ Triangle_Mesh Diffuse_Rectangular_Light::get_geometry() const {
 bool Lights::has_lights() const {
     return
         point_lights.size() ||
+        spot_lights.size() ||
         directional_lights.size() ||
         diffuse_rectangular_lights.size() ||
         diffuse_sphere_lights.size() ||
@@ -33,6 +34,7 @@ bool Lights::has_lights() const {
 void Lights::update_total_light_count() {
     total_light_count =
         (int)point_lights.size() + 
+        (int)spot_lights.size() +
         (int)directional_lights.size() +
         (int)diffuse_rectangular_lights.size() +
         (int)diffuse_sphere_lights.size() +

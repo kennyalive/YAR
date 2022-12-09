@@ -6,6 +6,7 @@
 
 enum class Light_Type : uint32_t {
     point, // delta light
+    spot, // delta light
     directional, // delta light
     diffuse_rectangular,
     diffuse_sphere,
@@ -32,6 +33,14 @@ constexpr int Light_Type_Count = static_cast<int>(Light_Type::count);
 
 struct Point_Light {
     Vector3 position;
+    ColorRGB intensity;
+};
+
+struct Spot_Light {
+    Vector3 position;
+    Vector3 direction;
+    float cone_angle = 0.f;
+    float penumbra_angle = 0.f;
     ColorRGB intensity;
 };
 
@@ -82,6 +91,7 @@ struct Environment_Light {
 
 struct Lights {
     std::vector<Point_Light> point_lights;
+    std::vector<Spot_Light> spot_lights;
     std::vector<Directional_Light> directional_lights;
     std::vector<Diffuse_Rectangular_Light> diffuse_rectangular_lights;
     std::vector<Diffuse_Sphere_Light> diffuse_sphere_lights;
