@@ -13,7 +13,7 @@ enum Options {
     OPT_RENDER_REGION_Y,
     OPT_RENDER_REGION_W,
     OPT_RENDER_REGION_H,
-    OPT_CROP_IMAGE_BY_RENDER_REGION,
+    OPT_DO_NOT_CROP_IMAGE_BY_RENDER_REGION,
     OPT_RNG_SEED_OFFSET,
     OPT_FLIP_HORIZONTALLY,
     OPT_FORCE_REBUILD_KDTREE_CACHE,
@@ -46,8 +46,8 @@ static const getopt_option_t option_list[] =
     { "h", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_RENDER_REGION_H,
         "set render region height", "height" },
 
-    { "crop", 0, GETOPT_OPTION_TYPE_NO_ARG, 0, OPT_CROP_IMAGE_BY_RENDER_REGION,
-        "crop image by render region rectangle" },
+    { "nocrop", 0, GETOPT_OPTION_TYPE_NO_ARG, 0, OPT_DO_NOT_CROP_IMAGE_BY_RENDER_REGION,
+        "do not crop image by render region rectangle" },
 
     { "flip", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_FLIP_HORIZONTALLY,
         "flip image horizontally" },
@@ -185,8 +185,8 @@ int main(int argc, char** argv) {
             render_region_size.y = std::max(1, atoi(ctx.current_opt_arg));
             is_render_region_specified = true;
         }
-        else if (opt == OPT_CROP_IMAGE_BY_RENDER_REGION) {
-            options.crop_image_by_render_region = true;
+        else if (opt == OPT_DO_NOT_CROP_IMAGE_BY_RENDER_REGION) {
+            options.crop_image_by_render_region = false;
         }
         else if (opt == OPT_RNG_SEED_OFFSET) {
             options.rng_seed_offset = atoi(ctx.current_opt_arg);

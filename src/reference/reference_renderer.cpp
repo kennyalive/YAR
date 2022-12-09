@@ -732,8 +732,8 @@ static void save_output_image(
     ASSERT(image.height == render_region.size().y);
 
     if (!options.crop_image_by_render_region) {
-        // Render region should be placed into a proper canvas position
-        // when we render only a sub-region of the entire image.
+        // Render region should be placed into a proper canvas position when we render
+        // only a sub-region of the entire image and --nocrop option is specified.
         if (render_region != Bounds2i{ {0, 0}, film_resolution }) {
             const ColorRGB* src_pixel = image.data.data();
 

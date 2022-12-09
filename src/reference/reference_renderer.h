@@ -7,7 +7,7 @@ struct Renderer_Options {
     int thread_count = 0;
 
     Bounds2i render_region;
-    bool crop_image_by_render_region = false;
+    bool crop_image_by_render_region = true;
 
     // Can be useful during debugging to vary random numbers and get configuration that
     // reproduces desired behavior.
