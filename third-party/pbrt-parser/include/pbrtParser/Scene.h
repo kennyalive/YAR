@@ -195,8 +195,8 @@ namespace pbrt {
     vec3f       to;
     vec3f       I              { 1.f,1.f,1.f };
     Spectrum    Ispectrum;
-    float       coneAngle      { 0.f };
-    float       coneDeltaAngle { 0.f };
+    float       coneAngle      { 30.f };
+    float       coneDeltaAngle { 5.f };
     vec3f       scale          { 1.f,1.f,1.f };
   };
 
