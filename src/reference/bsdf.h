@@ -89,4 +89,11 @@ struct Pbrt3_Uber_BRDF : public BSDF {
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
+struct Pbrt3_Plastic_BRDF : public Plastic_BRDF {
+    Vector3 original_shading_normal;
+
+    Pbrt3_Plastic_BRDF(const Thread_Context& thread_ctx, const Plastic_Material& params);
+    ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
+};
+
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material);

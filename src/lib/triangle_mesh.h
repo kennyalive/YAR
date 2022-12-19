@@ -10,6 +10,10 @@ struct Triangle_Mesh {
     std::vector<int32_t> indices;
     int alpha_texture_index = -1;
 
+    // Pbrt feature. It helps to be compatible with pbrt in the areas
+    // where the algorithm should distinguish between inside and outside.
+    bool reverse_geometric_normal_orientation = false;
+
     int get_triangle_count() const
     {
         ASSERT(indices.size() % 3 == 0);

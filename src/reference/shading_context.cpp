@@ -178,7 +178,11 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
     Vector3 p[3];
     ti.mesh->get_positions(ti.triangle_index, p);
     position = barycentric_interpolate(p, ti.barycentrics);
+
     geometric_normal = cross(p[1] - p[0], p[2] - p[0]).normalized();
+    if (ti.mesh->reverse_geometric_normal_orientation)
+        geometric_normal = -geometric_normal;
+
     normal = geometric_normal;
 
     Vector3 n[3];

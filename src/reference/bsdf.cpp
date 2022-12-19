@@ -376,6 +376,40 @@ float Pbrt3_Uber_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
     return pdf;
 }
 
+//
+// Pbrt3 Plastic BRDF
+//
+Pbrt3_Plastic_BRDF::Pbrt3_Plastic_BRDF(const Thread_Context& thread_ctx, const Plastic_Material& params)
+    : Plastic_BRDF(thread_ctx, params)
+{
+    original_shading_normal = thread_ctx.shading_context.original_shading_normal_was_flipped ? -normal : normal;
+}
+
+ColorRGB Pbrt3_Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
+{
+    Vector3 wh = (wo + wi).normalized();
+
+    float cos_theta_i = dot(wi, wh);
+    ASSERT(cos_theta_i >= 0);
+
+    // In pbrt3 eta_t is 1.0 and eta_i is 1.5, which is a bug but it became a feature.
+    // We need to do the same to produce pbrt3 output.
+    float relative_ior = 1.f / 1.5f;
+
+    bool flip_ior = dot(original_shading_normal, wi) < 0.f;
+    if (flip_ior)
+        relative_ior = 1.5f / 1.f;
+
+    ColorRGB F = ColorRGB(dielectric_fresnel(cos_theta_i, relative_ior));
+
+    float D = GGX_Distribution::D(wh, normal, alpha);
+    float G = GGX_Distribution::G(wi, wo, normal, alpha);
+
+    ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(normal, wo) * dot(normal, wi));
+    ColorRGB diffuse_brdf = diffuse_reflectance * Pi_Inv;
+    return diffuse_brdf + specular_brdf;
+}
+
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     Shading_Context& shading_ctx = thread_ctx.shading_context;
@@ -398,8 +432,14 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
     {
         const Plastic_Material& params = scene_ctx.materials.plastic[material.index];
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
-        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Plastic_BRDF>();
-        return new (bsdf_allocation) Plastic_BRDF(thread_ctx, params);
+        if (thread_ctx.scene_context->pbrt3_scene) {
+            void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Plastic_BRDF>();
+            return new (bsdf_allocation) Pbrt3_Plastic_BRDF(thread_ctx, params);
+        }
+        else {
+            void* bsdf_allocation = thread_ctx.memory_pool.allocate<Plastic_BRDF>();
+            return new (bsdf_allocation) Plastic_BRDF(thread_ctx, params);
+        }
     }
     case Material_Type::coated_diffuse:
     {

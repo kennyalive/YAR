@@ -826,6 +826,9 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
 
     init_pixel_sampler_config(scene_ctx.pixel_sampler_config, scene_ctx);
 
+    if (scene.type == Scene_Type::pbrt) // TODO: we might need to distinguish between pbrt3/4.
+        scene_ctx.pbrt3_scene = true;
+
     float load_time = elapsed_seconds(t_start);
     printf("%-*s %.3f seconds\n\n", time_category_field_width, "Total loading time", load_time);
 

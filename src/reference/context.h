@@ -48,6 +48,9 @@ struct Scene_Context {
     // Samplers
     Stratified_Pixel_Sampler_Configuration pixel_sampler_config;
     Array2D_Registry array2d_registry; // registered 2d arrays of samples
+
+    // Pbrt compatibility.
+    bool pbrt3_scene = false;
 };
 
 struct Path_Context {

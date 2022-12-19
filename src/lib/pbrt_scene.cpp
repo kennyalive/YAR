@@ -451,6 +451,8 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
         };
     }
 
+    mesh.reverse_geometric_normal_orientation = pbrt_mesh->reverseOrientation;
+
     mesh.remove_degenerate_triangles();
     if (mesh.indices.empty())
         return Null_Geometry;
