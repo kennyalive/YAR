@@ -237,6 +237,13 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
 {
     Materials& materials = scene->materials;
 
+    // default pbrt material
+    if (!pbrt_material) {
+        Lambertian_Material mtl;
+        set_constant_parameter(mtl.reflectance, ColorRGB{ 0.5f, 0.5f, 0.5f });
+        return add_material<Material_Type::lambertian>(materials, mtl);
+    }
+
     if (auto matte = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_material)) {
         Lambertian_Material mtl;
 
@@ -405,7 +412,7 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         return add_material<Material_Type::pbrt3_uber>(materials, mtl);
     }
 
-    // Default material.
+    // Use red diffuse material to indicate unsupported material.
     Lambertian_Material mtl;
     set_constant_parameter(mtl.reflectance, ColorRGB{ 1.f, 0.f, 0.f });
     return add_material<Material_Type::lambertian>(materials, mtl);
