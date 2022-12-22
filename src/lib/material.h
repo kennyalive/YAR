@@ -4,9 +4,10 @@
 #include "parameter.h"
 
 enum class Material_Type : uint32_t {
-    lambertian,
     perfect_reflector,
     perfect_refractor,
+    lambertian,
+    diffuse_transmission,
     metal,
     plastic,
     coated_diffuse,
@@ -32,12 +33,6 @@ static_assert(sizeof(Material_Handle) == 8);
 constexpr Material_Handle Null_Material = { Material_Type::null_material, -1 };
 constexpr int Material_Type_Count = static_cast<int>(Material_Type::count);
 
-struct Lambertian_Material {
-    Float_Parameter bump_map;
-    RGB_Parameter reflectance;
-    bool operator==(const Lambertian_Material&) const = default;
-};
-
 struct Perfect_Reflector_Material {
     Float_Parameter bump_map;
     RGB_Parameter reflectance;
@@ -47,6 +42,20 @@ struct Perfect_Reflector_Material {
 struct Perfect_Refractor_Material {
     Float_Parameter bump_map;
     Float_Parameter index_of_refraction;
+};
+
+struct Lambertian_Material {
+    Float_Parameter bump_map;
+    RGB_Parameter reflectance;
+    bool operator==(const Lambertian_Material&) const = default;
+};
+
+struct Diffuse_Transmission_Material {
+    Float_Parameter bump_map;
+    RGB_Parameter reflectance;
+    RGB_Parameter transmittance;
+    Float_Parameter scale;
+    bool operator==(const Diffuse_Transmission_Material&) const = default;
 };
 
 struct Metal_Material {
@@ -166,6 +175,7 @@ struct Pbrt3_Uber_Material {
 
 struct Materials {
     std::vector<Lambertian_Material> lambertian;
+    std::vector<Diffuse_Transmission_Material> diffuse_transmission;
     std::vector<Perfect_Reflector_Material> perfect_reflector;
     std::vector<Perfect_Refractor_Material> perfect_refractor;
     std::vector<Metal_Material> metal;

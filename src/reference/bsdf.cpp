@@ -26,6 +26,12 @@ inline float calculate_microfacet_wi_pdf(const Vector3& wo, const Vector3& wh, c
     return wi_pdf;
 }
 
+inline float cosine_hemisphere_pdf(float theta_cos)
+{
+    ASSERT(theta_cos >= 0.f);
+    return theta_cos * Pi_Inv;
+}
+
 // Mapping from pbrt3.
 static float roughness_to_alpha(float roughness)
 {
@@ -113,6 +119,69 @@ ColorRGB Lambertian_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, floa
 float Lambertian_BRDF::pdf(const Vector3& /*wo*/, const Vector3& wi) const {
     ASSERT(dot(normal, wi) >= 0.f);
     return dot(normal, wi) / Pi; // pdf for cosine-weighted hemisphere sampling
+}
+
+//
+// Diffuse Transmission BSDF
+//
+Diffuse_Transmission_BSDF::Diffuse_Transmission_BSDF(const Thread_Context& thread_ctx,
+    const Diffuse_Transmission_Material& material)
+    : BSDF(thread_ctx.shading_context)
+{
+    reflection_scattering = true;
+    transmission_scattering = true;
+
+    float scale = evaluate_float_parameter(thread_ctx, material.scale);
+
+    reflectance = scale * evaluate_rgb_parameter(thread_ctx, material.reflectance);
+    reflectance.clamp_to_unit_range();
+
+    transmittance = scale * evaluate_rgb_parameter(thread_ctx, material.transmittance);
+    transmittance.clamp_to_unit_range();
+}
+
+ColorRGB Diffuse_Transmission_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
+{
+    bool same_hemisphere = dot(wo, normal) * dot(wi, normal) > 0.f;
+    if (same_hemisphere)
+        return Pi_Inv * reflectance;
+    else
+        return Pi_Inv * transmittance;
+}
+
+ColorRGB Diffuse_Transmission_BSDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const
+{
+    float max_r = reflectance.max_component_value();
+    float max_t = transmittance.max_component_value();
+    float p = max_r / (max_r + max_t);
+
+    Vector3 local_dir;
+    if (u[0] < p) { // sample reflectance
+        u[0] = std::min(u[0] / p, One_Minus_Epsilon); // remap to [0, 1) range
+        local_dir = sample_hemisphere_cosine(u);
+    }
+    else { // sample tranmittance
+        u[0] = std::min((u[0] - p) / (1.f - p), One_Minus_Epsilon); // remap to [0, 1) range
+        local_dir = -sample_hemisphere_cosine(u);
+    }
+    *wi = local_to_world(local_dir);
+    *pdf = Diffuse_Transmission_BSDF::pdf(wo, *wi);
+    return Diffuse_Transmission_BSDF::evaluate(wo, *wi);
+}
+
+float Diffuse_Transmission_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
+{
+    float max_r = reflectance.max_component_value();
+    float max_t = transmittance.max_component_value();
+
+    float cos_theta = std::abs(dot(normal, wi));
+    float pdf = cosine_hemisphere_pdf(cos_theta);
+
+    bool same_hemisphere = dot(wo, normal) * dot(wi, normal) > 0.f;
+    if (same_hemisphere)
+        return (max_r / (max_r + max_t)) * pdf;
+    else
+        return (max_t / (max_r + max_t)) * pdf;
 }
 
 //
@@ -420,6 +489,13 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Lambertian_BRDF>();
         return new (bsdf_allocation) Lambertian_BRDF(thread_ctx, params);
+    }
+    case Material_Type::diffuse_transmission:
+    {
+        const Diffuse_Transmission_Material& params = scene_ctx.materials.diffuse_transmission[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Diffuse_Transmission_BSDF>();
+        return new (bsdf_allocation) Diffuse_Transmission_BSDF(thread_ctx, params);
     }
     case Material_Type::metal:
     {

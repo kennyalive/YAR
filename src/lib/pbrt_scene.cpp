@@ -176,6 +176,9 @@ Material_Handle add_material(Materials& materials, const Material& material)
     if constexpr (material_type == Material_Type::lambertian) {
         materials_of_given_type = &materials.lambertian;
     }
+    else if constexpr (material_type == Material_Type::diffuse_transmission) {
+        materials_of_given_type = &materials.diffuse_transmission;
+    }
     else if constexpr (material_type == Material_Type::perfect_reflector) {
         materials_of_given_type = &materials.perfect_reflector;
     }
@@ -256,6 +259,20 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
             mtl.bump_map = import_pbrt_texture_float(matte->map_bump, scene);
 
         return add_material<Material_Type::lambertian>(materials, mtl);
+    }
+
+    if (auto translucent_material = std::dynamic_pointer_cast<pbrt::TranslucentMaterial>(pbrt_material)) {
+        Diffuse_Transmission_Material mtl;
+
+        if (translucent_material->map_kd)
+            mtl.transmittance = import_pbrt_texture_rgb(translucent_material->map_kd, scene);
+        else
+            set_constant_parameter(mtl.transmittance, ColorRGB(&translucent_material->kd.x));
+
+        set_constant_parameter(mtl.reflectance, ColorRGB(0.25f));
+        set_constant_parameter(mtl.scale, 1.f);
+
+        return add_material<Material_Type::diffuse_transmission>(materials, mtl);
     }
 
     if (auto mirror_material = std::dynamic_pointer_cast<pbrt::MirrorMaterial>(pbrt_material)) {

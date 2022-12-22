@@ -64,18 +64,31 @@ struct ColorRGB {
         return r == 0 && g == 0 && b == 0;
     }
 
+    bool is_finite() const
+    {
+        return ::is_finite(r) && ::is_finite(g) && ::is_finite(b);
+    }
+
     float luminance() const {
         return sRGB_to_XYZ(*this)[1];
+    }
+
+    float max_component_value() const
+    {
+        return std::max(r, std::max(g, b));
+    }
+
+    void clamp_to_unit_range()
+    {
+        r = std::clamp(r, 0.f, 1.f);
+        g = std::clamp(g, 0.f, 1.f);
+        b = std::clamp(b, 0.f, 1.f);
     }
 
     void clamp_to_zero_negative_components() {
         r = std::max(0.f, r);
         g = std::max(0.f, g);
         b = std::max(0.f, b);
-    }
-
-    bool is_finite() const {
-        return ::is_finite(r) && ::is_finite(g) && ::is_finite(b);
     }
 };
 

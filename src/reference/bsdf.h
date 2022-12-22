@@ -39,6 +39,16 @@ struct Lambertian_BRDF : public BSDF {
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
+struct Diffuse_Transmission_BSDF : public BSDF {
+    ColorRGB reflectance;
+    ColorRGB transmittance;
+
+    Diffuse_Transmission_BSDF(const Thread_Context& thread_ctx, const Diffuse_Transmission_Material& material);
+    ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
+    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    float pdf(const Vector3& wo, const Vector3& wi) const override;
+};
+
 struct Metal_BRDF : public BSDF {
     float alpha = 0.f;
     float eta_i = 0.f; // ROI of adjacent dielectric
