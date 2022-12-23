@@ -145,13 +145,15 @@ void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, cons
     // we assume that dndu/dndv is still a reasonable approximation.
     shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &normal);
 
-    if (dpdu != Vector3_Zero) {
-        bitangent = cross(normal, dpdu).normalized();
+    bitangent = cross(normal, dpdu);
+    if (bitangent != Vector3_Zero) {
+        bitangent.normalize();
         tangent = cross(bitangent, normal);
     }
     else {
-        ASSERT(dpdv == Vector3_Zero); // consistency check, expect both derivatives are zero
         coordinate_system_from_vector(normal, &tangent, &bitangent);
+        dpdu = Vector3_Zero;
+        dpdv = Vector3_Zero;
     }
 
     material = intersection.scene_object->material;
@@ -188,7 +190,7 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
     Vector3 n[3];
     if (!ti.mesh->normals.empty()) {
         ti.mesh->get_normals(ti.triangle_index, n);
-        normal = barycentric_interpolate(n, ti.barycentrics);
+        normal = barycentric_interpolate(n, ti.barycentrics).normalized();
     }
 
     if (!ti.mesh->uvs.empty()) {
