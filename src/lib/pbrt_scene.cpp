@@ -43,7 +43,9 @@ static Sampled_Spectrum to_sampled_spectrum(const pbrt::Spectrum& pbrt_spectrum)
 }
 
 static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size, Matrix3x4& transform) {
-    if (mesh.vertices.size() != 4 || mesh.indices.size() != 6)
+    bool potentially_rectangle_topology =
+        (mesh.vertices.size() == 4 || mesh.vertices.size() == 6) && mesh.indices.size() == 6;
+    if (!potentially_rectangle_topology)
         return false;
 
     Vector3 p[3] = {
@@ -51,6 +53,25 @@ static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size,
         mesh.vertices[mesh.indices[1]],
         mesh.vertices[mesh.indices[2]]
     };
+
+    bool found_p3 = false;
+    Vector3 p3;
+    for (int i = 3; i < 6; i++) {
+        Vector3 pp = mesh.vertices[mesh.indices[i]];
+
+        // Looking for the vertex of the second triangle that is not shared with the first triangle.
+        if ((pp - p[0]).length() < 1e-4f || (pp - p[1]).length() < 1e-4f || (pp - p[2]).length() < 1e-4f)
+            continue;
+        // We already found non-shared vertex and now we have one more. It's not a rectangle.
+        if (found_p3)
+            return false;
+
+        found_p3 = true;
+        p3 = pp;
+    }
+    if (!found_p3)
+        return false;
+
     Vector3 v[3] = {
         p[1] - p[0],
         p[2] - p[1],
@@ -68,10 +89,10 @@ static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size,
             break;
         }
     }
-    if (k == 3)
+    if (k == 3) // we couldn't find a right angle in the first triangle, so entire shape is not a rectangle
         return false;
 
-    Vector3 mid_point = (mesh.vertices[0] + mesh.vertices[1] + mesh.vertices[2] + mesh.vertices[3]) * 0.25f;
+    Vector3 mid_point = (p[0] + p[1] + p[2] + p3) * 0.25f;
     Vector3 test_point = (p[k] + p[(k+2)%3]) * 0.5f;
 
     if ((mid_point - test_point).length() > 1e-4f)
