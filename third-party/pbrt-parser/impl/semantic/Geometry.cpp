@@ -391,6 +391,11 @@ namespace pbrt {
       } else if (in->hasParam3f("L")) {
         DiffuseAreaLightRGB::SP diffuse = std::make_shared<DiffuseAreaLightRGB>();
         in->getParam3f(&diffuse->L.x,"L");
+        if (in->hasParam3f("scale")) {
+            vec3f scale;
+            in->getParam3f(&scale.x, "scale");
+            diffuse->L = diffuse->L * scale;
+        }
         diffuse->nSamples = in->getParam1i("nsamples", 1);
         return diffuse;
       } else {
