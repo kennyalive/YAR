@@ -136,10 +136,34 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
         if (!fs_create_directories(kdtree_cache_directory))
             error("Failed to create kdtree cache directory: %s\n", kdtree_cache_directory.string().c_str());
 
-        for (size_t i = 0; i < geometry_datas.size(); i++) {
-            KdTree kdtree = build_triangle_mesh_kdtree(&geometry_datas[i]);
-            fs::path kdtree_file = kdtree_cache_directory / (std::to_string(i) + ".kdtree");
-            kdtree.save(kdtree_file.string());
+        std::atomic_int kdtree_counter{ 0 };
+        auto build_kdtree_func = [
+            &kdtree_cache_directory,
+            &geometry_datas,
+            &kdtree_counter
+        ]
+        {
+            initialize_fp_state();
+            int index = kdtree_counter.fetch_add(1);
+            while (index < geometry_datas.size()) {
+                KdTree kdtree = build_triangle_mesh_kdtree(&geometry_datas[index]);
+                fs::path kdtree_file = kdtree_cache_directory / (std::to_string(index) + ".kdtree");
+                kdtree.save(kdtree_file.string());
+                index = kdtree_counter.fetch_add(1);
+            }
+        };
+        // Start kdtree build threads.
+        {
+            int thread_count = std::max(1, (int)std::thread::hardware_concurrency());
+            thread_count = std::min(thread_count, (int)geometry_datas.size());
+
+            std::vector<std::jthread> threads;
+            threads.reserve(thread_count - 1);
+
+            for (int i = 0; i < thread_count - 1; i++) {
+                threads.push_back(std::jthread(build_kdtree_func));
+            }
+            build_kdtree_func();
         }
         printf("%.3f seconds\n", elapsed_seconds(t));
     }
