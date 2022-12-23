@@ -162,7 +162,8 @@ uint64_t KdTree::compute_scene_kdtree_data_hash(const Scene_Geometry_Data& scene
 
 //#define BRUTE_FORCE_INTERSECTION
 
-bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
+template <bool any_intersection>
+bool intersect_kd_tree(const KdTree& kdtree, const Ray& ray, Intersection& intersection)
 {
 #ifdef BRUTE_FORCE_INTERSECTION
     uint32_t primitive_count = 0;
@@ -180,10 +181,10 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
     float t_min, t_max; // parametric range for the ray's overlap with the current node
 
 #if ENABLE_INVALID_FP_EXCEPTION
-    if (!bounds.intersect_by_ray_without_NaNs(ray, &t_min, &t_max))
+    if (!kdtree.bounds.intersect_by_ray_without_NaNs(ray, &t_min, &t_max))
         return false;
 #else
-    if (!bounds.intersect_by_ray(ray, &t_min, &t_max))
+    if (!kdtree.bounds.intersect_by_ray(ray, &t_min, &t_max))
         return false;
 #endif
 
@@ -196,7 +197,7 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
     Traversal_Info traversal_stack[max_traversal_depth];
     int traversal_stack_size = 0;
 
-    const KdNode* node = &nodes[0];
+    const KdNode* node = &kdtree.nodes[0];
     const float ray_tmax = intersection.t;
 
     while (intersection.t > t_min) {
@@ -205,7 +206,7 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
             const float distance_to_split_plane = node->get_split_position() - ray.origin[axis];
 
             const KdNode* below_child = node + 1;
-            const KdNode* above_child = &nodes[node->get_above_child()];
+            const KdNode* above_child = &kdtree.nodes[node->get_above_child()];
             prefetch(above_child);
 
             if (distance_to_split_plane != 0.0) { // general case
@@ -255,7 +256,12 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
             const uint32_t primitive_count = node->get_primitive_count();
 
             for (uint32_t i = 0; i < primitive_count; i++) {
-                intersector(ray, geometry_data, primitive_array[i], intersection);
+                kdtree.intersector(ray, kdtree.geometry_data, primitive_array[i], intersection);
+
+                if constexpr (any_intersection) {
+                    if (intersection.t < ray_tmax)
+                        return true;
+                }
             }
 
             if (traversal_stack_size == 0)
@@ -268,12 +274,23 @@ bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
             t_max = traversal_stack[traversal_stack_size].t_max;
         }
     } // while (intersection.t > t_min)
-    return intersection.t < ray_tmax;
+    if constexpr (any_intersection) {
+        ASSERT(intersection.t >= ray_tmax);
+        return false;
+    }
+    else {
+        return intersection.t < ray_tmax;
+    }
 #endif // !BRUTE_FORCE_INTERSECTION
+}
+
+bool KdTree::intersect(const Ray& ray, Intersection& intersection) const
+{
+    return intersect_kd_tree<false>(*this, ray, intersection);
 }
 
 bool KdTree::intersect_any(const Ray& ray, float tmax) const
 {
     Intersection intersection{ tmax };
-    return intersect(ray, intersection);
+    return intersect_kd_tree<true>(*this, ray, intersection);
 }
