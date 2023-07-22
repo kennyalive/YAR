@@ -133,6 +133,28 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
     {
         set_constant_parameter(param, ColorRGB(&constant_texture->value.x));
     }
+    else if (auto scale_texture = std::dynamic_pointer_cast<pbrt::ScaleTexture>(pbrt_texture);
+        scale_texture != nullptr)
+    {
+        ASSERT(scale_texture->tex1 != nullptr);
+        ASSERT(scale_texture->tex2 == nullptr);
+        ASSERT(Vector3(&scale_texture->scale1.x) == Vector3(1));
+        ASSERT(scale_texture->scale2.x == scale_texture->scale2.y && scale_texture->scale2.y == scale_texture->scale2.z);
+
+        auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(scale_texture->tex1);
+        ASSERT(image_texture != nullptr);
+
+        int texture_index = add_scene_texture(
+            Texture_Descriptor{
+                .file_name = image_texture->fileName,
+                .scale = scale_texture->scale2.x,
+            },
+            scene
+        );
+        set_texture_parameter(param, texture_index);
+        param.u_scale = image_texture->uscale;
+        param.v_scale = image_texture->vscale;
+    }
     else
         error("Unsupported pbrt texture type");
 
