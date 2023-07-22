@@ -1,6 +1,10 @@
 #ifndef RT_UTILS_HLSL
 #define RT_UTILS_HLSL
 
+struct Attribs {
+    float2 barycentrics;
+};
+
 struct Ray_Payload {
     float3 color;
 };

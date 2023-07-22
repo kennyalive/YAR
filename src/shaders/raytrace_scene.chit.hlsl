@@ -65,9 +65,9 @@ Shading_Context init_shading_context(float2 attribs)
 }
 
 [shader("closesthit")]
-void main(inout Ray_Payload payload, in float2 attribs)
+void main(inout Ray_Payload payload, in Attribs attribs)
 {
-    Shading_Context sc = init_shading_context(attribs);
+    Shading_Context sc = init_shading_context(attribs.barycentrics);
     
     float3 L = estimate_direct_lighting(sc, accel, point_light_count, directional_light_count, diffuse_rectangular_light_count);
 
