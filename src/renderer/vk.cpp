@@ -4,8 +4,8 @@
 #define VMA_IMPLEMENTATION
 #include "vk.h"
 
-#define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
+#include "tinyexr/tinyexr.h"
 
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "glfw/glfw3.h"
@@ -791,16 +791,77 @@ Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate
     return image;
 }
 
-Vk_Image vk_load_texture(const std::string& texture_file) {
-    int w, h;
-    int component_count;
+Vk_Image vk_load_texture(const std::string& texture_file)
+{
+    Vk_Image texture;
 
-    auto rgba_pixels = stbi_load(texture_file.c_str(), &w, &h, &component_count,STBI_rgb_alpha);
-    if (rgba_pixels == nullptr)
-        error("failed to load image file: " + texture_file);
+    if (get_extension(texture_file) == ".exr") { // load image using TinyEXR library
+        EXRVersion exr_version{};
+        if (int ret = ParseEXRVersionFromFile(&exr_version, texture_file.c_str()); ret != 0) {
+            error("failed to load OpenEXR image file: %s. ParseEXRVersionFromFile call was not successful", texture_file.c_str());
+        }
+        if (exr_version.multipart) {
+            error("failed to load OpenEXR image file: %s. Multipart images are not supported", texture_file.c_str());
+        }
+        if (exr_version.tiled) {
+            error("failed to load OpenEXR image file: %s. Tiled images are not supported", texture_file.c_str());
+        }
 
-    Vk_Image texture = vk_create_texture(w, h, VK_FORMAT_R8G8B8A8_SRGB, true, rgba_pixels, 4, texture_file.c_str());
-    stbi_image_free(rgba_pixels);
+        EXRHeader exr_header{};
+        InitEXRHeader(&exr_header);
+        const char* header_parsing_error = nullptr;
+        if (int ret = ParseEXRHeaderFromFile(&exr_header, &exr_version, texture_file.c_str(), &header_parsing_error); ret != 0) {
+            std::string message_copy = header_parsing_error;
+            FreeEXRErrorMessage(header_parsing_error);
+            error("failed to load OpenEXR image file: %s. Parsing error: %s", texture_file.c_str(), message_copy.c_str());
+        }
+        ASSERT(exr_header.num_channels == 3); // support 3 channels for now, extend to 4 if necessary
+        ASSERT(strcmp(exr_header.channels[0].name, "B") == 0);
+        ASSERT(strcmp(exr_header.channels[1].name, "G") == 0);
+        ASSERT(strcmp(exr_header.channels[2].name, "R") == 0);
+        const int channel_remapping[3] = { 2, 1, 0 };
+
+        EXRImage exr_image{};
+        InitEXRImage(&exr_image);
+        const char* loading_error = nullptr;
+        if (int ret = LoadEXRImageFromFile(&exr_image, &exr_header, texture_file.c_str(), &loading_error); ret != 0) {
+            std::string message_copy = loading_error;
+            FreeEXRHeader(&exr_header);
+            FreeEXRErrorMessage(loading_error);
+            error("failed to load OpenEXR image file: %s. Loading error: %s", texture_file.c_str(), message_copy.c_str());
+        }
+        std::vector<uint8_t> rgba_pixels(exr_image.width * exr_image.height * 2 /* sizeof(half) */ * 4 /* rgba texture */);
+        for (int channel = 0; channel < exr_image.num_channels; channel++) {
+            const uint8_t* src = exr_image.images[channel];
+            uint8_t* dst = rgba_pixels.data() + channel_remapping[channel] * 2 /* sizeof(float16) */;
+            for (int k = 0; k < exr_image.width * exr_image.height; k++) {
+                dst[0] = src[0]; // half of float16
+                dst[1] = src[1]; // second half of float16
+                dst += 8; // go to the next pixel (skip 4 float16)
+                src += 2; // go to the float16 component (they are tightly packed)
+            }
+        }
+        for (int k = 0; k < exr_image.width * exr_image.height; k++) {
+            // Write 1.0 in float16 represenation to alpha channel.
+            rgba_pixels[k * 8 + 6] = 0x00; // lower bits
+            rgba_pixels[k * 8 + 7] = 0x3c; // higher bits
+        }
+
+        texture = vk_create_texture(exr_image.width, exr_image.height, VK_FORMAT_R16G16B16A16_SFLOAT, false /* ? */, rgba_pixels.data(), 8, texture_file.c_str());
+        FreeEXRImage(&exr_image);
+        FreeEXRHeader(&exr_header);
+    }
+    else { // load image using STB library
+        int w, h;
+        int component_count;
+        auto rgba_pixels = stbi_load(texture_file.c_str(), &w, &h, &component_count, STBI_rgb_alpha);
+        if (rgba_pixels == nullptr)
+            error("failed to load image file: " + texture_file);
+
+        texture = vk_create_texture(w, h, VK_FORMAT_R8G8B8A8_SRGB, true, rgba_pixels, 4, texture_file.c_str());
+        stbi_image_free(rgba_pixels);
+    }
+
     return texture;
 }
 
