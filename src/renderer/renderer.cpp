@@ -246,7 +246,8 @@ void Renderer::load_project(const std::string& input_file) {
         std::vector<GPU_Vertex> gpu_vertices(gpu_mesh.vertex_count);
         for (size_t k = 0; k < gpu_mesh.vertex_count; k++) {
             gpu_vertices[k].position = triangle_mesh.vertices[k];
-            gpu_vertices[k].normal = triangle_mesh.normals[k];
+            if (!triangle_mesh.normals.empty())
+                gpu_vertices[k].normal = triangle_mesh.normals[k];
             if (!triangle_mesh.uvs.empty())
                 gpu_vertices[k].uv = triangle_mesh.uvs[k];
         }
