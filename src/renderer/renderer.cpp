@@ -310,9 +310,11 @@ void Renderer::load_project(const std::string& input_file) {
             gpu_lambertian_materials[i].v_scale = param.v_scale;
         }
 
-        VkDeviceSize size = gpu_lambertian_materials.size() * sizeof(GPU_Types::Lambertian_Material);
-        gpu_scene.lambertian_material_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            gpu_lambertian_materials.data(), "lambertian_material_buffer");
+        if (!gpu_lambertian_materials.empty()) {
+            VkDeviceSize size = gpu_lambertian_materials.size() * sizeof(GPU_Types::Lambertian_Material);
+            gpu_scene.lambertian_material_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                gpu_lambertian_materials.data(), "lambertian_material_buffer");
+        }
 
         {
             gpu_scene.material_descriptor_set_layout = Descriptor_Set_Layout()
