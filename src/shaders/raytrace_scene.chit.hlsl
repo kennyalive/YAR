@@ -47,13 +47,22 @@ Shading_Context init_shading_context(float2 attribs)
     ng = normalize(mul(normal_transform, ng));
     ng = dot(ng, wo) < 0 ? -ng : ng;
 
-    // Compute shading normal.
-    // Ensure it's in the same hemisphere as Ng (renderer's convention).
-    float3 n0 = mul(normal_transform, v0.n);
-    float3 n1 = mul(normal_transform, v1.n);
-    float3 n2 = mul(normal_transform, v2.n);
-    float3 n = normalize(barycentric_interpolate(attribs.x, attribs.y, n0, n1, n2));
-    n = dot(n, ng) < 0 ? -n : n;
+    float3 n;
+    // If there is no normal then use a geometry normal. 
+    // TODO: support separate buffer per attribute and also have
+    // boolean constant/flag to check if normals are available.
+    if (any(v0.n != float3(0, 0, 0))) {
+        // Compute shading normal.
+        // Ensure it's in the same hemisphere as Ng (renderer's convention).
+        float3 n0 = mul(normal_transform, v0.n);
+        float3 n1 = mul(normal_transform, v1.n);
+        float3 n2 = mul(normal_transform, v2.n);
+        n = normalize(barycentric_interpolate(attribs.x, attribs.y, n0, n1, n2));
+        n = dot(n, ng) < 0 ? -n : n;
+    }
+    else {
+        n = ng;
+    }
 
     Shading_Context sc;
     sc.Wo = wo;
