@@ -368,32 +368,54 @@ void Renderer::load_project(const std::string& input_file) {
 
     // Lights.
     {
+        bool found_supported_lights = false;
         if (!scene.lights.point_lights.empty()) {
+            found_supported_lights = true;
             std::vector<GPU_Types::Point_Light> lights(scene.lights.point_lights.size());
-            for (auto[i, data] : enumerate(scene.lights.point_lights))
+            for (auto [i, data] : enumerate(scene.lights.point_lights)) {
                 lights[i].init(data);
-
+            }
             gpu_scene.point_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 lights.data(), "point_light_buffer");
         }
         if (!scene.lights.directional_lights.empty()) {
+            found_supported_lights = true;
             std::vector<GPU_Types::Directional_Light> lights(scene.lights.directional_lights.size());
-            for (auto [i, data] : enumerate(scene.lights.directional_lights))
+            for (auto [i, data] : enumerate(scene.lights.directional_lights)) {
                 lights[i].init(data);
-
+            }
             gpu_scene.directional_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 lights.data(), "directional_light_buffer");
         }
         if (!scene.lights.diffuse_rectangular_lights.empty()) {
+            found_supported_lights = true;
             std::vector<GPU_Types::Diffuse_Rectangular_Light> lights(scene.lights.diffuse_rectangular_lights.size());
-            for (auto[i, data] : enumerate(scene.lights.diffuse_rectangular_lights))
+            for (auto [i, data] : enumerate(scene.lights.diffuse_rectangular_lights)) {
                 lights[i].init(data);
-
+            }
             gpu_scene.diffuse_rectangular_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 lights.data(), "diffuse_rectangular_light_buffer");
+        }
+        if (scene.lights.has_environment_light) {
+            printf("Scene contains environment light. Environment lights are not suported yet.\n");
+        }
+        // Add default directional light if no supported lights were found
+        if (!found_supported_lights) {
+            Directional_Light scene_light;
+            scene_light.direction = Vector3(1, 1, 1).normalized();
+            scene_light.irradiance = ColorRGB(5, 5, 5);
+
+            scene.lights.directional_lights.push_back(scene_light);
+            scene.lights.update_total_light_count();
+
+            GPU_Types::Directional_Light gpu_light;
+            gpu_light.init(scene_light);
+            gpu_scene.directional_lights = vk_create_buffer(sizeof(GPU_Types::Directional_Light),
+                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                &gpu_light, "directional_light_buffer");
         }
 
         gpu_scene.light_descriptor_set_layout = Descriptor_Set_Layout()
