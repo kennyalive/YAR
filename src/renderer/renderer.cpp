@@ -481,17 +481,16 @@ void Renderer::run_frame() {
         if (ImGui::IsKeyDown(GLFW_KEY_F1)) {
             Matrix3x4 camera_pose = flying_camera.get_camera_pose();
             FILE* f = fopen("camera.txt", "w");
-            for (int i = 0; i < 3; i++)
+
+            for (int i = 0; i < 3; i++) {
                 fprintf(f, "%f, %f, %f, %f,\n", camera_pose.a[i][0], camera_pose.a[i][1], camera_pose.a[i][2], camera_pose.a[i][3]);
+            }
             fprintf(f, "\n");
 
-            {
-                Vector3 from = camera_pose.get_column(3);
-                Vector3 to = from + camera_pose.get_column(1);
-                Vector3 up = camera_pose.get_column(2);
-                fprintf(f, "pbrt: LookAt %f %f %f  %f %f %f  %f %f %f\n",
-                    from.x, from.y, from.z, to.x, to.y, to.z, up.x, up.y, up.z);
-            }
+            Vector3 from, to, up;
+            get_pbrt_lookat_from_camera_pose(camera_pose, scene.z_is_up, from, to, up);
+            fprintf(f, "pbrt: LookAt %f %f %f  %f %f %f  %f %f %f\n",
+                from.x, from.y, from.z, to.x, to.y, to.z, up.x, up.y, up.z);
 
             fclose(f);
         }

@@ -42,6 +42,8 @@ Matrix3x4 uniform_scale_transform(const Matrix3x4& m, float scale);
 // and orients its direction towards the point 'to'. 'up' unit vector specifies reference up direction.
 Matrix3x4 look_at_transform(Vector3 from, Vector3 to, Vector3 up);
 
+void get_pbrt_lookat_from_camera_pose(const Matrix3x4& camera_pose, bool z_is_up, Vector3& from, Vector3& to, Vector3& up);
+
 // Computes traditional perspective matrix that transforms position vector (x,y,z,1) to
 // obtain clip coordinates (xc, yc, zc, wc) that can be transformed to normalized deviced
 // coordinates (NDC) by perspective division (xd, yd, zd) = (xc/wc, yc/wc, zc/wc).

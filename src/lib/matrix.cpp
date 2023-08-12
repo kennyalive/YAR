@@ -259,6 +259,19 @@ Matrix3x4 look_at_transform(Vector3 from, Vector3 to, Vector3 up) {
     return m;
 }
 
+void get_pbrt_lookat_from_camera_pose(const Matrix3x4& camera_pose, bool z_is_up, Vector3& from, Vector3& to, Vector3& up)
+{
+    from = camera_pose.get_column(3);
+    if (z_is_up) {
+        to = from + camera_pose.get_column(1);
+        up = camera_pose.get_column(2);
+    }
+    else {
+        to = from - camera_pose.get_column(2);
+        up = camera_pose.get_column(1);
+    }
+}
+
 Matrix4x4 perspective_transform_opengl_z01(float fovy_radians, float aspect_ratio, float near, float far) {
     float h = std::tan(fovy_radians/2.f) * near;
     float w = aspect_ratio * h;
