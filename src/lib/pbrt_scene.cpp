@@ -243,6 +243,9 @@ Material_Handle add_material(Materials& materials, const Material& material)
     else if constexpr (material_type == Material_Type::pbrt3_uber) {
         materials_of_given_type = &materials.pbrt3_uber;
     }
+    else if constexpr (material_type == Material_Type::pbrt3_fourier) {
+        materials_of_given_type = &materials.pbrt3_fourier;
+    }
     else {
         static_assert(dependent_false_v<Material>, "add_material: Unexpected Material_Type");
     }
@@ -470,6 +473,16 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         set_constant_parameter(mtl.index_of_refraction, uber->index);
 
         return add_material<Material_Type::pbrt3_uber>(materials, mtl);
+    }
+
+    if (auto fourier_material = std::dynamic_pointer_cast<pbrt::FourierMaterial>(pbrt_material)) {
+        Pbrt3_Fourier_Material mtl;
+        mtl.bsdf_file = scene->get_resource_absolute_path(fourier_material->fileName);
+        if (mtl.load_bsdf_file()) {
+            return add_material<Material_Type::pbrt3_fourier>(materials, mtl);
+        }
+        printf("import_pbrt_material: Failed to load %s fourier bsdf file, fallback to using default material\n",
+            mtl.bsdf_file.c_str());
     }
 
     // Use red diffuse material to indicate unsupported material.

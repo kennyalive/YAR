@@ -77,6 +77,9 @@
       <Filter>scene_loader</Filter>
     </ClCompile>
     <ClCompile Include="..\src\lib\tessellation.cpp" />
+    <ClCompile Include="..\src\lib\material.cpp">
+      <Filter>scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="scene">

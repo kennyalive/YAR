@@ -126,6 +126,7 @@
     <ClCompile Include="..\src\lib\common.cpp" />
     <ClCompile Include="..\src\lib\flying_camera.cpp" />
     <ClCompile Include="..\src\lib\image.cpp" />
+    <ClCompile Include="..\src\lib\material.cpp" />
     <ClCompile Include="..\src\lib\math.cpp" />
     <ClCompile Include="..\src\lib\obj_loader.cpp" />
     <ClCompile Include="..\src\lib\tessellation.cpp" />

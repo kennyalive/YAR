@@ -13,6 +13,7 @@ enum class Material_Type : uint32_t {
     coated_diffuse,
     glass,
     pbrt3_uber,
+    pbrt3_fourier,
     count,
     null_material = std::numeric_limits<uint32_t>::max()
 };
@@ -173,6 +174,24 @@ struct Pbrt3_Uber_Material {
     bool operator==(const Pbrt3_Uber_Material&) const = default;
 };
 
+// https://pbr-book.org/3ed-2018/Reflection_Models/Fourier_Basis_BSDFs
+struct Pbrt3_Fourier_Material {
+    std::string bsdf_file;
+    bool load_bsdf_file();
+    bool operator==(const Pbrt3_Fourier_Material& other) const {
+        return bsdf_file == other.bsdf_file;
+    }
+    uint32_t max_order = 0;
+    uint32_t channel_count = 0;
+    float eta = 1.f;
+    std::vector<float> nodes;
+    std::vector<float> cdf;
+    std::vector<float> coeffs;
+    std::vector<float> first_coeffs; // the first coefficient for each pair of zenith directions
+    std::vector<uint32_t> coeff_offset;
+    std::vector<uint32_t> m;
+};
+
 struct Materials {
     std::vector<Lambertian_Material> lambertian;
     std::vector<Diffuse_Transmission_Material> diffuse_transmission;
@@ -183,4 +202,5 @@ struct Materials {
     std::vector<Coated_Diffuse_Material> coated_diffuse;
     std::vector<Glass_Material> glass;
     std::vector<Pbrt3_Uber_Material> pbrt3_uber;
+    std::vector<Pbrt3_Fourier_Material> pbrt3_fourier;
 };
