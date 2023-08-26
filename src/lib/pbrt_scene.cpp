@@ -743,16 +743,14 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
 //
 // PBRT scene main loading routine.
 //
-Scene load_pbrt_scene(const YAR_Project& project) {
-    pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(project.scene_path.string());
+void load_pbrt_scene(const YAR_Project& project, Scene& scene) {
+    pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(scene.path);
     pbrt_scene->makeSingleLevel();
 
     // TODO: re-work pbrt-parser to decouple material from shape to be able to use
     // the same shape with different materials. In current design shape data is
     // duplicated for each new material. pbrt-parser have to introduce primitive
     // abstraction that combines shape and material.
-
-    Scene scene;
 
     std::unordered_map<pbrt::Shape::SP, Shape> shape_cache;
     for (pbrt::Instance::SP instance : pbrt_scene->world->instances) {
@@ -872,5 +870,4 @@ Scene load_pbrt_scene(const YAR_Project& project) {
         scene.raytracer_config.pixel_filter_radius = pbrt_pixel_filter->radius;
         scene.raytracer_config.pixel_filter_alpha = pbrt_pixel_filter->alpha;
     }
-    return scene;
 }

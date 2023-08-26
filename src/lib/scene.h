@@ -53,4 +53,9 @@ struct Scene {
     Materials materials;
     Lights lights;
     std::vector<Scene_Object> objects;
+
+    std::string get_resource_absolute_path(const std::string& resource_relative_path) const
+    {
+        return (fs::path(path).parent_path() / resource_relative_path).string();
+    }
 };

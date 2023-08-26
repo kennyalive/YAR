@@ -44,7 +44,7 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
                 Image_Texture texture;
 
                 if (!texture_desc.file_name.empty()) {
-                    std::string path = (fs::path(scene.path).parent_path() / texture_desc.file_name).string();
+                    std::string path = scene.get_resource_absolute_path(texture_desc.file_name);
                     std::string ext = get_extension(path);
 
                     init_params.decode_srgb = texture_desc.decode_srgb;

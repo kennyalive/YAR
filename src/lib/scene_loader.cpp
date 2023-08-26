@@ -7,9 +7,9 @@
 #include "stb/stb_image.h"
 
 // defined in pbrt_scene.cpp
-Scene load_pbrt_scene(const YAR_Project& project);
+void load_pbrt_scene(const YAR_Project& project, Scene& scene);
 // defined in obj_scene.cpp
-Scene load_obj_scene(const YAR_Project& project);
+void load_obj_scene(const YAR_Project& project, Scene& scene);
 
 
 static YAR_Project create_yar_project(const std::string& input_file) {
@@ -75,8 +75,11 @@ Scene load_scene(const std::string& input_file) {
     YAR_Project project = create_yar_project(input_file);
 
     Scene scene;
+    scene.type = project.scene_type;
+    scene.path = project.scene_path.string();
+
     if (project.scene_type == Scene_Type::pbrt) {
-        scene = load_pbrt_scene(project);
+        load_pbrt_scene(project, scene);
 
         // In pbrt texture coordinate space has(0, 0) at the lower left corner.
         // Workaround with flipping texture coordinates instead is not robust
@@ -85,13 +88,10 @@ Scene load_scene(const std::string& input_file) {
     }
     else {
         ASSERT(project.scene_type == Scene_Type::obj);
-        scene = load_obj_scene(project);
+        load_obj_scene(project, scene);
     }
 
     add_light_sources_from_yar_project(scene, project);
-
-    scene.type = project.scene_type;
-    scene.path = project.scene_path.string();
 
     if (project.film_resolution != Vector2i{})
         scene.film_resolution = project.film_resolution;

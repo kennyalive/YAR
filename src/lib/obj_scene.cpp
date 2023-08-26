@@ -8,15 +8,13 @@
 #include "spectrum.h"
 #include "yar_project.h"
 
-Scene load_obj_scene(const YAR_Project& project) {
+void load_obj_scene(const YAR_Project& project, Scene& scene) {
     Triangle_Mesh_Load_Params mesh_load_params;
     mesh_load_params.transform = uniform_scale_transform(Matrix3x4::identity, project.world_scale);
     mesh_load_params.normal_calculation_params.use_crease_angle = project.mesh_use_crease_angle;
     mesh_load_params.normal_calculation_params.crease_angle = project.mesh_crease_angle;
     mesh_load_params.invert_winding_order = project.mesh_invert_winding_order;
     Obj_Data obj_data = load_obj(project.scene_path.string(), mesh_load_params, &project.ignore_geometry_names);
-
-    Scene scene;
 
     scene.materials.lambertian.resize(obj_data.materials.size());
     for (auto [i, obj_material] : enumerate(obj_data.materials)) {
@@ -82,5 +80,4 @@ Scene load_obj_scene(const YAR_Project& project) {
             }
         });
     }
-    return scene;
 }

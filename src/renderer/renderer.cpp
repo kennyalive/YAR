@@ -295,7 +295,7 @@ void Renderer::load_project(const std::string& input_file) {
     {
         gpu_scene.images_2d.reserve(gpu_scene.images_2d.size() + scene.texture_descriptors.size());
         for (const Texture_Descriptor& texture_desc : scene.texture_descriptors) {
-            Vk_Image image = vk_load_texture((fs::path(scene.path).parent_path() / texture_desc.file_name).string());
+            Vk_Image image = vk_load_texture(scene.get_resource_absolute_path(texture_desc.file_name));
             gpu_scene.images_2d.push_back(image);
         }
 
