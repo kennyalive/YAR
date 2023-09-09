@@ -22,3 +22,8 @@ ColorRGB sRGB_to_XYZ(const ColorRGB& rgb) {
     xyz[2] = 0.0193339f * rgb[0] + 0.1191920f * rgb[1] + 0.9503041f * rgb[2];
     return xyz;
 }
+
+float get_green_from_YRB(float y, float r, float b)
+{
+    return 1.398304f * y - 0.297381f * r - 0.100923f * b;
+}

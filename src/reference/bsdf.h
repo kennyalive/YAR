@@ -106,4 +106,13 @@ struct Pbrt3_Plastic_BRDF : public Plastic_BRDF {
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
 };
 
+struct Pbrt3_Fourier_BSDF : public BSDF {
+    Pbrt3_Fourier_BSDF(const Thread_Context& thread_ctx, const Pbrt3_Fourier_Material& params);
+    ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
+    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    float pdf(const Vector3& wo, const Vector3& wi) const override;
+
+    const Pbrt3_Fourier_Material& data;
+};
+
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material);

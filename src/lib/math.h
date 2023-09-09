@@ -76,6 +76,25 @@ inline T lerp(const T& a, const T& b, float t) {
     return (1.f - t) * a + t * b;
 }
 
+inline float cos_delta_phi(const Vector2& a, const Vector2& b)
+{
+    float a_len_sq = a.x * a.x + a.y * a.y;
+    float b_len_sq = b.x * b.x + b.y * b.y;
+
+    if (a_len_sq == 0.f || b_len_sq == 0.f) {
+        return 1.f;
+    }
+    float cosine = dot(a, b) / std::sqrt(a_len_sq * b_len_sq);
+    return std::clamp(cosine, -1.f, 1.f);
+}
+
+inline float cos_delta_phi(const Vector3& a, const Vector3& b, const Vector3& tangent1, const Vector3& tangent2)
+{
+    Vector2 local_a(dot(a, tangent1), dot(a, tangent2));
+    Vector2 local_b(dot(b, tangent1), dot(b, tangent2));
+    return cos_delta_phi(local_a, local_b);
+}
+
 inline Vector3 get_direction_from_spherical_coordinates(float theta, float phi) {
     float sin_theta = std::sin(theta);
     return { sin_theta * std::cos(phi), sin_theta * std::sin(phi), std::cos(theta) };

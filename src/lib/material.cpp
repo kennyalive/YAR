@@ -75,7 +75,7 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
     channel_count = header.channel_count;
     eta = header.eta;
 
-    if (!read_floats(header.node_count, nodes)) {
+    if (!read_floats(header.node_count, zenith_angle_discretization)) {
         return false;
     }
     if (!read_floats(header.node_count * header.node_count, cdf)) {
@@ -90,14 +90,14 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
     }
 
     coeff_offset.resize(header.node_count * header.node_count);
-    m.resize(header.node_count * header.node_count);
+    coeff_count.resize(header.node_count * header.node_count);
     first_coeffs.resize(header.node_count * header.node_count);
     for (uint32_t i = 0; i < header.node_count * header.node_count; i++) {
         uint32_t offset = offset_table[2 * i + 0];
-        uint32_t coeff_count = offset_table[2 * i + 1];
+        uint32_t count = offset_table[2 * i + 1];
         coeff_offset[i] = offset;
-        m[i] = coeff_count;
-        first_coeffs[i] = coeff_count > 0 ? coeffs[offset] : 0.f;
+        coeff_count[i] = count;
+        first_coeffs[i] = count > 0 ? coeffs[offset] : 0.f;
     }
     return true;
 }

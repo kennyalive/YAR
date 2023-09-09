@@ -9,6 +9,8 @@ struct ColorRGB;
 ColorRGB XYZ_to_sRGB(const Vector3& xyz);
 ColorRGB sRGB_to_XYZ(const ColorRGB& rgb);
 
+float get_green_from_YRB(float y, float r, float b);
+
 struct ColorRGB {
     float r;
     float g;

@@ -295,6 +295,10 @@ inline bool operator>=(Vector2 v1, Vector2 v2) {
     return v1[0] >= v2[0] && v1[1] >= v2[1];
 }
 
+inline float dot(const Vector2& v1, const Vector2& v2) {
+    return v1.x * v2.x + v1.y * v2.y;
+}
+
 namespace std {
 template<> struct hash<Vector2> {
     size_t operator()(Vector2 v) const {

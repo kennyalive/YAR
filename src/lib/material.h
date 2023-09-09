@@ -176,20 +176,39 @@ struct Pbrt3_Uber_Material {
 
 // https://pbr-book.org/3ed-2018/Reflection_Models/Fourier_Basis_BSDFs
 struct Pbrt3_Fourier_Material {
-    std::string bsdf_file;
     bool load_bsdf_file();
     bool operator==(const Pbrt3_Fourier_Material& other) const {
         return bsdf_file == other.bsdf_file;
     }
+
+    std::string bsdf_file;
+
+    // Bounds the number of coefficients in the fourier series.
     uint32_t max_order = 0;
+
+    // 1 for monochromatic BSDF, 3 for RBG (stores luminance, red and blue).
     uint32_t channel_count = 0;
+
+    // Relative IOR: eta(bottom) / eta(top).
     float eta = 1.f;
-    std::vector<float> nodes;
+
+    // Zenith angle cosines for sampled directions.
+    std::vector<float> zenith_angle_discretization;
+
     std::vector<float> cdf;
+
+    // Coefficients of fourier series.
     std::vector<float> coeffs;
-    std::vector<float> first_coeffs; // the first coefficient for each pair of zenith directions
+
+    // The first coefficient for each pair of zenith directions.
+    std::vector<float> first_coeffs;
+
+    // Offsets that define the start positions in the coeffs array of the
+    // series of fourier coefficients for each pair of zenith directions.
     std::vector<uint32_t> coeff_offset;
-    std::vector<uint32_t> m;
+
+    // The number of coefficients in the fourier series for each pair of zenith direction.
+    std::vector<uint32_t> coeff_count;
 };
 
 struct Materials {
