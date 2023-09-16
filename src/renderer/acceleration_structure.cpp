@@ -155,7 +155,7 @@ Vk_Intersection_Accelerator create_intersection_accelerator(
             instances.data(), "instance_buffer");
     }
     // Create TLAS.
-    accelerator.top_level_accel = create_TLAS((uint32_t)gpu_meshes.size(), accelerator.instance_buffer.device_address);
+    accelerator.top_level_accel = create_TLAS((uint32_t)scene_objects.size(), accelerator.instance_buffer.device_address);
 
     printf("\nAcceleration structures build time = %lld microseconds\n", elapsed_nanoseconds(t) / 1000);
     return accelerator;
