@@ -147,6 +147,7 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
         int texture_index = add_scene_texture(
             Texture_Descriptor{
                 .file_name = image_texture->fileName,
+                .decode_srgb = image_texture->gamma,
                 .scale = scale_texture->scale2.x,
             },
             scene
