@@ -12,19 +12,19 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{6DDBB987-4BB9-4B01-839A-499C8E9076F5}</ProjectGuid>
+    <ProjectGuid>{E490DB3B-C4F0-4B5E-8B09-DE049D73C7D1}</ProjectGuid>
     <Keyword>Win64Proj</Keyword>
-    <RootNamespace>RAY</RootNamespace>
+    <RootNamespace>tracer</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -71,7 +71,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>third-party.lib;lib.lib;tracer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>third-party.lib;lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -89,16 +89,64 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>third-party.lib;lib.lib;tracer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>third-party.lib;lib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\reference\main.cpp" />
+    <ClCompile Include="..\src\reference\bsdf.cpp" />
+    <ClCompile Include="..\src\reference\camera.cpp" />
+    <ClCompile Include="..\src\reference\film.cpp" />
+    <ClCompile Include="..\src\reference\intersection.cpp" />
+    <ClCompile Include="..\src\reference\intersection_simd.cpp" />
+    <ClCompile Include="..\src\reference\kdtree.cpp" />
+    <ClCompile Include="..\src\reference\kdtree_builder.cpp" />
+    <ClCompile Include="..\src\reference\direct_lighting.cpp" />
+    <ClCompile Include="..\src\reference\kdtree_stats.cpp" />
+    <ClCompile Include="..\src\reference\light_sampling.cpp" />
+    <ClCompile Include="..\src\reference\parameter_evaluation.cpp" />
+    <ClCompile Include="..\src\reference\path_tracing.cpp" />
+    <ClCompile Include="..\src\reference\pixel_sampling.cpp" />
+    <ClCompile Include="..\src\reference\reference_renderer.cpp" />
+    <ClCompile Include="..\src\reference\sampling.cpp" />
+    <ClCompile Include="..\src\reference\scattering.cpp" />
+    <ClCompile Include="..\src\reference\shading_context.cpp" />
+    <ClCompile Include="..\src\reference\image_texture.cpp" />
+    <ClCompile Include="..\src\reference\delta_scattering.cpp" />
+    <ClCompile Include="..\src\reference\test.cpp" />
+    <ClCompile Include="..\src\reference\test_kdtree.cpp" />
+    <ClCompile Include="..\src\reference\test_random.cpp" />
+    <ClCompile Include="..\src\reference\test_sampling.cpp" />
+    <ClCompile Include="..\src\reference\benchmark_triangle_intersection.cpp" />
+    <ClCompile Include="..\src\reference\test_triangle_intersection.cpp" />
+    <ClCompile Include="..\src\reference\test_watertightness.cpp" />
     <ClCompile Include="..\src\std.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\reference\bsdf.h" />
+    <ClInclude Include="..\src\reference\intersection_simd.h" />
+    <ClInclude Include="..\src\reference\kdtree_stats.h" />
+    <ClInclude Include="..\src\reference\light_sampling.h" />
+    <ClInclude Include="..\src\reference\parameter_evaluation.h" />
+    <ClInclude Include="..\src\reference\path_tracing.h" />
+    <ClInclude Include="..\src\reference\pixel_sampling.h" />
+    <ClInclude Include="..\src\reference\scattering.h" />
+    <ClInclude Include="..\src\reference\camera.h" />
+    <ClInclude Include="..\src\reference\context.h" />
+    <ClInclude Include="..\src\reference\film.h" />
+    <ClInclude Include="..\src\reference\intersection.h" />
+    <ClInclude Include="..\src\reference\kdtree.h" />
+    <ClInclude Include="..\src\reference\kdtree_builder.h" />
+    <ClInclude Include="..\src\reference\direct_lighting.h" />
+    <ClInclude Include="..\src\reference\reference_renderer.h" />
+    <ClInclude Include="..\src\reference\sampling.h" />
+    <ClInclude Include="..\src\reference\shading_context.h" />
+    <ClInclude Include="..\src\reference\image_texture.h" />
+    <ClInclude Include="..\src\reference\delta_scattering.h" />
+    <ClInclude Include="..\src\reference\test.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
