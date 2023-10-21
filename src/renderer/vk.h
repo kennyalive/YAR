@@ -15,6 +15,12 @@
 #define VK_CHECK_RESULT(result) if (result < 0) error(std::string("Error: ") + string_VkResult(result));
 #define VK_CHECK(function_call) { VkResult result = function_call;  VK_CHECK_RESULT(result); }
 
+struct Vk_Init_Params {
+    bool enable_validation_layer = false;
+    int physical_device_index = -1;
+    bool vsync = false;
+};
+
 struct Vk_Image {
     VkImage handle = VK_NULL_HANDLE;
     VkImageView view = VK_NULL_HANDLE;
@@ -52,7 +58,7 @@ struct GLFWwindow;
 
 // Initializes VK_Instance structure.
 // After calling this function we get fully functional vulkan subsystem.
-void vk_initialize(GLFWwindow* window, bool vsync, bool enable_validation_layers);
+void vk_initialize(GLFWwindow* window, const Vk_Init_Params& init_params);
 
 // Shutdown vulkan subsystem by releasing resources acquired by Vk_Instance.
 void vk_shutdown();

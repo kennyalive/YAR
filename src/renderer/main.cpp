@@ -6,7 +6,8 @@
 #include "imgui/imgui.h"
 
 static std::string input_file;
-static bool enable_validation_layers = false;
+static bool enable_vulkan_validation = false;
+static int gpu_index = -1;
 
 static int window_width = 960;
 static int window_height = 720;
@@ -15,10 +16,19 @@ static GLFWwindow* window;
 
 static bool parse_command_line(int argc, char** argv) {
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-validation-layers") == 0) {
-            enable_validation_layers = true;
+        if (strcmp(argv[i], "--gpu") == 0) {
+            if (i == argc - 1) {
+                printf("--gpu value is missing\n");
+            }
+            else {
+                gpu_index = std::stoi(argv[i + 1]);
+                i++;
+            }
         }
-        else if (strcmp(argv[i], "-data-dir") == 0) {
+        else if (strcmp(argv[i], "--validation") == 0) {
+            enable_vulkan_validation = true;
+        }
+        else if (strcmp(argv[i], "--data-dir") == 0) {
             if (i == argc-1) {
                 printf("-data-dir value is missing\n");
             }
@@ -75,7 +85,7 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
     }
 }
 
-int run_realtime_renderer(bool enable_validation_layers) {
+int run_realtime_renderer(bool enable_vulkan_validation, int gpu_index) {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         error("glfwInit failed");
@@ -86,7 +96,7 @@ int run_realtime_renderer(bool enable_validation_layers) {
     glfwSetKeyCallback(window, glfw_key_callback);
 
     Renderer renderer{};
-    renderer.initialize(window, enable_validation_layers);
+    renderer.initialize(window, enable_vulkan_validation, gpu_index);
     glfwSetWindowUserPointer(window, &renderer);
 
     if (!input_file.empty())
@@ -137,6 +147,6 @@ int main(int argc, char** argv) {
     if (!parse_command_line(argc, argv))
         return 0;
 
-    run_realtime_renderer(enable_validation_layers);
+    run_realtime_renderer(enable_vulkan_validation, gpu_index);
     return 0;
 }

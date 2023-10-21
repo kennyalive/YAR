@@ -20,7 +20,7 @@ struct GLFWwindow;
 
 class Renderer {
 public:
-    void initialize(GLFWwindow* glfw_window, bool enable_validation_layers);
+    void initialize(GLFWwindow* glfw_window, bool enable_vulkan_validation, int gpu_index);
     void shutdown();
 
     void release_resolution_dependent_resources();

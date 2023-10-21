@@ -42,7 +42,7 @@ VkSurfaceKHR platform_create_surface(VkInstance instance, GLFWwindow* window) {
 #error platform_create_surface() is not implemented on this platform
 #endif
 
-static void create_instance(bool enable_validation_layers) {
+static void create_instance(bool enable_validation_layer) {
     const char* instance_extensions[] = {
         VK_KHR_SURFACE_EXTENSION_NAME,
         VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
@@ -74,7 +74,7 @@ static void create_instance(bool enable_validation_layers) {
     instance_create_info.enabledExtensionCount = sizeof(instance_extensions)/sizeof(instance_extensions[0]);
     instance_create_info.ppEnabledExtensionNames = instance_extensions;
 
-    if (enable_validation_layers) {
+    if (enable_validation_layer) {
         static const char* layer_names[] = {
             "VK_LAYER_KHRONOS_validation"
         };
@@ -85,34 +85,48 @@ static void create_instance(bool enable_validation_layers) {
     VK_CHECK(vkCreateInstance(&instance_create_info, nullptr, &vk.instance));
 }
 
-static void create_device(GLFWwindow* window) {
+static void create_device(GLFWwindow* window, int physical_device_index) {
     // select physical device
     {
-        uint32_t count;
-        VK_CHECK(vkEnumeratePhysicalDevices(vk.instance, &count, nullptr));
+        uint32_t gpu_count = 0;
+        VK_CHECK(vkEnumeratePhysicalDevices(vk.instance, &gpu_count, nullptr));
 
-        if (count == 0)
+        if (gpu_count == 0) {
             error("There are no Vulkan physical devices available");
-
-        std::vector<VkPhysicalDevice> physical_devices(count);
-        VK_CHECK(vkEnumeratePhysicalDevices(vk.instance, &count, physical_devices.data()));
-
-        for (const auto& physical_device : physical_devices)
-        {
-            VkPhysicalDeviceProperties props;
-            vkGetPhysicalDeviceProperties(physical_device, &props);
-
-            // Check for device-level Vulkan 1.3 compatibility.
-            if (VK_VERSION_MAJOR(props.apiVersion) == 1 && VK_VERSION_MINOR(props.apiVersion) >= 3)
-            {
-                vk.physical_device = physical_device;
-                vk.timestamp_period_ms = (double)props.limits.timestampPeriod * 1e-6;
-                break;
-            }
+        }
+        if (physical_device_index >= gpu_count) {
+            error("Requested physical device index (zero-based) is %d, but physical device count is %u",
+                physical_device_index, gpu_count);
         }
 
-        if (vk.physical_device == nullptr)
-            error("Failed to find physical device that supports requested Vulkan API version");
+        std::vector<VkPhysicalDevice> physical_devices(gpu_count);
+        VK_CHECK(vkEnumeratePhysicalDevices(vk.instance, &gpu_count, physical_devices.data()));
+
+        int selected_gpu = -1;
+        VkPhysicalDeviceProperties gpu_properties{};
+
+        if (physical_device_index != -1) {
+            vkGetPhysicalDeviceProperties(physical_devices[physical_device_index], &gpu_properties);
+            if (VK_VERSION_MAJOR(gpu_properties.apiVersion) != 1 || VK_VERSION_MINOR(gpu_properties.apiVersion) < 3) {
+                error("Physical device %d reports unsupported Vulkan version: %u.%u. Vulkan 1.3 or higher (1.x) is required",
+                    physical_device_index, VK_VERSION_MAJOR(gpu_properties.apiVersion), VK_VERSION_MINOR(gpu_properties.apiVersion));
+            }
+            selected_gpu = physical_device_index;
+        }
+        else {
+            for (const auto& physical_device : physical_devices) {
+                vkGetPhysicalDeviceProperties(physical_device, &gpu_properties);
+                if (VK_VERSION_MAJOR(gpu_properties.apiVersion) == 1 && VK_VERSION_MINOR(gpu_properties.apiVersion) >= 3) {
+                    selected_gpu = int(&physical_device - physical_devices.data());
+                    break;
+                }
+            }
+        }
+        if (selected_gpu == -1) {
+            error("Failed to select physical device that supports Vulkan 1.3 or higher (1.x)");
+        }
+        vk.physical_device = physical_devices[selected_gpu];
+        vk.timestamp_period_ms = (double)gpu_properties.limits.timestampPeriod * 1e-6;
     }
 
     vk.surface = platform_create_surface(vk.instance, window);
@@ -281,7 +295,7 @@ void Vk_Buffer::destroy() {
     *this = Vk_Buffer{};
 }
 
-void vk_initialize(GLFWwindow* window, bool vsync, bool enable_validation_layers) {
+void vk_initialize(GLFWwindow* window, const Vk_Init_Params& init_params) {
     VK_CHECK(volkInitialize());
     uint32_t instance_version = volkGetInstanceVersion();
 
@@ -293,7 +307,7 @@ void vk_initialize(GLFWwindow* window, bool vsync, bool enable_validation_layers
     if (!instance_version_higher_than_or_equal_to_1_1)
         error("The supported instance version is Vulkan 1.1 or higher, but Vulkan 1.0 loader is detected");
 
-    create_instance(enable_validation_layers);
+    create_instance(init_params.enable_validation_layer);
     volkLoadInstance(vk.instance);
 
     // Create debug messenger as early as possible (even before VkDevice is created).
@@ -311,7 +325,7 @@ void vk_initialize(GLFWwindow* window, bool vsync, bool enable_validation_layers
         VK_CHECK(vkCreateDebugUtilsMessengerEXT(vk.instance, &desc, nullptr, &vk.debug_utils_messenger));
     }
 
-    create_device(window);
+    create_device(window, init_params.physical_device_index);
     volkLoadDevice(vk.device);
 
     vkGetDeviceQueue(vk.device, vk.queue_family_index, 0, &vk.queue);
@@ -437,7 +451,7 @@ void vk_initialize(GLFWwindow* window, bool vsync, bool enable_validation_layers
         } ();
     }
 
-    vk_create_swapchain(vsync);
+    vk_create_swapchain(init_params.vsync);
 
     // Query pool.
     {

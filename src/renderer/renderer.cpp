@@ -32,8 +32,12 @@ static VkFormat get_depth_image_format() {
     return VK_FORMAT_UNDEFINED;
 }
 
-void Renderer::initialize(GLFWwindow* window, bool enable_validation_layers) {
-    vk_initialize(window, ui.vsync, enable_validation_layers);
+void Renderer::initialize(GLFWwindow* window, bool enable_vulkan_validation, int gpu_index) {
+    Vk_Init_Params vk_init_params;
+    vk_init_params.enable_validation_layer = enable_vulkan_validation;
+    vk_init_params.physical_device_index = gpu_index;
+    vk_init_params.vsync = ui.vsync;
+    vk_initialize(window, vk_init_params);
 
     // Device properties.
     {
