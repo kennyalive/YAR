@@ -3,12 +3,13 @@
 #include "direct_lighting.h"
 
 #include "bsdf.h"
-#include "context.h"
 #include "delta_scattering.h"
 #include "intersection.h"
 #include "light_sampling.h"
 #include "sampling.h"
+#include "scene_context.h"
 #include "shading_context.h"
+#include "thread_context.h"
 
 #include "lib/light.h"
 #include "lib/math.h"
@@ -36,7 +37,7 @@ static ColorRGB direct_lighting_from_point_light(const Scene_Context& scene_ctx,
         return Color_Black;
 
     Ray light_visibility_ray{position, light_dir};
-    bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, light_dist * (1.f - 1e-5f));
+    bool occluded = scene_ctx.kdtree_data.scene_kdtree.intersect_any(light_visibility_ray, light_dist * (1.f - 1e-5f));
     if (occluded)
         return Color_Black;
 
@@ -79,7 +80,7 @@ static ColorRGB direct_lighting_from_spot_light(const Scene_Context& scene_ctx, 
         return Color_Black;
 
     Ray light_visibility_ray{ position, wi };
-    bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_light * (1.f - 1e-5f));
+    bool occluded = scene_ctx.kdtree_data.scene_kdtree.intersect_any(light_visibility_ray, distance_to_light * (1.f - 1e-5f));
     if (occluded)
         return Color_Black;
 
@@ -96,7 +97,7 @@ static ColorRGB direct_lighting_from_directional_light(const Scene_Context& scen
 
     Vector3 position = shading_ctx.get_ray_origin_using_control_direction(light.direction);
     Ray light_visibility_ray{position, light.direction};
-    bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
+    bool occluded = scene_ctx.kdtree_data.scene_kdtree.intersect_any(light_visibility_ray, Infinity);
     if (occluded)
         return Color_Black;
 
@@ -142,7 +143,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
 
                 if (!f.is_black()) {
                     Ray light_visibility_ray{ position, wi };
-                    bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample * (1.f - 1e-5f));
+                    bool occluded = scene_ctx.kdtree_data.scene_kdtree.intersect_any(light_visibility_ray, distance_to_sample * (1.f - 1e-5f));
 
                     if (!occluded) {
                         float light_pdf = (distance_to_sample * distance_to_sample) / (light.size.x * light.size.y * light_n_dot_wi);
@@ -172,7 +173,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
                 Ray light_visibility_ray{ position, wi };
 
                 Intersection isect;
-                bool found_isect = scene_ctx.acceleration_structure->intersect(light_visibility_ray, isect);
+                bool found_isect = scene_ctx.kdtree_data.scene_kdtree.intersect(light_visibility_ray, isect);
 
                 if (found_isect && isect.scene_object->area_light == light_handle) {
                     ASSERT(isect.geometry_type == Geometry_Type::triangle_mesh);
@@ -218,7 +219,7 @@ static ColorRGB direct_lighting_from_sphere_light(
 
             if (!f.is_black()) {
                 Ray light_visibility_ray{position, wi};
-                bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, distance_to_sample * (1.f - 1e-5f));
+                bool occluded = scene_ctx.kdtree_data.scene_kdtree.intersect_any(light_visibility_ray, distance_to_sample * (1.f - 1e-5f));
 
                 if (!occluded) {
                     float light_pdf = light_sampler.cone_sampling_pdf;
@@ -244,7 +245,7 @@ static ColorRGB direct_lighting_from_sphere_light(
                 Ray light_visibility_ray{position, wi};
 
                 Intersection isect;
-                bool found_isect = scene_ctx.acceleration_structure->intersect(light_visibility_ray, isect);
+                bool found_isect = scene_ctx.kdtree_data.scene_kdtree.intersect(light_visibility_ray, isect);
 
                 if (found_isect && isect.scene_object->area_light == light_handle) {
                     float light_pdf = light_sampler.cone_sampling_pdf;
@@ -279,7 +280,7 @@ static ColorRGB direct_lighting_from_environment_light(
             if (!f.is_black()) {
                 Vector3 position = shading_ctx.get_ray_origin_using_control_direction(wi);
                 Ray light_visibility_ray{position, wi};
-                bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
+                bool occluded = scene_ctx.kdtree_data.scene_kdtree.intersect_any(light_visibility_ray, Infinity);
 
                 if (!occluded) {
                     float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, wi);
@@ -306,7 +307,7 @@ static ColorRGB direct_lighting_from_environment_light(
             if (!Le.is_black()) {
                 Vector3 position = shading_ctx.get_ray_origin_using_control_direction(wi);
                 Ray light_visibility_ray{position, wi};
-                bool occluded = scene_ctx.acceleration_structure->intersect_any(light_visibility_ray, Infinity);
+                bool occluded = scene_ctx.kdtree_data.scene_kdtree.intersect_any(light_visibility_ray, Infinity);
 
                 if (!occluded) {
                     float light_pdf = scene_ctx.environment_light_sampler.pdf(wi);

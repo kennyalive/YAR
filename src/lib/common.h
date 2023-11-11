@@ -25,6 +25,15 @@ bool fs_rename(const fs::path& old_path, const fs::path& new_path);
 // the program can write to this location if necessary (kdtree cache.
 fs::path get_data_directory();
 
+// Returns a name that can be used to create a directory to store additional/generated project data.
+// The name is based on the hash of the scene's full path. So, for different project files that
+// reference the same scene this function will return the same string.
+//
+// NOTE: if per project temp directories are needed then one option is to create project
+// specific subdirectories inside temp scene directory - in this case we can share 
+// scene's additional data between multiple projects.
+std::string get_project_unique_name(const std::string & scene_path);
+
 std::vector<uint8_t> read_binary_file(const std::string& file_path);
 std::string read_text_file(const std::string& file_path);
 

@@ -2,11 +2,12 @@
 #include "lib/common.h"
 #include "bsdf.h"
 
-#include "context.h"
 #include "parameter_evaluation.h"
 #include "sampling.h"
 #include "scattering.h"
 #include "shading_context.h"
+#include "scene_context.h"
+#include "thread_context.h"
 
 #include "lib/math.h"
 

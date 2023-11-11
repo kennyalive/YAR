@@ -3,9 +3,10 @@
 #include "path_tracing.h"
 
 #include "bsdf.h"
-#include "context.h"
 #include "direct_lighting.h"
+#include "scene_context.h"
 #include "shading_context.h"
+#include "thread_context.h"
 
 ColorRGB trace_path(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays& differential_rays)
 {

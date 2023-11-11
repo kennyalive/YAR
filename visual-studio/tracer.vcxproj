@@ -110,6 +110,7 @@
     <ClCompile Include="..\src\reference\reference_renderer.cpp" />
     <ClCompile Include="..\src\reference\sampling.cpp" />
     <ClCompile Include="..\src\reference\scattering.cpp" />
+    <ClCompile Include="..\src\reference\scene_context.cpp" />
     <ClCompile Include="..\src\reference\shading_context.cpp" />
     <ClCompile Include="..\src\reference\image_texture.cpp" />
     <ClCompile Include="..\src\reference\delta_scattering.cpp" />
@@ -135,7 +136,7 @@
     <ClInclude Include="..\src\reference\pixel_sampling.h" />
     <ClInclude Include="..\src\reference\scattering.h" />
     <ClInclude Include="..\src\reference\camera.h" />
-    <ClInclude Include="..\src\reference\context.h" />
+    <ClInclude Include="..\src\reference\thread_context.h" />
     <ClInclude Include="..\src\reference\film.h" />
     <ClInclude Include="..\src\reference\intersection.h" />
     <ClInclude Include="..\src\reference\kdtree.h" />
@@ -143,6 +144,7 @@
     <ClInclude Include="..\src\reference\direct_lighting.h" />
     <ClInclude Include="..\src\reference\reference_renderer.h" />
     <ClInclude Include="..\src\reference\sampling.h" />
+    <ClInclude Include="..\src\reference\scene_context.h" />
     <ClInclude Include="..\src\reference\shading_context.h" />
     <ClInclude Include="..\src\reference\image_texture.h" />
     <ClInclude Include="..\src\reference\delta_scattering.h" />

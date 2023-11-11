@@ -2,10 +2,11 @@
 #include "lib/common.h"
 #include "delta_scattering.h"
 
-#include "context.h"
 #include "parameter_evaluation.h"
 #include "scattering.h"
+#include "scene_context.h"
 #include "shading_context.h"
+#include "thread_context.h"
 
 namespace {
 enum class Delta_Scattering_Type {

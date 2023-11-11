@@ -2,7 +2,6 @@
 #include "lib/common.h"
 #include "light_sampling.h"
 
-#include "context.h"
 #include "image_texture.h"
 #include "intersection.h"
 #include "shading_context.h"

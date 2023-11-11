@@ -2,7 +2,9 @@
 #include "lib/common.h"
 #include "parameter_evaluation.h"
 
-#include "context.h"
+#include "scene_context.h"
+#include "thread_context.h"
+
 #include "lib/parameter.h"
 
 ColorRGB evaluate_rgb_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vector2 duvdx, Vector2 duvdy, const RGB_Parameter& param)

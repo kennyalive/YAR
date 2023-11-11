@@ -2,6 +2,7 @@
 #include "common.h"
 
 #include "immintrin.h"
+#include "meow-hash/meow_hash_x64_aesni.h"
 
 // Default data folder path. Can be changed with -data-dir command line option.
 std::string g_data_dir = "./../data";
@@ -58,6 +59,21 @@ bool fs_rename(const fs::path& old_path, const fs::path& new_path) {
 
 fs::path get_data_directory() {
     return g_data_dir;
+}
+
+std::string get_project_unique_name(const std::string& scene_path) {
+    std::string file_name = to_lower(fs::path(scene_path).filename().string());
+    if (file_name.empty())
+        error("Failed to extract filename from scene path: %s", scene_path.c_str());
+
+    std::string path_lowercase = to_lower(scene_path);
+    meow_u128 hash_128 = MeowHash(MeowDefaultSeed, path_lowercase.size(), (void*)path_lowercase.c_str());
+    uint32_t hash_32 = MeowU32From(hash_128, 0);
+
+    std::ostringstream oss;
+    oss << std::setfill('0') << std::setw(8) << std::hex << hash_32;
+    oss << "-" << file_name;
+    return oss.str();
 }
 
 std::vector<uint8_t> read_binary_file(const std::string& file_path) {

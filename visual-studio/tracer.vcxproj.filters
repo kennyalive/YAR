@@ -42,6 +42,7 @@
     </ClCompile>
     <ClCompile Include="..\src\reference\kdtree_stats.cpp" />
     <ClCompile Include="..\src\reference\intersection_simd.cpp" />
+    <ClCompile Include="..\src\reference\scene_context.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -57,7 +58,7 @@
     <ClInclude Include="..\src\reference\image_texture.h" />
     <ClInclude Include="..\src\reference\scattering.h" />
     <ClInclude Include="..\src\reference\bsdf.h" />
-    <ClInclude Include="..\src\reference\context.h" />
+    <ClInclude Include="..\src\reference\thread_context.h" />
     <ClInclude Include="..\src\reference\test.h">
       <Filter>tests</Filter>
     </ClInclude>
@@ -67,6 +68,7 @@
     <ClInclude Include="..\src\reference\delta_scattering.h" />
     <ClInclude Include="..\src\reference\kdtree_stats.h" />
     <ClInclude Include="..\src\reference\intersection_simd.h" />
+    <ClInclude Include="..\src\reference\scene_context.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">

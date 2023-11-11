@@ -1,6 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "reference_renderer.h"
+#include "scene_context.h"
 #include "test.h"
 
 #include "getopt/getopt.h"

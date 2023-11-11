@@ -3,19 +3,18 @@
 #include "reference_renderer.h"
 
 #include "camera.h"
-#include "context.h"
 #include "direct_lighting.h"
 #include "film.h"
-#include "kdtree_builder.h"
 #include "path_tracing.h"
+#include "scene_context.h"
 #include "shading_context.h"
+#include "thread_context.h"
 
 #include "lib/math.h"
 #include "lib/random.h"
 #include "lib/scene_loader.h"
 #include "lib/vector.h"
 
-#include "meow-hash/meow_hash_x64_aesni.h"
 #include "tinyexr/tinyexr.h"
 
 constexpr int time_category_field_width = 21; // for printf 'width' specifier
@@ -91,132 +90,6 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
         scene_ctx.has_environment_light_sampler = true;
     }
 }
-
-// Returns a name that can be used to create a directory to store additional/generated project data.
-// The name is based on the hash of the scene's full path. So, for different project files that
-// reference the same scene this function will return the same string.
-//
-// NOTE: if per project temp directories are needed then one option is to create project
-// specific subdirectories inside temp scene directory - in this case we can share 
-// scene's additional data between multiple projects.
-static std::string get_project_unique_name(const std::string& scene_path) {
-    std::string file_name = to_lower(fs::path(scene_path).filename().string());
-    if (file_name.empty())
-        error("Failed to extract filename from scene path: %s", scene_path.c_str());
-
-    std::string path_lowercase = to_lower(scene_path);
-    meow_u128 hash_128 = MeowHash(MeowDefaultSeed, path_lowercase.size(), (void*)path_lowercase.c_str());
-    uint32_t hash_32 = MeowU32From(hash_128, 0);
-
-    std::ostringstream oss;
-    oss << std::setfill('0') << std::setw(8) << std::hex << hash_32;
-    oss << "-" << file_name;
-    return oss.str();
-}
-
-static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::vector<Triangle_Mesh_Geometry_Data>& geometry_datas,
-    std::array<int, Geometry_Type_Count>* geometry_type_offsets, bool force_rebuild_cache)
-{
-    fs::path kdtree_cache_directory = get_data_directory() / "kdtree-cache" / get_project_unique_name(scene.path);
-    bool cache_exists = fs_exists(kdtree_cache_directory);
-
-    // Check --force-rebuild-kdtree-cache command line option.
-    if (cache_exists && force_rebuild_cache) {
-        if (!fs_delete_directory(kdtree_cache_directory))
-            error("Failed to delete kdtree cache (%s) when handling --force-update-kdtree-cache command", kdtree_cache_directory.c_str());
-        cache_exists = false;
-    }
-
-    // Create kdtree cache if necessary.
-    if (!cache_exists) {
-        Timestamp t;
-        printf("Kdtree cache was not found\n");
-        printf("%-*s", time_category_field_width, "Building kdtree cache ");
-
-        if (!fs_create_directories(kdtree_cache_directory))
-            error("Failed to create kdtree cache directory: %s\n", kdtree_cache_directory.string().c_str());
-
-        std::atomic_int kdtree_counter{ 0 };
-        auto build_kdtree_func = [
-            &kdtree_cache_directory,
-            &geometry_datas,
-            &kdtree_counter
-        ]
-        {
-            initialize_fp_state();
-            int index = kdtree_counter.fetch_add(1);
-            while (index < geometry_datas.size()) {
-                KdTree kdtree = build_triangle_mesh_kdtree(&geometry_datas[index]);
-                fs::path kdtree_file = kdtree_cache_directory / (std::to_string(index) + ".kdtree");
-                kdtree.save(kdtree_file.string());
-                index = kdtree_counter.fetch_add(1);
-            }
-        };
-        // Start kdtree build threads.
-        {
-            int thread_count = std::max(1, (int)std::thread::hardware_concurrency());
-            thread_count = std::min(thread_count, (int)geometry_datas.size());
-
-            std::vector<std::jthread> threads;
-            threads.reserve(thread_count - 1);
-
-            for (int i = 0; i < thread_count - 1; i++) {
-                threads.push_back(std::jthread(build_kdtree_func));
-            }
-            build_kdtree_func();
-        }
-        printf("%.3f seconds\n", elapsed_seconds(t));
-    }
-
-    // Load triangle mesh kdtrees.
-    Timestamp t_kdtree_cache;
-    std::vector<KdTree> kdtrees;
-    kdtrees.reserve(scene.geometries.triangle_meshes.size());
-
-    geometry_type_offsets->fill(0);
-    (*geometry_type_offsets)[static_cast<int>(Geometry_Type::triangle_mesh)] = (int)kdtrees.size();
-
-    for (size_t i = 0; i < geometry_datas.size(); i++) {
-        fs::path kdtree_file = kdtree_cache_directory / (std::to_string(i) + ".kdtree");
-        KdTree kdtree = KdTree::load(kdtree_file.string());
-        kdtree.set_geometry_data(&geometry_datas[i]);
-        kdtrees.push_back(std::move(kdtree));
-    }
-    printf("%-*s %.3f seconds\n", time_category_field_width, "Load KdTree cache", elapsed_seconds(t_kdtree_cache));
-    return kdtrees;
-}
-
-struct KdTree_Data {
-    std::vector<Triangle_Mesh_Geometry_Data> triangle_mesh_geometry_data;
-    std::vector<KdTree> geometry_kdtrees;
-    Scene_Geometry_Data scene_geometry_data;
-    KdTree scene_kdtree;
-
-    void initialize(const Scene& scene, const Renderer_Options& options, const std::vector<Image_Texture>& textures)
-    {
-        const auto& meshes = scene.geometries.triangle_meshes;
-        triangle_mesh_geometry_data.resize(meshes.size());
-        for (size_t i = 0; i < meshes.size(); i++) {
-            triangle_mesh_geometry_data[i].mesh = &meshes[i];
-
-            if (meshes[i].alpha_texture_index >= 0) {
-                triangle_mesh_geometry_data[i].alpha_texture = &textures[meshes[i].alpha_texture_index];
-            }
-        }
-
-        std::array<int, Geometry_Type_Count> geometry_type_offsets;
-        geometry_kdtrees = load_geometry_kdtrees(scene, triangle_mesh_geometry_data, &geometry_type_offsets,
-            options.force_rebuild_kdtree_cache);
-
-        scene_geometry_data.scene_objects = &scene.objects;
-        scene_geometry_data.kdtrees = &geometry_kdtrees;
-        scene_geometry_data.geometry_type_offsets = geometry_type_offsets;
-
-        Timestamp t_scene_kdtree;
-        scene_kdtree = build_scene_kdtree(&scene_geometry_data);
-        printf("%-*s %.3f seconds\n", time_category_field_width, "Build scene KdTree", elapsed_seconds(t_scene_kdtree));
-    }
-};
 
 static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pixel_sampler_config, Scene_Context& scene_ctx)
 {
@@ -453,7 +326,7 @@ static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int t
     for (int y = sample_bounds.p0.y; y < sample_bounds.p1.y; y++) {
         for (int x = sample_bounds.p0.x; x < sample_bounds.p1.x; x++) {
             uint32_t stream_id = ((uint32_t)x & 0xffffu) | ((uint32_t)y << 16);
-            stream_id += (uint32_t)thread_ctx.renderer_options->rng_seed_offset;
+            stream_id += (uint32_t)scene_ctx.rng_seed_offset;
             thread_ctx.rng.init(0, stream_id);
             thread_ctx.pixel_sampler.next_pixel();
             thread_ctx.shading_context = Shading_Context{};
@@ -634,7 +507,6 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
         Thread_Context thread_ctx;
         thread_ctx.memory_pool.allocate_pool_memory(1 * 1024 * 1024);
         thread_ctx.pixel_sampler.init(&scene_ctx.pixel_sampler_config, &thread_ctx.rng);
-        thread_ctx.renderer_options = &options;
         thread_ctx.scene_context = &scene_ctx;
 
         int index = tile_counter.fetch_add(1);
@@ -841,10 +713,7 @@ void cpu_renderer_render(const std::string& input_file, const Renderer_Options& 
     init_textures(scene, scene_ctx);
     printf("%-*s %.3f seconds\n", time_category_field_width, "Initialize textures", elapsed_seconds(t_textures));
 
-    KdTree_Data kdtree_data;
-    kdtree_data.initialize(scene, options, scene_ctx.textures);
-    scene_ctx.acceleration_structure = &kdtree_data.scene_kdtree;
-
+    scene_ctx.kdtree_data.initialize(scene, scene_ctx.textures, options.force_rebuild_kdtree_cache);
     scene_ctx.materials = scene.materials;
     scene_ctx.lights = scene.lights;
 
