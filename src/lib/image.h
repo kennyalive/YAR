@@ -1,6 +1,7 @@
 #pragma once
 
-struct ColorRGB;
+#include "color.h"
+
 struct _EXRAttribute; // from tinyexr library
 
 struct Image {
@@ -16,5 +17,6 @@ struct Image {
     bool write_tga(const std::string& file_path) const;
     bool write_exr(const std::string& file_path, bool compress_image, const std::vector<_EXRAttribute>& custom_attributes) const;
 
+    void extend_to_region(Vector2i size, Vector2i offset);
     void flip_horizontally();
 };

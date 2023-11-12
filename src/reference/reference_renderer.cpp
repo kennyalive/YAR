@@ -456,25 +456,24 @@ static std::vector<int> load_checkpoint(const std::string& checkpoint_directory,
     return tiles_to_render;
 }
 
-static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options& options, Bounds2i render_region,
-    double* variance_estimate, float* render_time)
+Image render_scene(const Scene_Context& scene_ctx, double* variance_estimate, float* render_time)
 {
     Timestamp render_start_timestamp;
 
-    Film film(render_region, create_film_filter(scene_ctx.raytracer_config));
+    Film film(scene_ctx.render_region, create_film_filter(scene_ctx.raytracer_config));
 
     std::vector<Film_Tile> tiles(film.get_tile_count());
     std::vector<double> tile_variance_accumulators(film.get_tile_count(), 0.0);
     float previous_sessions_time = 0.f;
 
     std::vector<int> tiles_to_render;
-    if (!options.checkpoint_directory.empty()) {
+    if (!scene_ctx.checkpoint_directory.empty()) {
         Checkpoint_Info info;
         info.input_filename = scene_ctx.input_filename;
         info.total_tile_count = film.get_tile_count();
         info.samples_per_pixel = scene_ctx.pixel_sampler_config.get_samples_per_pixel();
 
-        tiles_to_render = load_checkpoint(options.checkpoint_directory, info,
+        tiles_to_render = load_checkpoint(scene_ctx.checkpoint_directory, info,
             &tiles, &tile_variance_accumulators, &previous_sessions_time);
     }
     else {
@@ -492,7 +491,6 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
     // The function runs the loop where it grabs index of the next tile and renders it.
     auto render_tile_thread_func = [
             &scene_ctx,
-            &options,
             &tile_counter,
             &tiles_to_render,
             &tiles,
@@ -518,9 +516,9 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
 
             tile = render_tile(thread_ctx, film, tile_index, &tile_variance_accumulator, &progress);
 
-            if (!options.checkpoint_directory.empty()) {
+            if (!scene_ctx.checkpoint_directory.empty()) {
                 float current_render_time = previous_sessions_time + elapsed_seconds(render_start_timestamp);
-                write_tile_to_checkpoint_directory(options.checkpoint_directory, tile, tile_index,
+                write_tile_to_checkpoint_directory(scene_ctx.checkpoint_directory, tile, tile_index,
                     current_render_time, tile_variance_accumulator);
             }
             index = tile_counter.fetch_add(1);
@@ -531,13 +529,7 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
     //
     // Render tiles. The main (this) thread also runs rendering job.
     //
-    int thread_count;
-    if (options.thread_count > 0)
-        thread_count = options.thread_count;
-    else
-        thread_count = std::max(1u, std::thread::hardware_concurrency());
-    thread_count = std::min(thread_count, (int)tiles_to_render.size());
-
+    const int thread_count = std::min(scene_ctx.thread_count, (int)tiles_to_render.size());
     if (thread_count > 0) {
         std::vector<std::jthread> threads;
         threads.reserve(thread_count - 1);
@@ -570,6 +562,34 @@ static Image render_scene(const Scene_Context& scene_ctx, const Renderer_Options
     }
     *render_time = previous_sessions_time + elapsed_seconds(render_start_timestamp);
     return image;
+}
+
+void init_scene_context(const Scene& scene, const Renderer_Configuration& config, Scene_Context& scene_ctx)
+{
+    scene_ctx.input_filename = scene.path;
+    scene_ctx.checkpoint_directory = config.checkpoint_directory;
+    scene_ctx.thread_count = config.thread_count;
+    scene_ctx.render_region = scene.render_region;
+    scene_ctx.raytracer_config = scene.raytracer_config;
+    scene_ctx.camera = Camera(scene.view_points[0], Vector2(scene.film_resolution), scene.camera_fov_y, scene.z_is_up);
+
+    // Textures should be initialized before kdtrees,
+    // kdtrees might store texture references for transparency testing
+    Timestamp t_textures;
+    init_textures(scene, scene_ctx);
+    printf("%-*s %.3f seconds\n", time_category_field_width, "Initialize textures", elapsed_seconds(t_textures));
+
+    scene_ctx.kdtree_data.initialize(scene, scene_ctx.textures, config.rebuild_kdtree_cache);
+    scene_ctx.materials = scene.materials;
+    scene_ctx.lights = scene.lights;
+
+    init_pixel_sampler_config(scene_ctx.pixel_sampler_config, scene_ctx);
+
+    if (scene.type == Scene_Type::pbrt) {
+        // TODO: we might need to distinguish between pbrt3/4.
+        scene_ctx.pbrt3_scene = true;
+    }
+    scene_ctx.rng_seed_offset = config.rng_seed_offset;
 }
 
 struct EXR_Attributes_Writer {
@@ -605,183 +625,27 @@ struct EXR_Attributes_Writer {
     }
 };
 
-struct EXR_Custom_Attributes {
-    std::string input_file;
-    int spp = 0; // samples per pixel
-
-    // Here are the attributes that vary between render sessions. We store such
-    // attributes in the output file only if --openexr-varying-attributes command
-    // line option is specified. The reason why we do not always write them is to
-    // keep output deterministic by default.
-    float load_time = 0.f;
-    float render_time = 0.f;
-
-    float variance = 0.f;
-};
-
-static void save_output_image(
-    const std::string& output_filename, Image image,
-    const Bounds2i& render_region, const Vector2i& film_resolution,
-    const Renderer_Options& options, const EXR_Custom_Attributes& exr_attributes)
+bool write_openexr_image(const std::string& filename, const Image& image, const EXR_Write_Params& write_params)
 {
-    ASSERT(image.width == render_region.size().x);
-    ASSERT(image.height == render_region.size().y);
-
-    if (!options.crop_image_by_render_region) {
-        // Render region should be placed into a proper canvas position when we render
-        // only a sub-region of the entire image and --nocrop option is specified.
-        if (render_region != Bounds2i{ {0, 0}, film_resolution }) {
-            const ColorRGB* src_pixel = image.data.data();
-
-            std::vector<ColorRGB> film_pixels(film_resolution.area()); // the pixels outside render region will be black
-            ColorRGB* dst_pixel = &film_pixels[render_region.p0.y * film_resolution.x + render_region.p0.x];
-
-            for (int y = 0; y < image.height; y++) {
-                memcpy(dst_pixel, src_pixel, image.width * sizeof(ColorRGB));
-                src_pixel += image.width;
-                dst_pixel += film_resolution.x;
-            }
-            image.data.swap(film_pixels);
-            image.width = film_resolution.x;
-            image.height = film_resolution.y;
-        }
-    }
-
-    if (options.flip_image_horizontally)
-        image.flip_horizontally();
+    const EXR_Custom_Attributes& custom_attribs = write_params.custom_attributes;
 
     // Initialize EXR custom attributes.
     EXR_Attributes_Writer attrib_writer;
     attrib_writer.add_string_attribute("yar_build_version", "0.0");
     attrib_writer.add_integer_attribute("yar_build_asserts", ENABLE_ASSERT);
     attrib_writer.add_string_attribute("yar_render_device", "cpu");
-    attrib_writer.add_string_attribute("yar_input_file", exr_attributes.input_file.c_str());
-    attrib_writer.add_integer_attribute("yar_spp", exr_attributes.spp);
+    attrib_writer.add_string_attribute("yar_input_file", custom_attribs.input_file.c_str());
+    attrib_writer.add_integer_attribute("yar_spp", custom_attribs.spp);
 
     // We have deterministic CPU rendering, so variance does not change between
     // renders if other parameters are the same. That's why we don't put variance
     // under openexr_disable_varying_attributes scope.
-    attrib_writer.add_float_attribute("yar_variance", exr_attributes.variance);
+    attrib_writer.add_float_attribute("yar_variance", custom_attribs.variance);
 
-    if (!options.openexr_disable_varying_attributes) {
-        attrib_writer.add_float_attribute("yar_load_time", exr_attributes.load_time);
-        attrib_writer.add_float_attribute("yar_render_time", exr_attributes.render_time);
+    if (!write_params.disable_varying_attributes) {
+        attrib_writer.add_float_attribute("yar_load_time", custom_attribs.load_time);
+        attrib_writer.add_float_attribute("yar_render_time", custom_attribs.render_time);
     }
-
     // Write file to disk.
-    if (!image.write_exr(output_filename, options.openexr_enable_compression, attrib_writer.attributes)) {
-        error("Failed to save rendered image: %s", output_filename.c_str());
-    }
-    printf("Saved output image to %s\n\n", output_filename.c_str());
-}
-
-void cpu_renderer_render(const std::string& input_file, const Renderer_Options& options)
-{
-    Timestamp t_start;
-    printf("Loading: %s\n", input_file.c_str());
-
-    //
-    // Parse project file.
-    //
-    Timestamp t_project;
-    Scene scene = load_scene(input_file);
-    printf("%-*s %.3f seconds\n", time_category_field_width, "Parse project", elapsed_seconds(t_project));
-
-    //
-    // Initialize scene.
-    //
-    Scene_Context scene_ctx;
-    scene_ctx.input_filename = scene.path;
-    scene_ctx.raytracer_config = scene.raytracer_config;
-
-    if (options.samples_per_pixel > 0) {
-        int k = (int)std::ceil(std::sqrt(options.samples_per_pixel));
-        scene_ctx.raytracer_config.x_pixel_sample_count = k;
-        scene_ctx.raytracer_config.y_pixel_sample_count = k;
-    }
-
-    const Vector2i film_resolution = (options.film_resolution != Vector2i{}) ? options.film_resolution : scene.film_resolution;
-
-    scene_ctx.camera = Camera(scene.view_points[0],
-        Vector2(film_resolution),
-        scene.camera_fov_y,
-        scene.z_is_up);
-
-    // Textures should be initialized before kdtrees,
-    // kdtrees might store texture references for transparency testing
-    Timestamp t_textures;
-    init_textures(scene, scene_ctx);
-    printf("%-*s %.3f seconds\n", time_category_field_width, "Initialize textures", elapsed_seconds(t_textures));
-
-    scene_ctx.kdtree_data.initialize(scene, scene_ctx.textures, options.force_rebuild_kdtree_cache);
-    scene_ctx.materials = scene.materials;
-    scene_ctx.lights = scene.lights;
-
-    init_pixel_sampler_config(scene_ctx.pixel_sampler_config, scene_ctx);
-
-    if (scene.type == Scene_Type::pbrt) // TODO: we might need to distinguish between pbrt3/4.
-        scene_ctx.pbrt3_scene = true;
-
-    float load_time = elapsed_seconds(t_start);
-    printf("%-*s %.3f seconds\n\n", time_category_field_width, "Total loading time", load_time);
-
-    //
-    // Render scene.
-    //
-    const Bounds2i render_region = [&options, &scene]() {
-        Bounds2i rr;
-        if (options.render_region != Bounds2i{}) {
-            rr = options.render_region;
-        }
-        else if (options.film_resolution != Vector2i{}) {
-            // Custom film resolution invalidates scene.render_region,
-            // so we set render region to match custom film resolution.
-            rr = Bounds2i{ {0, 0}, options.film_resolution };
-        }
-        else if (scene.render_region != Bounds2i{}) {
-            rr = scene.render_region;
-        }
-        else {
-            rr = { {0, 0}, scene.film_resolution };
-        }
-        return rr;
-    }();
-
-    // assert that render region is within the film dimensions
-    ASSERT(render_region.p0 >= Vector2i{});
-    ASSERT(render_region.p0 < render_region.p1);
-    ASSERT(render_region.p1 <= film_resolution);
-
-    double variance_estimate = 0.0;
-    float render_time = 0.f;
-    Image image = render_scene(scene_ctx, options, render_region, &variance_estimate, &render_time);
-
-    printf("%-*s %.3f seconds\n", 12, "Render time", render_time);
-    printf("%-*s %.6f\n", 12, "Variance", variance_estimate);
-    printf("%-*s %.6f\n", 12, "StdDev", std::sqrt(variance_estimate));
-
-    //
-    // Save output image.
-    //
-    std::string output_filename;
-    if (!scene.output_filename.empty())
-        output_filename = fs::path(scene.output_filename).replace_extension().string();
-    else
-        output_filename = fs::path(input_file).stem().string();
-
-    if (!options.output_directory.empty())
-        output_filename = (fs::path(options.output_directory) / fs::path(output_filename)).string();
-
-    output_filename += options.output_filename_suffix;
-    output_filename += ".exr"; // output is always in OpenEXR format
-
-    EXR_Custom_Attributes exr_attributes{
-        .input_file = input_file,
-        .spp = scene_ctx.pixel_sampler_config.get_samples_per_pixel(),
-        .load_time = load_time,
-        .render_time = render_time,
-        .variance = (float)variance_estimate
-    };
-
-    save_output_image(output_filename, image, render_region, film_resolution, options, exr_attributes);
+    return image.write_exr(filename, write_params.enable_compression, attrib_writer.attributes);
 }

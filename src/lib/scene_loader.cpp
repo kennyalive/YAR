@@ -121,6 +121,14 @@ Scene load_scene(const std::string& input_file) {
         scene.camera_fov_y = 45.f;
 
     finalize_scene(scene);
+
+    ASSERT(scene.film_resolution != Vector2i{});
+
+    // check that render region is within the film dimensions
+    ASSERT(scene.render_region.p0 >= Vector2i{});
+    ASSERT(scene.render_region.p0 < scene.render_region.p1);
+    ASSERT(scene.render_region.p1 <= scene.film_resolution);
+
     return scene;
 }
 

@@ -4,7 +4,52 @@
 #include "scene_context.h"
 #include "test.h"
 
+#include "lib/scene_loader.h"
+
 #include "getopt/getopt.h"
+
+constexpr int time_category_field_width = 21; // for printf 'width' specifier
+
+struct Command_Line_Options {
+    int thread_count = 0;
+
+    Bounds2i render_region;
+    bool crop_image_by_render_region = true;
+
+    // Can be useful during debugging to vary random numbers and get configuration that
+    // reproduces desired behavior.
+    int rng_seed_offset = 0;
+
+    // Can be used to match output of the renderer that uses left-handed coordinate system.
+    bool flip_image_horizontally = false;
+
+    bool force_rebuild_kdtree_cache = false;
+
+    // This option disables generation of openexr custom attributes that vary between render sessions.
+    // Examples of varying attributes: render time, variance.
+    // Examples of non-varying attributes: output file name, per pixel sample count.
+    bool openexr_disable_varying_attributes = false;
+
+    // Enables OpenEXR feature to store image data in compressed form (zip)
+    bool openexr_enable_compression = false;
+
+    std::string output_directory;
+    std::string output_filename_suffix;
+    std::string checkpoint_directory;
+
+    int samples_per_pixel = 0; // overrides project settings
+    Vector2i film_resolution; // overrides project settings
+};
+
+struct Parsed_Command_Line {
+    std::vector<std::string> files;
+    Command_Line_Options options;
+    bool exit_app = false;
+    int exit_code = 0;
+
+    Parsed_Command_Line() = default;
+    Parsed_Command_Line(int exit_code) : exit_app(true), exit_code(exit_code) {}
+};
 
 enum Options {
     OPT_HELP = 128, // start with some offset because getopt library reserves some values like '?' or '!'
@@ -85,7 +130,8 @@ static const getopt_option_t option_list[] =
     GETOPT_OPTIONS_END
 };
 
-static void print_help_string(getopt_context_t* ctx) {
+static void print_help_string(getopt_context_t* ctx)
+{
     char buffer[4096];
     printf("Usage: RAY.exe <pbrt_file or yar_file> [options...]\n");
     printf("Options:\n%s\n", getopt_create_help_string(ctx, buffer, sizeof(buffer)));
@@ -117,8 +163,8 @@ static std::vector<std::string> read_list_file(const std::string& list_file)
     return filenames;
 }
 
-int main(int argc, char** argv) {
-    initialize_fp_state();
+static Parsed_Command_Line parse_command_line(int argc, char** argv)
+{
     getopt_context_t ctx;
     if (getopt_create_context(&ctx, argc, (const char**)argv, option_list) < 0) {
         printf("internal error: invalid configuration of commnad line option list");
@@ -126,7 +172,7 @@ int main(int argc, char** argv) {
     }
 
     std::vector<std::string> files;
-    Renderer_Options options;
+    Command_Line_Options options;
 
     bool is_render_region_specified = false;
     Vector2i render_region_position {0, 0};
@@ -245,13 +291,8 @@ int main(int argc, char** argv) {
             }
         }
         else {
-           ASSERT(!"unknown option");
+            ASSERT(!"unknown option");
         }
-    }
-
-    if (is_render_region_specified) {
-        options.render_region.p0 = render_region_position;
-        options.render_region.p1 = render_region_position + render_region_size;
     }
 
     if (files.empty()) {
@@ -259,8 +300,128 @@ int main(int argc, char** argv) {
         print_help_string(&ctx);
         return 1;
     }
-    for (const std::string& input_file : files) {
-        cpu_renderer_render(input_file, options);
+    if (is_render_region_specified) {
+        options.render_region.p0 = render_region_position;
+        options.render_region.p1 = render_region_position + render_region_size;
+    }
+    else if (options.film_resolution != Vector2i{}) {
+        // Custom film resolution invalidates native scene's render region
+        // Set render region to match custom film resolution.
+        options.render_region = Bounds2i{ {0, 0}, options.film_resolution };
+    }
+    Parsed_Command_Line cmdline;
+    cmdline.files = files;
+    cmdline.options = options;
+    return cmdline;
+}
+
+static void process_input_file(const std::string& input_file, const Command_Line_Options& options)
+{
+    Timestamp t_start;
+    printf("Loading: %s\n", input_file.c_str());
+
+    //
+    // Load scene.
+    //
+    Timestamp t_project;
+    Scene scene = load_scene(input_file);
+    float project_load_time = elapsed_seconds(t_project);
+    printf("%-*s %.3f seconds\n", time_category_field_width, "Parse project", project_load_time);
+
+    //
+    // Override requested parts of the scene.
+    //
+    if (options.film_resolution != Vector2i{}) {
+        scene.film_resolution = options.film_resolution;
+    }
+    if (options.render_region != Bounds2i{}) {
+        scene.render_region = options.render_region;
+    }
+    if (options.samples_per_pixel > 0) {
+        int k = (int)std::ceil(std::sqrt(options.samples_per_pixel));
+        scene.raytracer_config.x_pixel_sample_count = k;
+        scene.raytracer_config.y_pixel_sample_count = k;
+    }
+    int thread_count = options.thread_count;
+    if (!thread_count) {
+        thread_count = std::max(1u, std::thread::hardware_concurrency());
+    }
+
+    //
+    // Render scene.
+    //
+    Renderer_Configuration config;
+    config.thread_count = thread_count;
+    config.checkpoint_directory = options.checkpoint_directory;
+    config.rebuild_kdtree_cache = options.force_rebuild_kdtree_cache;
+    config.rng_seed_offset = options.rng_seed_offset;
+
+    Scene_Context scene_ctx;
+    init_scene_context(scene, config, scene_ctx);
+    float load_time = elapsed_seconds(t_start);
+    printf("%-*s %.3f seconds\n\n", time_category_field_width, "Total loading time", load_time);
+
+    double variance_estimate = 0.0;
+    float render_time = 0.f;
+    Image image = render_scene(scene_ctx, &variance_estimate, &render_time);
+
+    printf("%-*s %.3f seconds\n", 12, "Render time", render_time);
+    printf("%-*s %.6f\n", 12, "Variance", variance_estimate);
+    printf("%-*s %.6f\n", 12, "StdDev", std::sqrt(variance_estimate));
+
+    //
+    // Save image
+    //
+    // --nocrop
+    if (!options.crop_image_by_render_region) {
+        ASSERT(Vector2i(image.width, image.height) == scene.render_region.size());
+        if (scene.render_region != Bounds2i{ {0, 0}, scene.film_resolution }) {
+            image.extend_to_region(scene.film_resolution, scene.render_region.p0);
+        }
+    }
+    // --flip
+    if (options.flip_image_horizontally) {
+        image.flip_horizontally();
+    }
+
+    std::string image_filename;
+    if (!scene.output_filename.empty()) {
+        image_filename = fs::path(scene.output_filename).replace_extension().string();
+    }
+    else {
+        image_filename = fs::path(input_file).stem().string();
+    }
+    if (!options.output_directory.empty()) {
+        image_filename = (fs::path(options.output_directory) / fs::path(image_filename)).string();
+    }
+    image_filename += options.output_filename_suffix;
+    image_filename += ".exr"; // output is OpenEXR image
+
+    EXR_Write_Params write_params;
+    write_params.custom_attributes = EXR_Custom_Attributes {
+        .input_file = input_file,
+        .spp = scene_ctx.pixel_sampler_config.get_samples_per_pixel(),
+        .variance = (float)variance_estimate,
+        .load_time = load_time,
+        .render_time = render_time,
+    };
+
+    if (!write_openexr_image(image_filename, image, write_params)) {
+        error("Failed to save rendered image: %s", image_filename.c_str());
+    }
+    printf("Saved output image to %s\n\n", image_filename.c_str());
+}
+
+int main(int argc, char** argv)
+{
+    initialize_fp_state();
+    const Parsed_Command_Line cmdline = parse_command_line(argc, argv);
+    if (cmdline.exit_app) {
+        return cmdline.exit_code;
+    }
+
+    for (const std::string& input_file : cmdline.files) {
+        process_input_file(input_file, cmdline.options);
     }
     return 0;
 }

@@ -224,6 +224,24 @@ bool Image::write_exr(const std::string& file_path, bool compress_image, const s
     return result == TINYEXR_SUCCESS;
 }
 
+void Image::extend_to_region(Vector2i size, Vector2i offset) {
+    ASSERT(offset.x + width <= size.x);
+    ASSERT(offset.y + height <= size.y);
+
+    const ColorRGB* src_pixel = data.data();
+    std::vector<ColorRGB> film_pixels(size.x * size.y, Color_Black);
+    ColorRGB* dst_pixel = &film_pixels[offset.y * size.x + offset.x];
+
+    for (int y = 0; y < height; y++) {
+        memcpy(dst_pixel, src_pixel, width * sizeof(ColorRGB));
+        src_pixel += width;
+        dst_pixel += size.x;
+    }
+    data.swap(film_pixels);
+    width = size.x;
+    height = size.y;
+}
+
 void Image::flip_horizontally()
 {
     ColorRGB* row = data.data();
