@@ -69,8 +69,14 @@ private:
         VkDescriptorSet base_descriptor_set;
 
         Vk_Buffer point_lights;
+        uint32_t point_light_count = 0;
+
         Vk_Buffer directional_lights;
+        uint32_t directional_light_count = 0;
+
         Vk_Buffer diffuse_rectangular_lights;
+        uint32_t diffuse_rectangular_light_count = 0;
+
         VkDescriptorSetLayout light_descriptor_set_layout;
         VkDescriptorSet light_descriptor_set;
 

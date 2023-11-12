@@ -63,15 +63,15 @@ void Raytrace_Scene::update_camera_transform(const Matrix3x4& camera_to_world_tr
     mapped_uniform_buffer->camera_to_world = camera_to_world_transform;
 }
 
-void Raytrace_Scene::update_point_lights(int light_count) {
+void Raytrace_Scene::update_point_lights(uint32_t light_count) {
     mapped_uniform_buffer->point_light_count = light_count;
 }
 
-void Raytrace_Scene::update_directional_lights(int light_count) {
+void Raytrace_Scene::update_directional_lights(uint32_t light_count) {
     mapped_uniform_buffer->directional_light_count = light_count;
 }
 
-void Raytrace_Scene::update_diffuse_rectangular_lights(int light_count) {
+void Raytrace_Scene::update_diffuse_rectangular_lights(uint32_t light_count) {
     mapped_uniform_buffer->diffuse_rectangular_light_count = light_count;
 }
 

@@ -50,8 +50,11 @@ void UI::run_imgui() {
             ImGui::Text("Camera position: %.2f %.2f %.2f", camera_position.x, camera_position.y, camera_position.z);
 
             ImGui::Separator();
-            if (ImGui::Button("Render reference image"))
-                ui_result.reference_render_requested;
+            ImGui::InputScalar("thread count", ImGuiDataType_U32, &ref_params.thread_count);
+            ImGui::InputScalar("spp", ImGuiDataType_U32, &ref_params.spp);
+            if (ImGui::Button("Render reference image")) {
+                ui_result.reference_render_requested = true;
+            }
 
             if (ImGui::BeginPopupContextWindow()) {
                 if (ImGui::MenuItem("Custom",       NULL, corner == -1)) corner = -1;

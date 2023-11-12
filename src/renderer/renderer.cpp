@@ -9,9 +9,10 @@
 #include "shaders/shared_light.hlsli"
 #include "shaders/shared_material.hlsli"
 
-#include "reference/reference_renderer.h"
 #include "lib/matrix.h"
 #include "lib/scene_loader.h"
+#include "reference/reference_renderer.h"
+#include "reference/scene_context.h"
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
@@ -123,8 +124,12 @@ void Renderer::shutdown() {
     ImGui::DestroyContext();
 
     gpu_scene.point_lights.destroy();
+    gpu_scene.point_light_count = 0;
     gpu_scene.directional_lights.destroy();
+    gpu_scene.directional_light_count = 0;
     gpu_scene.diffuse_rectangular_lights.destroy();
+    gpu_scene.diffuse_rectangular_light_count = 0;
+
     vkDestroyDescriptorSetLayout(vk.device, gpu_scene.light_descriptor_set_layout, nullptr);
 
     gpu_scene.lambertian_material_buffer.destroy();
@@ -382,6 +387,7 @@ void Renderer::load_project(const std::string& input_file) {
             gpu_scene.point_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 lights.data(), "point_light_buffer");
+            gpu_scene.point_light_count = (uint32_t)lights.size();
         }
         if (!scene.lights.directional_lights.empty()) {
             found_supported_lights = true;
@@ -392,6 +398,7 @@ void Renderer::load_project(const std::string& input_file) {
             gpu_scene.directional_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 lights.data(), "directional_light_buffer");
+            gpu_scene.directional_light_count = (uint32_t)lights.size();
         }
         if (!scene.lights.diffuse_rectangular_lights.empty()) {
             found_supported_lights = true;
@@ -402,6 +409,7 @@ void Renderer::load_project(const std::string& input_file) {
             gpu_scene.diffuse_rectangular_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 lights.data(), "diffuse_rectangular_light_buffer");
+            gpu_scene.diffuse_rectangular_light_count = (uint32_t)lights.size();
         }
         if (scene.lights.has_environment_light) {
             printf("Scene contains environment light. Environment lights are not suported yet.\n");
@@ -412,14 +420,13 @@ void Renderer::load_project(const std::string& input_file) {
             scene_light.direction = Vector3(1, 1, 1).normalized();
             scene_light.irradiance = ColorRGB(5, 5, 5);
 
-            scene.lights.directional_lights.push_back(scene_light);
-            scene.lights.update_total_light_count();
-
             GPU_Types::Directional_Light gpu_light;
             gpu_light.init(scene_light);
             gpu_scene.directional_lights = vk_create_buffer(sizeof(GPU_Types::Directional_Light),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 &gpu_light, "directional_light_buffer");
+            gpu_scene.directional_light_count = 1;
+            printf("No supported lights found. Added default directional light\n");
         }
 
         gpu_scene.light_descriptor_set_layout = Descriptor_Set_Layout()
@@ -458,9 +465,9 @@ void Renderer::load_project(const std::string& input_file) {
 
     raytrace_scene.create(kernel_context, scene, gpu_meshes);
     raytrace_scene.update_output_image_descriptor(output_image.view);
-    raytrace_scene.update_point_lights((int)scene.lights.point_lights.size());
-    raytrace_scene.update_directional_lights((int)scene.lights.directional_lights.size());
-    raytrace_scene.update_diffuse_rectangular_lights((int)scene.lights.diffuse_rectangular_lights.size());
+    raytrace_scene.update_point_lights(gpu_scene.point_light_count);
+    raytrace_scene.update_directional_lights(gpu_scene.directional_light_count);
+    raytrace_scene.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_light_count);
 
     Descriptor_Writes(gpu_scene.light_descriptor_set).storage_buffer(POINT_LIGHT_BINDING, gpu_scene.point_lights.handle, 0, VK_WHOLE_SIZE);
     Descriptor_Writes(gpu_scene.light_descriptor_set).storage_buffer(DIRECTIONAL_LIGHT_BINDING, gpu_scene.directional_lights.handle, 0, VK_WHOLE_SIZE);
@@ -505,6 +512,11 @@ void Renderer::run_frame() {
 
     if (project_loaded) {
         raytrace_scene.update_camera_transform(flying_camera.get_camera_pose());
+    }
+
+    if (ui.ui_result.reference_render_requested) {
+        start_reference_renderer();
+        ui.ui_result.reference_render_requested = false;
     }
 
     draw_frame();
@@ -622,36 +634,34 @@ void Renderer::copy_output_image_to_swapchain() {
     copy_to_swapchain.dispatch();
 }
 
-void Renderer::start_reference_renderer() {
-    /*
-    const std::string temp_project_path = (get_data_directory() / "temp.yar").string();
+void Renderer::start_reference_renderer()
+{
+    Renderer_Configuration renderer_config;
+    int thread_count = ui.ref_params.thread_count;
+    if (!thread_count) {
+        thread_count = std::max(1u, std::thread::hardware_concurrency());
+    }
+    renderer_config.thread_count = thread_count;
 
-    YAR_Project temp_project = project;
-    temp_project.image_resolution = Vector2i{(int)vk.surface_size.width, (int)vk.surface_size.height};
-    temp_project.camera_to_world = flying_camera.get_camera_pose();
-    save_yar_file(temp_project_path, temp_project);
+    int k = (int)std::ceil(std::sqrt(ui.ref_params.spp));
+    scene.raytracer_config.x_pixel_sample_count = k;
+    scene.raytracer_config.y_pixel_sample_count = k;
 
-#ifdef _WIN32
-    char cmd_line[256];
-    sprintf_s(cmd_line, "RAY.exe \"%s\"", temp_project_path.c_str());
+    Scene_Context scene_ctx;
+    init_scene_context(scene, renderer_config, scene_ctx);
 
-    STARTUPINFOA si{};
-    si.cb = sizeof(si);
-    PROCESS_INFORMATION pi{};
+    scene_ctx.camera = Camera(flying_camera.get_camera_pose(), Vector2(scene.film_resolution), scene.camera_fov_y, scene.z_is_up);
 
-    BOOL result = ::CreateProcessA(
-        NULL, cmd_line,
-        NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+    double variance_estimate = 0.0;
+    float render_time = 0.f;
+    Image image = render_scene(scene_ctx, &variance_estimate, &render_time);
 
-    if (!result) {
-        ::MessageBoxA(NULL, "Failed to run RAY.exe", "Error", MB_OK);
+    EXR_Write_Params write_params;
+    const std::string image_filename = "image.exr";
+    if (!write_openexr_image(image_filename, image, write_params)) {
+        printf("Failed to save rendered image: %s\n", image_filename.c_str());
     }
     else {
-        ::CloseHandle(pi.hProcess);
-        ::CloseHandle(pi.hThread);
+        printf("Saved output image to %s\n\n", image_filename.c_str());
     }
-#else
-#error Unsupported platform
-#endif
-*/
 }

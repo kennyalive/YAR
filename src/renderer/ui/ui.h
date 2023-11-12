@@ -18,5 +18,11 @@ struct UI {
     const GPU_Time_Scope* frame_time_scope = nullptr;
 
     Vector3 camera_position;
+
+    struct Reference_Renderer_Params {
+        uint32_t thread_count = 0;
+        uint32_t spp = 4;
+    };
+    Reference_Renderer_Params ref_params;
 };
 
