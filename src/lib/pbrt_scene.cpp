@@ -312,12 +312,11 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         Diffuse_Transmission_Material mtl;
 
         if (translucent_material->map_kd)
-            mtl.transmittance = import_pbrt_texture_rgb(translucent_material->map_kd, scene);
-        else
-            set_constant_parameter(mtl.transmittance, ColorRGB(&translucent_material->kd.x));
-
-        set_constant_parameter(mtl.reflectance, ColorRGB(0.25f));
-        set_constant_parameter(mtl.scale, 1.f);
+            mtl.scale = import_pbrt_texture_rgb(translucent_material->map_kd, scene);
+        else 
+            set_constant_parameter(mtl.scale, ColorRGB(&translucent_material->kd.x));
+        set_constant_parameter(mtl.reflectance, ColorRGB(&translucent_material->reflect.x));
+        set_constant_parameter(mtl.transmittance, ColorRGB(&translucent_material->transmit.x));
 
         return add_material<Material_Type::diffuse_transmission>(materials, mtl);
     }

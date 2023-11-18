@@ -55,7 +55,7 @@ struct Diffuse_Transmission_Material {
     Float_Parameter bump_map;
     RGB_Parameter reflectance;
     RGB_Parameter transmittance;
-    Float_Parameter scale;
+    RGB_Parameter scale;
     bool operator==(const Diffuse_Transmission_Material&) const = default;
 };
 

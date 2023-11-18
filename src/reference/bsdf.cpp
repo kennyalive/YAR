@@ -132,7 +132,7 @@ Diffuse_Transmission_BSDF::Diffuse_Transmission_BSDF(const Thread_Context& threa
     reflection_scattering = true;
     transmission_scattering = true;
 
-    float scale = evaluate_float_parameter(thread_ctx, material.scale);
+    ColorRGB scale = evaluate_rgb_parameter(thread_ctx, material.scale);
 
     reflectance = scale * evaluate_rgb_parameter(thread_ctx, material.reflectance);
     reflectance.clamp_to_unit_range();
