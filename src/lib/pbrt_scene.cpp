@@ -217,8 +217,8 @@ template <Material_Type material_type, typename Material>
 Material_Handle add_material(Materials& materials, const Material& material)
 {
     std::vector<Material>* materials_of_given_type = nullptr;
-    if constexpr (material_type == Material_Type::lambertian) {
-        materials_of_given_type = &materials.lambertian;
+    if constexpr (material_type == Material_Type::diffuse) {
+        materials_of_given_type = &materials.diffuse;
     }
     else if constexpr (material_type == Material_Type::diffuse_transmission) {
         materials_of_given_type = &materials.diffuse_transmission;
@@ -289,13 +289,13 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
 
     // default pbrt material
     if (!pbrt_material) {
-        Lambertian_Material mtl;
+        Diffuse_Material mtl;
         set_constant_parameter(mtl.reflectance, ColorRGB{ 0.5f, 0.5f, 0.5f });
-        return add_material<Material_Type::lambertian>(materials, mtl);
+        return add_material<Material_Type::diffuse>(materials, mtl);
     }
 
     if (auto matte = std::dynamic_pointer_cast<pbrt::MatteMaterial>(pbrt_material)) {
-        Lambertian_Material mtl;
+        Diffuse_Material mtl;
 
         if (matte->map_kd)
             mtl.reflectance = import_pbrt_texture_rgb(matte->map_kd, scene);
@@ -305,7 +305,7 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         if (matte->map_bump)
             mtl.bump_map = import_pbrt_texture_float(matte->map_bump, scene);
 
-        return add_material<Material_Type::lambertian>(materials, mtl);
+        return add_material<Material_Type::diffuse>(materials, mtl);
     }
 
     if (auto translucent_material = std::dynamic_pointer_cast<pbrt::TranslucentMaterial>(pbrt_material)) {
@@ -486,9 +486,9 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
     }
 
     // Use red diffuse material to indicate unsupported material.
-    Lambertian_Material mtl;
+    Diffuse_Material mtl;
     set_constant_parameter(mtl.reflectance, ColorRGB{ 1.f, 0.f, 0.f });
-    return add_material<Material_Type::lambertian>(materials, mtl);
+    return add_material<Material_Type::diffuse>(materials, mtl);
 }
 
 static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pbrt_mesh, Scene* scene) {

@@ -16,15 +16,15 @@ void load_obj_scene(const YAR_Project& project, Scene& scene) {
     mesh_load_params.invert_winding_order = project.mesh_invert_winding_order;
     Obj_Data obj_data = load_obj(project.scene_path.string(), mesh_load_params, &project.ignore_geometry_names);
 
-    scene.materials.lambertian.resize(obj_data.materials.size());
+    scene.materials.diffuse.resize(obj_data.materials.size());
     for (auto [i, obj_material] : enumerate(obj_data.materials)) {
         if (obj_material.diffuse_texture.empty()) {
-            scene.materials.lambertian[i].reflectance.is_constant = true;
-            scene.materials.lambertian[i].reflectance.constant_value = obj_material.k_diffuse;
+            scene.materials.diffuse[i].reflectance.is_constant = true;
+            scene.materials.diffuse[i].reflectance.constant_value = obj_material.k_diffuse;
         }
         else {
-            scene.materials.lambertian[i].reflectance.is_constant = false;
-            scene.materials.lambertian[i].reflectance.texture_index = add_scene_texture(obj_material.diffuse_texture, &scene);
+            scene.materials.diffuse[i].reflectance.is_constant = false;
+            scene.materials.diffuse[i].reflectance.texture_index = add_scene_texture(obj_material.diffuse_texture, &scene);
         }
     }
 
@@ -42,11 +42,11 @@ void load_obj_scene(const YAR_Project& project, Scene& scene) {
 
         Material_Handle material;
         if (obj_data.meshes[i].material_index == -1) {
-            material = { Material_Type::lambertian, (int)scene.materials.lambertian.size() };
+            material = { Material_Type::diffuse, (int)scene.materials.diffuse.size() };
             add_default_material = true;
         }
         else {
-            material = { Material_Type::lambertian, obj_data.meshes[i].material_index };
+            material = { Material_Type::diffuse, obj_data.meshes[i].material_index };
         }
 
         auto instances_it = instance_infos.find(obj_data.meshes[i].name); 
@@ -71,7 +71,7 @@ void load_obj_scene(const YAR_Project& project, Scene& scene) {
         }
     }
     if (add_default_material) {
-        scene.materials.lambertian.push_back({ 
+        scene.materials.diffuse.push_back({ 
             .reflectance = { {
                     .is_specified = true,
                     .is_constant = true,

@@ -97,27 +97,27 @@ Vector3 BSDF::sample_microfacet_normal(Vector2 u, const Vector3& wo, float alpha
 }
 
 //
-// Lambertian BRDF
+// Diffuse BRDF
 //
-Lambertian_BRDF::Lambertian_BRDF(const Thread_Context& thread_ctx, const Lambertian_Material& material)
+Diffuse_BRDF::Diffuse_BRDF(const Thread_Context& thread_ctx, const Diffuse_Material& material)
     : BSDF(thread_ctx.shading_context)
 {
     reflection_scattering = true;
     reflectance = evaluate_rgb_parameter(thread_ctx, material.reflectance);
 }
 
-ColorRGB Lambertian_BRDF::evaluate(const Vector3& /*wo*/, const Vector3& /*wi*/) const {
+ColorRGB Diffuse_BRDF::evaluate(const Vector3& /*wo*/, const Vector3& /*wi*/) const {
     return Pi_Inv * reflectance;
 }
 
-ColorRGB Lambertian_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
+ColorRGB Diffuse_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
     Vector3 local_dir = sample_hemisphere_cosine(u);
     *wi = local_to_world(local_dir);
-    *pdf = Lambertian_BRDF::pdf(wo, *wi);
+    *pdf = Diffuse_BRDF::pdf(wo, *wi);
     return Pi_Inv * reflectance;
 }
 
-float Lambertian_BRDF::pdf(const Vector3& /*wo*/, const Vector3& wi) const {
+float Diffuse_BRDF::pdf(const Vector3& /*wo*/, const Vector3& wi) const {
     ASSERT(dot(normal, wi) >= 0.f);
     return dot(normal, wi) / Pi; // pdf for cosine-weighted hemisphere sampling
 }
@@ -564,12 +564,12 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     Shading_Context& shading_ctx = thread_ctx.shading_context;
     switch (material.type) {
-    case Material_Type::lambertian:
+    case Material_Type::diffuse:
     {
-        const Lambertian_Material& params = scene_ctx.materials.lambertian[material.index];
+        const Diffuse_Material& params = scene_ctx.materials.diffuse[material.index];
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
-        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Lambertian_BRDF>();
-        return new (bsdf_allocation) Lambertian_BRDF(thread_ctx, params);
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Diffuse_BRDF>();
+        return new (bsdf_allocation) Diffuse_BRDF(thread_ctx, params);
     }
     case Material_Type::diffuse_transmission:
     {

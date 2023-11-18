@@ -308,8 +308,8 @@ void Renderer::load_project(const std::string& input_file) {
             gpu_scene.images_2d.push_back(image);
         }
 
-        std::vector<GPU_Types::Lambertian_Material> gpu_lambertian_materials(scene.materials.lambertian.size());
-        for (auto[i, lambertian] : enumerate(scene.materials.lambertian)) {
+        std::vector<GPU_Types::Lambertian_Material> gpu_lambertian_materials(scene.materials.diffuse.size());
+        for (auto[i, lambertian] : enumerate(scene.materials.diffuse)) {
             const RGB_Parameter& param = lambertian.reflectance;
             gpu_lambertian_materials[i].r = param.constant_value.r;
             gpu_lambertian_materials[i].g = param.constant_value.g;

@@ -6,7 +6,7 @@
 enum class Material_Type : uint32_t {
     perfect_reflector,
     perfect_refractor,
-    lambertian,
+    diffuse,
     diffuse_transmission,
     metal,
     plastic,
@@ -45,10 +45,10 @@ struct Perfect_Refractor_Material {
     Float_Parameter index_of_refraction;
 };
 
-struct Lambertian_Material {
+struct Diffuse_Material {
     Float_Parameter bump_map;
     RGB_Parameter reflectance;
-    bool operator==(const Lambertian_Material&) const = default;
+    bool operator==(const Diffuse_Material&) const = default;
 };
 
 struct Diffuse_Transmission_Material {
@@ -212,7 +212,7 @@ struct Pbrt3_Fourier_Material {
 };
 
 struct Materials {
-    std::vector<Lambertian_Material> lambertian;
+    std::vector<Diffuse_Material> diffuse;
     std::vector<Diffuse_Transmission_Material> diffuse_transmission;
     std::vector<Perfect_Reflector_Material> perfect_reflector;
     std::vector<Perfect_Refractor_Material> perfect_refractor;

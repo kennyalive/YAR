@@ -30,10 +30,10 @@ protected:
     Vector3 sample_microfacet_normal(Vector2 u, const Vector3& wo, float alpha) const;
 };
 
-struct Lambertian_BRDF : public BSDF {
+struct Diffuse_BRDF : public BSDF {
     ColorRGB reflectance;
 
-    Lambertian_BRDF(const Thread_Context& thread_ctx, const Lambertian_Material& material);
+    Diffuse_BRDF(const Thread_Context& thread_ctx, const Diffuse_Material& material);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
     ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
