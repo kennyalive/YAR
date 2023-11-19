@@ -94,7 +94,7 @@ static void create_device(GLFWwindow* window, int physical_device_index) {
         if (gpu_count == 0) {
             error("There are no Vulkan physical devices available");
         }
-        if (physical_device_index >= gpu_count) {
+        if (physical_device_index >= (int)gpu_count) {
             error("Requested physical device index (zero-based) is %d, but physical device count is %u",
                 physical_device_index, gpu_count);
         }
