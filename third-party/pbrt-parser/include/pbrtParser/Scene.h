@@ -685,6 +685,9 @@ namespace pbrt {
     vec3f kr { 1.f, 1.f, 1.f };
     vec3f kt { 1.f, 1.f, 1.f };
     float index { 1.5f };
+    float u_roughness{ 0.f };
+    float v_roughness{ 0.f };
+    bool remap_roughness{ true };
   };
     
   struct UberMaterial : public Material {

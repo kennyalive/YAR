@@ -478,6 +478,9 @@ namespace pbrt {
     in->getParam3f(&mat->kt.x,"Kt");
     mat->index = in->getParam1f("index", 1.5f);
         
+    mat->u_roughness = in->getParam1f("uroughness", 0.f);
+    mat->v_roughness = in->getParam1f("vroughness", 0.f);
+    mat->remap_roughness = in->getParamBool("remaproughness", true);
     return mat;
   }
 
