@@ -328,10 +328,14 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
     }
 
     if (auto glass_material = std::dynamic_pointer_cast<pbrt::GlassMaterial>(pbrt_material)) {
+        ASSERT(glass_material->u_roughness == glass_material->v_roughness);
+
         Glass_Material mtl;
         set_constant_parameter(mtl.reflectance, ColorRGB(&glass_material->kr.x));
         set_constant_parameter(mtl.transmittance, ColorRGB(&glass_material->kt.x));
         set_constant_parameter(mtl.index_of_refraction, glass_material->index);
+        set_constant_parameter(mtl.roughness, glass_material->u_roughness);
+        mtl.roughness_is_alpha = !glass_material->remap_roughness;
         return add_material<Material_Type::glass>(materials, mtl);
     }
 

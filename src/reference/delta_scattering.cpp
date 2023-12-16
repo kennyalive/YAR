@@ -53,6 +53,11 @@ static Delta_Info get_perfect_refractor_info(Thread_Context& thread_ctx, const P
 
 static Delta_Info get_glass_info(Thread_Context& thread_ctx, const Glass_Material& params, float u)
 {
+    float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
+    if (roughness > 0.f) {
+        return Delta_Info{}; // it's not a delta scattering, should be handled by Rough_Glass_BSDF
+    }
+
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     Delta_Info result;
 
@@ -206,7 +211,7 @@ bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float u, Delta
     else if (delta_info.scattering_type == Delta_Scattering_Type::transmission) {
         bool refracted = refract(shading_ctx.wo, shading_ctx.normal, delta_info.etaI_over_etaT, &delta_direction);
         // Total internal reflection can not happen if we have reached this code path.
-        // The comments earlier in this function explain why we have this guarantee.
+        // The comments earlier in this file explain why we have this guarantee.
         ASSERT(refracted);
 
         has_differential_rays =

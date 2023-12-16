@@ -66,7 +66,8 @@ private:
 
 // Importance sampling of GGX microfacet distribution: D(wh) * dot(wh, N)
 Vector3 GGX_sample_microfacet_normal(Vector2 u, float alpha);
-// Returns PDF of sampled wh direction.
+
+// Returns PDF of sampled wh direction (microfacet normal).
 float GGX_microfacet_normal_pdf(const Vector3& wh, const Vector3& n, float alpha);
 
 // Sampling of visible normals distribution as described in:
@@ -76,5 +77,6 @@ float GGX_microfacet_normal_pdf(const Vector3& wh, const Vector3& n, float alpha
 //
 // wo_local - outgoing direction in shading coordinate system.
 Vector3 GGX_sample_visible_microfacet_normal(Vector2 u, const Vector3& wo_local, float alpha_x, float alpha_y);
-// Returns PDF of sampled wh direction.
+
+// Returns PDF of sampled wh direction (microfacet normal).
 float GGX_visible_microfacet_normal_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha);

@@ -130,6 +130,13 @@ struct Glass_Material {
     RGB_Parameter reflectance;
     RGB_Parameter transmittance;
     Float_Parameter index_of_refraction;
+
+    Float_Parameter roughness;
+
+    // If true, roughness represents a microfacet alpha parameter.
+    // Otherwise it's a roughness material property with values in the range [0..1].
+    bool roughness_is_alpha = false;
+
     bool operator==(const Glass_Material&) const = default;
 };
 

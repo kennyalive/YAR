@@ -13,17 +13,47 @@
 
 static bool ggx_sample_visible_normals = false;
 
-inline float calculate_microfacet_wi_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha) {
+// The probability density calculations for reflection and tranmission are from the classic paper:
+// "Microfacet Models for Refraction through Rough Surfaces"
+// https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf
+// I rederived these formulas to check there are no typos, and also adjusted variables
+// naming according to the conventions of this renderer.
+
+inline float calculate_microfacet_reflection_wi_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha)
+{
     float wh_pdf;
     if (ggx_sample_visible_normals)
         wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, n, alpha);
     else
         wh_pdf = GGX_microfacet_normal_pdf(wh, n, alpha);
 
-    // Converts between probability densities:
-    // wi_pdf = wh_pdf * dWh/dWi
-    // dWh/dWi = 1/4(wh, wi) = 1/4(wh,wo)
+    // Convert between probability densities:
+    // wi_pdf = wh_pdf * dwh/dwi
+    // dwh/dwi = 1/4(wh, wi) = 1/4(wh,wo)
     float wi_pdf = wh_pdf / (4 * dot(wh, wo));
+    return wi_pdf;
+}
+
+inline float calculate_microfacet_transmission_wi_pdf(const Vector3& wo, const Vector3& wi, const Vector3& wh, const Vector3& n, float alpha, float eta_o, float eta_i)
+{
+    // For reflection, wh is naturally computed to be in the hemisphere of the normal direction.
+    // For transmission, the classic computation results in wh that is in the hemisphere with a lower IoR index.
+    // The half-angle vector should be flipped if necessary to make sure it's in the normal hemisphere.
+    ASSERT(dot(wh, n) > 0.f);
+
+    float wh_pdf;
+    if (ggx_sample_visible_normals)
+        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, n, alpha);
+    else
+        wh_pdf = GGX_microfacet_normal_pdf(wh, n, alpha);
+
+    // Convert between probability densities:
+    // wi_pdf = wh_pdf * dwh/dwi
+    // dwh/dwi = eta_i^2 * abs(dot(wi, wh)) / (eta_o*dot(wo, wh) + eta_i*dot(wi, wh))^2
+    float denom = eta_o * dot(wo, wh) + eta_i * dot(wi, wh);
+    float dwh_over_dwi = eta_i * eta_i * std::abs(dot(wi, wh)) / (denom * denom);
+
+    float wi_pdf = wh_pdf * dwh_over_dwi;
     return wi_pdf;
 }
 
@@ -33,17 +63,48 @@ inline float cosine_hemisphere_pdf(float theta_cos)
     return theta_cos * Pi_Inv;
 }
 
-// Mapping from pbrt3.
+// Mapping from pbrt3 (with modified min roughness constant).
+// 
+// 'roughness' is a "user-friendly" value from [0..1] range and this function
+// remaps it to get an 'alpha' parameter from the ggx microfacet distribution.
+// 
+// When alpha values smaller than "min roughness" threshold are needed, then alpha
+// value should be specified directly instead of using this re-mapping function.
+// For pbrt scenes, a material can specify "bool remaproughness" ["false"] to treat
+// roughness directly as alpha.
+//
+// Selected samples to visualize mapping behavior:
+// ----------------------
+//  roughness | ggx alpha 
+//   0.00020  ->  0.01047
+//   0.00021  ->  0.01092
+//   0.00025  ->  0.01306
+//   0.00030  ->  0.01607
+//   0.00100  ->  0.04726
+//   0.00500  ->  0.10329
+//   0.01000  ->  0.13892
+//   0.05000  ->  0.31254
+//   0.10000  ->  0.46176
+//   0.20000  ->  0.68383
+//   0.50000  ->  1.13082
+//   0.80000  ->  1.44689
+//   0.90000  ->  1.53693
+//   1.00000  ->  1.62142
 static float roughness_to_alpha(float roughness)
 {
-    // 'roughness' is a user-friendly value from [0..1] range and we need to remap it to
-    // represent 'alpha' parameter from microfacet distribution.
-
     // TODO: assert is disabled for now, because some materials violate this.
     // Do we need a warning here?
     //ASSERT(roughness >= 0.f && roughness <= 1.f);
 
-    roughness = std::max(roughness, 1e-3f);
+    // The minimum roughness can't be arbitrarily small because the following polynomial
+    // will exibit non-monotonic behavior when mapping from roughness to ggx alpha value.
+    // Pbrt3 uses 1e-3f as a min threshold. I discovered that 0.0002f also works fine.
+    // But, when using, 0.0001f, for example, you can observe non-monotonic behavior at
+    // the beginning of the range, i.e. larger roughness value will map to a smaller 
+    // alpha value comparing to the previous one.
+    constexpr float min_roughness = 0.0002f;
+
+    roughness = std::max(roughness, min_roughness);
     float x = std::log(roughness);
 
     float alpha =
@@ -228,14 +289,14 @@ ColorRGB Metal_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pd
     if (dot(normal, *wi) <= 0.f)
         return Color_Black;
 
-    *pdf = calculate_microfacet_wi_pdf(wo, wh, normal, alpha);
+    *pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
     return evaluate(wo, *wi);
 }
 
 float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
     ASSERT(dot(normal, wi) >= 0.f);
     Vector3 wh = (wo + wi).normalized();
-    return calculate_microfacet_wi_pdf(wo, wh, normal, alpha);
+    return calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
 }
 
 //
@@ -300,10 +361,158 @@ float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
     float diffuse_pdf = dot(normal, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, normal, alpha);
+    float spec_pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + spec_pdf);
     return pdf;
+}
+
+//
+// Rough glass BSDF
+//
+Rough_Glass_BSDF::Rough_Glass_BSDF(const Thread_Context& thread_ctx, const Glass_Material& params)
+    : BSDF(thread_ctx.shading_context)
+    , rng(const_cast<RNG*>(& thread_ctx.rng))
+{
+    reflection_scattering = true;
+    transmission_scattering = true;
+
+    reflectance = evaluate_rgb_parameter(thread_ctx, params.reflectance);
+    transmittance = evaluate_rgb_parameter(thread_ctx, params.transmittance);
+
+    float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
+    if (params.roughness_is_alpha)
+        alpha = roughness;
+    else
+        alpha = roughness_to_alpha(roughness);
+
+    bool enter_event = thread_ctx.shading_context.nested_dielectric ?
+        thread_ctx.current_dielectric_material == Null_Material :
+        !thread_ctx.shading_context.original_shading_normal_was_flipped;
+
+    float dielectric_ior = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
+    if (enter_event) {
+        eta_o = 1.f;
+        eta_i = dielectric_ior;
+    }
+    else {
+        eta_o = dielectric_ior;
+        eta_i = 1.f;
+    }
+}
+
+ColorRGB Rough_Glass_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
+{
+    bool same_hemisphere = dot(wo, normal) * dot(wi, normal) > 0.f;
+    if (same_hemisphere) { // reflection
+        Vector3 wh = (wo + wi).normalized();
+        float cos_theta_i = dot(wi, wh);
+        float fresnel = dielectric_fresnel(cos_theta_i, eta_i / eta_o);
+
+        float D = GGX_Distribution::D(wh, normal, alpha);
+        float G = GGX_Distribution::G(wi, wo, normal, alpha);
+
+        ColorRGB f = reflectance * (G * D * fresnel / (4.f * dot(normal, wo) * dot(normal, wi)));
+        return f;
+    }
+    else { // transmission
+        Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
+        // The above wh computation gives a vector that is in the hemisphere with a smaller IoR.
+        // We need to ensure wh is in the hemisphere defined by the normal.
+        if (dot(wh, normal) < 0.f) {
+            wh = -wh;
+        }
+        float cos_theta_i = dot(wi, wh);
+        float fresnel = dielectric_fresnel(cos_theta_i, eta_o / eta_i);
+        if (fresnel == 1.f) {
+            return Color_Black;
+        }
+
+        float D = GGX_Distribution::D(wh, normal, alpha);
+        float G = GGX_Distribution::G(wi, wo, normal, alpha);
+
+        float k = std::abs((dot(wi, wh) * dot(wo, wh)) / (dot(wi, normal) * dot(wo, normal)));
+        float k2 = eta_o * dot(wo, wh) + eta_i * dot(wi, wh);
+        ColorRGB f = transmittance * (eta_i * eta_i * k * G * D * (1.f - fresnel) / (k2 * k2));
+        return f;
+    }
+}
+
+ColorRGB Rough_Glass_BSDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const
+{
+    Vector3 wh = sample_microfacet_normal(u, wo, alpha);
+    Vector3 reflection_wi = reflect(wo, wh);
+    if (dot(reflection_wi, normal) <= 0.f) {
+        return Color_Black;
+    }
+
+    float max_r = reflectance.max_component_value();
+    float max_t = transmittance.max_component_value();
+    float reflection_ratio = max_r / (max_r + max_t);
+
+    float cos_theta_i = dot(wo, wh);
+    ASSERT(cos_theta_i > 0.f);
+
+    float fresnel = dielectric_fresnel(cos_theta_i, eta_i / eta_o);
+    float r = fresnel * reflection_ratio;
+    float t = (1.f - fresnel) * (1 - reflection_ratio);
+    float reflection_probability = ((r + t) == 0) ? 0.f : r / (r + t);
+
+    float uf = rng->get_float();
+    if (uf < reflection_probability) {
+        *wi = reflection_wi;
+    }
+    else {
+        bool refracted = refract(wo, wh, eta_o / eta_i, wi);
+        if (!refracted) {
+            return Color_Black;
+        }
+        if (dot(*wi, normal) >= 0.f) {
+            return Color_Black;
+        }
+    }
+    *pdf = Rough_Glass_BSDF::pdf(wo, *wi);
+    return Rough_Glass_BSDF::evaluate(wo, *wi);
+}
+
+float Rough_Glass_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
+{
+    float max_r = reflectance.max_component_value();
+    float max_t = transmittance.max_component_value();
+    float reflection_ratio = max_r / (max_r + max_t);
+
+    bool same_hemisphere = dot(wo, normal) * dot(wi, normal) > 0.f;
+    if (same_hemisphere) { // reflection
+        Vector3 wh = (wo + wi).normalized();
+        float reflection_pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+        float cos_theta_i = dot(wi, wh);
+
+        float fresnel = dielectric_fresnel(cos_theta_i, eta_i / eta_o);
+        float r = fresnel * reflection_ratio;
+        float t = (1.f - fresnel) * (1 - reflection_ratio);
+        float reflection_probability = ((r + t) == 0) ? 0.f : r / (r + t);
+
+        float pdf = reflection_pdf * reflection_probability;
+        return pdf;
+    }
+    else { // transmission
+        Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
+        // The above wh computation gives a vector that lies in the hemisphere with a smaller IoR.
+        // We need to ensure wh is in the hemisphere defined by the normal.
+        if (dot(wh, normal) < 0.f) {
+            wh = -wh;
+        }
+        float cos_theta = dot(wo, wh);
+
+        float fresnel = dielectric_fresnel(cos_theta, eta_i / eta_o);
+        float r = fresnel * reflection_ratio;
+        float t = (1.f - fresnel) * (1 - reflection_ratio);
+        float reflection_probability = ((r + t) == 0) ? 0.f : r / (r + t);
+
+        float transmission_pdf = calculate_microfacet_transmission_wi_pdf(wo, wi, wh, normal, alpha, eta_o, eta_i);
+        float pdf = transmission_pdf * (1.f - reflection_probability);
+        return pdf;
+    }
 }
 
 //
@@ -372,7 +581,7 @@ float Ashikhmin_Shirley_Phong_BRDF::pdf(const Vector3& wo, const Vector3& wi) co
     float diffuse_pdf = dot(normal, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float spec_pdf = calculate_microfacet_wi_pdf(wo, wh, normal, alpha);
+    float spec_pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + spec_pdf);
     return pdf;
@@ -440,7 +649,7 @@ float Pbrt3_Uber_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
     float diffuse_pdf = dot(normal, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float specular_pdf = calculate_microfacet_wi_pdf(wo, wh, normal, alpha);
+    float specular_pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + specular_pdf);
     return pdf;
@@ -604,6 +813,13 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Ashikhmin_Shirley_Phong_BRDF>();
         return new (bsdf_allocation) Ashikhmin_Shirley_Phong_BRDF(thread_ctx, params);
+    }
+    case Material_Type::glass:
+    {
+        const Glass_Material& params = scene_ctx.materials.glass[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Rough_Glass_BSDF>();
+        return new (bsdf_allocation) Rough_Glass_BSDF(thread_ctx, params);
     }
     case Material_Type::pbrt3_uber:
     {

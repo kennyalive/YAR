@@ -72,6 +72,24 @@ struct Plastic_BRDF : public BSDF {
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
+struct Rough_Glass_BSDF : public BSDF {
+    ColorRGB reflectance;
+    ColorRGB transmittance;
+    float alpha = 0.f;
+    float eta_o = 0.f;
+    float eta_i = 0.f;
+
+    // TEMP: BSDF interface needs to add support the third random variable, that can be used to
+    // select reflection layer. In some cases it's possible to re-purpose u[0] by remapping it,
+    // but in some cases it's not possible (as in the rough glass bsdf).
+    RNG* rng = nullptr;
+
+    Rough_Glass_BSDF(const Thread_Context& thread_ctx, const Glass_Material& params);
+    ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
+    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    float pdf(const Vector3& wo, const Vector3& wi) const override;
+};
+
 struct Ashikhmin_Shirley_Phong_BRDF : public BSDF {
     float alpha = 0.f; // GGX alpha parameter
     ColorRGB r0; // reflectance of the glossy layer at normal incident angle
