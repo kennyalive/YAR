@@ -741,6 +741,8 @@ namespace pbrt {
       /*! the root scene shape, defined in the
         'WorldBegin'/'WorldEnd' statements */
       std::shared_ptr<Object> world;
+
+      bool isZAxisUp = false;
     
       std::string makeGlobalFileName(const std::string &relativePath)
       { return basePath + relativePath; }

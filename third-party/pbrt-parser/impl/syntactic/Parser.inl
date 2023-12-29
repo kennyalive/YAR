@@ -735,6 +735,7 @@ namespace pbrt {
           xfm.p    = v0;
         
           addTransform(inverse(xfm));
+          this->scene->isZAxisUp = std::abs(v2.z) > std::abs(v2.y);
           continue;
         }
 

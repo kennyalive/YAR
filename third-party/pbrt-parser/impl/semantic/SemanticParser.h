@@ -60,6 +60,7 @@ namespace pbrt {
     {
       result        = std::make_shared<Scene>();
       result->world  = findOrEmitObject(pbrtScene->world);
+      result->zAxisIsUp = pbrtScene->isZAxisUp;
 
       if (!unhandledShapeTypeCounter.empty()) {
         std::cerr << "WARNING: scene contained some un-handled shapes!" << std::endl;

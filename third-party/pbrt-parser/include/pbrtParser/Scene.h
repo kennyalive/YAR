@@ -1234,6 +1234,8 @@ namespace pbrt {
 
     /*! the worldbegin/worldend content */
     Object::SP              world;
+
+    bool                    zAxisIsUp = false;
   };
     
   /* compute some _rough_ storage cost esimate for a scene. this will
