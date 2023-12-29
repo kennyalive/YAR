@@ -264,11 +264,11 @@ void get_pbrt_lookat_from_camera_pose(const Matrix3x4& camera_pose, bool z_is_up
     from = camera_pose.get_column(3);
     if (z_is_up) {
         to = from + camera_pose.get_column(1);
-        up = camera_pose.get_column(2);
+        up = Vector3(0, 0, 1);
     }
     else {
         to = from - camera_pose.get_column(2);
-        up = camera_pose.get_column(1);
+        up = Vector3(0, 1, 0);
     }
 }
 

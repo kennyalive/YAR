@@ -706,8 +706,6 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
         Vector3 up = Vector3(&rot.vy.x);
         Vector3 forward = Vector3(&rot.vz.x);
 
-        scene->z_is_up = std::abs(up.z) > std::abs(up.y);
-
         // Setup camera in right-handed coordinate system according to conventions from "camera.h".
         //
         // This type of code might be non-trivial to understand just by eyeballing it. One way to
@@ -836,6 +834,7 @@ void load_pbrt_scene(const YAR_Project& project, Scene& scene) {
     // Import camera.
     ASSERT(!pbrt_scene->cameras.empty());
     pbrt::Camera::SP pbrt_camera = pbrt_scene->cameras[0];
+    scene.z_is_up = pbrt_scene->zAxisIsUp;
     import_pbrt_camera(pbrt_camera, &scene);
 
     // Import sampler.
