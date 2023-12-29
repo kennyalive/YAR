@@ -68,10 +68,9 @@ inline float cosine_hemisphere_pdf(float theta_cos)
 // 'roughness' is a "user-friendly" value from [0..1] range and this function
 // remaps it to get an 'alpha' parameter from the ggx microfacet distribution.
 // 
-// When alpha values smaller than "min roughness" threshold are needed, then alpha
-// value should be specified directly instead of using this re-mapping function.
-// For pbrt scenes, a material can specify "bool remaproughness" ["false"] to treat
-// roughness directly as alpha.
+// When alpha value smaller than "min roughness" is needed, then it can be 
+// specified directly. For pbrt scenes, a material can specify 
+// "bool remaproughness" ["false"] to use roughness directly as alpha.
 //
 // Selected samples to visualize mapping behavior:
 // ----------------------
@@ -90,7 +89,7 @@ inline float cosine_hemisphere_pdf(float theta_cos)
 //   0.80000  ->  1.44689
 //   0.90000  ->  1.53693
 //   1.00000  ->  1.62142
-static float roughness_to_alpha(float roughness)
+static float roughness_to_alpha(float roughness, float min_roughness_threshold = 0.0002f)
 {
     // TODO: assert is disabled for now, because some materials violate this.
     // Do we need a warning here?
@@ -101,12 +100,10 @@ static float roughness_to_alpha(float roughness)
     // Pbrt3 uses 1e-3f as a min threshold. I discovered that 0.0002f also works fine.
     // But, when using, 0.0001f, for example, you can observe non-monotonic behavior at
     // the beginning of the range, i.e. larger roughness value will map to a smaller 
-    // alpha value comparing to the previous one.
-    constexpr float min_roughness = 0.0002f;
+    // alpha value comparing to the previous sample.
+    roughness = std::max(roughness, min_roughness_threshold);
 
-    roughness = std::max(roughness, min_roughness);
     float x = std::log(roughness);
-
     float alpha =
         1.621420000f +
         0.819955000f * x +
@@ -115,6 +112,19 @@ static float roughness_to_alpha(float roughness)
         0.000640711f * x * x * x * x;
 
     return alpha;
+}
+
+static float ggx_alpha(const Thread_Context& thread_ctx, const Float_Parameter& roughness_parameter, bool roughness_is_alpha)
+{
+    float roughness = evaluate_float_parameter(thread_ctx, roughness_parameter);
+    if (roughness_is_alpha) {
+        return roughness;
+    }
+    if (thread_ctx.scene_context->pbrt3_scene) {
+        constexpr float pbrt_min_roughness = 0.001f;
+        return roughness_to_alpha(roughness, pbrt_min_roughness);
+    }
+    return roughness_to_alpha(roughness);
 }
 
 BSDF::BSDF(const Shading_Context& shading_ctx)
@@ -253,13 +263,7 @@ Metal_BRDF::Metal_BRDF(const Thread_Context& thread_ctx, const Metal_Material& m
     : BSDF(thread_ctx.shading_context)
 {
     reflection_scattering = true;
-
-    float roughness = evaluate_float_parameter(thread_ctx, material.roughness);
-    if (material.roughness_is_alpha)
-        alpha = roughness;
-    else
-        alpha = roughness_to_alpha(roughness);
-
+    alpha = ggx_alpha(thread_ctx, material.roughness, material.roughness_is_alpha);
     eta_i = evaluate_float_parameter(thread_ctx, material.eta_i);
     eta_t = evaluate_rgb_parameter(thread_ctx, material.eta);
     k_t = evaluate_rgb_parameter(thread_ctx, material.k);
@@ -306,13 +310,7 @@ Plastic_BRDF::Plastic_BRDF(const Thread_Context& thread_ctx, const Plastic_Mater
     : BSDF(thread_ctx.shading_context)
 {
     reflection_scattering = true;
-
-    float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
-    if (params.roughness_is_alpha)
-        alpha = roughness;
-    else
-        alpha = roughness_to_alpha(roughness);
-
+    alpha = ggx_alpha(thread_ctx, params.roughness, params.roughness_is_alpha);
     r0 = evaluate_float_parameter(thread_ctx, params.r0);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
 }
@@ -379,12 +377,7 @@ Rough_Glass_BSDF::Rough_Glass_BSDF(const Thread_Context& thread_ctx, const Glass
 
     reflectance = evaluate_rgb_parameter(thread_ctx, params.reflectance);
     transmittance = evaluate_rgb_parameter(thread_ctx, params.transmittance);
-
-    float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
-    if (params.roughness_is_alpha)
-        alpha = roughness;
-    else
-        alpha = roughness_to_alpha(roughness);
+    alpha = ggx_alpha(thread_ctx, params.roughness, params.roughness_is_alpha);
 
     bool enter_event = thread_ctx.shading_context.nested_dielectric ?
         thread_ctx.current_dielectric_material == Null_Material :
@@ -525,13 +518,7 @@ Ashikhmin_Shirley_Phong_BRDF::Ashikhmin_Shirley_Phong_BRDF(const Thread_Context&
     : BSDF(thread_ctx.shading_context)
 {
     reflection_scattering = true;
-
-    float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
-    if (params.roughness_is_alpha)
-        alpha = roughness;
-    else
-        alpha = roughness_to_alpha(roughness);
-
+    alpha = ggx_alpha(thread_ctx, params.roughness, params.roughness_is_alpha);
     r0 = evaluate_rgb_parameter(thread_ctx, params.r0);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
 }
@@ -597,13 +584,7 @@ Pbrt3_Uber_BRDF::Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_U
     opacity = evaluate_rgb_parameter(thread_ctx, params.opacity);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
     specular_reflectance = evaluate_rgb_parameter(thread_ctx, params.specular_reflectance);
-
-    float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
-    if (params.roughness_is_alpha)
-        alpha = roughness;
-    else
-        alpha = roughness_to_alpha(roughness);
-
+    alpha = ggx_alpha(thread_ctx, params.roughness, params.roughness_is_alpha);
     index_of_refraction = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
 }
 
