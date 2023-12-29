@@ -78,7 +78,7 @@ inline float cosine_hemisphere_pdf(float theta_cos)
 //   0.00020  ->  0.01047
 //   0.00021  ->  0.01092
 //   0.00025  ->  0.01306
-//   0.00030  ->  0.01607
+//   0.00050  ->  0.02756
 //   0.00100  ->  0.04726
 //   0.00500  ->  0.10329
 //   0.01000  ->  0.13892
@@ -465,6 +465,9 @@ ColorRGB Rough_Glass_BSDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, flo
         }
     }
     *pdf = Rough_Glass_BSDF::pdf(wo, *wi);
+    if (*pdf == 0.f) {
+        return Color_Black;
+    }
     return Rough_Glass_BSDF::evaluate(wo, *wi);
 }
 
