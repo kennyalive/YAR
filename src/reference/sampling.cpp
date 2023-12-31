@@ -292,8 +292,6 @@ static void sample_visible_slope(Vector2 u, float cos_theta, float* slope_x, flo
 }
 
 Vector3 GGX_sample_visible_microfacet_normal(Vector2 u, const Vector3& wo_local, float alpha_x, float alpha_y) {
-    ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u);
-
     // Stretch Wo (alpha_x/y are also stretched implicitly by the inverse values,
     // so we get isotropic distribution).
     Vector3 wo = Vector3(alpha_x * wo_local.x, alpha_y * wo_local.y, wo_local.z);

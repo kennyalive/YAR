@@ -109,7 +109,7 @@ static ColorRGB direct_lighting_from_directional_light(const Scene_Context& scen
 static ColorRGB direct_lighting_from_rectangular_light(
     const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
     Light_Handle light_handle, const Diffuse_Rectangular_Light& light,
-    Vector2 u_light, Vector2 u_bsdf)
+    Vector2 u_light, Vector2 u_bsdf, float u_scattering_type)
 {
     ASSERT(light_handle.type == Light_Type::diffuse_rectangular);
 
@@ -160,7 +160,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
     {
         Vector3 wi;
         float bsdf_pdf;
-        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, shading_ctx.wo, &wi, &bsdf_pdf);
+        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, u_scattering_type, shading_ctx.wo, &wi, &bsdf_pdf);
 
         if (!f.is_black()) {
             ASSERT(bsdf_pdf > 0.f);
@@ -196,7 +196,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
 static ColorRGB direct_lighting_from_sphere_light(
     const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
     Light_Handle light_handle, const Diffuse_Sphere_Light_Sampler& light_sampler,
-    Vector2 u_light, Vector2 u_bsdf)
+    Vector2 u_light, Vector2 u_bsdf, float u_scattering_type)
 {
     ASSERT(light_handle.type == Light_Type::diffuse_sphere);
 
@@ -235,7 +235,7 @@ static ColorRGB direct_lighting_from_sphere_light(
     {
         Vector3 wi;
         float bsdf_pdf;
-        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, shading_ctx.wo, &wi, &bsdf_pdf);
+        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, u_scattering_type, shading_ctx.wo, &wi, &bsdf_pdf);
 
         if (!f.is_black()) {
             ASSERT(bsdf_pdf > 0.f);
@@ -261,7 +261,7 @@ static ColorRGB direct_lighting_from_sphere_light(
 
 static ColorRGB direct_lighting_from_environment_light(
     const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
-    Vector2 u_light, Vector2 u_bsdf)
+    Vector2 u_light, Vector2 u_bsdf, float u_scattering_type)
 {
     ColorRGB L;
     // Light sampling part of MIS.
@@ -295,7 +295,7 @@ static ColorRGB direct_lighting_from_environment_light(
     {
         Vector3 wi;
         float bsdf_pdf;
-        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, shading_ctx.wo, &wi, &bsdf_pdf);
+        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, u_scattering_type, shading_ctx.wo, &wi, &bsdf_pdf);
 
         if (!f.is_black()) {
             ASSERT(bsdf_pdf > 0.f);
@@ -349,8 +349,8 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
         }
         return Color_Black;
     }
-    float u_init_scattering = thread_ctx.pixel_sampler.get_next_1d_sample();
-    thread_ctx.shading_context.initialize_scattering(thread_ctx, u_init_scattering);
+    float u_scattering_type = thread_ctx.pixel_sampler.get_next_1d_sample();
+    thread_ctx.shading_context.initialize_scattering(thread_ctx, &u_scattering_type);
 
     // debug visualization of samples with adjusted shading normal.
     /*if (shading_ctx.shading_normal_adjusted)
@@ -376,11 +376,13 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
 
             const MIS_Array_Info& array_info = scene_ctx.array2d_registry.rectangular_light_arrays[light_index];
             const Vector2* light_samples = thread_ctx.pixel_sampler.get_array2d(array_info.light_array_id);
-            const Vector2* bsdf_samples = thread_ctx.pixel_sampler.get_array2d(array_info.bsdf_array_id);
+            const Vector2* bsdf_wi_samples = thread_ctx.pixel_sampler.get_array2d(array_info.bsdf_wi_array_id);
+            const float* bsdf_scattering_samples = thread_ctx.pixel_sampler.get_array1d(array_info.bsdf_scattering_array_id);
 
             ColorRGB L2;
             for (int i = 0; i < array_info.array_size; i++) {
-                L2 += direct_lighting_from_rectangular_light(scene_ctx, shading_ctx, light_handle, light, light_samples[i], bsdf_samples[i]);
+                L2 += direct_lighting_from_rectangular_light(scene_ctx, shading_ctx, light_handle, light,
+                    light_samples[i], bsdf_wi_samples[i], bsdf_scattering_samples[i]);
             }
             L2 /= float(array_info.array_size);
             L += L2;
@@ -392,11 +394,13 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
 
             const MIS_Array_Info& array_info = scene_ctx.array2d_registry.sphere_light_arrays[light_index];
             const Vector2* light_samples = thread_ctx.pixel_sampler.get_array2d(array_info.light_array_id);
-            const Vector2* bsdf_samples = thread_ctx.pixel_sampler.get_array2d(array_info.bsdf_array_id);
+            const Vector2* bsdf_wi_samples = thread_ctx.pixel_sampler.get_array2d(array_info.bsdf_wi_array_id);
+            const float* bsdf_scattering_samples = thread_ctx.pixel_sampler.get_array1d(array_info.bsdf_scattering_array_id);
 
             ColorRGB L2;
             for (int i = 0; i < array_info.array_size; i++) {
-                L2 += direct_lighting_from_sphere_light(scene_ctx, shading_ctx, light_handle, sampler, light_samples[i], bsdf_samples[i]);
+                L2 += direct_lighting_from_sphere_light(scene_ctx, shading_ctx, light_handle, sampler,
+                    light_samples[i], bsdf_wi_samples[i], bsdf_scattering_samples[i]);
             }
             L2 /= float(array_info.array_size);
             L += L2;
@@ -407,7 +411,8 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
             for (int i = 0; i < scene_ctx.environment_light_sampler.light->sample_count; i++) {
                 Vector2 u_light = thread_ctx.rng.get_vector2();
                 Vector2 u_bsdf = thread_ctx.rng.get_vector2();
-                L2 += direct_lighting_from_environment_light(scene_ctx, shading_ctx, u_light, u_bsdf);
+                float u_scattering_type = thread_ctx.rng.get_float();
+                L2 += direct_lighting_from_environment_light(scene_ctx, shading_ctx, u_light, u_bsdf, u_scattering_type);
             }
             L2 /= float(scene_ctx.environment_light_sampler.light->sample_count);
             L += L2;
@@ -441,7 +446,7 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
 }
 
 ColorRGB estimate_direct_lighting_from_single_sample(const Thread_Context& thread_ctx,
-    float u_light_selector, Vector2 u_light, Vector2 u_bsdf)
+    float u_light_selector, Vector2 u_light, Vector2 u_bsdf, float u_scattering_type)
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
@@ -470,19 +475,22 @@ ColorRGB estimate_direct_lighting_from_single_sample(const Thread_Context& threa
     if (light_index < scene_ctx.lights.diffuse_rectangular_lights.size()) {
         Light_Handle light_handle = {Light_Type::diffuse_rectangular, light_index};
         const Diffuse_Rectangular_Light& light = scene_ctx.lights.diffuse_rectangular_lights[light_index];
-        return (float)scene_ctx.lights.total_light_count * direct_lighting_from_rectangular_light(scene_ctx, shading_ctx, light_handle, light, u_light, u_bsdf);
+        ColorRGB L = direct_lighting_from_rectangular_light(scene_ctx, shading_ctx, light_handle, light, u_light, u_bsdf, u_scattering_type);
+        return (float)scene_ctx.lights.total_light_count * L;
     }
     light_index -= (int)scene_ctx.lights.diffuse_rectangular_lights.size();
 
     if (light_index < scene_ctx.lights.diffuse_sphere_lights.size()) {
         Light_Handle light_handle = {Light_Type::diffuse_sphere, light_index};
         Diffuse_Sphere_Light_Sampler sampler(scene_ctx.lights.diffuse_sphere_lights[light_index], shading_ctx.position);
-        return (float)scene_ctx.lights.total_light_count * direct_lighting_from_sphere_light(scene_ctx, shading_ctx, light_handle, sampler, u_light, u_bsdf);
+        ColorRGB L = direct_lighting_from_sphere_light(scene_ctx, shading_ctx, light_handle, sampler, u_light, u_bsdf, u_scattering_type);
+        return (float)scene_ctx.lights.total_light_count * L;
     }
     light_index -= (int)scene_ctx.lights.diffuse_sphere_lights.size();
 
     // the only light left is environment light
     ASSERT(light_index == 0);
     ASSERT(scene_ctx.has_environment_light_sampler);
-    return (float)scene_ctx.lights.total_light_count * direct_lighting_from_environment_light(scene_ctx, shading_ctx, u_light, u_bsdf);
+    ColorRGB L = direct_lighting_from_environment_light(scene_ctx, shading_ctx, u_light, u_bsdf, u_scattering_type);
+    return (float)scene_ctx.lights.total_light_count * L;
 }

@@ -24,7 +24,8 @@ struct KdTree_Data {
 
 struct MIS_Array_Info {
     int light_array_id = -1;
-    int bsdf_array_id = -1;
+    int bsdf_wi_array_id = -1;
+    int bsdf_scattering_array_id = -1;
     int array_size = 0;
 };
 

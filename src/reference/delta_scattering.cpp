@@ -100,14 +100,18 @@ static Delta_Info get_glass_info(Thread_Context& thread_ctx, const Glass_Materia
     return result;
 }
 
-static Delta_Info get_pbrt_uber_info(Thread_Context& thread_ctx, const Pbrt3_Uber_Material& params, float u)
+static Delta_Info get_pbrt_uber_info(Thread_Context& thread_ctx, const Pbrt3_Uber_Material& params, float* u_scattering_type)
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     Delta_Info result;
 
-    int component_index = int(u * params.component_count);
+    float fp_index = *u_scattering_type * float(params.component_count);
+    int component_index = int(fp_index);
     ASSERT(component_index < params.component_count);
     int component_type = params.components[component_index];
+
+    // re-normalize u_scattering_type random variable, so it can be re-used in the bsdf pipeline
+    *u_scattering_type = std::clamp(fp_index - float(component_index), 0.f, One_Minus_Epsilon);
 
     if (component_type == Pbrt3_Uber_Material::DELTA_REFLECTION) {
         bool enter_event = shading_ctx.nested_dielectric ?
@@ -146,7 +150,7 @@ static Delta_Info get_pbrt_uber_info(Thread_Context& thread_ctx, const Pbrt3_Ube
     return result;
 }
 
-bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float u, Delta_Scattering* delta_scattering)
+bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float* u_scattering_type, Delta_Scattering* delta_scattering)
 {
     const Scene_Context& scene_ctx = *thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
@@ -163,11 +167,11 @@ bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float u, Delta
     }
     else if (material.type == Material_Type::glass) {
         const Glass_Material& params = scene_ctx.materials.glass[material.index];
-        delta_info = get_glass_info(thread_ctx, params, u);
+        delta_info = get_glass_info(thread_ctx, params, *u_scattering_type);
     }
     else if (material.type == Material_Type::pbrt3_uber) {
         const Pbrt3_Uber_Material& params = scene_ctx.materials.pbrt3_uber[material.index];
-        delta_info = get_pbrt_uber_info(thread_ctx, params, u);
+        delta_info = get_pbrt_uber_info(thread_ctx, params, u_scattering_type);
     }
 
     delta_scattering->delta_layer_selection_probability = delta_info.delta_layer_selection_probability;

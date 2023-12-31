@@ -43,16 +43,17 @@ ColorRGB trace_path(Thread_Context& thread_ctx, const Ray& ray, const Differenti
         }
         ray_is_already_traced_by_delta_bounce = false;
 
-        float u_init_scattering = thread_ctx.pixel_sampler.get_next_1d_sample();
+        float u_scattering_type = thread_ctx.pixel_sampler.get_next_1d_sample();
         float u_light_index = thread_ctx.pixel_sampler.get_next_1d_sample();
-        Vector2 u_light_mis = thread_ctx.pixel_sampler.get_next_2d_sample();
-        Vector2 u_bsdf_mis = thread_ctx.pixel_sampler.get_next_2d_sample();
+        float u_scattering_type_next_segment = thread_ctx.pixel_sampler.get_next_1d_sample();
+        Vector2 u_light = thread_ctx.pixel_sampler.get_next_2d_sample();
+        Vector2 u_bsdf = thread_ctx.pixel_sampler.get_next_2d_sample();
         Vector2 u_bsdf_next_segment = thread_ctx.pixel_sampler.get_next_2d_sample();
 
-        thread_ctx.shading_context.initialize_scattering(thread_ctx, u_init_scattering);
+        thread_ctx.shading_context.initialize_scattering(thread_ctx, &u_scattering_type);
 
         if (!shading_ctx.delta_scattering_event) {
-            ColorRGB direct_lighting = estimate_direct_lighting_from_single_sample(thread_ctx, u_light_index, u_light_mis, u_bsdf_mis);
+            ColorRGB direct_lighting = estimate_direct_lighting_from_single_sample(thread_ctx, u_light_index, u_light, u_bsdf, u_scattering_type);
             L += path_coeff * direct_lighting;
 
             path_ctx.bounce_count++;
@@ -61,7 +62,7 @@ ColorRGB trace_path(Thread_Context& thread_ctx, const Ray& ray, const Differenti
 
             Vector3 wi;
             float bsdf_pdf;
-            ColorRGB f = shading_ctx.bsdf->sample(u_bsdf_next_segment, shading_ctx.wo, &wi, &bsdf_pdf);
+            ColorRGB f = shading_ctx.bsdf->sample(u_bsdf_next_segment, u_scattering_type_next_segment, shading_ctx.wo, &wi, &bsdf_pdf);
             if (f.is_black())
                 break;
 
@@ -72,7 +73,7 @@ ColorRGB trace_path(Thread_Context& thread_ctx, const Ray& ray, const Differenti
         }
         else {
             if (shading_ctx.bsdf) {
-                ColorRGB direct_lighting = estimate_direct_lighting_from_single_sample(thread_ctx, u_light_index, u_light_mis, u_bsdf_mis);
+                ColorRGB direct_lighting = estimate_direct_lighting_from_single_sample(thread_ctx, u_light_index, u_light, u_bsdf, u_scattering_type);
                 L += path_coeff * direct_lighting;
             }
 

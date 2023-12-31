@@ -6,9 +6,6 @@
 struct Ray;
 struct RNG;
 
-#define ASSERT_ZERO_TO_ONE_RANGE(u) ASSERT((u) >= 0.f && (u) < 1.f)
-#define ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u) ASSERT((u) >= Vector2(0.f) && (u) < Vector2(1.f))
-
 constexpr float Pi = 3.14159265f;
 constexpr float Pi2 = 6.2831853f;
 constexpr float Pi_Over_2 = 1.57079632f;

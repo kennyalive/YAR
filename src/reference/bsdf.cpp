@@ -181,7 +181,7 @@ ColorRGB Diffuse_BRDF::evaluate(const Vector3& /*wo*/, const Vector3& /*wi*/) co
     return Pi_Inv * reflectance;
 }
 
-ColorRGB Diffuse_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
+ColorRGB Diffuse_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const {
     Vector3 local_dir = sample_hemisphere_cosine(u);
     *wi = local_to_world(local_dir);
     *pdf = Diffuse_BRDF::pdf(wo, *wi);
@@ -221,21 +221,15 @@ ColorRGB Diffuse_Transmission_BSDF::evaluate(const Vector3& wo, const Vector3& w
         return Pi_Inv * transmittance;
 }
 
-ColorRGB Diffuse_Transmission_BSDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const
+ColorRGB Diffuse_Transmission_BSDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
 {
     float max_r = reflectance.max_component_value();
     float max_t = transmittance.max_component_value();
     float p = max_r / (max_r + max_t);
 
-    Vector3 local_dir;
-    if (u[0] < p) { // sample reflectance
-        u[0] = std::min(u[0] / p, One_Minus_Epsilon); // remap to [0, 1) range
-        local_dir = sample_hemisphere_cosine(u);
-    }
-    else { // sample tranmittance
-        u[0] = std::min((u[0] - p) / (1.f - p), One_Minus_Epsilon); // remap to [0, 1) range
-        local_dir = -sample_hemisphere_cosine(u);
-    }
+    float sign = (u_scattering_type < p) ? 1.f : -1.f; // reflection or transmission
+    Vector3 local_dir = sign * sample_hemisphere_cosine(u);
+
     *wi = local_to_world(local_dir);
     *pdf = Diffuse_Transmission_BSDF::pdf(wo, *wi);
     return Diffuse_Transmission_BSDF::evaluate(wo, *wi);
@@ -284,9 +278,7 @@ ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
     return f;
 }
 
-ColorRGB Metal_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
-    ASSERT_ZERO_TO_ONE_RANGE_VECTOR2(u);
-
+ColorRGB Metal_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const {
     Vector3 wh = sample_microfacet_normal(u, wo, alpha);
     *wi = reflect(wo, wh);
 
@@ -332,23 +324,20 @@ ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
     return diffuse_brdf + specular_brdf;
 }
 
-ColorRGB Plastic_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const
+ColorRGB Plastic_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
 {
-    if (u[0] < 0.5f) { // sample diffuse
-        u[0] *= 2.f; // remap u[0] to [0, 1) range
-
+    if (u_scattering_type < 0.5f) { // sample diffuse
         Vector3 local_dir = sample_hemisphere_cosine(u);
         *wi = local_to_world(local_dir);
     }
     else { // sample specular
-        u[0] = (u[0] - 0.5f) * 2.f; // remap u[0] to [0, 1) range
         Vector3 wh = sample_microfacet_normal(u, wo, alpha);
         *wi = reflect(wo, wh);
     }
 
-    if (dot(normal, *wi) <= 0.f)
+    if (dot(normal, *wi) <= 0.f) {
         return Color_Black;
-
+    }
     *pdf = Plastic_BRDF::pdf(wo, *wi);
     return evaluate(wo, *wi);
 }
@@ -370,7 +359,6 @@ float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 //
 Rough_Glass_BSDF::Rough_Glass_BSDF(const Thread_Context& thread_ctx, const Glass_Material& params)
     : BSDF(thread_ctx.shading_context)
-    , rng(const_cast<RNG*>(& thread_ctx.rng))
 {
     reflection_scattering = true;
     transmission_scattering = true;
@@ -431,7 +419,7 @@ ColorRGB Rough_Glass_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
     }
 }
 
-ColorRGB Rough_Glass_BSDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const
+ColorRGB Rough_Glass_BSDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
 {
     Vector3 wh = sample_microfacet_normal(u, wo, alpha);
     Vector3 reflection_wi = reflect(wo, wh);
@@ -451,8 +439,7 @@ ColorRGB Rough_Glass_BSDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, flo
     float t = (1.f - fresnel) * (1 - reflection_ratio);
     float reflection_probability = ((r + t) == 0) ? 0.f : r / (r + t);
 
-    float uf = rng->get_float();
-    if (uf < reflection_probability) {
+    if (u_scattering_type < reflection_probability) {
         *wi = reflection_wi;
     }
     else {
@@ -546,22 +533,19 @@ ColorRGB Ashikhmin_Shirley_Phong_BRDF::evaluate(const Vector3& wo, const Vector3
     return diffuse_brdf + specular_brdf;
 }
 
-ColorRGB Ashikhmin_Shirley_Phong_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const {
-    if (u[0] < 0.5f) { // sample diffuse
-        u[0] *= 2.f; // remap u[0] to [0, 1) range
-
+ColorRGB Ashikhmin_Shirley_Phong_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const {
+    if (u_scattering_type < 0.5f) { // sample diffuse
         Vector3 local_dir = sample_hemisphere_cosine(u);
         *wi = local_to_world(local_dir);
     }
     else { // sample specular
-        u[0] = (u[0] - 0.5f) * 2.f; // remap u[0] to [0, 1) range
         Vector3 wh = sample_microfacet_normal(u, wo, alpha);
         *wi = reflect(wo, wh);
     }
 
-    if (dot(normal, *wi) <= 0.f)
+    if (dot(normal, *wi) <= 0.f) {
         return Color_Black;
-
+    }
     *pdf = Ashikhmin_Shirley_Phong_BRDF::pdf(wo, *wi);
     return evaluate(wo, *wi);
 }
@@ -607,22 +591,20 @@ ColorRGB Pbrt3_Uber_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
     return diffuse_brdf + specular_brdf;
 }
 
-ColorRGB Pbrt3_Uber_BRDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const
+ColorRGB Pbrt3_Uber_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
 {
-    if (u[0] < 0.5f) { // sample diffuse
-        u[0] *= 2.f; // remap u[0] to [0, 1) range
+    if (u_scattering_type < 0.5f) { // sample diffuse
         Vector3 local_dir = sample_hemisphere_cosine(u);
         *wi = local_to_world(local_dir);
     }
     else { // sample specular
-        u[0] = (u[0] - 0.5f) * 2.f; // remap u[0] to [0, 1) range
         Vector3 wh = sample_microfacet_normal(u, wo, alpha);
         *wi = reflect(wo, wh);
     }
 
-    if (dot(normal, *wi) <= 0.f)
+    if (dot(normal, *wi) <= 0.f) {
         return Color_Black;
-
+    }
     *pdf = Pbrt3_Uber_BRDF::pdf(wo, *wi);
     return Pbrt3_Uber_BRDF::evaluate(wo, *wi);
 }
@@ -739,7 +721,7 @@ ColorRGB Pbrt3_Fourier_BSDF::evaluate(const Vector3& wo, const Vector3& wi) cons
     }
 }
 
-ColorRGB Pbrt3_Fourier_BSDF::sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const
+ColorRGB Pbrt3_Fourier_BSDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
 {
     Vector3 local_dir = sample_hemisphere_cosine(u);
     *wi = local_to_world(local_dir);

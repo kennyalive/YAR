@@ -27,4 +27,4 @@ struct Delta_Scattering {
 };
 
 // Returns true if delta scattering event is happening, otherwise false.
-bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float u, Delta_Scattering* delta_scattering);
+bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float* u_scattering_type, Delta_Scattering* delta_scattering);

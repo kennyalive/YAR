@@ -162,12 +162,12 @@ void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, cons
     nested_dielectric = intersection.scene_object->participate_in_nested_dielectrics_tracking;
 }
 
-void Shading_Context::initialize_scattering(Thread_Context& thread_ctx, float u)
+void Shading_Context::initialize_scattering(Thread_Context& thread_ctx, float* u_scattering_type)
 {
     if (material == Null_Material) // TODO: do we need this? if yes, write a comment when it's needed
         return;
 
-    delta_scattering_event = check_for_delta_scattering_event(thread_ctx, u, &delta_scattering);
+    delta_scattering_event = check_for_delta_scattering_event(thread_ctx, u_scattering_type, &delta_scattering);
 
     bsdf_layer_selection_probability = 1.f - delta_scattering.delta_layer_selection_probability;
     ASSERT(bsdf_layer_selection_probability >= 0.f && bsdf_layer_selection_probability <= 1.f);

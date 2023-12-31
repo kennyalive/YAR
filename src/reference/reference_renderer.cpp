@@ -98,8 +98,8 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
     int sample_2d_count = 0;
     if (rt_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::path_tracer) {
         ASSERT(rt_config.max_light_bounces >= 0);
-        const int sample_1d_count_per_bounce = 3; // scattering initialization + light index selection + path termination probability
-        const int sample_2d_count_per_bounce = 3; // MIS light sample + MIS bsdf sample + bsdf sample for new direction
+        const int sample_1d_count_per_bounce = 4; // scattering type + light index selection + scattering type for new direction + path termination probability
+        const int sample_2d_count_per_bounce = 3; // light sample + bsdf sample + bsdf sample for new direction
         sample_1d_count = std::min(10, rt_config.max_light_bounces) * sample_1d_count_per_bounce;
         sample_2d_count = std::min(10, rt_config.max_light_bounces) * sample_2d_count_per_bounce;
     }
@@ -113,7 +113,8 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
 
         MIS_Array_Info info;
         info.light_array_id = pixel_sampler_config.register_array2d_samples(k, k);
-        info.bsdf_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+        info.bsdf_wi_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+        info.bsdf_scattering_array_id = pixel_sampler_config.register_array1d_samples(k * k);
         info.array_size = k*k;
         scene_ctx.array2d_registry.rectangular_light_arrays.push_back(info);
     }
@@ -126,7 +127,8 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
 
         MIS_Array_Info info;
         info.light_array_id = pixel_sampler_config.register_array2d_samples(k, k);
-        info.bsdf_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+        info.bsdf_wi_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+        info.bsdf_scattering_array_id = pixel_sampler_config.register_array1d_samples(k * k);
         info.array_size = k*k;
         scene_ctx.array2d_registry.sphere_light_arrays.push_back(info);
     }

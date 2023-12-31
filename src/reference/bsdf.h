@@ -8,7 +8,7 @@ struct Thread_Context;
 
 struct BSDF {
     virtual ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const = 0;
-    virtual ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const = 0;
+    virtual ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const = 0;
     virtual float pdf(const Vector3& wo, const Vector3& wi) const = 0;
 
     BSDF(const Shading_Context& shading_ctx);
@@ -35,7 +35,7 @@ struct Diffuse_BRDF : public BSDF {
 
     Diffuse_BRDF(const Thread_Context& thread_ctx, const Diffuse_Material& material);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
-    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
@@ -45,7 +45,7 @@ struct Diffuse_Transmission_BSDF : public BSDF {
 
     Diffuse_Transmission_BSDF(const Thread_Context& thread_ctx, const Diffuse_Transmission_Material& material);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
-    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
@@ -57,7 +57,7 @@ struct Metal_BRDF : public BSDF {
 
     Metal_BRDF(const Thread_Context& thread_ctx, const Metal_Material& material);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
-    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
@@ -68,7 +68,7 @@ struct Plastic_BRDF : public BSDF {
 
     Plastic_BRDF(const Thread_Context& thread_ctx, const Plastic_Material& params);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
-    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
@@ -79,14 +79,9 @@ struct Rough_Glass_BSDF : public BSDF {
     float eta_o = 0.f;
     float eta_i = 0.f;
 
-    // TEMP: BSDF interface needs to add support the third random variable, that can be used to
-    // select reflection layer. In some cases it's possible to re-purpose u[0] by remapping it,
-    // but in some cases it's not possible (as in the rough glass bsdf).
-    RNG* rng = nullptr;
-
     Rough_Glass_BSDF(const Thread_Context& thread_ctx, const Glass_Material& params);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
-    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
@@ -97,7 +92,7 @@ struct Ashikhmin_Shirley_Phong_BRDF : public BSDF {
 
     Ashikhmin_Shirley_Phong_BRDF(const Thread_Context& thread_ctx, const Coated_Diffuse_Material& params);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
-    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
@@ -113,7 +108,7 @@ struct Pbrt3_Uber_BRDF : public BSDF {
 
     Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_Uber_Material& params);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
-    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
@@ -127,7 +122,7 @@ struct Pbrt3_Plastic_BRDF : public Plastic_BRDF {
 struct Pbrt3_Fourier_BSDF : public BSDF {
     Pbrt3_Fourier_BSDF(const Thread_Context& thread_ctx, const Pbrt3_Fourier_Material& params);
     ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
-    ColorRGB sample(Vector2 u, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const override;
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 
     const Pbrt3_Fourier_Material& data;

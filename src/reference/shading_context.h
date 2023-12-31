@@ -89,7 +89,12 @@ struct Shading_Context {
     void initialize_local_geometry(Thread_Context& thread_ctx, const Ray& ray,
         const Differential_Rays* differential_rays, const Intersection& intersection);
 
-    void initialize_scattering(Thread_Context& thread_ctx, float u);
+    // u_scattering_type is in/out parameter. When it's used by the delta scattering pipeline,
+    // it can be re-normalized for subsequent usage in the bsdf pipeline.
+    // Currently we have one case that does re-normalization (pbrt uber material).
+    // If, for some reason, it won't be possible to re-normalize u_scattering_type in the new
+    // scenarios, then we have to use separate random variables for delta scattering and bsdf pipelines.
+    void initialize_scattering(Thread_Context& thread_ctx, float* u_scattering_type);
 
     float compute_texture_lod(int mip_count, const Vector2& uv_scale) const;
 
