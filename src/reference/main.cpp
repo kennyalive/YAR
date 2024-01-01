@@ -39,6 +39,9 @@ struct Command_Line_Options {
 
     int samples_per_pixel = 0; // overrides project settings
     Vector2i film_resolution; // overrides project settings
+
+    bool override_rendering_algorithm = false;
+    Raytracer_Config::Rendering_Algorithm rendering_algorithm;
 };
 
 struct Parsed_Command_Line {
@@ -70,6 +73,8 @@ enum Options {
     OPT_SAMPLES_PER_PIXEL,
     OPT_FILM_RESOLUTION,
     OPT_CHECKPOINT,
+    OPT_PATH_TRACING,
+    OPT_DIRECT_LIGHTING,
 };
 
 static const getopt_option_t option_list[] =
@@ -126,6 +131,12 @@ static const getopt_option_t option_list[] =
     { "resolution", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_FILM_RESOLUTION,
         "specify resolution of the output image (overrides project settings)",
         "640x480, 1080p, QHD, 4K, etc" },
+
+    { "path", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_PATH_TRACING,
+        "force path tracing rendering algorithm" },
+
+    { "direct", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_DIRECT_LIGHTING,
+        "force direct lighting rendering algorithm" },
 
     GETOPT_OPTIONS_END
 };
@@ -290,6 +301,14 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
                 }
             }
         }
+        else if (opt == OPT_PATH_TRACING) {
+            options.override_rendering_algorithm = true;
+            options.rendering_algorithm = Raytracer_Config::Rendering_Algorithm::path_tracer;
+        }
+        else if (opt == OPT_DIRECT_LIGHTING) {
+            options.override_rendering_algorithm = true;
+            options.rendering_algorithm = Raytracer_Config::Rendering_Algorithm::direct_lighting;
+        }
         else {
             ASSERT(!"unknown option");
         }
@@ -341,6 +360,9 @@ static void process_input_file(const std::string& input_file, const Command_Line
         int k = (int)std::ceil(std::sqrt(options.samples_per_pixel));
         scene.raytracer_config.x_pixel_sample_count = k;
         scene.raytracer_config.y_pixel_sample_count = k;
+    }
+    if (options.override_rendering_algorithm) {
+        scene.raytracer_config.rendering_algorithm = options.rendering_algorithm;
     }
     int thread_count = options.thread_count;
     if (!thread_count) {
