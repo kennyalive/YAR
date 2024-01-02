@@ -60,6 +60,7 @@ struct Scene_Context {
 
     // Pbrt format support.
     bool pbrt3_scene = false;
+    bool pbrt4_scene = false;
     bool pbrt_compatibility = false; // this flag has detailed documentation in main.cpp
 
     // Can be useful during debugging to vary random numbers and get configuration that

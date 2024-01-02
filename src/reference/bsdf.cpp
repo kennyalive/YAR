@@ -63,46 +63,9 @@ inline float cosine_hemisphere_pdf(float theta_cos)
     return theta_cos * Pi_Inv;
 }
 
-// Mapping from pbrt3 (with modified min roughness constant).
-// 
-// 'roughness' is a "user-friendly" value from [0..1] range and this function
-// remaps it to get an 'alpha' parameter from the ggx microfacet distribution.
-// 
-// When alpha value smaller than "min roughness" is needed, then it can be 
-// specified directly. For pbrt scenes, a material can specify 
-// "bool remaproughness" ["false"] to use roughness directly as alpha.
-//
-// Selected samples to visualize mapping behavior:
-// ----------------------
-//  roughness | ggx alpha 
-//   0.00020  ->  0.01047
-//   0.00021  ->  0.01092
-//   0.00025  ->  0.01306
-//   0.00050  ->  0.02756
-//   0.00100  ->  0.04726
-//   0.00500  ->  0.10329
-//   0.01000  ->  0.13892
-//   0.05000  ->  0.31254
-//   0.10000  ->  0.46176
-//   0.20000  ->  0.68383
-//   0.50000  ->  1.13082
-//   0.80000  ->  1.44689
-//   0.90000  ->  1.53693
-//   1.00000  ->  1.62142
-static float roughness_to_alpha(float roughness, float min_roughness_threshold = 0.0002f)
+static float pbrt3_roughness_to_alpha(float roughness)
 {
-    // TODO: assert is disabled for now, because some materials violate this.
-    // Do we need a warning here?
-    //ASSERT(roughness >= 0.f && roughness <= 1.f);
-
-    // The minimum roughness can't be arbitrarily small because the following polynomial
-    // will exibit non-monotonic behavior when mapping from roughness to ggx alpha value.
-    // Pbrt3 uses 1e-3f as a min threshold. I discovered that 0.0002f also works fine.
-    // But, when using, 0.0001f, for example, you can observe non-monotonic behavior at
-    // the beginning of the range, i.e. larger roughness value will map to a smaller 
-    // alpha value comparing to the previous sample.
-    roughness = std::max(roughness, min_roughness_threshold);
-
+    roughness = std::max(roughness, 1e-3f);
     float x = std::log(roughness);
     float alpha =
         1.621420000f +
@@ -110,21 +73,30 @@ static float roughness_to_alpha(float roughness, float min_roughness_threshold =
         0.173400000f * x * x +
         0.017120100f * x * x * x +
         0.000640711f * x * x * x * x;
-
     return alpha;
 }
 
-static float ggx_alpha(const Thread_Context& thread_ctx, const Float_Parameter& roughness_parameter, bool roughness_is_alpha)
+// 'roughness' is a "user-friendly" value from [0..1] range and remapping
+// functions convert it to 'alpha' parameter from the ggx microfacet distribution.
+// The expectation is that 'roughness' behaves perceptually more linearly than
+// distribution's alpha parameter.
+float ggx_alpha(const Thread_Context& thread_ctx, const Float_Parameter& roughness_parameter, bool no_remapping)
 {
-    float roughness = evaluate_float_parameter(thread_ctx, roughness_parameter);
-    if (roughness_is_alpha) {
-        return roughness;
+    const float roughness = evaluate_float_parameter(thread_ctx, roughness_parameter);
+    float alpha;
+    if (no_remapping) {
+        alpha = roughness;
     }
-    if (thread_ctx.scene_context->pbrt3_scene) {
-        constexpr float pbrt_min_roughness = 0.001f;
-        return roughness_to_alpha(roughness, pbrt_min_roughness);
+    else if (thread_ctx.scene_context->pbrt3_scene) {
+        alpha = pbrt3_roughness_to_alpha(roughness);
     }
-    return roughness_to_alpha(roughness);
+    else if (thread_ctx.scene_context->pbrt4_scene) {
+        alpha = std::sqrt(roughness);
+    }
+    else {
+        alpha = roughness * roughness;
+    }
+    return alpha;
 }
 
 BSDF::BSDF(const Shading_Context& shading_ctx)

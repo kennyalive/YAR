@@ -72,9 +72,6 @@ struct Metal_Material {
     // otherwise eta/k are used to evaluate full fresnel equations.
     bool is_r0_defined = false;
 
-    // Reflectance at normal incident angle.
-    RGB_Parameter r0;
-
     // If input defines eta/k as _spectral_ data then we use Spectrum -> XYZ -> RGB transformation.
     // This is not a physically-based conversion because eta/k are not perceptual quantities that
     // play nicely with color matching functions. The engineering justification to do this is the 
