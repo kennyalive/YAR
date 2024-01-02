@@ -591,6 +591,7 @@ void init_scene_context(const Scene& scene, const Renderer_Configuration& config
         // TODO: we might need to distinguish between pbrt3/4.
         scene_ctx.pbrt3_scene = true;
     }
+    scene_ctx.pbrt_compatibility = config.pbrt_compatibility;
     scene_ctx.rng_seed_offset = config.rng_seed_offset;
 }
 

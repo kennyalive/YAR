@@ -15,6 +15,8 @@ struct Renderer_Configuration {
     // Can be useful during debugging to vary random numbers and get configuration that
     // reproduces desired behavior.
     int rng_seed_offset = 0;
+
+    bool pbrt_compatibility = false;
 };
 
 struct EXR_Custom_Attributes {

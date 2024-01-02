@@ -42,6 +42,15 @@ struct Command_Line_Options {
 
     bool override_rendering_algorithm = false;
     Raytracer_Config::Rendering_Algorithm rendering_algorithm;
+
+    // Might affect computations to produce output that is more similar to 
+    // pbrt for comparison/development purposes. For example, pbrt3 does
+    // roughness remapping in a different way (not square root). Please note,
+    // the reference renderer does not have a goal to be fully pbrt compatible
+    // (whatever that means). Compatibility features are supported when it's
+    // benefitial for development, and when it's not too hard to implement,
+    // and only by the reference renderer.
+    bool pbrt_compatibility = false;
 };
 
 struct Parsed_Command_Line {
@@ -75,6 +84,7 @@ enum Options {
     OPT_CHECKPOINT,
     OPT_PATH_TRACING,
     OPT_DIRECT_LIGHTING,
+    OPT_PBRT_COMPATIBILITY,
 };
 
 static const getopt_option_t option_list[] =
@@ -137,6 +147,9 @@ static const getopt_option_t option_list[] =
 
     { "direct", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_DIRECT_LIGHTING,
         "force direct lighting rendering algorithm" },
+
+    { "pbrt", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_PBRT_COMPATIBILITY,
+        "enable pbrt compatibility mode" },
 
     GETOPT_OPTIONS_END
 };
@@ -309,6 +322,9 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
             options.override_rendering_algorithm = true;
             options.rendering_algorithm = Raytracer_Config::Rendering_Algorithm::direct_lighting;
         }
+        else if (opt == OPT_PBRT_COMPATIBILITY) {
+            options.pbrt_compatibility = true;
+        }
         else {
             ASSERT(!"unknown option");
         }
@@ -377,6 +393,7 @@ static void process_input_file(const std::string& input_file, const Command_Line
     config.checkpoint_directory = options.checkpoint_directory;
     config.rebuild_kdtree_cache = options.force_rebuild_kdtree_cache;
     config.rng_seed_offset = options.rng_seed_offset;
+    config.pbrt_compatibility = options.pbrt_compatibility;
 
     Scene_Context scene_ctx;
     init_scene_context(scene, config, scene_ctx);

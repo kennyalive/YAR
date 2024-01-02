@@ -58,8 +58,9 @@ struct Scene_Context {
     Stratified_Pixel_Sampler_Configuration pixel_sampler_config;
     Array2D_Registry array2d_registry; // registered 2d arrays of samples
 
-    // Pbrt compatibility.
+    // Pbrt format support.
     bool pbrt3_scene = false;
+    bool pbrt_compatibility = false; // this flag has detailed documentation in main.cpp
 
     // Can be useful during debugging to vary random numbers and get configuration that
     // reproduces desired behavior.
