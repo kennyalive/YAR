@@ -105,32 +105,33 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
     }
     pixel_sampler_config.init(rt_config.x_pixel_sample_count, rt_config.y_pixel_sample_count, sample_1d_count, sample_2d_count);
 
-    scene_ctx.array2d_registry.rectangular_light_arrays.reserve(scene_ctx.lights.diffuse_rectangular_lights.size());
-    for (const Diffuse_Rectangular_Light& light : scene_ctx.lights.diffuse_rectangular_lights) {
-        int k = (int)std::ceil(std::sqrt(light.sample_count));
-        ASSERT(k*k >= light.sample_count);
-        ASSERT((k-1)*(k-1) < light.sample_count);
+    if (rt_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::direct_lighting) {
+        scene_ctx.array2d_registry.rectangular_light_arrays.reserve(scene_ctx.lights.diffuse_rectangular_lights.size());
+        for (const Diffuse_Rectangular_Light& light : scene_ctx.lights.diffuse_rectangular_lights) {
+            int k = (int)std::ceil(std::sqrt(light.sample_count));
+            ASSERT(k * k >= light.sample_count);
+            ASSERT((k - 1) * (k - 1) < light.sample_count);
 
-        MIS_Array_Info info;
-        info.light_array_id = pixel_sampler_config.register_array2d_samples(k, k);
-        info.bsdf_wi_array_id = pixel_sampler_config.register_array2d_samples(k, k);
-        info.bsdf_scattering_array_id = pixel_sampler_config.register_array1d_samples(k * k);
-        info.array_size = k*k;
-        scene_ctx.array2d_registry.rectangular_light_arrays.push_back(info);
-    }
+            MIS_Array_Info info;
+            info.light_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+            info.bsdf_wi_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+            info.bsdf_scattering_array_id = pixel_sampler_config.register_array1d_samples(k * k);
+            info.array_size = k * k;
+            scene_ctx.array2d_registry.rectangular_light_arrays.push_back(info);
+        }
+        scene_ctx.array2d_registry.sphere_light_arrays.reserve(scene_ctx.lights.diffuse_sphere_lights.size());
+        for (const Diffuse_Sphere_Light& light : scene_ctx.lights.diffuse_sphere_lights) {
+            int k = (int)std::ceil(std::sqrt(light.sample_count));
+            ASSERT(k * k >= light.sample_count);
+            ASSERT((k - 1) * (k - 1) < light.sample_count);
 
-    scene_ctx.array2d_registry.sphere_light_arrays.reserve(scene_ctx.lights.diffuse_sphere_lights.size());
-    for (const Diffuse_Sphere_Light& light : scene_ctx.lights.diffuse_sphere_lights) {
-        int k = (int)std::ceil(std::sqrt(light.sample_count));
-        ASSERT(k*k >= light.sample_count);
-        ASSERT((k-1)*(k-1) < light.sample_count);
-
-        MIS_Array_Info info;
-        info.light_array_id = pixel_sampler_config.register_array2d_samples(k, k);
-        info.bsdf_wi_array_id = pixel_sampler_config.register_array2d_samples(k, k);
-        info.bsdf_scattering_array_id = pixel_sampler_config.register_array1d_samples(k * k);
-        info.array_size = k*k;
-        scene_ctx.array2d_registry.sphere_light_arrays.push_back(info);
+            MIS_Array_Info info;
+            info.light_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+            info.bsdf_wi_array_id = pixel_sampler_config.register_array2d_samples(k, k);
+            info.bsdf_scattering_array_id = pixel_sampler_config.register_array1d_samples(k * k);
+            info.array_size = k * k;
+            scene_ctx.array2d_registry.sphere_light_arrays.push_back(info);
+        }
     }
 }
 
