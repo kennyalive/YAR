@@ -95,6 +95,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\reference\bsdf.cpp" />
+    <ClCompile Include="..\src\reference\bsdf_pbrt.cpp" />
     <ClCompile Include="..\src\reference\camera.cpp" />
     <ClCompile Include="..\src\reference\film.cpp" />
     <ClCompile Include="..\src\reference\intersection.cpp" />
@@ -128,6 +129,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\bsdf.h" />
+    <ClInclude Include="..\src\reference\bsdf_pbrt.h" />
     <ClInclude Include="..\src\reference\intersection_simd.h" />
     <ClInclude Include="..\src\reference\kdtree_stats.h" />
     <ClInclude Include="..\src\reference\light_sampling.h" />

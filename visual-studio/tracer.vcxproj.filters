@@ -43,6 +43,7 @@
     <ClCompile Include="..\src\reference\kdtree_stats.cpp" />
     <ClCompile Include="..\src\reference\intersection_simd.cpp" />
     <ClCompile Include="..\src\reference\scene_context.cpp" />
+    <ClCompile Include="..\src\reference\bsdf_pbrt.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />
@@ -69,6 +70,7 @@
     <ClInclude Include="..\src\reference\kdtree_stats.h" />
     <ClInclude Include="..\src\reference\intersection_simd.h" />
     <ClInclude Include="..\src\reference\scene_context.h" />
+    <ClInclude Include="..\src\reference\bsdf_pbrt.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="tests">
