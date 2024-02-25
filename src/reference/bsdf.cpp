@@ -387,7 +387,7 @@ ColorRGB Rough_Glass_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
 
         float k = std::abs((dot(wi, wh) * dot(wo, wh)) / (dot(wi, normal) * dot(wo, normal)));
         float k2 = eta_o * dot(wo, wh) + eta_i * dot(wi, wh);
-        ColorRGB f = transmittance * (eta_i * eta_i * k * G * D * (1.f - fresnel) / (k2 * k2));
+        ColorRGB f = transmittance * (eta_o * eta_o * k * G * D * (1.f - fresnel) / (k2 * k2));
         return f;
     }
 }
