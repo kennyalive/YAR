@@ -535,6 +535,9 @@ namespace pbrt {
     vec3f reflect  { 0.5f, 0.5f, 0.5f };
     vec3f kd { 0.25, 0.25, 0.25 };
     Texture::SP map_kd;
+    vec3f ks { 0.25, 0.25, 0.25 };
+    Texture::SP map_bump;
+    float roughness{ 0.1f };
   };
     
   struct PlasticMaterial : public Material

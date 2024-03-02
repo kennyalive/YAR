@@ -466,7 +466,13 @@ namespace pbrt {
       mat->map_kd = findOrCreateTexture(in->getParamTexture("Kd"));
     else
       in->getParam3f(&mat->kd.x,"Kd");
-          
+    in->getParam3f(&mat->ks.x, "Ks");
+    if (in->hasParamTexture("bumpmap")) {
+        mat->map_bump = findOrCreateTexture(in->getParamTexture("bumpmap"));
+    }
+    if (in->hasParam1f("roughness")) {
+        mat->roughness = in->getParam1f("roughness");
+    }
     return mat;
   }
 
