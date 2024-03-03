@@ -593,6 +593,13 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Uber_BRDF>();
         return new (bsdf_allocation) Pbrt3_Uber_BRDF(thread_ctx, params);
     }
+    case Material_Type::pbrt3_translucent:
+    {
+        const Pbrt3_Translucent_Material& params = scene_ctx.materials.pbrt3_translucent[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Translucent_BSDF>();
+        return new (bsdf_allocation) Pbrt3_Translucent_BSDF(thread_ctx, params);
+    }
     case Material_Type::pbrt3_fourier:
     {
         const Pbrt3_Fourier_Material& params = scene_ctx.materials.pbrt3_fourier[material.index];

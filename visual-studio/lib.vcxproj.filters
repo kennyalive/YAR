@@ -45,6 +45,7 @@
     <ClInclude Include="..\src\lib\raytracer_config.h">
       <Filter>scene</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\lib\material_pbrt.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />
@@ -77,7 +78,7 @@
       <Filter>scene_loader</Filter>
     </ClCompile>
     <ClCompile Include="..\src\lib\tessellation.cpp" />
-    <ClCompile Include="..\src\lib\material.cpp">
+    <ClCompile Include="..\src\lib\material_pbrt.cpp">
       <Filter>scene</Filter>
     </ClCompile>
   </ItemGroup>

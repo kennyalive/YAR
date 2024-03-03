@@ -18,7 +18,7 @@ Pbrt3_Uber_BRDF::Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_U
     opacity = evaluate_rgb_parameter(thread_ctx, params.opacity);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
     specular_reflectance = evaluate_rgb_parameter(thread_ctx, params.specular_reflectance);
-    alpha = ggx_alpha(thread_ctx, params.roughness, params.roughness_is_alpha);
+    alpha = ggx_alpha(thread_ctx, params.roughness, true);
     index_of_refraction = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
 }
 
@@ -66,6 +66,51 @@ float Pbrt3_Uber_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 
     float pdf = 0.5f * (diffuse_pdf + specular_pdf);
     return pdf;
+}
+
+//
+// Pbrt3 Translucent BRDF
+//
+Pbrt3_Translucent_BSDF::Pbrt3_Translucent_BSDF(const Thread_Context& thread_ctx, const Pbrt3_Translucent_Material& params)
+    : BSDF(thread_ctx.shading_context)
+{
+    diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
+    diffuse_transmission = evaluate_rgb_parameter(thread_ctx, params.diffuse_transmission);
+    specular_reflectance = evaluate_rgb_parameter(thread_ctx, params.specular_reflectance);
+    specular_transmission = evaluate_rgb_parameter(thread_ctx, params.specular_transmission);
+    alpha = ggx_alpha(thread_ctx, params.roughness, true);
+
+    bool enter_event = thread_ctx.shading_context.nested_dielectric ?
+        thread_ctx.current_dielectric_material == Null_Material :
+        !thread_ctx.shading_context.original_shading_normal_was_flipped;
+
+    if (enter_event) {
+        eta_o = 1.f;
+        eta_i = 1.5;
+    }
+    else {
+        eta_o = 1.5;
+        eta_i = 1.f;
+    }
+
+    reflection_scattering = !diffuse_reflectance.is_black() || !specular_reflectance.is_black();;
+    transmission_scattering = !diffuse_transmission.is_black() || !specular_transmission.is_black();
+}
+
+ColorRGB Pbrt3_Translucent_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
+{
+    return Color_Black;
+
+}
+
+ColorRGB Pbrt3_Translucent_BSDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
+{
+    return Color_Black;
+}
+
+float Pbrt3_Translucent_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
+{
+    return 0.f;
 }
 
 //

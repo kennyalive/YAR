@@ -9,8 +9,10 @@
 
 ColorRGB evaluate_rgb_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vector2 duvdx, Vector2 duvdy, const RGB_Parameter& param)
 {
-    if (param.is_constant)
-        return param.constant_value;
+    if (param.is_constant) {
+        ColorRGB rgb = param.scale * param.constant_value;
+        return rgb;
+    }
 
     ASSERT(param.texture_index >= 0);
     const Image_Texture& texture = scene_ctx.textures[param.texture_index];
@@ -33,7 +35,9 @@ ColorRGB evaluate_rgb_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vect
     // D. EWA
     duvdx *= uv_scale;
     duvdy *= uv_scale;
-    return texture.sample_EWA(uv, duvdx, duvdy, Wrap_Mode::repeat, 32.f);
+    ColorRGB sample = texture.sample_EWA(uv, duvdx, duvdy, Wrap_Mode::repeat, 32.f);
+    ColorRGB rgb = param.scale * sample;
+    return rgb;
 }
 
 ColorRGB evaluate_rgb_parameter(const Scene_Context& scene_ctx, const Shading_Context& shading_ctx, const RGB_Parameter& param)

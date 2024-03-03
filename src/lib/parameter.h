@@ -13,6 +13,7 @@ struct Parameter {
     Type constant_value = Type();
     int texture_index = -1;
 
+    Type scale = Type(1.f);
     float u_scale = 1.f;
     float v_scale = 1.f;
 
