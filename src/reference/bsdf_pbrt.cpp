@@ -18,7 +18,7 @@ Pbrt3_Uber_BRDF::Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_U
     opacity = evaluate_rgb_parameter(thread_ctx, params.opacity);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
     specular_reflectance = evaluate_rgb_parameter(thread_ctx, params.specular_reflectance);
-    alpha = ggx_alpha(thread_ctx, params.roughness, params.roughness_is_alpha);
+    alpha = ggx_alpha(thread_ctx, params.roughness, false);
     index_of_refraction = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
 }
 
@@ -66,6 +66,165 @@ float Pbrt3_Uber_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 
     float pdf = 0.5f * (diffuse_pdf + specular_pdf);
     return pdf;
+}
+
+//
+// Pbrt3 Translucent BRDF
+//
+Pbrt3_Translucent_BSDF::Pbrt3_Translucent_BSDF(const Thread_Context& thread_ctx, const Pbrt3_Translucent_Material& params)
+    : BSDF(thread_ctx.shading_context)
+{
+    reflectance = evaluate_rgb_parameter(thread_ctx, params.reflectance);
+    transmittance = evaluate_rgb_parameter(thread_ctx, params.transmittance);
+    diffuse_coeff = evaluate_rgb_parameter(thread_ctx, params.diffuse);
+    specular_coeff = evaluate_rgb_parameter(thread_ctx, params.specular);
+    alpha = ggx_alpha(thread_ctx, params.roughness, false);
+
+    bool trace_enter_event = thread_ctx.shading_context.nested_dielectric ?
+        thread_ctx.current_dielectric_material == Null_Material :
+        !thread_ctx.shading_context.original_shading_normal_was_flipped;
+    if (trace_enter_event) {
+        eta_o = 1.f;
+        eta_i = 1.5;
+    }
+    else {
+        eta_o = 1.5;
+        eta_i = 1.f;
+    }
+    reflection_scattering = !reflectance.is_black();
+    transmission_scattering = !transmittance.is_black();
+}
+
+ColorRGB Pbrt3_Translucent_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
+{
+    bool same_hemisphere = dot(wo, normal) * dot(wi, normal) > 0.f;
+    if (same_hemisphere) {
+        ColorRGB diffuse = Pi_Inv * diffuse_coeff * reflectance;
+
+        Vector3 wh = (wo + wi).normalized();
+        float cos_theta_i = dot(wi, wh);
+        float fresnel = dielectric_fresnel(cos_theta_i, eta_i / eta_o);
+        float D = GGX_Distribution::D(wh, normal, alpha);
+        float G = GGX_Distribution::G(wi, wo, normal, alpha);
+        ColorRGB specular = (specular_coeff * reflectance) * (G * D * fresnel / (4.f * dot(normal, wo) * dot(normal, wi)));
+
+        ColorRGB f = diffuse + specular;
+        return f;
+    }
+    else {
+        ColorRGB diffuse = Pi_Inv * diffuse_coeff * transmittance;
+
+        Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
+        // The above wh computation gives a vector that is in the hemisphere with a smaller IoR.
+        // We need to ensure wh is in the hemisphere defined by the normal.
+        if (dot(wh, normal) < 0.f) {
+            wh = -wh;
+        }
+        float cos_theta_i = dot(wi, wh);
+        float fresnel = dielectric_fresnel(cos_theta_i, eta_o / eta_i);
+        if (fresnel == 1.f) {
+            return Color_Black;
+        }
+        float D = GGX_Distribution::D(wh, normal, alpha);
+        float G = GGX_Distribution::G(wi, wo, normal, alpha);
+        float k = std::abs((dot(wi, wh) * dot(wo, wh)) / (dot(wi, normal) * dot(wo, normal)));
+        float k2 = eta_o * dot(wo, wh) + eta_i * dot(wi, wh);
+        ColorRGB specular = (specular_coeff * transmittance) * (eta_o * eta_o * k * G * D * (1.f - fresnel) / (k2 * k2));
+
+        ColorRGB f = diffuse + specular;
+        return f;
+    }
+}
+
+ColorRGB Pbrt3_Translucent_BSDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
+{
+    float max_r = reflectance.max_component_value();
+    float max_t = transmittance.max_component_value();
+    ASSERT(max_r != 0.f || max_t != 0.f);
+    float reflection_probability = max_r / (max_r + max_t);
+
+    if (u_scattering_type < reflection_probability) {
+        u_scattering_type = std::min(u_scattering_type / reflection_probability, One_Minus_Epsilon);
+        if (u_scattering_type < 0.5f) { // sample diffuse
+            Vector3 local_dir = sample_hemisphere_cosine(u);
+            *wi = local_to_world(local_dir);
+        }
+        else { // sample specular
+            Vector3 wh = sample_microfacet_normal(u, wo, alpha);
+            Vector3 wi_candidate = reflect(wo, wh);
+            if (dot(wi_candidate, normal) <= 0.f) {
+                return Color_Black;
+            }
+            *wi = wi_candidate;
+        }
+    }
+    else {
+        u_scattering_type = std::min((u_scattering_type - reflection_probability) / (1.f - reflection_probability), One_Minus_Epsilon);
+        if (u_scattering_type < 0.5f) { // sample diffuse
+            Vector3 local_dir = -sample_hemisphere_cosine(u); // negate to get transmitted direction
+            *wi = local_to_world(local_dir);
+        }
+        else { // sample specular
+            Vector3 wh = sample_microfacet_normal(u, wo, alpha);
+            if (dot(wh, wo) < 0.f) {
+                // TODO: this happens for regular microfacet normal sampling,
+                // but can this happen if we sampling based on visible normals?
+                return Color_Black;
+            }
+            Vector3 wi_candidate;
+            bool refracted = refract(wo, wh, eta_o / eta_i, &wi_candidate);
+            if (!refracted) {
+                return Color_Black;
+            }
+            if (dot(wi_candidate, normal) >= 0.f) {
+                return Color_Black;
+            }
+            *wi = wi_candidate;
+        }
+    }
+
+    *pdf = Pbrt3_Translucent_BSDF::pdf(wo, *wi);
+    if (*pdf == 0.f) {
+        return Color_Black;
+    }
+    return Pbrt3_Translucent_BSDF::evaluate(wo, *wi);
+}
+
+float Pbrt3_Translucent_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
+{
+    float max_r = reflectance.max_component_value();
+    float max_t = transmittance.max_component_value();
+    ASSERT(max_r != 0.f || max_t != 0.f);
+    float reflection_probability = max_r / (max_r + max_t);
+
+    bool same_hemisphere = dot(wo, normal) * dot(wi, normal) > 0.f;
+    if (same_hemisphere) { // reflection
+        float diffuse_cos_theta = dot(wi, normal);
+        ASSERT(diffuse_cos_theta >= 0.f);
+        float diffuse_pdf = cosine_hemisphere_pdf(diffuse_cos_theta);
+
+        Vector3 wh = (wo + wi).normalized();
+        float specular_pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+
+        float pdf = reflection_probability * 0.5f * (diffuse_pdf + specular_pdf);
+        return pdf;
+    }
+    else {
+        float diffuse_cos_theta = -dot(wi, normal);
+        ASSERT(diffuse_cos_theta >= 0.f);
+        float diffuse_pdf = cosine_hemisphere_pdf(diffuse_cos_theta);
+
+        Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
+        // The above wh computation gives a vector that lies in the hemisphere with a smaller IoR.
+        // We need to ensure wh is in the hemisphere defined by the normal.
+        if (dot(wh, normal) < 0.f) {
+            wh = -wh;
+        }
+
+        float specular_pdf = calculate_microfacet_transmission_wi_pdf(wo, wi, wh, normal, alpha, eta_o, eta_i);
+        float pdf = (1.f - reflection_probability) * 0.5f * (diffuse_pdf + specular_pdf);
+        return pdf;
+    }
 }
 
 //

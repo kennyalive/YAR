@@ -81,7 +81,7 @@ inline float cos_delta_phi(const Vector2& a, const Vector2& b)
     if (a_len_sq == 0.f || b_len_sq == 0.f) {
         return 1.f;
     }
-    float cosine = dot(a, b) / std::sqrt(a_len_sq * b_len_sq);
+    float cosine = dot2(a, b) / std::sqrt(a_len_sq * b_len_sq);
     return std::clamp(cosine, -1.f, 1.f);
 }
 

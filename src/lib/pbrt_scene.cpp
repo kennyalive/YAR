@@ -244,6 +244,9 @@ Material_Handle add_material(Materials& materials, const Material& material)
     else if constexpr (material_type == Material_Type::pbrt3_uber) {
         materials_of_given_type = &materials.pbrt3_uber;
     }
+    else if constexpr (material_type == Material_Type::pbrt3_translucent) {
+        materials_of_given_type = &materials.pbrt3_translucent;
+    }
     else if constexpr (material_type == Material_Type::pbrt3_fourier) {
         materials_of_given_type = &materials.pbrt3_fourier;
     }
@@ -306,19 +309,6 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
             mtl.bump_map = import_pbrt_texture_float(matte->map_bump, scene);
 
         return add_material<Material_Type::diffuse>(materials, mtl);
-    }
-
-    if (auto translucent_material = std::dynamic_pointer_cast<pbrt::TranslucentMaterial>(pbrt_material)) {
-        Diffuse_Transmission_Material mtl;
-
-        if (translucent_material->map_kd)
-            mtl.scale = import_pbrt_texture_rgb(translucent_material->map_kd, scene);
-        else 
-            set_constant_parameter(mtl.scale, ColorRGB(&translucent_material->kd.x));
-        set_constant_parameter(mtl.reflectance, ColorRGB(&translucent_material->reflect.x));
-        set_constant_parameter(mtl.transmittance, ColorRGB(&translucent_material->transmit.x));
-
-        return add_material<Material_Type::diffuse_transmission>(materials, mtl);
     }
 
     if (auto mirror_material = std::dynamic_pointer_cast<pbrt::MirrorMaterial>(pbrt_material)) {
@@ -470,13 +460,29 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         else
             set_constant_parameter(mtl.roughness, uber->roughness);
 
-        // pbrt-parser currently does not support `remaproughness` attribute for uber material (easy to add if necessary).
-        // It's not problem in practise - all standard pbrt3 scenes use default remap value (true) for uber material.
-        mtl.roughness_is_alpha = false; 
-
         set_constant_parameter(mtl.index_of_refraction, uber->index);
-
         return add_material<Material_Type::pbrt3_uber>(materials, mtl);
+    }
+
+    if (auto translucent = std::dynamic_pointer_cast<pbrt::TranslucentMaterial>(pbrt_material)) {
+        Pbrt3_Translucent_Material mtl;
+
+        ColorRGB reflect = ColorRGB(&translucent->reflect.x);
+        set_constant_parameter(mtl.reflectance, reflect);
+
+        ColorRGB transmit = ColorRGB(&translucent->transmit.x);
+        set_constant_parameter(mtl.transmittance, transmit);
+
+        mtl.diffuse = init_rgb_parameter_from_texture_or_constant(scene, translucent->map_kd, translucent->kd);
+
+        ColorRGB specular = ColorRGB(&translucent->ks.x);
+        set_constant_parameter(mtl.specular, specular);
+
+        if (translucent->map_bump) {
+            mtl.bump_map = import_pbrt_texture_float(translucent->map_bump, scene);
+        }
+        set_constant_parameter(mtl.roughness, translucent->roughness);
+        return add_material<Material_Type::pbrt3_translucent>(materials, mtl);
     }
 
     if (auto fourier_material = std::dynamic_pointer_cast<pbrt::FourierMaterial>(pbrt_material)) {

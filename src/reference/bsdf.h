@@ -8,6 +8,13 @@ struct Thread_Context;
 
 float ggx_alpha(const Thread_Context& thread_ctx, const Float_Parameter& roughness_parameter, bool no_remapping);
 float calculate_microfacet_reflection_wi_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha);
+float calculate_microfacet_transmission_wi_pdf(const Vector3& wo, const Vector3& wi, const Vector3& wh, const Vector3& n, float alpha, float eta_o, float eta_i);
+
+inline float cosine_hemisphere_pdf(float theta_cos)
+{
+    ASSERT(theta_cos >= 0.f);
+    return theta_cos * Pi_Inv;
+}
 
 struct BSDF {
     virtual ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const = 0;

@@ -35,12 +35,12 @@ float calculate_microfacet_reflection_wi_pdf(const Vector3& wo, const Vector3& w
     return wi_pdf;
 }
 
-inline float calculate_microfacet_transmission_wi_pdf(const Vector3& wo, const Vector3& wi, const Vector3& wh, const Vector3& n, float alpha, float eta_o, float eta_i)
+float calculate_microfacet_transmission_wi_pdf(const Vector3& wo, const Vector3& wi, const Vector3& wh, const Vector3& n, float alpha, float eta_o, float eta_i)
 {
     // For reflection, wh is naturally computed to be in the hemisphere of the normal direction.
     // For transmission, the classic computation results in wh that is in the hemisphere with a lower IoR index.
     // The half-angle vector should be flipped if necessary to make sure it's in the normal hemisphere.
-    ASSERT(dot(wh, n) > 0.f);
+    ASSERT(dot(wh, n) >= 0.f);
 
     float wh_pdf;
     if (ggx_sample_visible_normals)
@@ -56,12 +56,6 @@ inline float calculate_microfacet_transmission_wi_pdf(const Vector3& wo, const V
 
     float wi_pdf = wh_pdf * dwh_over_dwi;
     return wi_pdf;
-}
-
-inline float cosine_hemisphere_pdf(float theta_cos)
-{
-    ASSERT(theta_cos >= 0.f);
-    return theta_cos * Pi_Inv;
 }
 
 static float pbrt3_roughness_to_alpha(float roughness)
@@ -592,6 +586,13 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Uber_BRDF>();
         return new (bsdf_allocation) Pbrt3_Uber_BRDF(thread_ctx, params);
+    }
+    case Material_Type::pbrt3_translucent:
+    {
+        const Pbrt3_Translucent_Material& params = scene_ctx.materials.pbrt3_translucent[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Translucent_BSDF>();
+        return new (bsdf_allocation) Pbrt3_Translucent_BSDF(thread_ctx, params);
     }
     case Material_Type::pbrt3_fourier:
     {
