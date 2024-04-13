@@ -144,18 +144,21 @@ Diffuse_BRDF::Diffuse_BRDF(const Thread_Context& thread_ctx, const Diffuse_Mater
     reflectance = evaluate_rgb_parameter(thread_ctx, material.reflectance);
 }
 
-ColorRGB Diffuse_BRDF::evaluate(const Vector3& /*wo*/, const Vector3& /*wi*/) const {
+ColorRGB Diffuse_BRDF::evaluate(const Vector3& /*wo*/, const Vector3& /*wi*/) const
+{
     return Pi_Inv * reflectance;
 }
 
-ColorRGB Diffuse_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const {
+ColorRGB Diffuse_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
+{
     Vector3 local_dir = sample_hemisphere_cosine(u);
     *wi = local_to_world(local_dir);
     *pdf = Diffuse_BRDF::pdf(wo, *wi);
-    return Pi_Inv * reflectance;
+    return Diffuse_BRDF::evaluate(wo, *wi);
 }
 
-float Diffuse_BRDF::pdf(const Vector3& /*wo*/, const Vector3& wi) const {
+float Diffuse_BRDF::pdf(const Vector3& /*wo*/, const Vector3& wi) const
+{
     ASSERT(dot(normal, wi) >= 0.f);
     return dot(normal, wi) / Pi; // pdf for cosine-weighted hemisphere sampling
 }
@@ -230,22 +233,25 @@ Metal_BRDF::Metal_BRDF(const Thread_Context& thread_ctx, const Metal_Material& m
     k_t = evaluate_rgb_parameter(thread_ctx, material.k);
 }
 
-ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
+ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
+{
     Vector3 wh = (wo + wi).normalized();
 
     float cos_theta_i = dot(wi, wh);
     ASSERT(cos_theta_i >= 0);
 
     ColorRGB F = conductor_fresnel(cos_theta_i, eta_i, eta_t, k_t);
-
-    float D = GGX_Distribution::D(wh, normal, alpha);
     float G = GGX_Distribution::G(wi, wo, normal, alpha);
-    
-    ColorRGB f = (G * D) * F / (4.f * dot(normal, wo) * dot(normal, wi));
+    float D = GGX_Distribution::D(wh, normal, alpha);
+    float wo_dot_n = dot(wo, normal);
+    float wi_dot_n = dot(wi, normal);
+
+    ColorRGB f = microfacet_reflection(F, G, D, wo_dot_n, wi_dot_n);
     return f;
 }
 
-ColorRGB Metal_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const {
+ColorRGB Metal_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
+{
     Vector3 wh = sample_microfacet_normal(u, wo, alpha);
     *wi = reflect(wo, wh);
 
@@ -256,7 +262,8 @@ ColorRGB Metal_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& w
     return evaluate(wo, *wi);
 }
 
-float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const {
+float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
+{
     ASSERT(dot(normal, wi) >= 0.f);
     Vector3 wh = (wo + wi).normalized();
     return calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
@@ -282,13 +289,16 @@ ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
     ASSERT(cos_theta_i >= 0);
 
     ColorRGB F = schlick_fresnel(ColorRGB(0.04f), cos_theta_i);
-
-    float D = GGX_Distribution::D(wh, normal, alpha);
     float G = GGX_Distribution::G(wi, wo, normal, alpha);
+    float D = GGX_Distribution::D(wh, normal, alpha);
+    float wo_dot_n = dot(wo, normal);
+    float wi_dot_n = dot(wi, normal);
 
-    ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(normal, wo) * dot(normal, wi));
-    ColorRGB diffuse_brdf = diffuse_reflectance * Pi_Inv;
-    return diffuse_brdf + specular_brdf;
+    ColorRGB f = microfacet_reflection(F, G, D, wo_dot_n, wi_dot_n);
+    ColorRGB specular = r0 * f;
+
+    ColorRGB diffuse = diffuse_reflectance * Pi_Inv;
+    return diffuse + specular;
 }
 
 ColorRGB Plastic_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
@@ -355,12 +365,14 @@ ColorRGB Rough_Glass_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
     if (same_hemisphere) { // reflection
         Vector3 wh = (wo + wi).normalized();
         float cos_theta_i = dot(wi, wh);
-        float fresnel = dielectric_fresnel(cos_theta_i, eta_i / eta_o);
-
-        float D = GGX_Distribution::D(wh, normal, alpha);
+        float F = dielectric_fresnel(cos_theta_i, eta_i / eta_o);
         float G = GGX_Distribution::G(wi, wo, normal, alpha);
+        float D = GGX_Distribution::D(wh, normal, alpha);
+        float wo_dot_n = dot(wo, normal);
+        float wi_dot_n = dot(wi, normal);
 
-        ColorRGB f = reflectance * (G * D * fresnel / (4.f * dot(normal, wo) * dot(normal, wi)));
+        float base_reflection = microfacet_reflection(F, G, D, wo_dot_n, wi_dot_n);
+        ColorRGB f = reflectance * base_reflection;
         return f;
     }
     else { // transmission

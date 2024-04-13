@@ -56,6 +56,18 @@ ColorRGB conductor_fresnel(float cos_theta_i, float eta_i, const ColorRGB& eta_t
     return F;
 }
 
+ColorRGB microfacet_reflection(const ColorRGB& F, float G, float D, float wo_dot_n, float wi_dot_n)
+{
+    ColorRGB f = F * ((G * D) / (4.f * wo_dot_n * wi_dot_n));
+    return f;
+}
+
+float microfacet_reflection(float F, float G, float D, float wo_dot_n, float wi_dot_n)
+{
+    float f = (F * G * D) / (4.f * wo_dot_n * wi_dot_n);
+    return f;
+}
+
 float GGX_Distribution::D(const Vector3& wh, const Vector3& n, float alpha) {
     float cos_theta = dot(wh, n);
     if (cos_theta <= 0.f)

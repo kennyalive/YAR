@@ -15,6 +15,9 @@ float dielectric_fresnel(float cos_theta_i, float eta);
 // For microfacet model the normal is a half-vector (wi + wo).
 ColorRGB conductor_fresnel(float cos_theta_i, float eta_i, const ColorRGB& eta_t, const ColorRGB& k_t);
 
+ColorRGB microfacet_reflection(const ColorRGB& F, float G, float D, float wo_dot_n, float wi_dot_n);
+float microfacet_reflection(float F, float G, float D, float wo_dot_n, float wi_dot_n);
+
 struct GGX_Distribution {
     // wh -normalized half-vector (wi+wo)
     // n - shading normal

@@ -24,18 +24,21 @@ Pbrt3_Uber_BRDF::Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_U
 
 ColorRGB Pbrt3_Uber_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
 {
-    ColorRGB diffuse_brdf = Pi_Inv * diffuse_reflectance * opacity;
+    ColorRGB diffuse = Pi_Inv * diffuse_reflectance * opacity;
 
     Vector3 wh = (wo + wi).normalized();
     float cos_theta_i = dot(wi, wh);
     ASSERT(cos_theta_i >= 0);
     float F = dielectric_fresnel(cos_theta_i, index_of_refraction);
-    float D = GGX_Distribution::D(wh, normal, alpha);
     float G = GGX_Distribution::G(wi, wo, normal, alpha);
-    float f = (G * D * F) / (4.f * dot(normal, wo) * dot(normal, wi));
-    ColorRGB specular_brdf = f * specular_reflectance * opacity;
+    float D = GGX_Distribution::D(wh, normal, alpha);
+    float wo_dot_n = dot(wo, normal);
+    float wi_dot_n = dot(wi, normal);
 
-    return diffuse_brdf + specular_brdf;
+    float f = microfacet_reflection(F, G, D, wo_dot_n, wi_dot_n);
+    ColorRGB specular = (specular_reflectance * opacity) * f;
+
+    return diffuse + specular;
 }
 
 ColorRGB Pbrt3_Uber_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
@@ -103,10 +106,13 @@ ColorRGB Pbrt3_Translucent_BSDF::evaluate(const Vector3& wo, const Vector3& wi) 
 
         Vector3 wh = (wo + wi).normalized();
         float cos_theta_i = dot(wi, wh);
-        float fresnel = dielectric_fresnel(cos_theta_i, eta_i / eta_o);
-        float D = GGX_Distribution::D(wh, normal, alpha);
+        float F = dielectric_fresnel(cos_theta_i, eta_i / eta_o);
         float G = GGX_Distribution::G(wi, wo, normal, alpha);
-        ColorRGB specular = (specular_coeff * reflectance) * (G * D * fresnel / (4.f * dot(normal, wo) * dot(normal, wi)));
+        float D = GGX_Distribution::D(wh, normal, alpha);
+        float wo_dot_n = dot(wo, normal);
+        float wi_dot_n = dot(wi, normal);
+        float base_relfection = microfacet_reflection(F, G, D, wo_dot_n, wi_dot_n);
+        ColorRGB specular = (specular_coeff * reflectance) * base_relfection;
 
         ColorRGB f = diffuse + specular;
         return f;
@@ -252,13 +258,16 @@ ColorRGB Pbrt3_Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) cons
         relative_ior = 1.5f / 1.f;
 
     ColorRGB F = ColorRGB(dielectric_fresnel(cos_theta_i, relative_ior));
-
-    float D = GGX_Distribution::D(wh, normal, alpha);
     float G = GGX_Distribution::G(wi, wo, normal, alpha);
+    float D = GGX_Distribution::D(wh, normal, alpha);
+    float wo_dot_n = dot(wo, normal);
+    float wi_dot_n = dot(wi, normal);
 
-    ColorRGB specular_brdf = (G * D) * F * r0 / (4.f * dot(normal, wo) * dot(normal, wi));
-    ColorRGB diffuse_brdf = diffuse_reflectance * Pi_Inv;
-    return diffuse_brdf + specular_brdf;
+    ColorRGB f = microfacet_reflection(F, G, D, wo_dot_n, wi_dot_n);
+    ColorRGB specular = r0 * f;
+
+    ColorRGB diffuse = diffuse_reflectance * Pi_Inv;
+    return diffuse + specular;
 }
 
 //
