@@ -19,29 +19,21 @@ struct Renderer_Configuration {
     bool pbrt_compatibility = false;
 };
 
-struct EXR_Custom_Attributes {
+struct EXR_Attributes {
     std::string input_file;
     int spp = 0; // samples per pixel
     float variance = 0.f;
 
-    // Here are the attributes that vary between render sessions. We store such
-    // attributes in the output file only if --openexr-varying-attributes command
-    // line option is specified. The reason why we do not always write them is to
-    // keep output deterministic by default.
+    // The attributes that might vary between render sessions.
     float load_time = 0.f;
     float render_time = 0.f;
 };
 
 struct EXR_Write_Params {
-    // Enables OpenEXR feature to store image data in compressed form (zip)
     bool enable_compression = false;
-
-    // This option disables generation of openexr custom attributes that vary between render sessions.
-    // Examples of varying attributes: render time, variance.
-    // Examples of non-varying attributes: output file name, per pixel sample count.
-    bool disable_varying_attributes = false;
-
-    EXR_Custom_Attributes custom_attributes;
+    bool enable_varying_attributes = false;
+    bool dump_attributes = false;
+    EXR_Attributes attributes;
 };
 
 void init_scene_context(const Scene& scene, const Renderer_Configuration& config, Scene_Context& scene_ctx);

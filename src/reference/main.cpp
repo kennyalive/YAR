@@ -25,10 +25,14 @@ struct Command_Line_Options {
 
     bool force_rebuild_kdtree_cache = false;
 
-    // This option disables generation of openexr custom attributes that vary between render sessions.
-    // Examples of varying attributes: render time, variance.
-    // Examples of non-varying attributes: output file name, per pixel sample count.
-    bool openexr_disable_varying_attributes = false;
+    // This option enables openexr attributes that vary between render sessions.
+    // Examples of varying attributes: timing metrics, machine parameters.
+    // Examples of non-varying attributes: output file name, per pixel sample count,
+    // variance (if computed deterministically).
+    bool openexr_enable_varying_attributes = false;
+
+    // Generate a text file with all attributes (including varying).
+    bool openexr_dump_attributes = false;
 
     // Enables OpenEXR feature to store image data in compressed form (zip)
     bool openexr_enable_compression = false;
@@ -77,7 +81,8 @@ enum Options {
     OPT_FORCE_REBUILD_KDTREE_CACHE,
     OPT_OUTPUT_DIRECTORY,
     OPT_OUTPUT_FILENAME_SUFFIX,
-    OPT_OPENEXR_DISABLE_VARYING_ATTRIBUTES,
+    OPT_OPENEXR_ENABLE_VARYING_ATTRIBUTES,
+    OPT_OPENEXR_DUMP_ATTRIBUTES,
     OPT_OPENEXR_COMPRESS,
     OPT_SAMPLES_PER_PIXEL,
     OPT_FILM_RESOLUTION,
@@ -128,8 +133,11 @@ static const getopt_option_t option_list[] =
     { "checkpoint", 0, GETOPT_OPTION_TYPE_REQUIRED, nullptr, OPT_CHECKPOINT,
         "start or resume multi-session rendering", "checkpoint_directory_path" },
 
-    { "openexr-disable-varying-attributes", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_OPENEXR_DISABLE_VARYING_ATTRIBUTES,
-        "do not generate OpenEXR custom attributes that vary between render sessions" },
+    { "openexr-enable-varying-attributes", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_OPENEXR_ENABLE_VARYING_ATTRIBUTES,
+        "write OpenEXR attributes that might vary between render sessions" },
+
+    { "openexr-dump-attributes", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_OPENEXR_DUMP_ATTRIBUTES,
+        "write OpenEXR attributes to a text file" },
 
     { "openexr-compress", 0, GETOPT_OPTION_TYPE_NO_ARG, nullptr, OPT_OPENEXR_COMPRESS,
         "enable OpenEXR zip compression of image data" },
@@ -268,8 +276,11 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
         else if (opt == OPT_FORCE_REBUILD_KDTREE_CACHE) {
             options.force_rebuild_kdtree_cache = true;
         }
-        else if (opt == OPT_OPENEXR_DISABLE_VARYING_ATTRIBUTES) {
-            options.openexr_disable_varying_attributes = true;
+        else if (opt == OPT_OPENEXR_ENABLE_VARYING_ATTRIBUTES) {
+            options.openexr_enable_varying_attributes = true;
+        }
+        else if (opt == OPT_OPENEXR_DUMP_ATTRIBUTES) {
+            options.openexr_dump_attributes = true;
         }
         else if (opt == OPT_OPENEXR_COMPRESS) {
             options.openexr_enable_compression = true;
@@ -437,7 +448,10 @@ static void process_input_file(const std::string& input_file, const Command_Line
     image_filename += ".exr"; // output is OpenEXR image
 
     EXR_Write_Params write_params;
-    write_params.custom_attributes = EXR_Custom_Attributes {
+    write_params.enable_varying_attributes = options.openexr_enable_varying_attributes;
+    write_params.enable_compression = options.openexr_enable_compression;
+    write_params.dump_attributes = options.openexr_dump_attributes;
+    write_params.attributes = EXR_Attributes {
         .input_file = input_file,
         .spp = scene_ctx.pixel_sampler_config.get_samples_per_pixel(),
         .variance = (float)variance_estimate,

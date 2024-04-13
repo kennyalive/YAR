@@ -601,17 +601,34 @@ struct EXR_Attributes_Writer {
     unsigned char value_buffer[buffer_size];
     unsigned char* buffer_ptr = value_buffer;
     std::vector<EXRAttribute> attributes;
+    FILE* dump_file = nullptr;
 
-    void add_string_attribute(const char* name, const char* value) {
-        int size = (int)strlen(value); // string attributes do not require null terminator to be included
-        add_attribute(name, "string", value, size);
+    void add_string_attribute(const char* name, const char* value, bool add_to_image = true) {
+        if (add_to_image) {
+            add_attribute(name, "string", value, (int)strlen(value));
+        }
+        if (dump_file) {
+            fprintf(dump_file, "%s %s\n", name, value);
+        }
     }
-    void add_integer_attribute(const char* name, int value) {
-        add_attribute(name, "int", &value, sizeof(int));
+    void add_integer_attribute(const char* name, int value, bool add_to_image = true) {
+        if (add_to_image) {
+            add_attribute(name, "int", &value, sizeof(int));
+        }
+        if (dump_file) {
+            fprintf(dump_file, "%s %d\n", name, value);
+        }
     }
-    void add_float_attribute(const char* name, float value) {
-        add_attribute(name, "float", &value, sizeof(float));
+    void add_float_attribute(const char* name, float value, bool add_to_image = true) {
+        if (add_to_image) {
+            add_attribute(name, "float", &value, sizeof(float));
+        }
+        if (dump_file) {
+            fprintf(dump_file, "%s %f\n", name, value);
+        }
     }
+
+private:
     void add_attribute(const char* name, const char* type, const void* value, int size) {
         ASSERT(buffer_ptr + size <= value_buffer + buffer_size);
         memcpy(buffer_ptr, value, size);
@@ -631,25 +648,34 @@ struct EXR_Attributes_Writer {
 
 bool write_openexr_image(const std::string& filename, const Image& image, const EXR_Write_Params& write_params)
 {
-    const EXR_Custom_Attributes& custom_attribs = write_params.custom_attributes;
-
-    // Initialize EXR custom attributes.
     EXR_Attributes_Writer attrib_writer;
+    if (write_params.dump_attributes) {
+        std::string dumpfile = fs::path(filename).replace_extension(".txt").string();
+        attrib_writer.dump_file = fopen(dumpfile.c_str(), "w");
+    }
+
+    const EXR_Attributes& attribs = write_params.attributes;
+
+    // Add attributes.
     attrib_writer.add_string_attribute("yar_build_version", "0.0");
     attrib_writer.add_integer_attribute("yar_build_asserts", ENABLE_ASSERT);
     attrib_writer.add_string_attribute("yar_render_device", "cpu");
-    attrib_writer.add_string_attribute("yar_input_file", custom_attribs.input_file.c_str());
-    attrib_writer.add_integer_attribute("yar_spp", custom_attribs.spp);
+    attrib_writer.add_string_attribute("yar_input_file", attribs.input_file.c_str());
+    attrib_writer.add_integer_attribute("yar_spp", attribs.spp);
 
-    // We have deterministic CPU rendering, so variance does not change between
-    // renders if other parameters are the same. That's why we don't put variance
-    // under openexr_disable_varying_attributes scope.
-    attrib_writer.add_float_attribute("yar_variance", custom_attribs.variance);
+    // The CPU renderer is deterministic, so the variance does not change between renderings
+    // if other parameters are the same. Don't consider variance as varying attribute.
+    attrib_writer.add_float_attribute("yar_variance", attribs.variance);
 
-    if (!write_params.disable_varying_attributes) {
-        attrib_writer.add_float_attribute("yar_load_time", custom_attribs.load_time);
-        attrib_writer.add_float_attribute("yar_render_time", custom_attribs.render_time);
+    // Attributes that can vary between renderings of the same scene.
+    attrib_writer.add_float_attribute("yar_load_time", attribs.load_time, write_params.enable_varying_attributes);
+    attrib_writer.add_float_attribute("yar_render_time", attribs.render_time, write_params.enable_varying_attributes);
+
+    if (attrib_writer.dump_file) {
+        fclose(attrib_writer.dump_file);
+        attrib_writer.dump_file = nullptr;
     }
+
     // Write file to disk.
     return image.write_exr(filename, write_params.enable_compression, attrib_writer.attributes);
 }
