@@ -68,6 +68,16 @@ float microfacet_reflection(float F, float G, float D, float wo_dot_n, float wi_
     return f;
 }
 
+float microfacet_transmission(float F, float G, float D,
+    float wo_dot_n, float wi_dot_n, float wo_dot_wh, float wi_dot_wh,
+    float eta_o, float eta_i)
+{
+    float k = std::abs((wo_dot_wh * wi_dot_wh) / (wo_dot_n * wi_dot_n));
+    float k2 = eta_o * wo_dot_wh + eta_i * wi_dot_wh;
+    float f = (eta_o * eta_o * k * G * D * (1.f - F)) / (k2 * k2);
+    return f;
+}
+
 float GGX_Distribution::D(const Vector3& wh, const Vector3& n, float alpha) {
     float cos_theta = dot(wh, n);
     if (cos_theta <= 0.f)

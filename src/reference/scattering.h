@@ -18,6 +18,10 @@ ColorRGB conductor_fresnel(float cos_theta_i, float eta_i, const ColorRGB& eta_t
 ColorRGB microfacet_reflection(const ColorRGB& F, float G, float D, float wo_dot_n, float wi_dot_n);
 float microfacet_reflection(float F, float G, float D, float wo_dot_n, float wi_dot_n);
 
+float microfacet_transmission(float F, float G, float D,
+    float wo_dot_n, float wi_dot_n, float wo_dot_wh, float wi_dot_wh,
+    float eta_o, float eta_i);
+
 struct GGX_Distribution {
     // wh -normalized half-vector (wi+wo)
     // n - shading normal

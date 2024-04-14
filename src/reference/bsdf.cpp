@@ -294,8 +294,8 @@ ColorRGB Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
     float wo_dot_n = dot(wo, normal);
     float wi_dot_n = dot(wi, normal);
 
-    ColorRGB f = microfacet_reflection(F, G, D, wo_dot_n, wi_dot_n);
-    ColorRGB specular = r0 * f;
+    ColorRGB base_specular = microfacet_reflection(F, G, D, wo_dot_n, wi_dot_n);
+    ColorRGB specular = r0 * base_specular;
 
     ColorRGB diffuse = diffuse_reflectance * Pi_Inv;
     return diffuse + specular;
@@ -383,17 +383,19 @@ ColorRGB Rough_Glass_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
             wh = -wh;
         }
         float cos_theta_i = dot(wi, wh);
-        float fresnel = dielectric_fresnel(cos_theta_i, eta_o / eta_i);
-        if (fresnel == 1.f) {
+        float F = dielectric_fresnel(cos_theta_i, eta_o / eta_i);
+        if (F == 1.f) {
             return Color_Black;
         }
-
-        float D = GGX_Distribution::D(wh, normal, alpha);
         float G = GGX_Distribution::G(wi, wo, normal, alpha);
+        float D = GGX_Distribution::D(wh, normal, alpha);
+        float wo_dot_n = dot(wo, normal);
+        float wi_dot_n = dot(wi, normal);
+        float wo_dot_wh = dot(wo, wh);
+        float wi_dot_wh = dot(wi, wh);
 
-        float k = std::abs((dot(wi, wh) * dot(wo, wh)) / (dot(wi, normal) * dot(wo, normal)));
-        float k2 = eta_o * dot(wo, wh) + eta_i * dot(wi, wh);
-        ColorRGB f = transmittance * (eta_o * eta_o * k * G * D * (1.f - fresnel) / (k2 * k2));
+        float base_transmission = microfacet_transmission(F, G, D, wo_dot_n, wi_dot_n, wo_dot_wh, wi_dot_wh, eta_o, eta_i);
+        ColorRGB f = transmittance * base_transmission;
         return f;
     }
 }
