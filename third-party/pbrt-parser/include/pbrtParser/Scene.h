@@ -1209,11 +1209,7 @@ namespace pbrt {
     virtual void readFrom(BinaryReader &) override;
     
     /*! checks if the scene contains more than one level of instancing */
-    bool isMultiLevel() const;
-    /*! checks if the scene contains more than one level of instancing */
     bool isSingleLevel() const;
-    /*! checks if the scene contains more than one level of instancing */
-    bool isSingleObject() const;
     
     /*! helper function that flattens a multi-level scene into a
       flattned scene */

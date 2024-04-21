@@ -394,7 +394,7 @@ namespace pbrt {
     Object::SP
     getOrCreateEmittedShapeFrom(Object::SP object)
     {
-      if (object->shapes.empty()) return Object::SP();
+      if (object->shapes.empty() && object->lightSources.empty()) return Object::SP();
       if (alreadyEmitted[object]) return alreadyEmitted[object];
       
       Object::SP ours = std::make_shared<Object>("ShapeFrom:"+object->name);
@@ -441,7 +441,7 @@ namespace pbrt {
   /*! checks if the scene contains more than one level of instancing */
   bool Scene::isSingleLevel() const
   {
-    if (!world->shapes.empty())
+    if (!world->shapes.empty() || !world->lightSources.empty())
       return false;
     for (auto inst : world->instances)
       if (inst && inst->object && !inst->object->instances.empty())
