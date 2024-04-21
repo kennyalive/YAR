@@ -20,6 +20,13 @@ Pbrt3_Uber_BRDF::Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_U
     specular_reflectance = evaluate_rgb_parameter(thread_ctx, params.specular_reflectance);
     alpha = ggx_alpha(thread_ctx, params.roughness, false);
     index_of_refraction = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
+
+    bool trace_enter_event = thread_ctx.shading_context.nested_dielectric ?
+        thread_ctx.current_dielectric_material == Null_Material :
+        !thread_ctx.shading_context.original_shading_normal_was_flipped;
+    if (!trace_enter_event) {
+        index_of_refraction = 1.f / index_of_refraction;
+    }
 }
 
 ColorRGB Pbrt3_Uber_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
