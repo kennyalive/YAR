@@ -83,6 +83,10 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
 void KdTree_Data::initialize(const Scene& scene, const std::vector<Image_Texture>& textures, bool rebuild_kdtree_cache)
 {
     const auto& meshes = scene.geometries.triangle_meshes;
+    if (meshes.empty()) {
+        return;
+    }
+
     triangle_mesh_geometry_data.resize(meshes.size());
     for (size_t i = 0; i < meshes.size(); i++) {
         triangle_mesh_geometry_data[i].mesh = &meshes[i];
