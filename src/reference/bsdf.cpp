@@ -37,10 +37,15 @@ float calculate_microfacet_reflection_wi_pdf(const Vector3& wo, const Vector3& w
 
 float calculate_microfacet_transmission_wi_pdf(const Vector3& wo, const Vector3& wi, const Vector3& wh, const Vector3& n, float alpha, float eta_o, float eta_i)
 {
-    // For reflection, wh is naturally computed to be in the hemisphere of the normal direction.
-    // For transmission, the classic computation results in wh that is in the hemisphere with a lower IoR index.
-    // The half-angle vector should be flipped if necessary to make sure it's in the normal hemisphere.
+    // The computation of transmission half-angle direction gets a vector that is in
+    // the hemisphere with a lower index of refraction. If the computed vector is not
+    // in the hemisphere defined by the normal, the caller should flip it before
+    // calling this function.
     ASSERT(dot(wh, n) >= 0.f);
+
+    // The wo/wi vectors should be on the opposite side of the half-angle direction to be
+    // able to form a refraction configuration.
+    ASSERT(dot(wo, wh) * dot(wi, wh) <= 0.f);
 
     float wh_pdf;
     if (ggx_sample_visible_normals)
@@ -377,11 +382,22 @@ ColorRGB Rough_Glass_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
     }
     else { // transmission
         Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
-        // The above wh computation gives a vector that is in the hemisphere with a smaller IoR.
-        // We need to ensure wh is in the hemisphere defined by the normal.
+        // The above hw computation gives a vector that is in the hemisphere with a
+        // smaller index of refraction. We need to ensure that the resulting vector
+        // is in the hemisphere defined by the normal.
         if (dot(wh, normal) < 0.f) {
             wh = -wh;
         }
+
+        float wo_dot_wh = dot(wo, wh);
+        float wi_dot_wh = dot(wi, wh);
+        if (wo_dot_wh * wi_dot_wh > 0.f) {
+            // The provided wo/wi directions can't form a refraction configuration.
+            // When refraction is possible, then wo/wi directions should be in the
+            // different hemispheres of the half-direction vector.
+            return Color_Black;
+        }
+
         float cos_theta_i = dot(wi, wh);
         float F = dielectric_fresnel(cos_theta_i, eta_o / eta_i);
         if (F == 1.f) {
@@ -391,8 +407,7 @@ ColorRGB Rough_Glass_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
         float D = GGX_Distribution::D(wh, normal, alpha);
         float wo_dot_n = dot(wo, normal);
         float wi_dot_n = dot(wi, normal);
-        float wo_dot_wh = dot(wo, wh);
-        float wi_dot_wh = dot(wi, wh);
+        
 
         float base_transmission = microfacet_transmission(F, G, D, wo_dot_n, wi_dot_n, wo_dot_wh, wi_dot_wh, eta_o, eta_i);
         ColorRGB f = transmittance * base_transmission;
@@ -461,13 +476,23 @@ float Rough_Glass_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
     }
     else { // transmission
         Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
-        // The above wh computation gives a vector that lies in the hemisphere with a smaller IoR.
-        // We need to ensure wh is in the hemisphere defined by the normal.
+        // The above hw computation gives a vector that is in the hemisphere with a
+        // smaller index of refraction. We need to ensure that the resulting vector
+        // is in the hemisphere defined by the normal.
         if (dot(wh, normal) < 0.f) {
             wh = -wh;
         }
-        float cos_theta = dot(wo, wh);
 
+        float wo_dot_wh = dot(wo, wh);
+        float wi_dot_wh = dot(wi, wh);
+        if (wo_dot_wh * wi_dot_wh > 0.f) {
+            // The provided wo/wi directions can't form a refraction configuration.
+            // When refraction is possible, then wo/wi directions should be in the
+            // different hemispheres of the half-direction vector.
+            return 0.f;
+        }
+
+        float cos_theta = dot(wo, wh);
         float fresnel = dielectric_fresnel(cos_theta, eta_i / eta_o);
         float r = fresnel * reflection_ratio;
         float t = (1.f - fresnel) * (1 - reflection_ratio);

@@ -128,25 +128,35 @@ ColorRGB Pbrt3_Translucent_BSDF::evaluate(const Vector3& wo, const Vector3& wi) 
         ColorRGB diffuse = Pi_Inv * diffuse_coeff * transmittance;
 
         Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
-        // The above wh computation gives a vector that is in the hemisphere with a smaller IoR.
-        // We need to ensure wh is in the hemisphere defined by the normal.
+        // The above hw computation gives a vector that is in the hemisphere with a
+        // smaller index of refraction. We need to ensure that the resulting vector
+        // is in the hemisphere defined by the normal.
         if (dot(wh, normal) < 0.f) {
             wh = -wh;
         }
-        float cos_theta_i = dot(wi, wh);
-        float F = dielectric_fresnel(cos_theta_i, eta_o / eta_i);
-        if (F == 1.f) {
-            return Color_Black;
-        }
-        float G = GGX_Distribution::G(wi, wo, normal, alpha);
-        float D = GGX_Distribution::D(wh, normal, alpha);
-        float wo_dot_n = dot(wo, normal);
-        float wi_dot_n = dot(wi, normal);
+
         float wo_dot_wh = dot(wo, wh);
         float wi_dot_wh = dot(wi, wh);
 
-        float base_specular_transmission = microfacet_transmission(F, G, D, wo_dot_n, wi_dot_n, wo_dot_wh, wi_dot_wh, eta_o, eta_i);
-        ColorRGB specular = (specular_coeff * transmittance) * base_specular_transmission;
+        // When refraction is possible, then wo/wi directions should be in the
+        // different hemispheres of the half-direction vector.
+        bool refraction_possible = (wo_dot_wh * wi_dot_wh <= 0.f);
+
+        ColorRGB specular;
+        if (refraction_possible) {
+            float cos_theta_i = dot(wi, wh);
+            float F = dielectric_fresnel(cos_theta_i, eta_o / eta_i);
+            if (F == 1.f) {
+                return Color_Black;
+            }
+            float G = GGX_Distribution::G(wi, wo, normal, alpha);
+            float D = GGX_Distribution::D(wh, normal, alpha);
+            float wo_dot_n = dot(wo, normal);
+            float wi_dot_n = dot(wi, normal);
+
+            float base_specular_transmission = microfacet_transmission(F, G, D, wo_dot_n, wi_dot_n, wo_dot_wh, wi_dot_wh, eta_o, eta_i);
+            specular = (specular_coeff * transmittance) * base_specular_transmission;
+        }
 
         ColorRGB f = diffuse + specular;
         return f;
@@ -232,13 +242,25 @@ float Pbrt3_Translucent_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
         float diffuse_pdf = cosine_hemisphere_pdf(diffuse_cos_theta);
 
         Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
-        // The above wh computation gives a vector that lies in the hemisphere with a smaller IoR.
-        // We need to ensure wh is in the hemisphere defined by the normal.
+        // The above hw computation gives a vector that is in the hemisphere with a
+        // smaller index of refraction. We need to ensure that the resulting vector
+        // is in the hemisphere defined by the normal.
         if (dot(wh, normal) < 0.f) {
             wh = -wh;
         }
 
-        float specular_pdf = calculate_microfacet_transmission_wi_pdf(wo, wi, wh, normal, alpha, eta_o, eta_i);
+        float wo_dot_wh = dot(wo, wh);
+        float wi_dot_wh = dot(wi, wh);
+
+        // When refraction is possible, then wo/wi directions should be in the
+        // different hemispheres of the half-direction vector.
+        bool refraction_possible = (wo_dot_wh * wi_dot_wh <= 0.f);
+
+        float specular_pdf = 0.f;
+        if (refraction_possible) {
+            specular_pdf = calculate_microfacet_transmission_wi_pdf(wo, wi, wh, normal, alpha, eta_o, eta_i);
+        }
+        
         float pdf = (1.f - reflection_probability) * 0.5f * (diffuse_pdf + specular_pdf);
         return pdf;
     }
