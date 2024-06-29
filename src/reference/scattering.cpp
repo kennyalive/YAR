@@ -56,6 +56,19 @@ ColorRGB conductor_fresnel(float cos_theta_i, float eta_i, const ColorRGB& eta_t
     return F;
 }
 
+Vector3 refraction_half_direction(float eta_o, const Vector3& wo, float eta_i, const Vector3& wi, const Vector3& normal)
+{
+    // The following formula computes half-direction for refraction.
+    // The computed vector points into the hemisphere with a smaller index of refraction.
+    Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
+
+    // Enforce convention the resulted vector is in the hemisphere defined by the normal.
+    if (dot(wh, normal) < 0.f) {
+        wh = -wh;
+    }
+    return wh;
+}
+
 ColorRGB microfacet_reflection(const ColorRGB& F, float G, float D, float wo_dot_n, float wi_dot_n)
 {
     ColorRGB f = F * ((G * D) / (4.f * wo_dot_n * wi_dot_n));

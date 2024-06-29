@@ -381,14 +381,7 @@ ColorRGB Rough_Glass_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
         return f;
     }
     else { // transmission
-        Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
-        // The above hw computation gives a vector that is in the hemisphere with a
-        // smaller index of refraction. We need to ensure that the resulting vector
-        // is in the hemisphere defined by the normal.
-        if (dot(wh, normal) < 0.f) {
-            wh = -wh;
-        }
-
+        Vector3 wh = refraction_half_direction(eta_o, wo, eta_i, wi, normal);
         float wo_dot_wh = dot(wo, wh);
         float wi_dot_wh = dot(wi, wh);
         if (wo_dot_wh * wi_dot_wh > 0.f) {
@@ -475,14 +468,7 @@ float Rough_Glass_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
         return pdf;
     }
     else { // transmission
-        Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
-        // The above hw computation gives a vector that is in the hemisphere with a
-        // smaller index of refraction. We need to ensure that the resulting vector
-        // is in the hemisphere defined by the normal.
-        if (dot(wh, normal) < 0.f) {
-            wh = -wh;
-        }
-
+        Vector3 wh = refraction_half_direction(eta_o, wo, eta_i, wi, normal);
         float wo_dot_wh = dot(wo, wh);
         float wi_dot_wh = dot(wi, wh);
         if (wo_dot_wh * wi_dot_wh > 0.f) {

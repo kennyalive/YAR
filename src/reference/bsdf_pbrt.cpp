@@ -127,14 +127,7 @@ ColorRGB Pbrt3_Translucent_BSDF::evaluate(const Vector3& wo, const Vector3& wi) 
     else {
         ColorRGB diffuse = Pi_Inv * diffuse_coeff * transmittance;
 
-        Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
-        // The above hw computation gives a vector that is in the hemisphere with a
-        // smaller index of refraction. We need to ensure that the resulting vector
-        // is in the hemisphere defined by the normal.
-        if (dot(wh, normal) < 0.f) {
-            wh = -wh;
-        }
-
+        Vector3 wh = refraction_half_direction(eta_o, wo, eta_i, wi, normal);
         float wo_dot_wh = dot(wo, wh);
         float wi_dot_wh = dot(wi, wh);
 
@@ -241,14 +234,7 @@ float Pbrt3_Translucent_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
         ASSERT(diffuse_cos_theta >= 0.f);
         float diffuse_pdf = cosine_hemisphere_pdf(diffuse_cos_theta);
 
-        Vector3 wh = -(eta_o * wo + eta_i * wi).normalized();
-        // The above hw computation gives a vector that is in the hemisphere with a
-        // smaller index of refraction. We need to ensure that the resulting vector
-        // is in the hemisphere defined by the normal.
-        if (dot(wh, normal) < 0.f) {
-            wh = -wh;
-        }
-
+        Vector3 wh = refraction_half_direction(eta_o, wo, eta_i, wi, normal);
         float wo_dot_wh = dot(wo, wh);
         float wi_dot_wh = dot(wi, wh);
 
