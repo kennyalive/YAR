@@ -5,6 +5,8 @@
 class Image_Texture;
 struct RNG;
 
+float cosine_hemisphere_pdf(float theta_cos);
+
 Vector3 sample_sphere_uniform(Vector2 u);
 Vector3 sample_hemisphere_uniform(Vector2 u);
 Vector3 sample_hemisphere_cosine(Vector2 u);

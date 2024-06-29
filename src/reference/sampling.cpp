@@ -8,6 +8,12 @@
 #include "lib/math.h"
 #include "lib/random.h"
 
+float cosine_hemisphere_pdf(float theta_cos)
+{
+    ASSERT(theta_cos >= 0.f);
+    return theta_cos * Pi_Inv;
+}
+
 Vector3 sample_sphere_uniform(Vector2 u) {
     ASSERT(u < Vector2(1));
     float z = 1.f - 2.f * u[0];

@@ -18,7 +18,8 @@ Pbrt3_Uber_BRDF::Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_U
     opacity = evaluate_rgb_parameter(thread_ctx, params.opacity);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
     specular_reflectance = evaluate_rgb_parameter(thread_ctx, params.specular_reflectance);
-    alpha = ggx_alpha(thread_ctx, params.roughness, false);
+    const float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
+    alpha = GGX_Distribution::roughness_to_alpha(thread_ctx, roughness, false);
     index_of_refraction = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
 
     bool trace_enter_event = thread_ctx.shading_context.nested_dielectric ?
@@ -72,7 +73,7 @@ float Pbrt3_Uber_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
     float diffuse_pdf = dot(normal, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float specular_pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+    float specular_pdf = microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + specular_pdf);
     return pdf;
@@ -88,7 +89,8 @@ Pbrt3_Translucent_BSDF::Pbrt3_Translucent_BSDF(const Thread_Context& thread_ctx,
     transmittance = evaluate_rgb_parameter(thread_ctx, params.transmittance);
     diffuse_coeff = evaluate_rgb_parameter(thread_ctx, params.diffuse);
     specular_coeff = evaluate_rgb_parameter(thread_ctx, params.specular);
-    alpha = ggx_alpha(thread_ctx, params.roughness, false);
+    const float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
+    alpha = GGX_Distribution::roughness_to_alpha(thread_ctx, roughness, false);
 
     bool trace_enter_event = thread_ctx.shading_context.nested_dielectric ?
         thread_ctx.current_dielectric_material == Null_Material :
@@ -224,7 +226,7 @@ float Pbrt3_Translucent_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
         float diffuse_pdf = cosine_hemisphere_pdf(diffuse_cos_theta);
 
         Vector3 wh = (wo + wi).normalized();
-        float specular_pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+        float specular_pdf = microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
 
         float pdf = reflection_probability * 0.5f * (diffuse_pdf + specular_pdf);
         return pdf;
@@ -244,7 +246,7 @@ float Pbrt3_Translucent_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
 
         float specular_pdf = 0.f;
         if (refraction_possible) {
-            specular_pdf = calculate_microfacet_transmission_wi_pdf(wo, wi, wh, normal, alpha, eta_o, eta_i);
+            specular_pdf = microfacet_transmission_wi_pdf(wo, wi, wh, normal, alpha, eta_o, eta_i);
         }
         
         float pdf = (1.f - reflection_probability) * 0.5f * (diffuse_pdf + specular_pdf);

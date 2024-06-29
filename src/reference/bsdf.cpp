@@ -12,93 +12,6 @@
 
 #include "lib/math.h"
 
-static bool ggx_sample_visible_normals = false;
-
-// The probability density calculations for reflection and tranmission are from the classic paper:
-// "Microfacet Models for Refraction through Rough Surfaces"
-// https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf
-// I rederived these formulas to check there are no typos, and also adjusted variables
-// naming according to the conventions of this renderer.
-
-float calculate_microfacet_reflection_wi_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha)
-{
-    float wh_pdf;
-    if (ggx_sample_visible_normals)
-        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, n, alpha);
-    else
-        wh_pdf = GGX_microfacet_normal_pdf(wh, n, alpha);
-
-    // Convert between probability densities:
-    // wi_pdf = wh_pdf * dwh/dwi
-    // dwh/dwi = 1/4(wh, wi) = 1/4(wh,wo)
-    float wi_pdf = wh_pdf / (4 * dot(wh, wo));
-    return wi_pdf;
-}
-
-float calculate_microfacet_transmission_wi_pdf(const Vector3& wo, const Vector3& wi, const Vector3& wh, const Vector3& n, float alpha, float eta_o, float eta_i)
-{
-    // The computation of transmission half-angle direction gets a vector that is in
-    // the hemisphere with a lower index of refraction. If the computed vector is not
-    // in the hemisphere defined by the normal, the caller should flip it before
-    // calling this function.
-    ASSERT(dot(wh, n) >= 0.f);
-
-    // The wo/wi vectors should be on the opposite side of the half-angle direction to be
-    // able to form a refraction configuration.
-    ASSERT(dot(wo, wh) * dot(wi, wh) <= 0.f);
-
-    float wh_pdf;
-    if (ggx_sample_visible_normals)
-        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, n, alpha);
-    else
-        wh_pdf = GGX_microfacet_normal_pdf(wh, n, alpha);
-
-    // Convert between probability densities:
-    // wi_pdf = wh_pdf * dwh/dwi
-    // dwh/dwi = eta_i^2 * abs(dot(wi, wh)) / (eta_o*dot(wo, wh) + eta_i*dot(wi, wh))^2
-    float denom = eta_o * dot(wo, wh) + eta_i * dot(wi, wh);
-    float dwh_over_dwi = eta_i * eta_i * std::abs(dot(wi, wh)) / (denom * denom);
-
-    float wi_pdf = wh_pdf * dwh_over_dwi;
-    return wi_pdf;
-}
-
-static float pbrt3_roughness_to_alpha(float roughness)
-{
-    roughness = std::max(roughness, 1e-3f);
-    float x = std::log(roughness);
-    float alpha =
-        1.621420000f +
-        0.819955000f * x +
-        0.173400000f * x * x +
-        0.017120100f * x * x * x +
-        0.000640711f * x * x * x * x;
-    return alpha;
-}
-
-// 'roughness' is a "user-friendly" value from [0..1] range and remapping
-// functions convert it to 'alpha' parameter from the ggx microfacet distribution.
-// The expectation is that 'roughness' behaves perceptually more linearly than
-// distribution's alpha parameter.
-float ggx_alpha(const Thread_Context& thread_ctx, const Float_Parameter& roughness_parameter, bool no_remapping)
-{
-    const float roughness = evaluate_float_parameter(thread_ctx, roughness_parameter);
-    float alpha;
-    if (no_remapping) {
-        alpha = roughness;
-    }
-    else if (thread_ctx.scene_context->pbrt3_scene) {
-        alpha = pbrt3_roughness_to_alpha(roughness);
-    }
-    else if (thread_ctx.scene_context->pbrt4_scene) {
-        alpha = std::sqrt(roughness);
-    }
-    else {
-        alpha = roughness * roughness;
-    }
-    return alpha;
-}
-
 BSDF::BSDF(const Shading_Context& shading_ctx)
     : normal(shading_ctx.normal)
     , tangent(shading_ctx.tangent)
@@ -232,7 +145,8 @@ Metal_BRDF::Metal_BRDF(const Thread_Context& thread_ctx, const Metal_Material& m
     : BSDF(thread_ctx.shading_context)
 {
     reflection_scattering = true;
-    alpha = ggx_alpha(thread_ctx, material.roughness, material.roughness_is_alpha);
+    const float roughness = evaluate_float_parameter(thread_ctx, material.roughness);
+    alpha = GGX_Distribution::roughness_to_alpha(thread_ctx, roughness, material.roughness_is_alpha);
     eta_i = evaluate_float_parameter(thread_ctx, material.eta_i);
     eta_t = evaluate_rgb_parameter(thread_ctx, material.eta);
     k_t = evaluate_rgb_parameter(thread_ctx, material.k);
@@ -263,7 +177,7 @@ ColorRGB Metal_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& w
     if (dot(normal, *wi) <= 0.f)
         return Color_Black;
 
-    *pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+    *pdf = microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
     return evaluate(wo, *wi);
 }
 
@@ -271,7 +185,7 @@ float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 {
     ASSERT(dot(normal, wi) >= 0.f);
     Vector3 wh = (wo + wi).normalized();
-    return calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+    return microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
 }
 
 //
@@ -281,7 +195,8 @@ Plastic_BRDF::Plastic_BRDF(const Thread_Context& thread_ctx, const Plastic_Mater
     : BSDF(thread_ctx.shading_context)
 {
     reflection_scattering = true;
-    alpha = ggx_alpha(thread_ctx, params.roughness, params.roughness_is_alpha);
+    const float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
+    alpha = GGX_Distribution::roughness_to_alpha(thread_ctx, roughness, params.roughness_is_alpha);
     r0 = evaluate_float_parameter(thread_ctx, params.r0);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
 }
@@ -330,7 +245,7 @@ float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
     float diffuse_pdf = dot(normal, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float spec_pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+    float spec_pdf = microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + spec_pdf);
     return pdf;
@@ -347,7 +262,9 @@ Rough_Glass_BSDF::Rough_Glass_BSDF(const Thread_Context& thread_ctx, const Glass
 
     reflectance = evaluate_rgb_parameter(thread_ctx, params.reflectance);
     transmittance = evaluate_rgb_parameter(thread_ctx, params.transmittance);
-    alpha = ggx_alpha(thread_ctx, params.roughness, params.roughness_is_alpha);
+
+    const float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
+    alpha = GGX_Distribution::roughness_to_alpha(thread_ctx, roughness, params.roughness_is_alpha);
 
     bool enter_event = thread_ctx.shading_context.nested_dielectric ?
         thread_ctx.current_dielectric_material == Null_Material :
@@ -456,7 +373,7 @@ float Rough_Glass_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
     bool same_hemisphere = dot(wo, normal) * dot(wi, normal) > 0.f;
     if (same_hemisphere) { // reflection
         Vector3 wh = (wo + wi).normalized();
-        float reflection_pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+        float reflection_pdf = microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
         float cos_theta_i = dot(wi, wh);
 
         float fresnel = dielectric_fresnel(cos_theta_i, eta_i / eta_o);
@@ -484,7 +401,7 @@ float Rough_Glass_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
         float t = (1.f - fresnel) * (1 - reflection_ratio);
         float reflection_probability = ((r + t) == 0) ? 0.f : r / (r + t);
 
-        float transmission_pdf = calculate_microfacet_transmission_wi_pdf(wo, wi, wh, normal, alpha, eta_o, eta_i);
+        float transmission_pdf = microfacet_transmission_wi_pdf(wo, wi, wh, normal, alpha, eta_o, eta_i);
         float pdf = transmission_pdf * (1.f - reflection_probability);
         return pdf;
     }
@@ -500,7 +417,8 @@ Ashikhmin_Shirley_Phong_BRDF::Ashikhmin_Shirley_Phong_BRDF(const Thread_Context&
     : BSDF(thread_ctx.shading_context)
 {
     reflection_scattering = true;
-    alpha = ggx_alpha(thread_ctx, params.roughness, params.roughness_is_alpha);
+    const float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
+    alpha = GGX_Distribution::roughness_to_alpha(thread_ctx, roughness, params.roughness_is_alpha);
     r0 = evaluate_rgb_parameter(thread_ctx, params.r0);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
 }
@@ -547,7 +465,7 @@ float Ashikhmin_Shirley_Phong_BRDF::pdf(const Vector3& wo, const Vector3& wi) co
     float diffuse_pdf = dot(normal, wi) / Pi;
 
     Vector3 wh = (wo + wi).normalized();
-    float spec_pdf = calculate_microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+    float spec_pdf = microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
 
     float pdf = 0.5f * (diffuse_pdf + spec_pdf);
     return pdf;

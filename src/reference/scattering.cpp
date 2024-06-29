@@ -2,21 +2,26 @@
 #include "lib/common.h"
 #include "scattering.h"
 
+#include "scene_context.h"
+#include "thread_context.h"
+
 #include "lib/vector.h"
 
-ColorRGB schlick_fresnel(const ColorRGB& R0, float cos_theta_i) {
+ColorRGB schlick_fresnel(const ColorRGB& R0, float cos_theta_i)
+{
     float k = 1.f - std::abs(cos_theta_i);
     float k5 = (k * k) * (k * k) * k;
     return R0 + (ColorRGB(1) - R0) * k5;
 }
 
-float dielectric_fresnel(float cos_theta_i, float eta) {
+float dielectric_fresnel(float cos_theta_i, float eta)
+{
     cos_theta_i = std::min(std::abs(cos_theta_i), 1.f);
     float sin_theta_i = std::sqrt(1.f - cos_theta_i * cos_theta_i);
     float sin_theta_t = (1.f / eta) * sin_theta_i;
-
-    if (sin_theta_t >= 1.f)
+    if (sin_theta_t >= 1.f) {
         return 1.f;
+    }
 
     float cos_theta_t = std::sqrt(1.f - sin_theta_t * sin_theta_t);
 
@@ -31,7 +36,8 @@ float dielectric_fresnel(float cos_theta_i, float eta) {
     return f;
 }
 
-ColorRGB conductor_fresnel(float cos_theta_i, float eta_i, const ColorRGB& eta_t, const ColorRGB& k_t) {
+ColorRGB conductor_fresnel(float cos_theta_i, float eta_i, const ColorRGB& eta_t, const ColorRGB& k_t)
+{
     cos_theta_i = std::abs(std::clamp(cos_theta_i, -1.f, 1.f));
     float cos_theta_i2 = cos_theta_i * cos_theta_i;
     float sin_theta_i2 = 1.f - cos_theta_i2;
@@ -92,10 +98,61 @@ float microfacet_transmission(float F, float G, float D,
     return f;
 }
 
-float GGX_Distribution::D(const Vector3& wh, const Vector3& n, float alpha) {
+// The probability density calculations for reflection and tranmission are from the classic paper:
+// "Microfacet Models for Refraction through Rough Surfaces"
+// https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf
+// I rederived these formulas to check there are no typos, and also adjusted variables
+// naming according to the conventions of this renderer.
+
+float microfacet_reflection_wi_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha)
+{
+    float wh_pdf;
+    if (ggx_sample_visible_normals)
+        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, n, alpha);
+    else
+        wh_pdf = GGX_microfacet_normal_pdf(wh, n, alpha);
+
+    // Convert between probability densities:
+    // wi_pdf = wh_pdf * dwh/dwi
+    // dwh/dwi = 1/4(wh, wi) = 1/4(wh,wo)
+    float wi_pdf = wh_pdf / (4 * dot(wh, wo));
+    return wi_pdf;
+}
+
+float microfacet_transmission_wi_pdf(const Vector3& wo, const Vector3& wi, const Vector3& wh, const Vector3& n, float alpha, float eta_o, float eta_i)
+{
+    // The computation of transmission half-angle direction gets a vector that is in
+    // the hemisphere with a lower index of refraction. If the computed vector is not
+    // in the hemisphere defined by the normal, the caller should flip it before
+    // calling this function.
+    ASSERT(dot(wh, n) >= 0.f);
+
+    // The wo/wi vectors should be on the opposite side of the half-angle direction to be
+    // able to form a refraction configuration.
+    ASSERT(dot(wo, wh) * dot(wi, wh) <= 0.f);
+
+    float wh_pdf;
+    if (ggx_sample_visible_normals)
+        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, n, alpha);
+    else
+        wh_pdf = GGX_microfacet_normal_pdf(wh, n, alpha);
+
+    // Convert between probability densities:
+    // wi_pdf = wh_pdf * dwh/dwi
+    // dwh/dwi = eta_i^2 * abs(dot(wi, wh)) / (eta_o*dot(wo, wh) + eta_i*dot(wi, wh))^2
+    float denom = eta_o * dot(wo, wh) + eta_i * dot(wi, wh);
+    float dwh_over_dwi = eta_i * eta_i * std::abs(dot(wi, wh)) / (denom * denom);
+
+    float wi_pdf = wh_pdf * dwh_over_dwi;
+    return wi_pdf;
+}
+
+float GGX_Distribution::D(const Vector3& wh, const Vector3& n, float alpha)
+{
     float cos_theta = dot(wh, n);
-    if (cos_theta <= 0.f)
+    if (cos_theta <= 0.f) {
         return 0.f;
+    }
 
     // The formula as specified in "Microfacet Models for Refraction through Rough Surfaces".
     // https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf
@@ -116,7 +173,8 @@ float GGX_Distribution::D(const Vector3& wh, const Vector3& n, float alpha) {
     return D;
 }
 
-inline float GGX_lambda(const Vector3& v, const Vector3& n, float alpha) {
+static float GGX_lambda(const Vector3& v, const Vector3& n, float alpha)
+{
     float cos_theta = dot(v, n);
     float cos2_theta = cos_theta * cos_theta;
     float tan2_theta = std::max(0.f, (1.f - cos2_theta) / cos2_theta); // could be Infinity, that's fine
@@ -125,10 +183,43 @@ inline float GGX_lambda(const Vector3& v, const Vector3& n, float alpha) {
     return lambda;
 }
 
-float GGX_Distribution::G(const Vector3& wi, const Vector3& wo, const Vector3& n, float alpha) {
+float GGX_Distribution::G(const Vector3& wi, const Vector3& wo, const Vector3& n, float alpha)
+{
     return 1.f / (1.f + GGX_lambda(wi, n, alpha) + GGX_lambda(wo, n, alpha));
 }
 
-float GGX_Distribution::G1(const Vector3& v, const Vector3& n, float alpha) {
+float GGX_Distribution::G1(const Vector3& v, const Vector3& n, float alpha)
+{
     return 1.f / (1.f + GGX_lambda(v, n, alpha));
+}
+
+static float pbrt3_roughness_to_alpha(float roughness)
+{
+    roughness = std::max(roughness, 1e-3f);
+    float x = std::log(roughness);
+    float alpha =
+        1.621420000f +
+        0.819955000f * x +
+        0.173400000f * x * x +
+        0.017120100f * x * x * x +
+        0.000640711f * x * x * x * x;
+    return alpha;
+}
+
+float GGX_Distribution::roughness_to_alpha(const Thread_Context& thread_ctx, float roughness, bool no_remapping)
+{
+    float alpha;
+    if (no_remapping) {
+        alpha = roughness;
+    }
+    else if (thread_ctx.scene_context->pbrt3_scene) {
+        alpha = pbrt3_roughness_to_alpha(roughness);
+    }
+    else if (thread_ctx.scene_context->pbrt4_scene) {
+        alpha = std::sqrt(roughness);
+    }
+    else {
+        alpha = roughness * roughness;
+    }
+    return alpha;
 }
