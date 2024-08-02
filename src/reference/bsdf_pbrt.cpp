@@ -122,37 +122,30 @@ ColorRGB Pbrt3_Translucent_BSDF::evaluate(const Vector3& wo, const Vector3& wi) 
         float wi_dot_n = dot(wi, normal);
         float base_specular_relfection = microfacet_reflection(F, G, D, wo_dot_n, wi_dot_n);
         ColorRGB specular = (specular_coeff * reflectance) * base_specular_relfection;
-
         ColorRGB f = diffuse + specular;
         return f;
     }
     else {
         ColorRGB diffuse = Pi_Inv * diffuse_coeff * transmittance;
-
-        Vector3 wh = refraction_half_direction(eta_o, wo, eta_i, wi, normal);
-        float wo_dot_wh = dot(wo, wh);
-        float wi_dot_wh = dot(wi, wh);
-
-        // When refraction is possible, then wo/wi directions should be in the
-        // different hemispheres of the half-direction vector.
-        bool refraction_possible = (wo_dot_wh * wi_dot_wh <= 0.f);
-
         ColorRGB specular;
-        if (refraction_possible) {
-            float cos_theta_i = dot(wi, wh);
-            float F = dielectric_fresnel(cos_theta_i, eta_o / eta_i);
-            if (F == 1.f) {
-                return Color_Black;
+        {
+            Vector3 wh = refraction_half_direction(eta_o, wo, eta_i, wi, normal);
+            float wo_dot_wh = dot(wo, wh);
+            float wi_dot_wh = dot(wi, wh);
+            bool microfacet_refraction_possible = (wo_dot_wh * wi_dot_wh <= 0.f);
+            if (microfacet_refraction_possible) {
+                float F = dielectric_fresnel(wi_dot_wh, eta_o / eta_i);
+                if (F < 1.f) {
+                    float G = GGX_Distribution::G(wi, wo, normal, alpha);
+                    float D = GGX_Distribution::D(wh, normal, alpha);
+                    float wo_dot_n = dot(wo, normal);
+                    float wi_dot_n = dot(wi, normal);
+                    float base_specular_transmission = microfacet_transmission(
+                        F, G, D, wo_dot_n, wi_dot_n, wo_dot_wh, wi_dot_wh, eta_o, eta_i);
+                    specular = (specular_coeff * transmittance) * base_specular_transmission;
+                }
             }
-            float G = GGX_Distribution::G(wi, wo, normal, alpha);
-            float D = GGX_Distribution::D(wh, normal, alpha);
-            float wo_dot_n = dot(wo, normal);
-            float wi_dot_n = dot(wi, normal);
-
-            float base_specular_transmission = microfacet_transmission(F, G, D, wo_dot_n, wi_dot_n, wo_dot_wh, wi_dot_wh, eta_o, eta_i);
-            specular = (specular_coeff * transmittance) * base_specular_transmission;
         }
-
         ColorRGB f = diffuse + specular;
         return f;
     }
@@ -231,24 +224,21 @@ float Pbrt3_Translucent_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
         float pdf = reflection_probability * 0.5f * (diffuse_pdf + specular_pdf);
         return pdf;
     }
-    else {
+    else { // refraction
         float diffuse_cos_theta = -dot(wi, normal);
         ASSERT(diffuse_cos_theta >= 0.f);
         float diffuse_pdf = cosine_hemisphere_pdf(diffuse_cos_theta);
 
-        Vector3 wh = refraction_half_direction(eta_o, wo, eta_i, wi, normal);
-        float wo_dot_wh = dot(wo, wh);
-        float wi_dot_wh = dot(wi, wh);
-
-        // When refraction is possible, then wo/wi directions should be in the
-        // different hemispheres of the half-direction vector.
-        bool refraction_possible = (wo_dot_wh * wi_dot_wh <= 0.f);
-
         float specular_pdf = 0.f;
-        if (refraction_possible) {
-            specular_pdf = microfacet_transmission_wi_pdf(wo, wi, wh, normal, alpha, eta_o, eta_i);
+        {
+            Vector3 wh = refraction_half_direction(eta_o, wo, eta_i, wi, normal);
+            float wo_dot_wh = dot(wo, wh);
+            float wi_dot_wh = dot(wi, wh);
+            bool microfacet_refraction_possible = (wo_dot_wh * wi_dot_wh <= 0.f);
+            if (microfacet_refraction_possible) {
+                specular_pdf = microfacet_transmission_wi_pdf(wo, wi, wh, normal, alpha, eta_o, eta_i);
+            }
         }
-        
         float pdf = (1.f - reflection_probability) * 0.5f * (diffuse_pdf + specular_pdf);
         return pdf;
     }
