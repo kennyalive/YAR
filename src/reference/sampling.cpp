@@ -253,84 +253,40 @@ float GGX_microfacet_normal_pdf(const Vector3& wh, const Vector3& n, float alpha
     return D * dot(wh, n);
 }
 
-static void sample_visible_slope(Vector2 u, float cos_theta, float* slope_x, float* slope_y) {
-    ASSERT(cos_theta >= -1.f && cos_theta <= 1.f);
+Vector3 GGX_sample_visible_microfacet_normal(Vector2 u, const Vector3& wo_local, float alpha_x, float alpha_y)
+{
+    // Transforming the view direction to the hemisphere configuration
+    Vector3 N = Vector3(alpha_x * wo_local.x, alpha_y * wo_local.y, wo_local.z).normalized();
 
-    // special case (normal incidence)
-    if (cos_theta > 0.9999f) {
-        float r = std::sqrt(u[0]/(1.f - u[0]));
-        float phi = Pi2 * u[1];
-        *slope_x = r * std::cos(phi);
-        *slope_y = r * std::cos(phi);
-        return;
-    }
+    // Orthonormal basis (with special case if cross product is zero)
+    float len_sq = N.x * N.x + N.y * N.y;
+    Vector3 T1 = len_sq > 0.f ? (Vector3(-N.y, N.x, 0) / std::sqrt(len_sq)) : Vector3(1, 0, 0);
+    Vector3 T2 = cross(N, T1);
 
-    float sin_theta = std::sqrt(1.f - cos_theta * cos_theta);
-    float tan_theta = sin_theta / cos_theta;
-    float a = 1.f / tan_theta;
-    float G1 = 2.f / (1.f + std::sqrt(1.f + 1.f/(a*a)));
+    // Parameterization of the projected area
+    float r = std::sqrt(u[0]);
+    float phi = 2.f * Pi * u[1];
+    float t1 = r * std::cos(phi);
+    float t2 = r * std::sin(phi);
+    float s = 0.5f * (1.f + N.z);
+    t2 = (1.f - s) * std::sqrt(1.f - t1 * t1) + s * t2;
 
-    // sample slope_x
-    float A = (2.f * u[0] / G1) - 1.f;
-    float tmp = 1.f / (A*A - 1.f);
-    if (tmp > 1e10)
-        tmp = 1e10;
-    float B = tan_theta;
-    float D = std::sqrt(std::max(0.f, B*B*tmp*tmp - (A*A - B*B)*tmp));
-    float slope_x_1 = B*tmp - D;
-    float slope_x_2 = B*tmp + D;
-    *slope_x = (A < 0 || slope_x_2 > 1.f/tan_theta) ? slope_x_1 : slope_x_2;
+    // Reprojection onto hemisphere
+    Vector3 nh = t1 * T1 + t2 * T2 + std::sqrt(std::max(0.f, 1.f - t1 * t1 - t2 * t2)) * N;
 
-    // sample slope_y
-    float S;
-    float u2 = u[1];
-    if (u2 > 0.5f) {
-        S = 1.f;
-        u2 = 2.f * (u2 - 0.5f);
-    }
-    else {
-        S = -1.f;
-        u2 = 2.f * (0.5f - u2);
-    }
-    float z = (u2 * (u2 * (u2 * 0.27385f - 0.73369f) + 0.46341f)) /
-              (u2 * (u2 * (u2 * 0.093073f + 0.309420f) - 1.f) + 0.597999f);
-    *slope_y = S * z * std::sqrt(1.f + (*slope_x) * (*slope_x));
-}
-
-Vector3 GGX_sample_visible_microfacet_normal(Vector2 u, const Vector3& wo_local, float alpha_x, float alpha_y) {
-    // Stretch Wo (alpha_x/y are also stretched implicitly by the inverse values,
-    // so we get isotropic distribution).
-    Vector3 wo = Vector3(alpha_x * wo_local.x, alpha_y * wo_local.y, wo_local.z);
-    wo.normalize();
-
-    Direction_Info wo_info(wo);
-
-    // Sample P22_wo (for isotropic distribution and we can assume phi=0).
-    float slope_x, slope_y;
-    sample_visible_slope(u, wo_info.cos_theta, &slope_x, &slope_y);
-
-    // Rotate from default phi=0 frame to phi defined by wo.
-    float tmp = wo_info.cos_phi * slope_x - wo_info.sin_phi * slope_y;
-    slope_y   = wo_info.sin_phi * slope_x + wo_info.cos_phi * slope_y;
-    slope_x = tmp;
-
-    // Unstretch slope.
-    slope_x = alpha_x * slope_x;
-    slope_y = alpha_y * slope_y;
-
-    // Compute normal.
-    Vector3 wh_local = Vector3(-slope_x, -slope_y, 1.f).normalized();
+    // Transforming the normal back to the ellipsoid configuration
+    Vector3 wh_local = Vector3(alpha_x * nh.x, alpha_y * nh.y, std::max(1e-6f, nh.z)).normalized();
     return wh_local;
 }
 
-float GGX_visible_microfacet_normal_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha) {
+float GGX_visible_microfacet_normal_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha)
+{
     ASSERT(dot(wh, n) >= 0.f);
-    ASSERT(dot(wo, wh) >= 0.f);
     ASSERT(dot(wo, n) >= 0.f);
 
     float G1 = GGX_Distribution::G1(wo, n, alpha);
     float D = GGX_Distribution::D(wh, n, alpha);
 
-    float wh_pdf = G1 * D * dot(wo, wh) / dot(wo, n);
+    float wh_pdf = G1 * D * std::max(0.f, dot(wo, wh)) / dot(wo, n);
     return wh_pdf;
 }
