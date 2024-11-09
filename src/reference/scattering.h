@@ -48,4 +48,4 @@ struct GGX_Distribution {
     static float roughness_to_alpha(const Thread_Context& thread_ctx, float roughness, bool no_remapping);
 };
 
-constexpr bool ggx_sample_visible_normals = false;
+constexpr bool ggx_sample_visible_normals = true;
