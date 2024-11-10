@@ -12,10 +12,11 @@
 
 #include "lib/math.h"
 
-BSDF::BSDF(const Shading_Context& shading_ctx)
-    : normal(shading_ctx.normal)
-    , tangent(shading_ctx.tangent)
-    , bitangent(shading_ctx.bitangent)
+BSDF::BSDF(const Scene_Context& scene_context, const Shading_Context& shading_context)
+    : scene_context(scene_context)
+    , normal(shading_context.normal)
+    , tangent(shading_context.tangent)
+    , bitangent(shading_context.bitangent)
 {
 }
 
@@ -56,7 +57,7 @@ Vector3 BSDF::sample_microfacet_normal(Vector2 u, const Vector3& wo, float alpha
 // Diffuse BRDF
 //
 Diffuse_BRDF::Diffuse_BRDF(const Thread_Context& thread_ctx, const Diffuse_Material& material)
-    : BSDF(thread_ctx.shading_context)
+    : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
 {
     reflection_scattering = true;
     reflectance = evaluate_rgb_parameter(thread_ctx, material.reflectance);
@@ -86,7 +87,7 @@ float Diffuse_BRDF::pdf(const Vector3& /*wo*/, const Vector3& wi) const
 //
 Diffuse_Transmission_BSDF::Diffuse_Transmission_BSDF(const Thread_Context& thread_ctx,
     const Diffuse_Transmission_Material& material)
-    : BSDF(thread_ctx.shading_context)
+    : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
 {
     reflection_scattering = true;
     transmission_scattering = true;
@@ -142,7 +143,7 @@ float Diffuse_Transmission_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
 // Metal BRDF
 //
 Metal_BRDF::Metal_BRDF(const Thread_Context& thread_ctx, const Metal_Material& material)
-    : BSDF(thread_ctx.shading_context)
+    : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
 {
     reflection_scattering = true;
     const float roughness = evaluate_float_parameter(thread_ctx, material.roughness);
@@ -192,7 +193,7 @@ float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 // Plastic BRDF
 //
 Plastic_BRDF::Plastic_BRDF(const Thread_Context& thread_ctx, const Plastic_Material& params)
-    : BSDF(thread_ctx.shading_context)
+    : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
 {
     reflection_scattering = true;
     const float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
@@ -255,7 +256,7 @@ float Plastic_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 // Rough glass BSDF
 //
 Rough_Glass_BSDF::Rough_Glass_BSDF(const Thread_Context& thread_ctx, const Glass_Material& params)
-    : BSDF(thread_ctx.shading_context)
+    : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
 {
     reflection_scattering = true;
     transmission_scattering = true;
@@ -414,7 +415,7 @@ float Rough_Glass_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
 // https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.18.4504&rep=rep1&type=pdf
 //
 Ashikhmin_Shirley_Phong_BRDF::Ashikhmin_Shirley_Phong_BRDF(const Thread_Context& thread_ctx, const Coated_Diffuse_Material& params)
-    : BSDF(thread_ctx.shading_context)
+    : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
 {
     reflection_scattering = true;
     const float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
@@ -472,7 +473,7 @@ float Ashikhmin_Shirley_Phong_BRDF::pdf(const Vector3& wo, const Vector3& wi) co
 }
 
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
-    const Scene_Context& scene_ctx = *thread_ctx.scene_context;
+    const Scene_Context& scene_ctx = thread_ctx.scene_context;
     Shading_Context& shading_ctx = thread_ctx.shading_context;
     switch (material.type) {
     case Material_Type::diffuse:
@@ -500,7 +501,7 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
     {
         const Plastic_Material& params = scene_ctx.materials.plastic[material.index];
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
-        if (thread_ctx.scene_context->pbrt3_scene) {
+        if (thread_ctx.scene_context.pbrt3_scene) {
             void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Plastic_BRDF>();
             return new (bsdf_allocation) Pbrt3_Plastic_BRDF(thread_ctx, params);
         }

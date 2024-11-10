@@ -49,7 +49,7 @@ ColorRGB evaluate_rgb_parameter(const Thread_Context& thread_ctx, const RGB_Para
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     Vector2 duvdx = Vector2(shading_ctx.dudx, shading_ctx.dvdx);
     Vector2 duvdy = Vector2(shading_ctx.dudy, shading_ctx.dvdy);
-    return evaluate_rgb_parameter(*thread_ctx.scene_context, shading_ctx.uv, duvdx, duvdy, param);
+    return evaluate_rgb_parameter(thread_ctx.scene_context, shading_ctx.uv, duvdx, duvdy, param);
 }
 
 float evaluate_float_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vector2 duvdx, Vector2 duvdy, const Float_Parameter& param)
@@ -96,5 +96,5 @@ float evaluate_float_parameter(const Thread_Context& thread_ctx, const Float_Par
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     Vector2 duvdx = Vector2(shading_ctx.dudx, shading_ctx.dvdx);
     Vector2 duvdy = Vector2(shading_ctx.dudy, shading_ctx.dvdy);
-    return evaluate_float_parameter(*thread_ctx.scene_context, shading_ctx.uv, duvdx, duvdy, param);
+    return evaluate_float_parameter(thread_ctx.scene_context, shading_ctx.uv, duvdx, duvdy, param);
 }

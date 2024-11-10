@@ -329,10 +329,10 @@ ColorRGB get_emitted_radiance(Thread_Context& thread_ctx)
         return Color_Black;
 
     if (light.type == Light_Type::diffuse_rectangular)
-        return thread_ctx.scene_context->lights.diffuse_rectangular_lights[light.index].emitted_radiance;
+        return thread_ctx.scene_context.lights.diffuse_rectangular_lights[light.index].emitted_radiance;
 
     if (light.type == Light_Type::diffuse_sphere)
-        return thread_ctx.scene_context->lights.diffuse_sphere_lights[light.index].emitted_radiance;
+        return thread_ctx.scene_context.lights.diffuse_sphere_lights[light.index].emitted_radiance;
 
     ASSERT(false); // unexpected area light type
     return Color_Black;
@@ -340,7 +340,7 @@ ColorRGB get_emitted_radiance(Thread_Context& thread_ctx)
 
 ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays& differential_rays)
 {
-    const Scene_Context& scene_ctx = *thread_ctx.scene_context;
+    const Scene_Context& scene_ctx = thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
 
     if (!trace_ray(thread_ctx, ray, &differential_rays)) {
@@ -448,7 +448,7 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
 ColorRGB estimate_direct_lighting_from_single_sample(const Thread_Context& thread_ctx,
     float u_light_selector, Vector2 u_light, Vector2 u_bsdf, float u_scattering_type)
 {
-    const Scene_Context& scene_ctx = *thread_ctx.scene_context;
+    const Scene_Context& scene_ctx = thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
 
     int light_index = int(u_light_selector * scene_ctx.lights.total_light_count);
