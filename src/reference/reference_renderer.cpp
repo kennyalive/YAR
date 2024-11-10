@@ -314,7 +314,7 @@ struct Rendering_Progress {
 static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int tile_index,
     double* tile_variance_accumulator, Rendering_Progress* progress)
 {
-    const Scene_Context& scene_ctx = *thread_ctx.scene_context;
+    const Scene_Context& scene_ctx = thread_ctx.scene_context;
 
     Bounds2i sample_bounds;
     Bounds2i pixel_bounds;
@@ -505,10 +505,9 @@ Image render_scene(const Scene_Context& scene_ctx, double* variance_estimate, fl
     ] {
         initialize_fp_state();
 
-        Thread_Context thread_ctx;
+        Thread_Context thread_ctx(scene_ctx);
         thread_ctx.memory_pool.allocate_pool_memory(1 * 1024 * 1024);
         thread_ctx.pixel_sampler.init(&scene_ctx.pixel_sampler_config, &thread_ctx.rng);
-        thread_ctx.scene_context = &scene_ctx;
 
         int index = tile_counter.fetch_add(1);
 

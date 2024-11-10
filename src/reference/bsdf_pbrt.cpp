@@ -12,7 +12,7 @@
 // Uber material from PBRT 3
 //
 Pbrt3_Uber_BRDF::Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_Uber_Material& params)
-    : BSDF(thread_ctx.shading_context)
+    : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
 {
     reflection_scattering = true;
     opacity = evaluate_rgb_parameter(thread_ctx, params.opacity);
@@ -83,7 +83,7 @@ float Pbrt3_Uber_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 // Pbrt3 Translucent BRDF
 //
 Pbrt3_Translucent_BSDF::Pbrt3_Translucent_BSDF(const Thread_Context& thread_ctx, const Pbrt3_Translucent_Material& params)
-    : BSDF(thread_ctx.shading_context)
+    : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
 {
     reflectance = evaluate_rgb_parameter(thread_ctx, params.reflectance);
     transmittance = evaluate_rgb_parameter(thread_ctx, params.transmittance);
@@ -287,7 +287,7 @@ ColorRGB Pbrt3_Plastic_BRDF::evaluate(const Vector3& wo, const Vector3& wi) cons
 // Pbrt3 Fourier BRDF
 //
 Pbrt3_Fourier_BSDF::Pbrt3_Fourier_BSDF(const Thread_Context& thread_ctx, const Pbrt3_Fourier_Material& params)
-    : BSDF(thread_ctx.shading_context)
+    : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
     , data(params)
 {
     reflection_scattering = true;

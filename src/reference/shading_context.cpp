@@ -434,7 +434,7 @@ void Shading_Context::apply_bump_map(const Scene_Context& scene_ctx, Float_Param
 bool trace_ray(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays* differential_rays)
 {
     Intersection isect;
-    if (!thread_ctx.scene_context->kdtree_data.scene_kdtree.intersect(ray, isect)) {
+    if (!thread_ctx.scene_context.kdtree_data.scene_kdtree.intersect(ray, isect)) {
         thread_ctx.shading_context = Shading_Context{};
         thread_ctx.shading_context.miss_ray = ray;
         return false;

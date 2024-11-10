@@ -3,6 +3,7 @@
 #include "lib/material.h"
 #include "lib/vector.h"
 
+struct Scene_Context;
 struct Shading_Context;
 struct Thread_Context;
 
@@ -11,7 +12,10 @@ struct BSDF {
     virtual ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const = 0;
     virtual float pdf(const Vector3& wo, const Vector3& wi) const = 0;
 
-    BSDF(const Shading_Context& shading_ctx);
+    BSDF(const Scene_Context& scene_context, const Shading_Context& shading_context);
+
+    // Scene settings can affect bsdf computation
+    const Scene_Context& scene_context;
 
     // types of scattering modeled by this bsdf
     bool reflection_scattering = false;

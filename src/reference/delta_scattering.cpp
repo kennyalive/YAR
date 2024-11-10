@@ -152,7 +152,7 @@ static Delta_Info get_pbrt_uber_info(Thread_Context& thread_ctx, const Pbrt3_Ube
 
 bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float* u_scattering_type, Delta_Scattering* delta_scattering)
 {
-    const Scene_Context& scene_ctx = *thread_ctx.scene_context;
+    const Scene_Context& scene_ctx = thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     const Material_Handle material = shading_ctx.material;
 

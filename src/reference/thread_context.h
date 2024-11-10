@@ -11,11 +11,13 @@ struct Path_Context {
 };
 
 struct Thread_Context {
+    Thread_Context(const Scene_Context& scene_context) : scene_context(scene_context) {}
+
+    const Scene_Context& scene_context;
+
     Memory_Pool memory_pool;
     RNG rng;
     Stratified_Pixel_Sampler pixel_sampler;
-
-    const Scene_Context* scene_context = nullptr;
     Path_Context path_context;
     Shading_Context shading_context;
 

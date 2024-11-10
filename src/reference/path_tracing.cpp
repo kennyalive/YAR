@@ -10,7 +10,7 @@
 
 ColorRGB trace_path(Thread_Context& thread_ctx, const Ray& ray, const Differential_Rays& differential_rays)
 {
-    const Scene_Context& scene_ctx = *thread_ctx.scene_context;
+    const Scene_Context& scene_ctx = thread_ctx.scene_context;
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     const Raytracer_Config& rt_config = scene_ctx.raytracer_config;
 

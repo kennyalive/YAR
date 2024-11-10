@@ -212,10 +212,10 @@ float GGX_Distribution::roughness_to_alpha(const Thread_Context& thread_ctx, flo
     if (no_remapping) {
         alpha = roughness;
     }
-    else if (thread_ctx.scene_context->pbrt3_scene) {
+    else if (thread_ctx.scene_context.pbrt3_scene) {
         alpha = pbrt3_roughness_to_alpha(roughness);
     }
-    else if (thread_ctx.scene_context->pbrt4_scene) {
+    else if (thread_ctx.scene_context.pbrt4_scene) {
         alpha = std::sqrt(roughness);
     }
     else {
