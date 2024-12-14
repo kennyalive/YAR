@@ -130,7 +130,6 @@ namespace pbrt {
       /*! Freeze the current graphics state so that it won't be affected
         by subsequent changes. Returns the frozen graphics state */
       static Attributes::SP freeze(Attributes::SP& graphicsState) {
-#if 0
         // iw - this CLONES the state, else I get stack overflow in
         // destructor chain: for pbrt-v3-scenes/straight-hair.pbrt i
         // get 1M hair shapes, and the shapes::clear() then triggers
@@ -144,22 +143,6 @@ namespace pbrt {
         newGraphicsState->parent = graphicsState->parent;
         newGraphicsState->prev = graphicsState;
         return newGraphicsState;
-
-#else
-        // iw, 1/1/20 - this is the code szellman adde to avoid
-        // un-necessary clones
-        Attributes::SP newGraphicsState = std::make_shared<Attributes>();
-        newGraphicsState->areaLightSources = graphicsState->areaLightSources;
-        newGraphicsState->mediumInterface = graphicsState->mediumInterface;
-        newGraphicsState->reverseOrientation = graphicsState->reverseOrientation;
-        newGraphicsState->parent = graphicsState->parent;
-        newGraphicsState->prev = graphicsState;
-
-        Attributes::SP oldGraphicsState = graphicsState;
-        graphicsState = newGraphicsState;
-
-        return oldGraphicsState;
-#endif
       }
 
       /*! Insert named material */
