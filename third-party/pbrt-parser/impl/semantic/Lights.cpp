@@ -144,14 +144,17 @@ namespace pbrt {
   (pbrt::syntactic::LightSource::SP in)
   {
     DistantLightSource::SP light = std::make_shared<DistantLightSource>();
+    affine3f transform = in->transform.atStart;
     for (auto it : in->param) {
-      std::string name = it.first;
+      const std::string name = it.first;
       if (name == "from") {
         in->getParam3f(&light->from.x,name);
+        light->from = xfmPoint(transform, light->from);
         continue;
       }
       if (name == "to") {
         in->getParam3f(&light->to.x,name);
+        light->to = xfmPoint(transform, light->to);
         continue;
       }
       if (name == "L") {
