@@ -445,11 +445,11 @@ ColorRGB Image_Texture::sample_bilinear(const Vector2& uv, int mip_level, Wrap_M
     float x = uv.x * float(image.width) - 0.5f;
     float y = uv.y * float(image.height) - 0.5f;
 
-    float x_floor;
-    float wx = std::modf(x, &x_floor);
+    float x_floor = std::floor(x);
+    float wx = x - x_floor;
 
-    float y_floor;
-    float wy = std::modf(y, &y_floor);
+    float y_floor = std::floor(y);
+    float wy = y - y_floor;
 
     int x0 = int(x_floor);
     int y0 = int(y_floor);
