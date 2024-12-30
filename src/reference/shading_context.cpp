@@ -233,13 +233,13 @@ void Shading_Context::calculate_dxdy_derivatives(const Differential_Rays& differ
     has_dxdy_derivatives = true;
 
     // Position derivatives.
-    float plane_d = -dot(normal, position);
-    float tx = ray_plane_intersection(differential_rays.dx_ray, normal, plane_d);
+    float plane_d = -dot(geometric_normal, position);
+    float tx = ray_plane_intersection(differential_rays.dx_ray, geometric_normal, plane_d);
     if (std::abs(tx) != Infinity) {
         Vector3 px = differential_rays.dx_ray.get_point(tx);
         dpdx = px - position;
     }
-    float ty = ray_plane_intersection(differential_rays.dy_ray, normal, plane_d);
+    float ty = ray_plane_intersection(differential_rays.dy_ray, geometric_normal, plane_d);
     if (std::abs(ty) != Infinity) {
         Vector3 py = differential_rays.dy_ray.get_point(ty);
         dpdy = py - position;
@@ -281,7 +281,7 @@ void Shading_Context::calculate_uv_derivates()
     // equation with the highest chance to be degenerate.
     int dim0, dim1;
     {
-        Vector3 a = normal.abs();
+        Vector3 a = geometric_normal.abs();
         if (a.x > a.y && a.x > a.z) {
             dim0 = 1;
             dim1 = 2;
