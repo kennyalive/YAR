@@ -146,15 +146,21 @@ void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, cons
     // we assume that dndu/dndv is still a reasonable approximation.
     shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &normal);
 
-    bitangent = cross(normal, dpdu);
-    if (bitangent != Vector3_Zero) {
-        bitangent.normalize();
-        tangent = cross(bitangent, normal);
+    if (!has_uv_parameterization) {
+        ASSERT(dpdu == Vector3_Zero);
+        ASSERT(dpdv == Vector3_Zero);
+        coordinate_system_from_vector(normal, &dpdu_shading, &dpdv_shading);
+    }
+    else if (std::abs(dot(normal, geometric_normal) - 1.f) < 1e-6f) {
+        dpdu_shading = dpdu;
+        dpdv_shading = dpdv;
     }
     else {
-        coordinate_system_from_vector(normal, &tangent, &bitangent);
-        dpdu = Vector3_Zero;
-        dpdv = Vector3_Zero;
+        dpdu_shading = project_vector_onto_plane_and_get_direction(dpdu, normal);
+        dpdu_shading *= dpdu.length();
+
+        dpdv_shading = project_vector_onto_plane_and_get_direction(dpdv, normal);
+        dpdv_shading *= dpdv.length();
     }
 
     material = intersection.scene_object->material;
@@ -413,21 +419,19 @@ void Shading_Context::apply_bump_map(const Scene_Context& scene_ctx, Float_Param
         // bump map offset is relative to the unmodified shading normal direction, as defined by the geometry
         Vector3 original_shading_normal = original_shading_normal_was_flipped ? -normal : normal;
 
-        Vector3 new_dpdu = dpdu + ((height_du - height) / du) * original_shading_normal;
-        Vector3 new_dpdv = dpdv + ((height_dv - height) / dv) * original_shading_normal;
-        Vector3 new_normal = cross(new_dpdu, new_dpdv).normalized();
+        dpdu_shading += ((height_du - height) / du) * original_shading_normal;
+        dpdv_shading += ((height_dv - height) / dv) * original_shading_normal;
+        normal = cross(dpdu_shading, dpdv_shading).normalized();
 
         // renderer convention: shading normals should be in the hemisphere of the geometric normal.
-        if (dot(new_normal, geometric_normal) < 0)
-            new_normal = -new_normal;
+        if (dot(normal, geometric_normal) < 0) {
+            normal = -normal;
+        }
 
-        shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &new_normal);
-
-        normal = new_normal;
-        bitangent = cross(normal, new_dpdu).normalized();
-        tangent = cross(bitangent, normal);
-        dpdu = new_dpdu;
-        dpdv = new_dpdv;
+        shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &normal);
+        // NOTE: do not adjust dpdu_shading/dpdv_shading derivatives to match new normal orientation.
+        // They have limited usage from this point on. dpdu_shading is used later to construct orthonormal
+        // basis during BSDF initialization, but it should not be orthogonal to the normal.
     }
 }
 

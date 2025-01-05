@@ -63,6 +63,14 @@ bool solve_linear_system_2x2(float a[2][2], T b[2], T* x1, T* x2);
 // axis v is specified, v1 and v2 are chosen arbitrarily.
 void coordinate_system_from_vector(const Vector3& v, Vector3* v1, Vector3* v2);
 
+// Returns normalized projection of the vector onto a plane.
+// The plane is oriented according to the given normal.
+Vector3 project_vector_onto_plane_and_get_direction(const Vector3& v, const Vector3& plane_n);
+
+// Returns vector projection onto a plane.
+// The plane is oriented according to the given normal.
+Vector3 project_vector_onto_plane(const Vector3& v, const Vector3& plane_n);
+
 // Returns signed distance to the intersection point. Returns signed infinity if
 // the ray is parallel to the plane and does not originate on the plane. If ray
 // if parallel to the plane and originates on the plane the function returns 0.

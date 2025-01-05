@@ -30,6 +30,21 @@ float ray_plane_intersection(const Ray& ray, const Vector3& plane_n, float plane
     return k / dot(ray.direction, plane_n);
 }
 
+Vector3 project_vector_onto_plane_and_get_direction(const Vector3& v, const Vector3& plane_n)
+{
+    Vector3 t = cross(v, plane_n);
+    ASSERT(t != Vector3_Zero);
+    Vector3 d = cross(plane_n, t);
+    return d.normalized();
+}
+
+Vector3 project_vector_onto_plane(const Vector3& v, const Vector3& plane_n)
+{
+    Vector3 direction = project_vector_onto_plane_and_get_direction(v, plane_n);
+    Vector3 projected_v = dot(v, direction) * direction;
+    return projected_v;
+}
+
 static int float_bits_to_int(float f) {
     static_assert(sizeof(float) == sizeof(int));
     int i;

@@ -15,9 +15,9 @@
 BSDF::BSDF(const Scene_Context& scene_context, const Shading_Context& shading_context)
     : scene_context(scene_context)
     , normal(shading_context.normal)
-    , tangent(shading_context.tangent)
-    , bitangent(shading_context.bitangent)
 {
+    bitangent = cross(normal, shading_context.dpdu_shading).normalized();
+    tangent = cross(bitangent, normal);
 }
 
 Vector3 BSDF::local_to_world(const Vector3& local_direction) const

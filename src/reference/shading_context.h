@@ -19,16 +19,22 @@ struct Shading_Context {
     Vector3 geometric_normal;
     Vector3 normal; // shading normal
 
-    // Tangent vectors for shading geometry.
-    // (tangent, bitangent, normal) is right-handed orthogonal coordinate system.
-    Vector3 tangent;
-    Vector3 bitangent;
-
     // Surface UV parameterization.
     bool has_uv_parameterization = false;
-    Vector2 uv; 
+    Vector2 uv;
+
+    // Position derivatives of the original geometry
     Vector3 dpdu;
     Vector3 dpdv;
+
+    // Position derivatives adjusted to perturbed surface
+    Vector3 dpdu_shading;
+    Vector3 dpdv_shading;
+
+    // Shading normal derivatives.
+    // NOTE: the renderer currently supports only the geometry types that have zero derivatives
+    // of geometric normals. When a new geometry type is introduced we need to revisit whether
+    // to keep both shading and geometric derivatives.
     Vector3 dndu;
     Vector3 dndv;
 
