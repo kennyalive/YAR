@@ -540,6 +540,13 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
             Vector2(1, 0) // not a typo, follows pbrt defaults
         };
     }
+    else if (mesh.vertices.size() == 3) {
+        mesh.uvs = { // follow pbrt3 convention (triangle.h in pbrt3)
+            Vector2(0, 0),
+            Vector2(1, 0),
+            Vector2(1, 1)
+        };
+    }
 
     mesh.reverse_geometric_normal_orientation = pbrt_mesh->reverseOrientation;
 
