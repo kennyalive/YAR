@@ -419,8 +419,8 @@ void Shading_Context::apply_bump_map(const Scene_Context& scene_ctx, Float_Param
         // bump map offset is relative to the unmodified shading normal direction, as defined by the geometry
         Vector3 original_shading_normal = original_shading_normal_was_flipped ? -normal : normal;
 
-        dpdu_shading += ((height_du - height) / du) * original_shading_normal;
-        dpdv_shading += ((height_dv - height) / dv) * original_shading_normal;
+        dpdu_shading += ((height_du - height) / du) * original_shading_normal + height * dndu;
+        dpdv_shading += ((height_dv - height) / dv) * original_shading_normal + height * dndv;
         normal = cross(dpdu_shading, dpdv_shading).normalized();
 
         // renderer convention: shading normals should be in the hemisphere of the geometric normal.
