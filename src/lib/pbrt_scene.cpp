@@ -241,6 +241,9 @@ Material_Handle add_material(Materials& materials, const Material& material)
     else if constexpr (material_type == Material_Type::glass) {
         materials_of_given_type = &materials.glass;
     }
+    else if constexpr (material_type == Material_Type::mix) {
+        materials_of_given_type = &materials.mix;
+    }
     else if constexpr (material_type == Material_Type::pbrt3_uber) {
         materials_of_given_type = &materials.pbrt3_uber;
     }
@@ -416,6 +419,14 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
             mtl.bump_map = import_pbrt_texture_float(coated_diffuse->map_bump, scene);
 
         return add_material<Material_Type::coated_diffuse>(materials, mtl);
+    }
+
+    if (auto mix = std::dynamic_pointer_cast<pbrt::MixMaterial>(pbrt_material)) {
+        Mix_Material mtl;
+        mtl.material1 = import_pbrt_material(mix->material0, scene);
+        mtl.material2 = import_pbrt_material(mix->material1, scene);
+        mtl.mix_amount = init_rgb_parameter_from_texture_or_constant(scene, mix->map_amount, mix->amount);
+        return add_material<Material_Type::mix>(materials, mtl);
     }
 
     if (auto uber = std::dynamic_pointer_cast<pbrt::UberMaterial>(pbrt_material)) {

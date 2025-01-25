@@ -12,6 +12,7 @@ enum class Material_Type : uint32_t {
     plastic,
     coated_diffuse,
     glass,
+    mix,
     pbrt3_uber,
     pbrt3_translucent,
     pbrt3_fourier,
@@ -138,6 +139,14 @@ struct Glass_Material {
     bool operator==(const Glass_Material&) const = default;
 };
 
+struct Mix_Material {
+    Material_Handle material1;
+    Material_Handle material2;
+    RGB_Parameter mix_amount;
+
+    bool operator==(const Mix_Material&) const = default;
+};
+
 #include "material_pbrt.h"
 
 struct Materials {
@@ -149,6 +158,7 @@ struct Materials {
     std::vector<Plastic_Material> plastic;
     std::vector<Coated_Diffuse_Material> coated_diffuse;
     std::vector<Glass_Material> glass;
+    std::vector<Mix_Material> mix;
     std::vector<Pbrt3_Uber_Material> pbrt3_uber;
     std::vector<Pbrt3_Translucent_Material> pbrt3_translucent;
     std::vector<Pbrt3_Fourier_Material> pbrt3_fourier;
