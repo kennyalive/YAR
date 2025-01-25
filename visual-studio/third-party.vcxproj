@@ -115,7 +115,6 @@
     <ClCompile Include="..\third-party\imgui\impl\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\third-party\imgui\impl\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\3rdParty\rply.c" />
-    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\BinaryFileFormat.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Camera.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Geometry.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\importPBRT.cpp" />

@@ -108,9 +108,6 @@
     <ClCompile Include="..\third-party\getopt\getopt.c">
       <Filter>getopt</Filter>
     </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\BinaryFileFormat.cpp">
-      <Filter>pbrt-parser\impl\semantic</Filter>
-    </ClCompile>
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Camera.cpp">
       <Filter>pbrt-parser\impl\semantic</Filter>
     </ClCompile>

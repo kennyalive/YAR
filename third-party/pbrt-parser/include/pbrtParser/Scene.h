@@ -58,12 +58,6 @@ namespace pbrt {
   using pairNf   = pbrt::math::pairNf;
 #endif
 
-  /*! internal class used for serializing a scene graph to/from disk */
-  struct BinaryWriter;
-    
-  /*! internal class used for serializing a scene graph to/from disk */
-  struct BinaryReader;
-
   struct Object;
 
   /*! base abstraction for any entity in the pbrt scene graph that's
@@ -77,10 +71,6 @@ namespace pbrt {
       
     /*! pretty-printer, for debugging */
     virtual std::string toString() const = 0; // { return "Entity"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) = 0;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) {}
   };
 
 
@@ -92,9 +82,6 @@ namespace pbrt {
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "Spectrum"; }
     /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     pairNf spd;
   };
@@ -115,10 +102,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "Material"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     /*! the logical name that this was defined under, such as
         "BackWall". Note this may be an empty string for some scenes
@@ -136,10 +119,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "LightSource"; }
-    // /*! serialize out to given binary writer */
-    // virtual int writeTo(BinaryWriter &) override;
-    // /*! serialize _in_ from given binary file reader */
-    // virtual void readFrom(BinaryReader &) override;
   };
 
   struct InfiniteLightSource : public LightSource {
@@ -147,10 +126,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "InfiniteLightSource"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     std::string mapName;
     affine3f    transform;
@@ -169,10 +144,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "DistantLightSource"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     vec3f from  { 0.f,0.f,0.f };
     vec3f to    { 0.f,0.f,1.f };
@@ -186,10 +157,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "SpotLightSource"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     vec3f       from;
     vec3f       to;
@@ -205,10 +172,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "PointLightSource"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     vec3f       from;
     vec3f       I              { 1.f,1.f,1.f };
@@ -226,10 +189,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "AreaLight"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
   };
   
   /*! a area light of type 'diffuse', with a 'color L' parameter */
@@ -238,10 +197,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "DiffuseAreaLightRGB"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     vec3f L;
     int nSamples = 1;
@@ -253,10 +208,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "DiffuseAreaLightBlackBody"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     /*! rgb from temperature */
     vec3f LinRGB() const;
@@ -270,10 +221,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "(Abstract)Texture"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
   };
 
   /*! a texture defined by a 2D image. Note we hadnle ptex separately,
@@ -285,10 +232,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "ImageTexture"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     std::string fileName;
     float uscale = 1.f;
@@ -306,10 +249,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "PtexFileTexture"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     std::string fileName;
   };
@@ -319,10 +258,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "FbmTexture"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
   };
   
   struct WindyTexture : public Texture {
@@ -330,10 +265,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "WindyTexture"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
   };
   
   struct MarbleTexture : public Texture {
@@ -341,10 +272,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "MarbleTexture"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     float scale { 1.f };
   };
@@ -354,10 +281,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "WrinkledTexture"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
   };
   
   struct ScaleTexture : public Texture {
@@ -365,10 +288,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "ScaleTexture"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     Texture::SP tex1, tex2;
     vec3f scale1 { 1.f };
@@ -380,10 +299,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "MixTexture"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     vec3f amount { 1.f };
     Texture::SP map_amount;
@@ -397,10 +312,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "ConstantTexture"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     vec3f value;
   };
@@ -410,10 +321,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "CheckerTexture"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     float uScale { 1.f};
     float vScale { 1.f};
@@ -430,10 +337,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "DisneyMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     float anisotropic    { 0.f };
     float clearCoat      { 0.f };
@@ -460,10 +363,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "MixMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     Material::SP material0, material1;
     vec3f amount { 0.5f, 0.5f, 0.5f };
@@ -479,10 +378,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "MetalMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     float roughness  { 0.01f };
     Texture::SP map_roughness;
@@ -507,10 +402,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "HairMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     float eumelanin  { 1.f };
     float beta_m     { .25f };
@@ -526,10 +417,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "TranslucentMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     vec3f transmit { 0.5f, 0.5f, 0.5f };
     vec3f reflect  { 0.5f, 0.5f, 0.5f };
@@ -549,10 +436,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "PlasticMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     vec3f kd { .25f };
     Texture::SP map_kd;
@@ -573,10 +456,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "SubstrateMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     float uRoughness { .1f };
     Texture::SP map_uRoughness;
@@ -600,10 +479,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "SubSurfaceMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     float uRoughness { 0.f };
     float vRoughness { 0.f };
@@ -623,10 +498,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "MirrorMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     vec3f kr { .9f };
     Texture::SP map_bump;
@@ -642,10 +513,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "FourierMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     std::string fileName;
   };
@@ -659,10 +526,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "MatteMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     vec3f kd { .5f };
     Texture::SP map_kd;
@@ -680,10 +543,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "GlassMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
     
     vec3f kr { 1.f, 1.f, 1.f };
     vec3f kt { 1.f, 1.f, 1.f };
@@ -701,10 +560,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "UberMaterial"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     vec3f kd { .25f };
     Texture::SP map_kd;
@@ -751,11 +606,6 @@ namespace pbrt {
     /*! virtual destructor, to force this to be polymorphic */
     virtual ~Shape() {}
     
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
-
     virtual size_t getNumPrims() const = 0;
     virtual box3f getBounds() = 0;
     virtual box3f getPrimBounds(const size_t primID, const affine3f &xfm) = 0;
@@ -793,12 +643,6 @@ namespace pbrt {
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override;
 
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
-    
     virtual size_t getNumPrims() const override
     {
       return index.size();
@@ -839,11 +683,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "QuadMesh"; }
-
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     /*! create a new quad mesh by merging triangle pairs in given
       triangle mesh. triangles that cannot be merged into quads will
@@ -886,12 +725,6 @@ namespace pbrt {
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "Curve"; }
 
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-      
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
-
     /*! for now, return '1' prim for the entire curve. since in pbrt
       a curve can be an entire spline of many points, most
       renderers will likely want to subdivide that into multiple
@@ -928,12 +761,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "Sphere"; }
-
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
     
     virtual size_t getNumPrims() const override
     {
@@ -961,12 +788,6 @@ namespace pbrt {
     
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "Disk"; }
-
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
     
     virtual size_t getNumPrims() const override
     {
@@ -992,10 +813,6 @@ namespace pbrt {
       
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "Instance"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     virtual box3f getBounds();
 
@@ -1024,10 +841,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "Object"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     virtual box3f getBounds();
     
@@ -1058,10 +871,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "Camera"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
 
     float fov { 30.f };
       
@@ -1110,10 +919,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "Film"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
     
     vec2i              resolution;
     vec4i              cropWindow;
@@ -1141,8 +946,6 @@ namespace pbrt {
       int ySamples = 1;
 
       std::string toString() const override { return "Sampler"; }
-      int writeTo(BinaryWriter &) override;
-      void readFrom(BinaryReader &) override;
   };
 
   struct Integrator : public Entity {
@@ -1159,8 +962,6 @@ namespace pbrt {
       float russianRouletteThreshold = 1.f;
 
       std::string toString() const override { return "Integrator"; }
-      int writeTo(BinaryWriter &) override;
-      void readFrom(BinaryReader &) override;
   };
 
   struct PixelFilter : public Entity {
@@ -1179,9 +980,6 @@ namespace pbrt {
       float alpha = 0.f;
 
       std::string toString() const override { return "PixelFilter"; }
-      int writeTo(BinaryWriter &) override;
-      void readFrom(BinaryReader &) override;
-
   };
 
   /*! the complete scene - pretty much the 'root' object that
@@ -1203,10 +1001,6 @@ namespace pbrt {
 
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "Scene"; }
-    /*! serialize out to given binary writer */
-    virtual int writeTo(BinaryWriter &) override;
-    /*! serialize _in_ from given binary file reader */
-    virtual void readFrom(BinaryReader &) override;
     
     /*! checks if the scene contains more than one level of instancing */
     bool isSingleLevel() const;
