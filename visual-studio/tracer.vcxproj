@@ -117,6 +117,7 @@
     <ClCompile Include="..\src\reference\delta_scattering.cpp" />
     <ClCompile Include="..\src\reference\test.cpp" />
     <ClCompile Include="..\src\reference\test_kdtree.cpp" />
+    <ClCompile Include="..\src\reference\benchmark_pbrt_parser.cpp" />
     <ClCompile Include="..\src\reference\test_random.cpp" />
     <ClCompile Include="..\src\reference\test_sampling.cpp" />
     <ClCompile Include="..\src\reference\benchmark_triangle_intersection.cpp" />

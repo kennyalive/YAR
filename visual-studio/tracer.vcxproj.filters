@@ -44,6 +44,9 @@
     <ClCompile Include="..\src\reference\intersection_simd.cpp" />
     <ClCompile Include="..\src\reference\scene_context.cpp" />
     <ClCompile Include="..\src\reference\bsdf_pbrt.cpp" />
+    <ClCompile Include="..\src\reference\benchmark_pbrt_parser.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\reference\camera.h" />

@@ -20,7 +20,7 @@
   after parsing */
 
 
-#include "pbrtParser/math.h"
+#include "math.h"
 // std
 #include <istream>
 #include <ostream>

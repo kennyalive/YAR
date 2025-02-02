@@ -9,6 +9,7 @@ void test_watertightness();
 void test_kdtree();
 void benchmark_triangle_intersection();
 void benchmark_kdtree();
+void benchmark_pbrt_parser();
 
 void run_tests(const std::string& test_name) {
     if (test_name.empty()) {
@@ -33,6 +34,9 @@ void run_tests(const std::string& test_name) {
     }
     else if (test_name == "bench_kdtree") {
         benchmark_kdtree();
+    }
+    else if (test_name == "bench_pbrt_parser") {
+        benchmark_pbrt_parser();
     }
     else {
         printf("run_tests: Unknown test name: %s\n", test_name.c_str());
