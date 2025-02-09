@@ -127,22 +127,25 @@ namespace pbrt {
         graphicsState = graphicsState->parent;
       }
 
-      /*! Freeze the current graphics state so that it won't be affected
-        by subsequent changes. Returns the frozen graphics state */
-      static Attributes::SP freeze(Attributes::SP& graphicsState) {
-        // iw - this CLONES the state, else I get stack overflow in
-        // destructor chain: for pbrt-v3-scenes/straight-hair.pbrt i
-        // get 1M hair shapes, and the shapes::clear() then triggers
-        // what looks like an infinite (or at least,
-        // too-deep-for-the-stack) chain of Attribute::~Attribute
-        // calls.
-        Attributes::SP newGraphicsState = std::make_shared<Attributes>();
-        newGraphicsState->areaLightSources = graphicsState->areaLightSources;
-        newGraphicsState->mediumInterface = graphicsState->mediumInterface;
-        newGraphicsState->reverseOrientation = graphicsState->reverseOrientation;
-        newGraphicsState->parent = graphicsState->parent;
-        newGraphicsState->prev = graphicsState;
-        return newGraphicsState;
+      Attributes::SP getClone() {
+          auto clone = std::make_shared<Attributes>();
+          clone->mediumInterface = mediumInterface;
+          clone->reverseOrientation = reverseOrientation;
+          clone->areaLightSources = areaLightSources;
+          std::vector<Attributes*> fullHistory;
+          for (Attributes* s = this; s; s = s->parent.get())
+              fullHistory.push_back(s);
+          while (!fullHistory.empty()) {
+              Attributes* att = fullHistory.back();
+              fullHistory.pop_back();
+              for (auto it : att->namedMaterial)
+                  clone->namedMaterial[it.first] = it.second;
+              for (auto it : att->namedMedium)
+                  clone->namedMedium[it.first] = it.second;
+              for (auto it : att->namedTexture)
+                  clone->namedTexture[it.first] = it.second;
+          }
+          return clone;
       }
 
       /*! Insert named material */
@@ -183,10 +186,6 @@ namespace pbrt {
       /*! Parent graphics state */
       Attributes::SP parent = nullptr;
 
-      /*! Previous graphics state, for "versioning"
-        (call freeze() to make a new version) */
-      std::weak_ptr<Attributes> prev;
-
       std::map<std::string,std::shared_ptr<Material> > namedMaterial;
       std::map<std::string,std::shared_ptr<Medium> >   namedMedium;
       std::map<std::string,std::shared_ptr<Texture> >  namedTexture;
@@ -200,22 +199,13 @@ namespace pbrt {
       /*! get reference to namedTexture */
       decltype(namedTexture)& get(std::shared_ptr<Texture>) { return namedTexture; }
       
-      /*! search this scope for the named item, descend into
-        parent scopes if not found. Also search prior versions */
       template <typename Item>
-      Item findNamedItem(Item, std::string name) {
-        Attributes* curr = this;
-        while (curr != nullptr) {
-          if (curr->get(Item{}).find(name) != curr->get(Item{}).end())
-            return curr->get(Item{})[name];
-          if (curr->prev.use_count() > 0) {
-            Attributes::SP prev(curr->prev);
-            curr = prev.get();
-          } else {
-            curr = curr->parent.get();
-          }
-        }
-        return nullptr;
+      Item findNamedItem(Item item, std::string name) {
+          auto items = get(Item{});
+          auto it = items.find(name);
+          if (it != items.end()) return it->second;
+          if (parent) return parent->findNamedItem(item, name);
+          return nullptr;
       }
 
     };

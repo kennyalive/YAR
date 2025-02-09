@@ -446,7 +446,7 @@ namespace pbrt {
             = std::make_shared<Material>(type);
           parseParams(material->param);
           currentMaterial = material;
-          material->attributes = Attributes::freeze(currentGraphicsState);
+          material->attributes = currentGraphicsState->getClone();;
           continue;
         }
 
@@ -460,7 +460,7 @@ namespace pbrt {
           std::shared_ptr<Texture> texture
             = std::make_shared<Texture>(name,texelType,mapType);
           currentGraphicsState->insertNamedTexture(name, texture);
-          texture->attributes = Attributes::freeze(currentGraphicsState);
+          texture->attributes = currentGraphicsState->getClone();;
           parseParams(texture->param);
           continue;
         }
@@ -474,7 +474,7 @@ namespace pbrt {
             = std::make_shared<Material>("<implicit>");
           currentGraphicsState->insertNamedMaterial(name, material);
           parseParams(material->param);
-          material->attributes = Attributes::freeze(currentGraphicsState);
+          material->attributes = currentGraphicsState->getClone();;
           
           /* named material have the parameter type implicitly as a
              parameter rather than explicitly on the
@@ -582,10 +582,10 @@ namespace pbrt {
           //   std::cout << "warning(pbrt_parser): shape, but no current material!" << std::endl;
           // }
           std::shared_ptr<Shape> shape
-            = std::make_shared<Shape>(next().text,
-                                      currentMaterial,
-                                      Attributes::freeze(currentGraphicsState),
-                                      ctm);
+              = std::make_shared<Shape>(next().text,
+                  currentMaterial,
+                  currentGraphicsState->getClone(),
+                  ctm);
           parseParams(shape->param);
           getCurrentObject()->shapes.push_back(shape);
           continue;
