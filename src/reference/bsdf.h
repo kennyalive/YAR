@@ -100,4 +100,16 @@ struct Ashikhmin_Shirley_Phong_BRDF : public BSDF {
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
+struct Mix_BSDF : public BSDF {
+    const BSDF* bsdf1 = nullptr;
+    const BSDF* bsdf2 = nullptr;
+    ColorRGB mix_coeff;
+    float p_coeff = 0.f;
+
+    Mix_BSDF(const Thread_Context& thread_ctx, const BSDF* bsdf1, const BSDF* bsdf2, const RGB_Parameter& mix_amaount_parameter);
+    ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
+    ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    float pdf(const Vector3& wo, const Vector3& wi) const override;
+};
+
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material);

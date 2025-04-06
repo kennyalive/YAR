@@ -472,6 +472,74 @@ float Ashikhmin_Shirley_Phong_BRDF::pdf(const Vector3& wo, const Vector3& wi) co
     return pdf;
 }
 
+//
+// Metal BRDF
+//
+Mix_BSDF::Mix_BSDF(const Thread_Context& thread_ctx, const BSDF* bsdf1, const BSDF* bsdf2, const RGB_Parameter& mix_amaount_parameter)
+    : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
+{
+    reflection_scattering = bsdf1->reflection_scattering || bsdf2->reflection_scattering;
+    transmission_scattering = bsdf1->transmission_scattering || bsdf2->transmission_scattering;
+    this->bsdf1 = bsdf1;
+    this->bsdf2 = bsdf2;
+    mix_coeff = Color_White - evaluate_rgb_parameter(thread_ctx, mix_amaount_parameter);
+    p_coeff = 1.f - mix_coeff.luminance();
+}
+
+ColorRGB Mix_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
+{
+    ColorRGB f1 = bsdf1->evaluate(wo, wi);
+    ColorRGB f2 = bsdf2->evaluate(wo, wi);
+    ColorRGB f = (Color_White - mix_coeff) * f1 + mix_coeff * f2;
+    return f;
+}
+
+ColorRGB Mix_BSDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
+{
+    ColorRGB f1, f2;
+    float pdf1 = 0.f;
+    float pdf2 = 0.f;
+
+    if (u_scattering_type < p_coeff) {
+        u_scattering_type = u_scattering_type / p_coeff;
+        f2 = bsdf2->sample(u, u_scattering_type, wo, wi, &pdf2);
+
+        float n_dot_wi = dot(normal, *wi);
+        if (n_dot_wi > 0 && bsdf1->reflection_scattering || n_dot_wi < 0 && bsdf1->transmission_scattering) {
+            pdf1 = bsdf1->pdf(wo, *wi);
+            f1 = bsdf1->evaluate(wo, *wi);
+        }
+    }
+    else {
+        u_scattering_type = (u_scattering_type - p_coeff) / (1.f - p_coeff);
+        f1 = bsdf1->sample(u, u_scattering_type, wo, wi, &pdf1);
+
+        float n_dot_wi = dot(normal, *wi);
+        if (n_dot_wi > 0 && bsdf2->reflection_scattering || n_dot_wi < 0 && bsdf2->transmission_scattering) {
+            pdf2 = bsdf2->pdf(wo, *wi);
+            f2 = bsdf2->evaluate(wo, *wi);
+        }
+    }
+    *pdf = (1.f - p_coeff) * pdf1 + p_coeff * pdf2;
+    ColorRGB f = (Color_White - mix_coeff) * f1 + mix_coeff * f2;
+    return f;
+}
+
+float Mix_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
+{
+    float n_dot_wi = dot(normal, wi);
+    float pdf1 = 0.f;
+    if (n_dot_wi > 0 && bsdf1->reflection_scattering || n_dot_wi < 0 && bsdf1->transmission_scattering) {
+        pdf1 = bsdf1->pdf(wo, wi);
+    }
+    float pdf2 = 0.f;
+    if (n_dot_wi > 0 && bsdf2->reflection_scattering || n_dot_wi < 0 && bsdf2->transmission_scattering) {
+        pdf2 = bsdf2->pdf(wo, wi);
+    }
+    float pdf = (1.f - p_coeff) * pdf1 + p_coeff * pdf2;
+    return pdf;
+}
+
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
     const Scene_Context& scene_ctx = thread_ctx.scene_context;
     Shading_Context& shading_ctx = thread_ctx.shading_context;
@@ -523,6 +591,14 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Rough_Glass_BSDF>();
         return new (bsdf_allocation) Rough_Glass_BSDF(thread_ctx, params);
+    }
+    case Material_Type::mix:
+    {
+        const Mix_Material& params = scene_ctx.materials.mix[material.index];
+        const BSDF* bsdf1 = create_bsdf(thread_ctx, params.material1);
+        const BSDF* bsdf2 = create_bsdf(thread_ctx, params.material2);
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Mix_BSDF>();
+        return new (bsdf_allocation) Mix_BSDF(thread_ctx, bsdf1, bsdf2, params.mix_amount);
     }
     case Material_Type::pbrt3_uber:
     {

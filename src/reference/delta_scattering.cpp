@@ -150,12 +150,9 @@ static Delta_Info get_pbrt_uber_info(Thread_Context& thread_ctx, const Pbrt3_Ube
     return result;
 }
 
-bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float* u_scattering_type, Delta_Scattering* delta_scattering)
+static Delta_Info get_delta_info(Thread_Context& thread_ctx, Material_Handle material, float* u_scattering_type)
 {
     const Scene_Context& scene_ctx = thread_ctx.scene_context;
-    const Shading_Context& shading_ctx = thread_ctx.shading_context;
-    const Material_Handle material = shading_ctx.material;
-
     Delta_Info delta_info;
     if (material.type == Material_Type::perfect_reflector) {
         const Perfect_Reflector_Material& params = scene_ctx.materials.perfect_reflector[material.index];
@@ -173,6 +170,28 @@ bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float* u_scatt
         const Pbrt3_Uber_Material& params = scene_ctx.materials.pbrt3_uber[material.index];
         delta_info = get_pbrt_uber_info(thread_ctx, params, u_scattering_type);
     }
+    else if (material.type == Material_Type::mix) {
+        const Mix_Material& mix_params = scene_ctx.materials.mix[material.index];
+        const float material1_prob = evaluate_rgb_parameter(thread_ctx, mix_params.mix_amount).luminance();
+        if (*u_scattering_type < material1_prob) {
+            *u_scattering_type /= material1_prob;
+            delta_info = get_delta_info(thread_ctx, mix_params.material1, u_scattering_type);
+            delta_info.delta_layer_selection_probability *= material1_prob;
+        }
+        else {
+            *u_scattering_type = (*u_scattering_type - material1_prob) / (1.f - material1_prob);
+            delta_info = get_delta_info(thread_ctx, mix_params.material2, u_scattering_type);
+            delta_info.delta_layer_selection_probability *= (1.f - material1_prob);
+        }
+    }
+    return delta_info;
+}
+
+bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float* u_scattering_type, Delta_Scattering* delta_scattering)
+{
+    const Shading_Context& shading_ctx = thread_ctx.shading_context;
+
+    const Delta_Info delta_info = get_delta_info(thread_ctx, shading_ctx.material, u_scattering_type);
 
     delta_scattering->delta_layer_selection_probability = delta_info.delta_layer_selection_probability;
 
@@ -183,9 +202,9 @@ bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float* u_scatt
     if (shading_ctx.nested_dielectric && delta_info.scattering_type == Delta_Scattering_Type::transmission)
     {
         if (thread_ctx.current_dielectric_material == Null_Material)
-            thread_ctx.current_dielectric_material = material;
+            thread_ctx.current_dielectric_material = shading_ctx.material;
         else {
-            ASSERT(thread_ctx.current_dielectric_material == material);
+            ASSERT(thread_ctx.current_dielectric_material == shading_ctx.material);
             thread_ctx.current_dielectric_material = Null_Material;
         }
     }
@@ -194,7 +213,7 @@ bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float* u_scatt
     // Compute new ray direction.
     //
     const Path_Context& path_ctx = thread_ctx.path_context;
-    const Raytracer_Config& rt_config = scene_ctx.raytracer_config;
+    const Raytracer_Config& rt_config = thread_ctx.scene_context.raytracer_config;
 
     Vector3 delta_direction;
     Differential_Rays differential_rays;
