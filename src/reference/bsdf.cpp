@@ -488,8 +488,15 @@ Mix_BSDF::Mix_BSDF(const Thread_Context& thread_ctx, const BSDF* bsdf1, const BS
 
 ColorRGB Mix_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
 {
-    ColorRGB f1 = bsdf1->evaluate(wo, wi);
-    ColorRGB f2 = bsdf2->evaluate(wo, wi);
+    ColorRGB f1, f2;
+
+    float n_dot_wi = dot(normal, wi);
+    if (n_dot_wi > 0 && bsdf1->reflection_scattering || n_dot_wi < 0 && bsdf1->transmission_scattering) {
+        f1 = bsdf1->evaluate(wo, wi);
+    }
+    if (n_dot_wi > 0 && bsdf2->reflection_scattering || n_dot_wi < 0 && bsdf2->transmission_scattering) {
+        f2 = bsdf2->evaluate(wo, wi);
+    }
     ColorRGB f = (Color_White - mix_coeff) * f1 + mix_coeff * f2;
     return f;
 }
