@@ -329,6 +329,9 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         set_constant_parameter(mtl.index_of_refraction, glass_material->index);
         set_constant_parameter(mtl.roughness, glass_material->u_roughness);
         mtl.roughness_is_alpha = !glass_material->remap_roughness;
+        if (glass_material->map_bump) {
+            mtl.bump_map = import_pbrt_texture_float(glass_material->map_bump, scene);
+        }
         return add_material<Material_Type::glass>(materials, mtl);
     }
 

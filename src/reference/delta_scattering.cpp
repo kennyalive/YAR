@@ -24,8 +24,7 @@ struct Delta_Info {
 };
 }
 
-static Delta_Info get_perfect_reflector_info(Thread_Context& thread_ctx,
-    const Perfect_Reflector_Material& params)
+static Delta_Info get_perfect_reflector_info(const Thread_Context& thread_ctx, const Perfect_Reflector_Material& params)
 {
     Delta_Info result;
     result.scattering_type = Delta_Scattering_Type::reflection;
@@ -34,7 +33,7 @@ static Delta_Info get_perfect_reflector_info(Thread_Context& thread_ctx,
     return result;
 }
 
-static Delta_Info get_perfect_refractor_info(Thread_Context& thread_ctx, const Perfect_Refractor_Material& params)
+static Delta_Info get_perfect_refractor_info(const Thread_Context& thread_ctx, const Perfect_Refractor_Material& params)
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
 
@@ -51,7 +50,7 @@ static Delta_Info get_perfect_refractor_info(Thread_Context& thread_ctx, const P
     return result;
 }
 
-static Delta_Info get_glass_info(Thread_Context& thread_ctx, const Glass_Material& params, float u)
+static Delta_Info get_glass_info(const Thread_Context& thread_ctx, const Glass_Material& params, float u)
 {
     float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
     if (roughness > 0.f) {
@@ -100,7 +99,7 @@ static Delta_Info get_glass_info(Thread_Context& thread_ctx, const Glass_Materia
     return result;
 }
 
-static Delta_Info get_pbrt_uber_info(Thread_Context& thread_ctx, const Pbrt3_Uber_Material& params, float* u_scattering_type)
+static Delta_Info get_pbrt_uber_info(const Thread_Context& thread_ctx, const Pbrt3_Uber_Material& params, float* u_scattering_type)
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     Delta_Info result;
@@ -150,7 +149,40 @@ static Delta_Info get_pbrt_uber_info(Thread_Context& thread_ctx, const Pbrt3_Ube
     return result;
 }
 
-static Delta_Info get_delta_info(Thread_Context& thread_ctx, Material_Handle material, float* u_scattering_type)
+static void apply_bump_map(Thread_Context& thread_ctx, Material_Handle material)
+{
+    const Scene_Context& scene_ctx = thread_ctx.scene_context;
+    Shading_Context& shading_ctx = thread_ctx.shading_context;
+
+    switch (material.type) {
+    case Material_Type::perfect_reflector:
+    {
+        const Perfect_Reflector_Material& params = scene_ctx.materials.perfect_reflector[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
+        break;
+    }
+    case Material_Type::perfect_refractor:
+    {
+        const Perfect_Refractor_Material& params = scene_ctx.materials.perfect_refractor[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
+        break;
+    }
+    case Material_Type::glass:
+    {
+        const Glass_Material& params = scene_ctx.materials.glass[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
+        break;
+    }
+    case Material_Type::pbrt3_uber:
+    {
+        const Pbrt3_Uber_Material& params = scene_ctx.materials.pbrt3_uber[material.index];
+        shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
+        break;
+    }
+    }
+}
+
+static Delta_Info get_delta_info(const Thread_Context& thread_ctx, Material_Handle material, float* u_scattering_type)
 {
     const Scene_Context& scene_ctx = thread_ctx.scene_context;
     Delta_Info delta_info;
@@ -191,10 +223,12 @@ bool check_for_delta_scattering_event(Thread_Context& thread_ctx, float* u_scatt
 {
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
 
+    // Apply bump mapping first, so get_delta_info can make decisions based on final shading normal
+    apply_bump_map(thread_ctx, shading_ctx.material);
+
     const Delta_Info delta_info = get_delta_info(thread_ctx, shading_ctx.material, u_scattering_type);
 
     delta_scattering->delta_layer_selection_probability = delta_info.delta_layer_selection_probability;
-
     if (delta_info.scattering_type == Delta_Scattering_Type::none)
         return false;
 

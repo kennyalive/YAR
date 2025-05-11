@@ -487,6 +487,9 @@ namespace pbrt {
     mat->u_roughness = in->getParam1f("uroughness", 0.f);
     mat->v_roughness = in->getParam1f("vroughness", 0.f);
     mat->remap_roughness = in->getParamBool("remaproughness", true);
+    if (in->hasParamTexture("bumpmap")) {
+        mat->map_bump = findOrCreateTexture(in->getParamTexture("bumpmap"));
+    }
     return mat;
   }
 

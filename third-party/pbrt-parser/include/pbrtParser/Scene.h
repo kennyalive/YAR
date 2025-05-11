@@ -550,6 +550,7 @@ namespace pbrt {
     float u_roughness{ 0.f };
     float v_roughness{ 0.f };
     bool remap_roughness{ true };
+    Texture::SP map_bump;
   };
     
   struct UberMaterial : public Material {
