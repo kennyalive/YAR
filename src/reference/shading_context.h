@@ -17,6 +17,8 @@ struct Shading_Context {
     Vector3 wo; // outgoing direction
     Vector3 position; // shading point position in world coordinates
     Vector3 geometric_normal;
+
+    Vector3 normal_before_bump; // shading normal before bump/normal mapping
     Vector3 normal; // shading normal
 
     // Surface UV parameterization.
@@ -26,7 +28,9 @@ struct Shading_Context {
     // Position derivatives of the original geometry
     Vector3 dpdu;
     Vector3 dpdv;
-
+    // Position derivatives adjusted to perturbed surface before bump/normal mapping
+    Vector3 dpdu_shading_before_bump;
+    Vector3 dpdv_shading_before_bump;
     // Position derivatives adjusted to perturbed surface
     Vector3 dpdu_shading;
     Vector3 dpdv_shading;

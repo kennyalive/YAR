@@ -145,6 +145,7 @@ void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, cons
     // it could be an issue (in most cases shading normals are left unchanged). Until further evidence
     // we assume that dndu/dndv is still a reasonable approximation.
     shading_normal_adjusted = adjust_shading_normal(wo, geometric_normal, &normal);
+    normal_before_bump = normal;
 
     if (!has_uv_parameterization) {
         ASSERT(dpdu == Vector3_Zero);
@@ -162,6 +163,8 @@ void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, cons
         dpdv_shading = project_vector_onto_plane_and_get_direction(dpdv, normal);
         dpdv_shading *= dpdv.length();
     }
+    dpdu_shading_before_bump = dpdu_shading;
+    dpdv_shading_before_bump = dpdv_shading;
 
     material = intersection.scene_object->material;
     area_light = intersection.scene_object->area_light;
@@ -417,10 +420,10 @@ void Shading_Context::apply_bump_map(const Scene_Context& scene_ctx, Float_Param
         float height_dv = evaluate_float_parameter(scene_ctx, uv_dv, duvdx, duvdy, bump_map);
 
         // bump map offset is relative to the unmodified shading normal direction, as defined by the geometry
-        Vector3 original_shading_normal = original_shading_normal_was_flipped ? -normal : normal;
+        Vector3 original_shading_normal = original_shading_normal_was_flipped ? -normal_before_bump : normal_before_bump;
 
-        dpdu_shading += ((height_du - height) / du) * original_shading_normal + height * dndu;
-        dpdv_shading += ((height_dv - height) / dv) * original_shading_normal + height * dndv;
+        dpdu_shading = dpdu_shading_before_bump + ((height_du - height) / du) * original_shading_normal + height * dndu;
+        dpdv_shading = dpdv_shading_before_bump + ((height_dv - height) / dv) * original_shading_normal + height * dndv;
         normal = cross(dpdu_shading, dpdv_shading).normalized();
 
         // renderer convention: shading normals should be in the hemisphere of the geometric normal.
