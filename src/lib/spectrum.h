@@ -13,12 +13,19 @@ struct Sampled_Spectrum {
 
     static_assert((Wavelength_Range_End - Wavelength_Range_Start) % Interval_Length == 0, "There should be an integral number of samples in the sampled range");
 
+    // Spectrum per-interval values
     float c[Sample_Count];
 
     static Sampled_Spectrum from_tabulated_data(const float* lambdas, const float* values, int n);
     static Sampled_Spectrum constant_spectrum(float c);
 
+    // The temperature is in Kelvin (e.g. 2700K).
+    static Sampled_Spectrum blackbody_normalized_spectrum(float temperature);
+
+    void apply_scale(float scale);
+
     Vector3 emission_spectrum_to_XYZ() const;
+    Vector3 emission_spectrum_to_XYZ_scale_by_CIE_Y_integral() const;
     Vector3 reflectance_spectrum_to_XYZ_for_D65_illuminant() const;
 };
 
