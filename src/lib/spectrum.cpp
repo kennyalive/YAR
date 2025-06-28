@@ -72,6 +72,46 @@ Sampled_Spectrum Sampled_Spectrum::constant_spectrum(float c) {
     return s;
 }
 
+Sampled_Spectrum Sampled_Spectrum::blackbody_normalized_spectrum(float temperature)
+{
+    // NOTE: use double type in computations because of large powers/values involved
+    // just to avoid any precision surprises.
+    const double t = static_cast<double>(temperature);
+
+    // Get wavelength where the spectrum reaches maximum values based on Wien's displacement law
+    const double wien_displacement_constant = 2.897771955e-3;
+    const double peak_lambda = wien_displacement_constant / t * 1e9; // in nanometers
+
+    auto blackbody_radiance = [t](double lambda_in_nanometers) {
+        const double h = 6.62607015e-34; // planck constant
+        const double c = 299792458.0; // light speed
+        const double k = 1.380649e-23; // boltzmann constant
+
+        const double lambda = lambda_in_nanometers * 1e-9; // convert to meters
+
+        const double lambda_squared = lambda * lambda;
+        const double lambda_pow5 = lambda_squared * lambda_squared * lambda;
+
+        return (2 * h * c * c) / (lambda_pow5 * (std::exp((h * c) / (lambda * k * t)) - 1.0));
+    };
+
+    const double normalization_factor = 1.0 / blackbody_radiance(peak_lambda);
+
+    Sampled_Spectrum s;
+    for (int i = 0; i < Sample_Count; i++) {
+        double interval_middle = Wavelength_Range_Start + Interval_Length * (double(i) + 0.5);
+        s.c[i] = static_cast<float>(blackbody_radiance(interval_middle) * normalization_factor);
+    }
+    return s;
+}
+
+void Sampled_Spectrum::apply_scale(float scale)
+{
+    for (int i = 0; i < Sample_Count; i++) {
+        c[i] *= scale;
+    }
+}
+
 Vector3 Sampled_Spectrum::emission_spectrum_to_XYZ() const {
     Vector3 xyz{0.f};
     for (int i = 0; i < Sample_Count; i++) {
@@ -80,6 +120,18 @@ Vector3 Sampled_Spectrum::emission_spectrum_to_XYZ() const {
         xyz[2] += c[i] * CIE_Z.c[i];
     }
     xyz *= (float)Interval_Length;
+    return xyz;
+}
+
+Vector3 Sampled_Spectrum::emission_spectrum_to_XYZ_scale_by_CIE_Y_integral() const
+{
+    Vector3 xyz{ 0.f };
+    for (int i = 0; i < Sample_Count; i++) {
+        xyz[0] += c[i] * CIE_X.c[i];
+        xyz[1] += c[i] * CIE_Y.c[i];
+        xyz[2] += c[i] * CIE_Z.c[i];
+    }
+    xyz *= (float)Interval_Length * CIE_Y_integral_inverse;
     return xyz;
 }
 

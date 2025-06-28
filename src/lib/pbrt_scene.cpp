@@ -617,8 +617,41 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                 else
                     error("triangle mesh light sources are not supported yet");
             }
-            else
+            else if (auto pbrt_diffuse_area_light_blackbody = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightBB>(pbrt_shape->areaLight))
+            {
+                Vector2 rect_size;
+                Matrix3x4 rect_transform;
+                const Triangle_Mesh& mesh = scene->geometries.triangle_meshes[shape.geometry.index];
+                if (check_if_mesh_is_rectangle(mesh, rect_size, rect_transform)) {
+                    if (pbrt_shape->reverseOrientation) {
+                        rect_transform.set_column(0, -rect_transform.get_column(0));
+                        rect_transform.set_column(2, -rect_transform.get_column(2));
+                    }
+                    Diffuse_Rectangular_Light light;
+                    light.light_to_world_transform = rect_transform;
+
+                    // There's a huge difference in black body brightness values between differenttemperatures (e.g. 1500K vs 6500K).
+                    // We are mostly interesting in the chroma part, so use normalized representation. This is different from how we
+                    // typically work with emission spectrum where we don't normalize and use emission_spectrum_to_XYZ().
+                    // To have different brightness levels pbrt3 uses scale factor.
+                    Sampled_Spectrum s = Sampled_Spectrum::blackbody_normalized_spectrum(pbrt_diffuse_area_light_blackbody->temperature);
+                    if (pbrt_diffuse_area_light_blackbody->scale != 1.f) {
+                        s.apply_scale(pbrt_diffuse_area_light_blackbody->scale);
+                    }
+                    Vector3 xyz = s.emission_spectrum_to_XYZ_scale_by_CIE_Y_integral();
+                    light.emitted_radiance = XYZ_to_sRGB(xyz);
+
+                    light.size = rect_size;
+                    light.sample_count = pbrt_diffuse_area_light_blackbody->nSamples;
+                    scene->lights.diffuse_rectangular_lights.push_back(light);
+                    shape.area_light = { Light_Type::diffuse_rectangular, (int)scene->lights.diffuse_rectangular_lights.size() - 1 };
+                }
+                else
+                    error("triangle mesh light sources are not supported yet");
+            }
+            else {
                 error("unsupported area light type");
+            }
         }
     }
 

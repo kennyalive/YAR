@@ -5,7 +5,7 @@
 struct Vector3;
 struct ColorRGB;
 
-// without gamma encoding
+// sRGB here refers to the color space and not to gamma encoding
 ColorRGB XYZ_to_sRGB(const Vector3& xyz);
 ColorRGB sRGB_to_XYZ(const ColorRGB& rgb);
 
