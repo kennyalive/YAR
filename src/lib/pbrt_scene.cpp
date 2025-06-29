@@ -102,6 +102,14 @@ static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size,
     Vector3 y_axis = d[(k+1)%3];
     Vector3 z_axis = cross(x_axis, y_axis);
 
+    // If mesh provides normals ensure that our basis defines a normal that is in the same hemisphere
+    if (!mesh.normals.empty()) {
+        if (dot(mesh.normals[0], z_axis) < 0.f) {
+            x_axis = -x_axis;
+            z_axis = -z_axis;
+        }
+    }
+
     size.x = v[k].length();
     size.y = v[(k+1)%3].length();
 
