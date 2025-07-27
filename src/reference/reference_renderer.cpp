@@ -87,7 +87,6 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
         scene_ctx.environment_light_sampler.light = &light;
         scene_ctx.environment_light_sampler.environment_map = &environment_map;
         scene_ctx.environment_light_sampler.radiance_distribution.initialize_from_latitude_longitude_radiance_map(environment_map);
-        scene_ctx.has_environment_light_sampler = true;
     }
 }
 
@@ -132,6 +131,30 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
             info.array_size = k * k;
             scene_ctx.array2d_registry.sphere_light_arrays.push_back(info);
         }
+    }
+}
+
+static void init_triangle_mesh_light_samplers(const Scene& scene, Scene_Context& scene_ctx)
+{
+    if (scene.lights.diffuse_triangle_mesh_lights.empty()) {
+        return;
+    }
+    std::vector<float> areas;
+    scene_ctx.triangle_mesh_light_samplers.reserve(scene.lights.diffuse_triangle_mesh_lights.size());
+    for (const auto& light : scene.lights.diffuse_triangle_mesh_lights) {
+        Diffuse_Triangle_Mesh_Light_Sampler& sampler = scene_ctx.triangle_mesh_light_samplers.emplace_back();
+        sampler.light = &light;
+
+        const Triangle_Mesh& mesh = scene.geometries.triangle_meshes[light.triangle_mesh_index];
+        sampler.mesh = &mesh;
+        sampler.mesh_area = mesh.get_area();
+
+        const int triangle_count = mesh.get_triangle_count();
+        areas.resize(triangle_count);
+        for (int i = 0; i < triangle_count; i++) {
+            areas[i] = mesh.get_triangle_area(i);
+        }
+        sampler.triangle_distribution.initialize(areas.data(), (int)areas.size());
     }
 }
 
@@ -586,6 +609,7 @@ void init_scene_context(const Scene& scene, const Renderer_Configuration& config
     scene_ctx.lights = scene.lights;
 
     init_pixel_sampler_config(scene_ctx.pixel_sampler_config, scene_ctx);
+    init_triangle_mesh_light_samplers(scene, scene_ctx);
 
     if (scene.type == Scene_Type::pbrt) {
         // TODO: we might need to distinguish between pbrt3/4.

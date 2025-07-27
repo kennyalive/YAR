@@ -52,7 +52,7 @@ struct Scene_Context {
     // Lights
     Lights lights;
     Environment_Light_Sampler environment_light_sampler;
-    bool has_environment_light_sampler = false;
+    std::vector<Diffuse_Triangle_Mesh_Light_Sampler> triangle_mesh_light_samplers;
 
     // Samplers
     Stratified_Pixel_Sampler_Configuration pixel_sampler_config;

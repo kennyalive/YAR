@@ -28,7 +28,7 @@ ColorRGB trace_path(Thread_Context& thread_ctx, const Ray& ray, const Differenti
             if (path_ctx.bounce_count == 0) {
                 if (hit_found)
                     L += path_coeff * get_emitted_radiance(thread_ctx);
-                else if (scene_ctx.has_environment_light_sampler)
+                else if (scene_ctx.environment_light_sampler.initialized())
                     L += path_coeff * scene_ctx.environment_light_sampler.get_filtered_radiance_for_direction(shading_ctx.miss_ray.direction);
 
                 if (rt_config.max_light_bounces == 0)
@@ -89,7 +89,7 @@ ColorRGB trace_path(Thread_Context& thread_ctx, const Ray& ray, const Differenti
             ColorRGB emitted_radiance;
             if (delta_hit_found)
                 emitted_radiance = get_emitted_radiance(thread_ctx);
-            else if (scene_ctx.has_environment_light_sampler)
+            else if (scene_ctx.environment_light_sampler.initialized())
                 emitted_radiance = scene_ctx.environment_light_sampler.get_filtered_radiance_for_direction(
                     shading_ctx.miss_ray.direction);
 

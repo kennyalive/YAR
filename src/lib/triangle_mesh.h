@@ -55,6 +55,17 @@ struct Triangle_Mesh {
         return barycentric_interpolate(n, barycentrics);
     }
 
+    Vector3 get_geometric_normal(uint32_t triangle_index) const
+    {
+        Vector3 p[3];
+        get_positions(triangle_index, p);
+        Vector3 geometric_normal = cross(p[1] - p[0], p[2] - p[0]).normalized();
+        if (reverse_geometric_normal_orientation) {
+            geometric_normal = -geometric_normal;
+        }
+        return geometric_normal;
+    }
+
     void get_uvs(uint32_t triangle_index, Vector2 uv[3]) const
     {
         const int* pi = &indices[triangle_index * 3];
@@ -77,6 +88,23 @@ struct Triangle_Mesh {
         bounds.add_point(vertices[pi[1]]);
         bounds.add_point(vertices[pi[2]]);
         return bounds;
+    }
+
+    float get_triangle_area(uint32_t triangle_index) const
+    {
+        Vector3 p[3];
+        get_positions(triangle_index, p);
+        float area = cross(p[1] - p[0], p[2] - p[0]).length() * 0.5f;
+        return area;
+    }
+
+    float get_area() const
+    {
+        float total_mesh_area = 0.f;
+        for (int i = 0; i < get_triangle_count(); i++) {
+            total_mesh_area += get_triangle_area(i);
+        }
+        return total_mesh_area;
     }
 
     Bounding_Box get_bounds() const

@@ -119,3 +119,66 @@ Vector3 Diffuse_Sphere_Light_Sampler::sample(Vector2 u) const {
 bool Diffuse_Sphere_Light_Sampler::is_direction_inside_light_cone(const Vector3& wi) const {
     return dot(-axes[2], wi) >= cos_theta_max;
 }
+
+//
+// Diffuse_Triangle_Mesh_Light_Sampler
+//
+Vector3 Diffuse_Triangle_Mesh_Light_Sampler::sample(Vector2 u, const Vector3& shading_pos, float* pdf) const
+{
+    float remapped_u0;
+    float s = triangle_distribution.sample(u[0], nullptr, &remapped_u0);
+    uint32_t triangle_index = std::min(uint32_t(s * mesh->get_triangle_count()), (uint32_t)mesh->get_triangle_count() - 1);
+    u[0] = remapped_u0;
+
+    Vector3 b = uniform_sample_triangle_baricentrics(u);
+
+    Vector3 light_p = mesh->get_position(triangle_index, b);
+
+    Vector3 light_n;
+    if (!mesh->normals.empty()) {
+        light_n = mesh->get_normal(triangle_index, b);
+    }
+    else {
+        light_n = mesh->get_geometric_normal(triangle_index);
+    }
+
+    const Vector3 light_vec = light_p - shading_pos;
+    float distance_to_light_sq = light_vec.length_squared();
+    Vector3 wi = light_vec / std::sqrt(distance_to_light_sq);
+
+    float light_n_dot_wi = dot(light_n, -wi);
+    if (light_n_dot_wi <= 0.f) {
+        // No emmission on the back side of the light. The caller will skip light contribution from this sample.
+        // NOTE: for two-sided lights this check is not needed (currently only single sided lights are supported).
+        *pdf = 0.f;
+    }
+    else {
+        // Compute pdf with respect to solid angle measure.
+        // This uses pdf with respect to area measure which is the inverse of the area value.
+        *pdf = distance_to_light_sq / (light_n_dot_wi * mesh_area);
+    }
+    return light_p;
+}
+
+float Diffuse_Triangle_Mesh_Light_Sampler::pdf(const Vector3& shading_pos, const Vector3& wi, const Intersection& light_intersection) const
+{
+    const Triangle_Intersection& isect = light_intersection.triangle_intersection;
+    ASSERT(mesh == isect.mesh);
+
+    Vector3 light_n;
+    if (!mesh->normals.empty()) {
+        light_n = mesh->get_normal(isect.triangle_index, isect.barycentrics);
+    }
+    else {
+        light_n = mesh->get_geometric_normal(isect.triangle_index);
+    }
+
+    float light_n_dot_wi = dot(light_n, -wi);
+    if (light_n_dot_wi <= 0.f) {
+        return 0.f;
+    }
+    else {
+        float distance_to_light_sq = light_intersection.t * light_intersection.t;
+        return distance_to_light_sq / (light_n_dot_wi * mesh_area);
+    }
+}

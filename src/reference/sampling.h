@@ -14,6 +14,8 @@ Vector3 sample_hemisphere_cosine(Vector2 u);
 Vector3 uniform_sample_cone(Vector2 u, float cos_theta_max);
 float uniform_cone_pdf(float cos_theta_max);
 
+Vector3 uniform_sample_triangle_baricentrics(Vector2 u);
+
 // Generates n stratified samples over [0, 1) range.
 void generate_stratified_sequence_1d(RNG& rng, int n, float* result);
 // Generates nx*ny stratified samples over [0, 1)^2 range.
@@ -33,28 +35,53 @@ void generate_stratified_sequence_2d(RNG& rng, int nx, int ny, Vector2* result);
 // which 'u' variable is mapped.
 //
 // The function returns a sample from [0, 1) distributed according to the provided CDF.
-float sample_from_CDF(float u, const float* cdf, int n, float interval_length /* 1/n */, float* pdf, int* interval_index);
+float sample_from_CDF(float u, const float* cdf, int n, float interval_length /* 1/n */, float* pdf,
+    int* interval_index = nullptr, float* remapped_u = nullptr);
+
+// Distribution_1D represents PDF (probability density function) defined over [0..1].
+// The samples are drawn according to pdf and belong to [0..1).
+class Distribution_1D {
+public:
+    // The pdf function is proportional to the initialization values.
+    void initialize(const float* values, int n);
+
+    // Draws a sample from the distribution. The sample belongs to [0..1).
+    // 
+    // 'u' - uniformly distributed random variable from [0..1).
+    // 
+    // 'pdf' output parameter is a pdf of the drawn sample with respect to [0..1] linear measure.
+    // It is guaranteed to be greater than zero.
+    float sample(float u, float* pdf, float* remapped_u = nullptr) const;
+
+    // For the given sample returns its probability density value.
+    // The pdf is calculated with respect to [0..1] uniform measure.
+    float pdf(float sample) const;
+
+private:
+    int n = 0;
+    float interval_length = 0.f; // 1/n
+    std::vector<float> cdf;
+};
 
 // Distribution_2D represents PDF (probability density function) defined over [0..1]^2.
-// The PDF function is proportional to the initialization values.
-// The samples are drawn according to pdf function and belong to [0..1)^2 domain.
+// The samples are drawn according to pdf and belong to [0..1)^2.
 class Distribution_2D {
 public:
+    // The pdf function is proportional to the initialization values.
     void initialize(const float* values, int nx, int ny);
     void initialize_from_latitude_longitude_radiance_map(const Image_Texture& env_map);
 
-    // Draws a sample from the distribution.
-    // The sample is from the closed-open region [0..1)^2
-    // 
-    // u - two uniformly distributed random variables from [0..1).
-    // 
-    // 'pdf' output parameter is a pdf of the drawn sample with respect to the solid angle measure.
+    // Draws a sample from the distribution. The sample belongs to [0..1)^2.
+    //
+    // 'u' - two uniformly distributed random variables from [0..1).
+    //
+    // 'pdf_uv' output parameter is a pdf of the drawn sample with respect to [0..1]^2 UV measure.
     // It is guaranteed to be greater than zero.
-    Vector2 sample(Vector2 u, float *pdf_uvr) const;
+    Vector2 sample(Vector2 u, float *pdf_uv) const;
 
     // For the given sample returns its probability density value.
-    // The pdf is calculated with respect to [0..1]^2 UV measure, it
-    // should be converted to solid angle measure if necessary.
+    // The pdf is calculated with respect to [0..1]^2 UV measure,
+    // it should be converted to solid angle measure if necessary.
     float pdf_uv(Vector2 sample) const;
 
 private:

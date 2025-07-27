@@ -609,6 +609,7 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                 Vector2 rect_size;
                 Matrix3x4 rect_transform;
                 const Triangle_Mesh& mesh = scene->geometries.triangle_meshes[shape.geometry.index];
+                // TODO: unify shared parts of rectangle and triangle mesh code
                 if (check_if_mesh_is_rectangle(mesh, rect_size, rect_transform)) {
                     if (pbrt_shape->reverseOrientation) {
                         rect_transform.set_column(0, -rect_transform.get_column(0));
@@ -622,14 +623,21 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                     scene->lights.diffuse_rectangular_lights.push_back(light);
                     shape.area_light = {Light_Type::diffuse_rectangular, (int)scene->lights.diffuse_rectangular_lights.size() - 1};
                 }
-                else
-                    error("triangle mesh light sources are not supported yet");
+                else {
+                    Diffuse_Triangle_Mesh_Light light;
+                    light.light_to_world_transform = instance_transform;
+                    light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
+                    light.triangle_mesh_index = (uint32_t)shape.geometry.index;
+                    scene->lights.diffuse_triangle_mesh_lights.push_back(light);
+                    shape.area_light = { Light_Type::diffuse_triangle_mesh, (int)scene->lights.diffuse_triangle_mesh_lights.size() - 1 };
+                }
             }
             else if (auto pbrt_diffuse_area_light_blackbody = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightBB>(pbrt_shape->areaLight))
             {
                 Vector2 rect_size;
                 Matrix3x4 rect_transform;
                 const Triangle_Mesh& mesh = scene->geometries.triangle_meshes[shape.geometry.index];
+                // TODO: unify shared parts of rectangle and triangle mesh code
                 if (check_if_mesh_is_rectangle(mesh, rect_size, rect_transform)) {
                     if (pbrt_shape->reverseOrientation) {
                         rect_transform.set_column(0, -rect_transform.get_column(0));
@@ -638,7 +646,7 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                     Diffuse_Rectangular_Light light;
                     light.light_to_world_transform = rect_transform;
 
-                    // There's a huge difference in black body brightness values between differenttemperatures (e.g. 1500K vs 6500K).
+                    // There's a huge difference in black body brightness values between different temperatures (e.g. 1500K vs 6500K).
                     // We are mostly interesting in the chroma part, so use normalized representation. This is different from how we
                     // typically work with emission spectrum where we don't normalize and use emission_spectrum_to_XYZ().
                     // To have different brightness levels pbrt3 uses scale factor.
@@ -654,8 +662,25 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                     scene->lights.diffuse_rectangular_lights.push_back(light);
                     shape.area_light = { Light_Type::diffuse_rectangular, (int)scene->lights.diffuse_rectangular_lights.size() - 1 };
                 }
-                else
-                    error("triangle mesh light sources are not supported yet");
+                else {
+                    Diffuse_Triangle_Mesh_Light light;
+                    light.light_to_world_transform = instance_transform;
+
+                    // There's a huge difference in black body brightness values between different temperatures (e.g. 1500K vs 6500K).
+                    // We are mostly interesting in the chroma part, so use normalized representation. This is different from how we
+                    // typically work with emission spectrum where we don't normalize and use emission_spectrum_to_XYZ().
+                    // To have different brightness levels pbrt3 uses scale factor.
+                    Sampled_Spectrum s = Sampled_Spectrum::blackbody_normalized_spectrum(pbrt_diffuse_area_light_blackbody->temperature);
+                    if (pbrt_diffuse_area_light_blackbody->scale != 1.f) {
+                        s.apply_scale(pbrt_diffuse_area_light_blackbody->scale);
+                    }
+                    Vector3 xyz = s.emission_spectrum_to_XYZ_scale_by_CIE_Y_integral();
+                    light.emitted_radiance = XYZ_to_sRGB(xyz);
+
+                    light.triangle_mesh_index = (uint32_t)shape.geometry.index;
+                    scene->lights.diffuse_triangle_mesh_lights.push_back(light);
+                    shape.area_light = { Light_Type::diffuse_triangle_mesh, (int)scene->lights.diffuse_triangle_mesh_lights.size() - 1 };
+                }
             }
             else {
                 error("unsupported area light type");

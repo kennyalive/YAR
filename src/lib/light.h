@@ -10,6 +10,7 @@ enum class Light_Type : uint32_t {
     directional, // delta light
     diffuse_rectangular,
     diffuse_sphere,
+    diffuse_triangle_mesh,
     environment_map,
     count,
     null_light = std::numeric_limits<uint32_t>::max()
@@ -81,6 +82,12 @@ struct Diffuse_Sphere_Light {
     int sample_count = 0;
 };
 
+struct Diffuse_Triangle_Mesh_Light {
+    Matrix3x4 light_to_world_transform;
+    ColorRGB emitted_radiance;
+    uint32_t triangle_mesh_index = 0;
+};
+
 struct Environment_Light {
     Matrix3x4 light_to_world;
     Matrix3x4 world_to_light;
@@ -95,6 +102,7 @@ struct Lights {
     std::vector<Directional_Light> directional_lights;
     std::vector<Diffuse_Rectangular_Light> diffuse_rectangular_lights;
     std::vector<Diffuse_Sphere_Light> diffuse_sphere_lights;
+    std::vector<Diffuse_Triangle_Mesh_Light> diffuse_triangle_mesh_lights;
 
     Environment_Light environment_light;
     bool has_environment_light = false;

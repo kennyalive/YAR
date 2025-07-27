@@ -66,6 +66,16 @@ float uniform_cone_pdf(float cos_theta_max) {
     return 1.f / (2.f * Pi * (1.f - cos_theta_max));
 }
 
+Vector3 uniform_sample_triangle_baricentrics(Vector2 u)
+{
+    float a = std::sqrt(u[0]);
+    Vector3 b;
+    b.x = 1 - a;
+    b.y = u[1] * a;
+    b.z = 1.f - b.x - b.y;
+    return b;
+}
+
 void generate_stratified_sequence_1d(RNG& rng, int n, float* result) {
     float dx = 1.f / float(n);
     for (int x = 0; x < n; x++) {
@@ -85,7 +95,8 @@ void generate_stratified_sequence_2d(RNG& rng, int nx, int ny, Vector2* result) 
     }
 }
 
-float sample_from_CDF(float u, const float* cdf, int n, float interval_length /* 1/n */, float* pdf, int* interval_index) {
+float sample_from_CDF(float u, const float* cdf, int n, float interval_length, float* pdf, int* interval_index, float* remapped_u)
+{
     ASSERT(u >= 0.f && u < 1.f);
     ASSERT(n >= 1);
     ASSERT(cdf[n-1] == 1.f);
@@ -119,13 +130,56 @@ float sample_from_CDF(float u, const float* cdf, int n, float interval_length /*
         */
     }
 
-    *pdf = (cdf_b - cdf_a) * n;
-    ASSERT(*pdf > 0.f);
+    float interval_fraction = (u - cdf_a) / (cdf_b - cdf_a);
+    float x = (float(k) + interval_fraction) * interval_length;
 
-    *interval_index = k;
-
-    float x = (float(k) + (u - cdf_a) / (cdf_b - cdf_a)) * interval_length;
+    if (pdf) {
+        *pdf = (cdf_b - cdf_a) * n;
+        ASSERT(*pdf > 0.f);
+    }
+    if (interval_index) {
+        *interval_index = k;
+    }
+    if (remapped_u) {
+        *remapped_u = std::min(interval_fraction, One_Minus_Epsilon);
+    }
     return std::min(x, One_Minus_Epsilon);
+}
+
+void Distribution_1D::initialize(const float* values, int n)
+{
+    this->n = n;
+    interval_length = 1.f / n;
+
+    float total_sum = 0.f;
+    for (int i = 0; i < n; i++) {
+        total_sum += values[i];
+    }
+
+    cdf.resize(n);
+    float sum = 0.f;
+    for (int i = 0; i < n; i++) {
+        sum += values[i];
+        cdf[i] = sum / total_sum;
+    }
+    ASSERT(cdf.back() == 1.f);
+}
+
+float Distribution_1D::sample(float u, float* pdf, float* remapped_u) const
+{
+    float s = sample_from_CDF(u, cdf.data(), n, interval_length, pdf, nullptr, remapped_u);
+    return s;
+}
+
+float Distribution_1D::pdf(float sample) const
+{
+    ASSERT(sample >= 0.f && sample < 1.f);
+
+    int index = int(sample * n);
+    ASSERT(index < n);
+
+    float pdf = (cdf[index] - (index == 0 ? 0.f : cdf[index - 1])) * n;
+    return pdf;
 }
 
 void Distribution_2D::initialize(const float* values, int nx, int ny) {
@@ -214,8 +268,7 @@ Vector2 Distribution_2D::sample(Vector2 u, float* pdf_uv) const {
     ASSERT(y < ny);
 
     float pdf_x_given_y;
-    int temp_x;
-    float kx = sample_from_CDF(u[1], &CDFs_x[y * nx], nx, x_interval_length, &pdf_x_given_y, &temp_x);
+    float kx = sample_from_CDF(u[1], &CDFs_x[y * nx], nx, x_interval_length, &pdf_x_given_y);
     ASSERT(pdf_x_given_y > 0.f);
 
     *pdf_uv = pdf_y * pdf_x_given_y;

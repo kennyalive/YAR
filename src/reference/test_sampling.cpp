@@ -239,8 +239,7 @@ void test_uniform_cdf_sampling() {
 
     for (int i = 0; i < Sample_Count; i++) {
         float temp_pdf;
-        int temp_index;
-        float s = sample_from_CDF(rng.get_float(), cdf.data(), int(cdf.size()), interval_length, &temp_pdf, &temp_index);
+        float s = sample_from_CDF(rng.get_float(), cdf.data(), int(cdf.size()), interval_length, &temp_pdf);
         ASSERT(s >= 0.f && s < 1.f);
         int bucket_index = int(s * buckets.size());
         ASSERT(bucket_index < (int)buckets.size());
@@ -291,8 +290,7 @@ void test_non_uniform_cdf_sampling() {
 
     for (int i = 0; i < Sample_Count; i++) {
         float temp_pdf;
-        int temp_index;
-        float s = sample_from_CDF(rng.get_float(), cdf.data(), int(cdf.size()), interval_length, &temp_pdf, &temp_index);
+        float s = sample_from_CDF(rng.get_float(), cdf.data(), int(cdf.size()), interval_length, &temp_pdf);
         ASSERT(s >= 0.f && s < 1.f);
         int bucket_index = int(s * buckets.size());
         ASSERT(bucket_index < (int)buckets.size());

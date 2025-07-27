@@ -259,6 +259,68 @@ static ColorRGB direct_lighting_from_sphere_light(
     return L;
 }
 
+static ColorRGB direct_lighting_from_triangle_mesh_light(
+    const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
+    Light_Handle light_handle, const Diffuse_Triangle_Mesh_Light& light,
+    Vector2 u_light, Vector2 u_bsdf, float u_scattering_type)
+{
+    ASSERT(light_handle.type == Light_Type::diffuse_triangle_mesh);
+    const Diffuse_Triangle_Mesh_Light_Sampler& sampler = scene_ctx.triangle_mesh_light_samplers[light_handle.index];
+
+    ColorRGB L;
+    // Light sampling part of MIS.
+    {
+        float light_pdf;
+        Vector3 light_point = sampler.sample(u_light, shading_ctx.position, &light_pdf);
+        if (light_pdf != 0.f) {
+            Vector3 position = shading_ctx.get_ray_origin_using_control_point(light_point);
+
+            const Vector3 light_vec = light_point - position;
+            float distance_to_sample = light_vec.length();
+            Vector3 wi = light_vec / distance_to_sample;
+
+            float n_dot_wi = dot(shading_ctx.normal, wi);
+            bool scattering_possible = n_dot_wi > 0.f && shading_ctx.bsdf->reflection_scattering ||
+                n_dot_wi < 0.f && shading_ctx.bsdf->transmission_scattering;
+
+            if (scattering_possible) {
+                ColorRGB f = shading_ctx.bsdf->evaluate(shading_ctx.wo, wi);
+                if (!f.is_black()) {
+                    Ray light_visibility_ray{ position, wi };
+                    bool occluded = scene_ctx.kdtree_data.scene_kdtree.intersect_any(light_visibility_ray, distance_to_sample * (1.f - 1e-5f));
+                    if (!occluded) {
+                        float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, wi);
+                        float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
+                        L += (sampler.light->emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
+                    }
+                }
+            }
+        }
+    }
+    // BSDF sampling part of MIS.
+    {
+        Vector3 wi;
+        float bsdf_pdf;
+        ColorRGB f = shading_ctx.bsdf->sample(u_bsdf, u_scattering_type, shading_ctx.wo, &wi, &bsdf_pdf);
+
+        if (!f.is_black()) {
+            ASSERT(bsdf_pdf > 0.f);
+            Vector3 position = shading_ctx.get_ray_origin_using_control_direction(wi);
+            Ray light_visibility_ray{position, wi};
+
+            Intersection isect;
+            bool found_isect = scene_ctx.kdtree_data.scene_kdtree.intersect(light_visibility_ray, isect);
+
+            if (found_isect && isect.scene_object->area_light == light_handle) {
+                float light_pdf = sampler.pdf(position, wi, isect);
+                float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
+                L += (sampler.light->emitted_radiance * f) * (mis_weight * std::abs(dot(shading_ctx.normal, wi)) / bsdf_pdf);
+            }
+        }
+    }
+    return L;
+}
+
 static ColorRGB direct_lighting_from_environment_light(
     const Scene_Context& scene_ctx, const Shading_Context& shading_ctx,
     Vector2 u_light, Vector2 u_bsdf, float u_scattering_type)
@@ -334,6 +396,18 @@ ColorRGB get_emitted_radiance(Thread_Context& thread_ctx)
     if (light.type == Light_Type::diffuse_sphere)
         return thread_ctx.scene_context.lights.diffuse_sphere_lights[light.index].emitted_radiance;
 
+    if (light.type == Light_Type::diffuse_triangle_mesh) {
+        const Shading_Context& shading_ctx = thread_ctx.shading_context;
+        // Check for backfacing side of one sided area light source.
+        // TODO: probably it's better to have access to original geometric normal, before it is potentially
+        // flipped to be in the hemisphere of wo, or maybe a flag in shading_ctx that current interaction
+        // is on the backside.
+        if (shading_ctx.original_shading_normal_was_flipped) {
+            return Color_Black;
+        }
+        return thread_ctx.scene_context.lights.diffuse_triangle_mesh_lights[light.index].emitted_radiance;
+    }
+
     ASSERT(false); // unexpected area light type
     return Color_Black;
 }
@@ -344,7 +418,7 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
 
     if (!trace_ray(thread_ctx, ray, &differential_rays)) {
-        if (scene_ctx.has_environment_light_sampler) {
+        if (scene_ctx.environment_light_sampler.initialized()) {
             return scene_ctx.environment_light_sampler.get_filtered_radiance_for_direction(shading_ctx.miss_ray.direction);
         }
         return Color_Black;
@@ -406,7 +480,7 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
             L += L2;
         }
 
-        if (scene_ctx.has_environment_light_sampler) {
+        if (scene_ctx.environment_light_sampler.initialized()) {
             ColorRGB L2;
             for (int i = 0; i < scene_ctx.environment_light_sampler.light->sample_count; i++) {
                 Vector2 u_light = thread_ctx.rng.get_vector2();
@@ -435,7 +509,7 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
         ColorRGB emitted_radiance;
         if (hit_found)
             emitted_radiance = get_emitted_radiance(thread_ctx);
-        else if (scene_ctx.has_environment_light_sampler)
+        else if (scene_ctx.environment_light_sampler.initialized())
             emitted_radiance = scene_ctx.environment_light_sampler.get_filtered_radiance_for_direction(
                 shading_ctx.miss_ray.direction);
 
@@ -488,9 +562,17 @@ ColorRGB estimate_direct_lighting_from_single_sample(const Thread_Context& threa
     }
     light_index -= (int)scene_ctx.lights.diffuse_sphere_lights.size();
 
+    if (light_index < scene_ctx.lights.diffuse_triangle_mesh_lights.size()) {
+        Light_Handle light_handle = {Light_Type::diffuse_triangle_mesh, light_index};
+        const Diffuse_Triangle_Mesh_Light& light = scene_ctx.lights.diffuse_triangle_mesh_lights[light_index];
+        ColorRGB L = direct_lighting_from_triangle_mesh_light(scene_ctx, shading_ctx, light_handle, light, u_light, u_bsdf, u_scattering_type);
+        return (float)scene_ctx.lights.total_light_count * L;
+    }
+    light_index -= (int)scene_ctx.lights.diffuse_triangle_mesh_lights.size();
+
     // the only light left is environment light
     ASSERT(light_index == 0);
-    ASSERT(scene_ctx.has_environment_light_sampler);
+    ASSERT(scene_ctx.environment_light_sampler.initialized());
     ColorRGB L = direct_lighting_from_environment_light(scene_ctx, shading_ctx, u_light, u_bsdf, u_scattering_type);
     return (float)scene_ctx.lights.total_light_count * L;
 }
