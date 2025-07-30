@@ -735,12 +735,5 @@ namespace pbrt {
 
     template<typename T> std::shared_ptr<ParamArray<T>> Param::as()
     { return std::dynamic_pointer_cast<ParamArray<T>>(shared_from_this()); }
-
-    extern "C" 
-    void pbrt_helper_loadPlyTriangles(const std::string &fileName,
-                                      std::vector<pbrt::syntactic::vec3f> &v,
-                                      std::vector<pbrt::syntactic::vec3f> &n,
-                                      std::vector<pbrt::syntactic::vec3i> &idx);
-
   } // ::pbrt::syntactic
 } // ::pbrt

@@ -154,11 +154,6 @@ namespace pbrt {
       std::shared_ptr<Attributes> currentGraphicsState;
       std::shared_ptr<Object>     currentObject;
       std::shared_ptr<Material>   currentMaterial;
-    
-      bool dbg;
-      /*! tracks the location of the last token gotten through next() (for debugging) */
-      // Loc lastLoc;
-    
     };
 
     typedef MappedFile FileType;

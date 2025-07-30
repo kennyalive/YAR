@@ -57,10 +57,7 @@ namespace pbrt {
         }
           
         if (c == '#') {
-          // startLoc = loc;
-          // Loc lastLoc = loc;
           while (c != '\n') {
-            // lastLoc = loc;
             c = buffer.get_char();
             if (c < 0) return Token();
           }
@@ -73,11 +70,8 @@ namespace pbrt {
       ss.clear();
     
       Loc startLoc = buffer.get_loc();
-      // startLoc = loc;
-      // Loc lastLoc = loc;
       if (c == '"') {
         while (1) {
-          // lastLoc = loc;
           c = buffer.get_char();
           if (c < 0)
             throw std::runtime_error("could not find end of string literal (found eof instead)");
@@ -97,14 +91,11 @@ namespace pbrt {
       }
 
       ss << (char)c;
-      // cout << "START OF TOKEN at " << loc.toString() << endl;
       while (1) {
-        // lastLoc = loc;
         c = buffer.get_char();
         if (c < 0)
           return Token(startLoc,Token::TOKEN_TYPE_LITERAL,ss.str());
         if (c == '#' || isSpecial(c) || isWhite(c) || c=='"') {
-          // cout << "END OF TOKEN AT " << lastLoc.toString() << endl;
           buffer.unget_char(c);
           return Token(startLoc,Token::TOKEN_TYPE_LITERAL,ss.str());
         }

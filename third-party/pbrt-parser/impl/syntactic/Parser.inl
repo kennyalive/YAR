@@ -36,8 +36,6 @@ namespace pbrt {
     level a triangle mesh is nothing but a shape that has a string
     with a given name, and parameters of given names and types */
   namespace syntactic {  
-    static int verbose = 0;
-
     inline bool operator==(const Token &tk, const std::string &text) { return tk.text == text; }
     inline bool operator==(const Token &tk, const char* text) { return tk.text == text; }
   
@@ -205,8 +203,6 @@ namespace pbrt {
           if (includedFileName[0] != '/') {
             includedFileName = rootNamePath+"/"+includedFileName;
           }
-          // if (dbg)
-          std::cout << "... including spd file '" << includedFileName << " ..." << std::endl;
           FileType::SP file = std::make_shared<FileType>(includedFileName);
           auto tokens = std::make_shared<BasicLexer<FileType>>(file);
           Token t = tokens->next();
@@ -237,7 +233,6 @@ namespace pbrt {
     std::shared_ptr<Texture> BasicParser<DS>::getTexture(const std::string &name) 
     {
       if (currentGraphicsState->findNamedTexture(name) == nullptr)
-        // throw std::runtime_error(lastLoc.toString()+": no texture named '"+name+"'");
         {
           std::cerr << "warning: could not find texture named '" << name << "'" << std::endl;
           return std::shared_ptr<Texture> ();
@@ -250,7 +245,6 @@ namespace pbrt {
       : basePath(basePath)
       , scene(std::make_shared<Scene>())
       , currentGraphicsState(std::make_shared<Attributes>())
-      , dbg(false)
     {
       ctm.reset();
       objectStack.push(scene->world);//scene.cast<Object>());
@@ -399,17 +393,14 @@ namespace pbrt {
     template <typename DS>
     void BasicParser<DS>::parseWorld()
     {
-      if (dbg) std::cout << "Parsing PBRT World" << std::endl;
       while (1) {
         Token token = next();
         assert(token);
-        if (dbg) std::cout << "World token : " << token.toString() << std::endl;
 
         // ------------------------------------------------------------------
         // WorldEnd - go back to regular parseScene
         // ------------------------------------------------------------------
         if (token == "WorldEnd") {
-          if (dbg) std::cout << "Parsing PBRT World - done!" << std::endl;
           break;
         }
       
@@ -640,9 +631,6 @@ namespace pbrt {
           std::shared_ptr<Object::Instance> inst
             = std::make_shared<Object::Instance>(object,ctm);
           getCurrentObject()->objectInstances.push_back(inst);
-          if (verbose)
-            std::cout << "adding instance " << inst->toString()
-                 << " to object " << getCurrentObject()->toString() << std::endl;
           continue;
         }
           
@@ -661,7 +649,6 @@ namespace pbrt {
       if (!token)
         throw std::runtime_error("unexpected end of file ...");
       peekQueue.pop_front();
-      // lastLoc = token.loc;
       return token;
     }
     
@@ -677,8 +664,6 @@ namespace pbrt {
           if (includedFileName[0] != '/') {
             includedFileName = rootNamePath+"/"+includedFileName;
           }
-          if (dbg)
-            std::cout << "... including file '" << includedFileName << " ..." << std::endl;
         
           tokenizerStack.push(tokens);
           FileType::SP file = std::make_shared<FileType>(includedFileName);
@@ -713,8 +698,6 @@ namespace pbrt {
       
         Token token = next();
         if (!token) break;
-
-        if (dbg) std::cout << token.toString() << std::endl;
 
         // -------------------------------------------------------
         // Transform
