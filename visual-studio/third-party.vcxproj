@@ -180,7 +180,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\third-party\pbrt-parser\impl\syntactic\Buffer.inl" />
-    <None Include="..\third-party\pbrt-parser\impl\syntactic\Lexer.inl" />
     <None Include="..\third-party\pbrt-parser\impl\syntactic\Parser.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

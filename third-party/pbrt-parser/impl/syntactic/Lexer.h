@@ -88,8 +88,84 @@ namespace pbrt {
       ReadBuffer<typename DataSource::SP> buffer;
     };
 
+    // =======================================================
+    // Lexer
+    // =======================================================
+
+    inline bool isWhite(const char c)
+    {
+        return (c == ' ' || c == '\n' || c == '\t' || c == '\r');
+        // return strchr(" \t\n\r",c)!=nullptr;
+    }
+    inline bool isSpecial(const char c)
+    {
+        return (c == '[' || c == ',' || c == ']');
+        // return strchr("[,]",c)!=nullptr;
+    }
+
+    template <typename Buffer>
+    Token BasicLexer<Buffer>::next()
+    {
+        // skip all white space and comments
+        int c;
+
+        // Loc startLoc = loc;
+        // skip all whitespaces and comments
+        while (1) {
+            c = buffer.get_char();
+
+            if (c < 0) return Token();
+
+            if (isWhite(c)) {
+                continue;
+            }
+
+            if (c == '#') {
+                while (c != '\n') {
+                    c = buffer.get_char();
+                    if (c < 0) return Token();
+                }
+                continue;
+            }
+            break;
+        }
+
+
+        ss.clear();
+
+        Loc startLoc = buffer.get_loc();
+        if (c == '"') {
+            while (1) {
+                c = buffer.get_char();
+                if (c < 0)
+                    throw std::runtime_error("could not find end of string literal (found eof instead)");
+                if (c == '"')
+                    break;
+                ss << (char)c;
+            }
+            return Token(startLoc, Token::TOKEN_TYPE_STRING, ss.str());
+        }
+
+        // -------------------------------------------------------
+        // special char
+        // -------------------------------------------------------
+        if (isSpecial(c)) {
+            ss << (char)c;
+            return Token(startLoc, Token::TOKEN_TYPE_SPECIAL, ss.str());
+        }
+
+        ss << (char)c;
+        while (1) {
+            c = buffer.get_char();
+            if (c < 0)
+                return Token(startLoc, Token::TOKEN_TYPE_LITERAL, ss.str());
+            if (c == '#' || isSpecial(c) || isWhite(c) || c == '"') {
+                buffer.unget_char(c);
+                return Token(startLoc, Token::TOKEN_TYPE_LITERAL, ss.str());
+            }
+            ss << (char)c;
+        }
+    }
+
   } // ::pbrt::syntactic
 } // ::pbrt
-
-// Implementation
-#include "Lexer.inl"

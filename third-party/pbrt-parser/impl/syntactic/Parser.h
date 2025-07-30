@@ -161,12 +161,6 @@ namespace pbrt {
 
     //! Default parser
     typedef BasicParser<FileType> Parser;
-
-    void parsePLY(const std::string &fileName,
-                                        std::vector<vec3f> &v,
-                                        std::vector<vec3f> &n,
-                                        std::vector<vec3i> &idx);
-    
   } // ::pbrt::syntx
 } // ::pbrt
 

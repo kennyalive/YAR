@@ -286,9 +286,6 @@
     <None Include="..\third-party\pbrt-parser\impl\syntactic\Buffer.inl">
       <Filter>pbrt-parser\impl\syntactic</Filter>
     </None>
-    <None Include="..\third-party\pbrt-parser\impl\syntactic\Lexer.inl">
-      <Filter>pbrt-parser\impl\syntactic</Filter>
-    </None>
     <None Include="..\third-party\pbrt-parser\impl\syntactic\Parser.inl">
       <Filter>pbrt-parser\impl\syntactic</Filter>
     </None>
