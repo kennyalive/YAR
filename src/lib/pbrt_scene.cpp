@@ -200,6 +200,15 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
         ASSERT(Vector3(&scale_texture->scale1.x) == Vector3(1));
         ASSERT(scale_texture->scale2.x == scale_texture->scale2.y && scale_texture->scale2.y == scale_texture->scale2.z);
 
+        // Do not support procedural pbrt3 textures.
+        // The main idea it is not future proof, so prerfer system simplicity.
+        // Pbrt4 also does not support them. Still it can be done if there is a necessity.
+        if (std::dynamic_pointer_cast<pbrt::FbmTexture>(scale_texture->tex1)) {
+            Float_Parameter zero_value_param;
+            set_constant_parameter(zero_value_param, 0.f);
+            return zero_value_param;
+        }
+
         auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(scale_texture->tex1);
         ASSERT(image_texture != nullptr);
 
