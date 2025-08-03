@@ -379,11 +379,9 @@ namespace pbrt {
     /*! pretty-printer, for debugging */
     virtual std::string toString() const override { return "MetalMaterial"; }
 
-    float roughness  { 0.01f };
-    Texture::SP map_roughness;
-    float uRoughness { 0.f };
+    float uRoughness { 0.01f };
     Texture::SP map_uRoughness;
-    float vRoughness { 0.f };
+    float vRoughness { 0.01f };
     Texture::SP map_vRoughness;
     bool remapRoughness { true };
     vec3f       eta  { 1.f, 1.f, 1.f };

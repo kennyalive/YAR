@@ -195,10 +195,14 @@ namespace pbrt {
     for (auto it : in->param) {
       std::string name = it.first;
       if (name == "roughness") {
-        if (in->hasParamTexture(name))
-          mat->map_roughness = findOrCreateTexture(in->getParamTexture(name));
-        else
-          mat->roughness = in->getParam1f(name);
+          if (in->hasParamTexture(name)) {
+              mat->map_uRoughness = findOrCreateTexture(in->getParamTexture(name));
+              mat->map_vRoughness = mat->map_uRoughness;
+          }
+          else {
+              mat->uRoughness = in->getParam1f(name);
+              mat->vRoughness = mat->uRoughness;
+          }
       }
       else if (name == "uroughness") {
         if (in->hasParamTexture(name))

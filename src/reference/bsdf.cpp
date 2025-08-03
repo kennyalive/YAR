@@ -47,6 +47,13 @@ Vector3 BSDF::sample_microfacet_normal(Vector2 u, const Vector3& wo, float alpha
     return wh;
 }
 
+Vector3 BSDF::sample_microfacet_normal_anisotropic(Vector2 u, const Vector3& wo_local, float alpha_x, float alpha_y) const
+{
+    Vector3 wh_local = GGX_sample_visible_microfacet_normal(u, wo_local, alpha_x, alpha_y);
+    ASSERT(wh_local.z >= 0.f);
+    return wh_local;
+}
+
 //
 // Diffuse BRDF
 //
@@ -140,8 +147,10 @@ Metal_BRDF::Metal_BRDF(const Thread_Context& thread_ctx, const Metal_Material& m
     : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
 {
     reflection_scattering = true;
-    const float roughness = evaluate_float_parameter(thread_ctx, material.roughness);
-    alpha = GGX_Distribution::roughness_to_alpha(thread_ctx, roughness, material.roughness_is_alpha);
+    const float u_roughness = evaluate_float_parameter(thread_ctx, material.u_roughness);
+    const float v_roughness = evaluate_float_parameter(thread_ctx, material.v_roughness);
+    alpha_x = GGX_Distribution::roughness_to_alpha(thread_ctx, u_roughness, material.roughness_is_alpha);
+    alpha_y = GGX_Distribution::roughness_to_alpha(thread_ctx, v_roughness, material.roughness_is_alpha);
     eta_i = evaluate_float_parameter(thread_ctx, material.eta_i);
     eta_t = evaluate_rgb_parameter(thread_ctx, material.eta);
     k_t = evaluate_rgb_parameter(thread_ctx, material.k);
@@ -149,38 +158,45 @@ Metal_BRDF::Metal_BRDF(const Thread_Context& thread_ctx, const Metal_Material& m
 
 ColorRGB Metal_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
 {
-    Vector3 wh = (wo + wi).normalized();
+    Vector3 wo_local = world_to_local(wo);
+    Vector3 wi_local = world_to_local(wi);
+    Vector3 wh_local = (wo_local + wi_local).normalized();
 
-    float cos_theta_i = dot(wi, wh);
+    float cos_theta_i = dot(wi_local, wh_local);
     ASSERT(cos_theta_i >= 0);
 
     ColorRGB F = conductor_fresnel(cos_theta_i, eta_i, eta_t, k_t);
-    float G = GGX_Distribution::G(wi, wo, normal, alpha);
-    float D = GGX_Distribution::D(wh, normal, alpha);
-    float wo_dot_n = dot(wo, normal);
-    float wi_dot_n = dot(wi, normal);
+    float G = GGX_Distribution::G_anisotropic(wi_local, wo_local, alpha_x, alpha_y);
+    float D = GGX_Distribution::D_anisotropic(wh_local, alpha_x, alpha_y);
 
-    ColorRGB f = microfacet_reflection(F, G, D, wo_dot_n, wi_dot_n);
+    ColorRGB f = microfacet_reflection(F, G, D, wo_local.z, wi_local.z);
     return f;
 }
 
 ColorRGB Metal_BRDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
 {
-    Vector3 wh = sample_microfacet_normal(u, wo, alpha);
-    *wi = reflect(wo, wh);
+    Vector3 wo_local = world_to_local(wo);
+    Vector3 wh_local = sample_microfacet_normal_anisotropic(u, wo_local, alpha_x, alpha_y);
+    Vector3 wi_local = reflect(wo_local, wh_local);
 
-    if (dot(normal, *wi) <= 0.f)
+    if (wi_local.z <= 0.f) {
         return Color_Black;
-
-    *pdf = microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+    }
+    *wi = local_to_world(wi_local);
+    *pdf = microfacet_reflection_wi_pdf_anisotropic(wo_local, wh_local, alpha_x, alpha_y);
     return evaluate(wo, *wi);
 }
 
 float Metal_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
 {
-    ASSERT(dot(normal, wi) >= 0.f);
-    Vector3 wh = (wo + wi).normalized();
-    return microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+    Vector3 wo_local = world_to_local(wo);
+
+    Vector3 wi_local = world_to_local(wi);
+    ASSERT(wi_local.z >= 0.f);
+
+    Vector3 wh_local = (wo_local + wi_local).normalized();
+
+    return microfacet_reflection_wi_pdf_anisotropic(wo_local, wh_local, alpha_x, alpha_y);
 }
 
 //

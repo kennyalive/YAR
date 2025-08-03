@@ -63,8 +63,8 @@ struct Diffuse_Transmission_Material {
 
 struct Metal_Material {
     Float_Parameter bump_map;
-
-    Float_Parameter roughness;
+    Float_Parameter u_roughness;
+    Float_Parameter v_roughness;
 
     // If true, roughness represents a microfacet alpha parameter.
     // Otherwise it's a roughness material property with values in the range [0..1].

@@ -26,20 +26,24 @@ float microfacet_transmission(float F, float G, float D,
     float eta_o, float eta_i);
 
 float microfacet_reflection_wi_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha);
+float microfacet_reflection_wi_pdf_anisotropic(const Vector3& wo_local, const Vector3& wh_local, float alpha_x, float alpha_y);
 float microfacet_transmission_wi_pdf(const Vector3& wo, const Vector3& wi, const Vector3& wh, const Vector3& n, float alpha, float eta_o, float eta_i);
 
 struct GGX_Distribution {
     // wh -normalized half-vector (wi+wo)
     // n - shading normal
     static float D(const Vector3& wh, const Vector3& n, float alpha);
+    static float D_anisotropic(const Vector3& wh_local, float alpha_x, float alpha_y);
 
     // wi/wo - incident/outgoing directions
     // n - shading normal
     static float G(const Vector3& wi, const Vector3& wo, const Vector3& n, float alpha);
+    static float G_anisotropic(const Vector3& wi_local, const Vector3& wo_local, float alpha_x, float alpha_y);
 
     // v - either wo or wi
     // n - shading normal
     static float G1(const Vector3& v, const Vector3& n, float alpha);
+    static float G1_anisotropic(const Vector3& v_local, float alpha_x, float alpha_y);
 
     // 'roughness' is a user-friendly value from [0..1] range and the remapping
     // function converts it to 'alpha' parameter from the ggx microfacet distribution.

@@ -355,10 +355,16 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
     if (auto metal = std::dynamic_pointer_cast<pbrt::MetalMaterial>(pbrt_material)) {
         Metal_Material mtl;
 
-        if (metal->map_roughness)
-            mtl.roughness = import_pbrt_texture_float(metal->map_roughness, scene);
+        if (metal->map_uRoughness)
+            mtl.u_roughness = import_pbrt_texture_float(metal->map_uRoughness, scene);
         else
-            set_constant_parameter(mtl.roughness, metal->roughness);
+            set_constant_parameter(mtl.u_roughness, metal->uRoughness);
+
+        if (metal->map_vRoughness)
+            mtl.v_roughness = import_pbrt_texture_float(metal->map_vRoughness, scene);
+        else
+            set_constant_parameter(mtl.v_roughness, metal->vRoughness);
+
         mtl.roughness_is_alpha = !metal->remapRoughness;
 
         set_constant_parameter(mtl.eta_i, 1.f);

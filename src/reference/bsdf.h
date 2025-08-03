@@ -31,7 +31,11 @@ protected:
     Vector3 local_to_world(const Vector3& local_direction) const;
     Vector3 world_to_local(const Vector3& world_direction) const;
 
+    // Returns sampled normal in world space
     Vector3 sample_microfacet_normal(Vector2 u, const Vector3& wo, float alpha) const;
+
+    // Returns sampled normal in local shading coordinate system
+    Vector3 sample_microfacet_normal_anisotropic(Vector2 u, const Vector3& wo_local, float alpha_x, float alpha_y) const;
 };
 
 struct Diffuse_BRDF : public BSDF {
@@ -54,7 +58,8 @@ struct Diffuse_Transmission_BSDF : public BSDF {
 };
 
 struct Metal_BRDF : public BSDF {
-    float alpha = 0.f;
+    float alpha_x = 0.f;
+    float alpha_y = 0.f;
     float eta_i = 0.f; // ROI of adjacent dielectric
     ColorRGB eta_t;
     ColorRGB k_t;

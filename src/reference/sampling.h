@@ -111,3 +111,4 @@ Vector3 GGX_sample_visible_microfacet_normal(Vector2 u, const Vector3& wo_local,
 
 // Returns PDF of sampled wh direction (microfacet normal).
 float GGX_visible_microfacet_normal_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha);
+float GGX_visible_microfacet_normal_pdf_anisotropic(const Vector3& wo_local, const Vector3& wh_local, float alpha_x, float alpha_y);

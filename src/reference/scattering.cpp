@@ -115,6 +115,17 @@ float microfacet_reflection_wi_pdf(const Vector3& wo, const Vector3& wh, const V
     return wi_pdf;
 }
 
+float microfacet_reflection_wi_pdf_anisotropic(const Vector3& wo_local, const Vector3& wh_local, float alpha_x, float alpha_y)
+{
+    float wh_pdf = GGX_visible_microfacet_normal_pdf_anisotropic(wo_local, wh_local, alpha_x, alpha_y);
+
+    // Convert between probability densities:
+    //  wi_pdf = wh_pdf * dwh/dwi
+    //  dwh/dwi = 1/4(wh, wi) = 1/4(wh,wo)
+    float wi_pdf = wh_pdf / (4 * dot(wh_local, wo_local));
+    return wi_pdf;
+}
+
 float microfacet_transmission_wi_pdf(const Vector3& wo, const Vector3& wi, const Vector3& wh, const Vector3& n, float alpha, float eta_o, float eta_i)
 {
     // The computation of transmission half-angle direction gets a vector that is in
@@ -147,6 +158,7 @@ float GGX_Distribution::D(const Vector3& wh, const Vector3& n, float alpha)
     }
 
     // The formula as specified in "Microfacet Models for Refraction through Rough Surfaces".
+    // Section 5.2, GGX Distribution.
     // https://www.cs.cornell.edu/~srm/publications/EGSR07-btdf.pdf
     /*
     float cos2_theta = cos_theta * cos_theta;
@@ -165,6 +177,20 @@ float GGX_Distribution::D(const Vector3& wh, const Vector3& n, float alpha)
     return D;
 }
 
+float GGX_Distribution::D_anisotropic(const Vector3& wh_local, float alpha_x, float alpha_y)
+{
+    float cos_theta = std::clamp(wh_local.z, -1.f, 1.f);
+    float cos2_theta = cos_theta * cos_theta;
+    float sin2_theta = 1.f - cos2_theta;
+
+    float sin2_theta_inv = 1.f / sin2_theta;
+    float cos2_phi = (sin2_theta == 0.f) ? 1.f : (wh_local.x * wh_local.x) * sin2_theta_inv;
+    float sin2_phi = (sin2_theta == 0.f) ? 0.f : (wh_local.y * wh_local.y) * sin2_theta_inv;
+
+    float k = cos2_theta + sin2_theta * (cos2_phi / (alpha_x * alpha_x) + sin2_phi / (alpha_y * alpha_y));
+    return 1.f / (Pi * alpha_x * alpha_y * k * k);
+}
+
 static float GGX_lambda(const Vector3& v, const Vector3& n, float alpha)
 {
     float cos_theta = dot(v, n);
@@ -175,14 +201,40 @@ static float GGX_lambda(const Vector3& v, const Vector3& n, float alpha)
     return lambda;
 }
 
+static float GGX_lambda_anisotropic(const Vector3& v_local, float alpha_x, float alpha_y)
+{
+    float cos_theta = std::clamp(v_local.z, -1.f, 1.f);
+    float cos2_theta = cos_theta * cos_theta;
+    float sin2_theta = 1.f - cos2_theta;
+    float tan2_theta = sin2_theta / cos2_theta; // could be Infinity, that's fine
+
+    float sin2_theta_inv = 1.f / sin2_theta;
+    float cos2_phi = (sin2_theta == 0.f) ? 1.f : (v_local.x * v_local.x) * sin2_theta_inv;
+    float sin2_phi = (sin2_theta == 0.f) ? 0.f : (v_local.y * v_local.y) * sin2_theta_inv;
+    float alpha2 = cos2_phi * alpha_x * alpha_x + sin2_phi * alpha_y * alpha_y;
+
+    float lambda = 0.5f * (-1.f + std::sqrt(1.f + alpha2 * tan2_theta));
+    return lambda;
+}
+
 float GGX_Distribution::G(const Vector3& wi, const Vector3& wo, const Vector3& n, float alpha)
 {
     return 1.f / (1.f + GGX_lambda(wi, n, alpha) + GGX_lambda(wo, n, alpha));
 }
 
+float GGX_Distribution::G_anisotropic(const Vector3& wi_local, const Vector3& wo_local, float alpha_x, float alpha_y)
+{
+    return 1.f / (1.f + GGX_lambda_anisotropic(wi_local, alpha_x, alpha_y) + GGX_lambda_anisotropic(wo_local, alpha_x, alpha_y));
+}
+
 float GGX_Distribution::G1(const Vector3& v, const Vector3& n, float alpha)
 {
     return 1.f / (1.f + GGX_lambda(v, n, alpha));
+}
+
+float GGX_Distribution::G1_anisotropic(const Vector3& v_local, float alpha_x, float alpha_y)
+{
+    return 1.f / (1.f + GGX_lambda_anisotropic(v_local, alpha_x, alpha_y));
 }
 
 static float pbrt3_roughness_to_alpha(float roughness)

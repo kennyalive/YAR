@@ -345,3 +345,15 @@ float GGX_visible_microfacet_normal_pdf(const Vector3& wo, const Vector3& wh, co
     float wh_pdf = G1 * D * std::max(0.f, dot(wo, wh)) / dot(wo, n);
     return wh_pdf;
 }
+
+float GGX_visible_microfacet_normal_pdf_anisotropic(const Vector3& wo_local, const Vector3& wh_local, float alpha_x, float alpha_y)
+{
+    ASSERT(wo_local.z >= 0.f);
+    ASSERT(wh_local.z >= 0.f);
+
+    float G1 = GGX_Distribution::G1_anisotropic(wo_local, alpha_x, alpha_y);
+    float D = GGX_Distribution::D_anisotropic(wh_local, alpha_x, alpha_y);
+
+    float wh_pdf = G1 * D * std::max(0.f, dot(wo_local, wh_local)) / wo_local.z;
+    return wh_pdf;
+}
