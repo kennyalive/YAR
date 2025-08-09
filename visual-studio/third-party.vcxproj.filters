@@ -52,6 +52,9 @@
     <Filter Include="vma">
       <UniqueIdentifier>{6a6d85f1-a835-4e62-9cb6-7db120416a01}</UniqueIdentifier>
     </Filter>
+    <Filter Include="xxhash">
+      <UniqueIdentifier>{8d04f4ac-ab2e-4133-819f-465068b54c1a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\third-party\glfw\context.c">
@@ -168,6 +171,9 @@
     <ClCompile Include="..\third-party\imgui\impl\imgui_impl_vulkan.cpp">
       <Filter>imgui\impl</Filter>
     </ClCompile>
+    <ClCompile Include="..\third-party\xxhash\xxhash.c">
+      <Filter>xxhash</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\third-party\glfw\egl_context.h">
@@ -280,6 +286,9 @@
     </ClInclude>
     <ClInclude Include="..\third-party\vma\vk_mem_alloc.h">
       <Filter>vma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\xxhash\xxhash.h">
+      <Filter>xxhash</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
