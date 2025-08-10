@@ -40,14 +40,8 @@ Vector3 BSDF::world_to_local(const Vector3& world_direction) const
 
 Vector3 BSDF::sample_microfacet_normal(Vector2 u, const Vector3& wo, float alpha) const
 {
-    Vector3 wh_local;
-    if (ggx_sample_visible_normals) {
-        Vector3 wo_local = world_to_local(wo);
-        wh_local = GGX_sample_visible_microfacet_normal(u, wo_local, alpha, alpha);
-    }
-    else {
-        wh_local = GGX_sample_microfacet_normal(u, alpha);
-    }
+    Vector3 wo_local = world_to_local(wo);
+    Vector3 wh_local = GGX_sample_visible_microfacet_normal(u, wo_local, alpha, alpha);
     Vector3 wh = local_to_world(wh_local);
     ASSERT(dot(wh, normal) >= 0.f);
     return wh;

@@ -290,6 +290,7 @@ float Distribution_2D::pdf_uv(Vector2 sample) const {
     return pdf;
 }
 
+// NO LONGER USED (renderer now samples the distribution of visible normals)
 Vector3 GGX_sample_microfacet_normal(Vector2 u, float alpha) {
     float theta = std::atan(alpha * std::sqrt(u[0] / (1 - u[0])));
     float phi = 2.f * Pi * u[1];
@@ -299,6 +300,7 @@ Vector3 GGX_sample_microfacet_normal(Vector2 u, float alpha) {
     return wh_local;
 }
 
+// NO LONGER USED (renderer now samples the distribution of visible normals)
 float GGX_microfacet_normal_pdf(const Vector3& wh, const Vector3& n, float alpha) {
     ASSERT(dot(wh, n) >= 0.f);
 

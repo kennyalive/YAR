@@ -106,15 +106,11 @@ float microfacet_transmission(float F, float G, float D,
 
 float microfacet_reflection_wi_pdf(const Vector3& wo, const Vector3& wh, const Vector3& n, float alpha)
 {
-    float wh_pdf;
-    if (ggx_sample_visible_normals)
-        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, n, alpha);
-    else
-        wh_pdf = GGX_microfacet_normal_pdf(wh, n, alpha);
+    float wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, n, alpha);
 
     // Convert between probability densities:
-    // wi_pdf = wh_pdf * dwh/dwi
-    // dwh/dwi = 1/4(wh, wi) = 1/4(wh,wo)
+    //  wi_pdf = wh_pdf * dwh/dwi
+    //  dwh/dwi = 1/4(wh, wi) = 1/4(wh,wo)
     float wi_pdf = wh_pdf / (4 * dot(wh, wo));
     return wi_pdf;
 }
@@ -131,15 +127,11 @@ float microfacet_transmission_wi_pdf(const Vector3& wo, const Vector3& wi, const
     // able to form a refraction configuration.
     ASSERT(dot(wo, wh) * dot(wi, wh) <= 0.f);
 
-    float wh_pdf;
-    if (ggx_sample_visible_normals)
-        wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, n, alpha);
-    else
-        wh_pdf = GGX_microfacet_normal_pdf(wh, n, alpha);
+    float wh_pdf = GGX_visible_microfacet_normal_pdf(wo, wh, n, alpha);
 
     // Convert between probability densities:
-    // wi_pdf = wh_pdf * dwh/dwi
-    // dwh/dwi = eta_i^2 * abs(dot(wi, wh)) / (eta_o*dot(wo, wh) + eta_i*dot(wi, wh))^2
+    //  wi_pdf = wh_pdf * dwh/dwi
+    //  dwh/dwi = eta_i^2 * abs(dot(wi, wh)) / (eta_o*dot(wo, wh) + eta_i*dot(wi, wh))^2
     float denom = eta_o * dot(wo, wh) + eta_i * dot(wi, wh);
     float dwh_over_dwi = eta_i * eta_i * std::abs(dot(wi, wh)) / (denom * denom);
 

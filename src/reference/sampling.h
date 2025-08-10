@@ -94,9 +94,13 @@ private:
 };
 
 // Importance sampling of GGX microfacet distribution: D(wh) * dot(wh, N)
+// NOTE: This function is not used and is left here mostly as an example.
+//       The renderer switched to sampling distribution of visible normals.
 Vector3 GGX_sample_microfacet_normal(Vector2 u, float alpha);
 
 // Returns PDF of sampled wh direction (microfacet normal).
+// NOTE: This function is not used and is left here mostly as an example.
+//       The renderer switched to sampling distribution of visible normals.
 float GGX_microfacet_normal_pdf(const Vector3& wh, const Vector3& n, float alpha);
 
 // "Sampling the GGX Distribution of Visible Normals"
