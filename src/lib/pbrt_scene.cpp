@@ -420,15 +420,19 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
     }
 
     if (auto coated_diffuse = std::dynamic_pointer_cast<pbrt::SubstrateMaterial>(pbrt_material)) {
-        ASSERT(coated_diffuse->map_vRoughness == nullptr);
-        ASSERT(coated_diffuse->uRoughness == coated_diffuse->vRoughness);
 
         Coated_Diffuse_Material mtl;
 
         if (coated_diffuse->map_uRoughness)
-            mtl.roughness = import_pbrt_texture_float(coated_diffuse->map_uRoughness, scene);
+            mtl.u_roughness = import_pbrt_texture_float(coated_diffuse->map_uRoughness, scene);
         else
-            set_constant_parameter(mtl.roughness, coated_diffuse->uRoughness);
+            set_constant_parameter(mtl.u_roughness, coated_diffuse->uRoughness);
+
+        if (coated_diffuse->map_vRoughness)
+            mtl.v_roughness = import_pbrt_texture_float(coated_diffuse->map_vRoughness, scene);
+        else
+            set_constant_parameter(mtl.v_roughness, coated_diffuse->vRoughness);
+
         mtl.roughness_is_alpha = !coated_diffuse->remapRoughness;
 
         if (coated_diffuse->map_ks)

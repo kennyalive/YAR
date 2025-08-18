@@ -95,7 +95,8 @@ struct Rough_Glass_BSDF : public BSDF {
 };
 
 struct Ashikhmin_Shirley_Phong_BRDF : public BSDF {
-    float alpha = 0.f; // GGX alpha parameter
+    float alpha_x = 0.f; // GGX alpha parameter
+    float alpha_y = 0.f;
     ColorRGB r0; // reflectance of the glossy layer at normal incident angle
     ColorRGB diffuse_reflectance; // reflectance of the diffuse layer
 

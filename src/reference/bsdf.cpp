@@ -428,28 +428,33 @@ Ashikhmin_Shirley_Phong_BRDF::Ashikhmin_Shirley_Phong_BRDF(const Thread_Context&
     : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
 {
     reflection_scattering = true;
-    const float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
-    alpha = GGX_Distribution::roughness_to_alpha(thread_ctx, roughness, params.roughness_is_alpha);
+    const float u_roughness = evaluate_float_parameter(thread_ctx, params.u_roughness);
+    const float v_roughness = evaluate_float_parameter(thread_ctx, params.v_roughness);
+
+    alpha_x = GGX_Distribution::roughness_to_alpha(thread_ctx, u_roughness, params.roughness_is_alpha);
+    alpha_y = GGX_Distribution::roughness_to_alpha(thread_ctx, v_roughness, params.roughness_is_alpha);
     r0 = evaluate_rgb_parameter(thread_ctx, params.r0);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
 }
 
 ColorRGB Ashikhmin_Shirley_Phong_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const {
-    Vector3 wh = (wo + wi).normalized();
+    Vector3 wo_local = world_to_local(wo);
+    Vector3 wi_local = world_to_local(wi);
+    Vector3 wh_local = (wo_local + wi_local).normalized();
 
-    float cos_theta_i = dot(wi, wh);
+    float cos_theta_i = dot(wi_local, wh_local);
     ASSERT(cos_theta_i >= 0);
 
     ColorRGB F = schlick_fresnel(r0, cos_theta_i);
-    float D = GGX_Distribution::D(wh, normal, alpha);
+    float D = GGX_Distribution::D_anisotropic(wh_local, alpha_x, alpha_y);
 
-    ColorRGB specular_brdf = F * (D / (4.f * cos_theta_i * std::max(dot(normal, wo), dot(normal, wi))));
+    ColorRGB specular_brdf = F * (D / (4.f * cos_theta_i * std::max(wo_local.z, wi_local.z)));
 
     auto pow5 = [](float v) { return (v * v) * (v * v) * v; };
 
     ColorRGB diffuse_brdf =
             (diffuse_reflectance * (ColorRGB(1.f) - r0)) *
-            (28.f / (23.f*Pi) * (1.f - pow5(1.f - 0.5f * dot(normal, wi))) * (1.f - pow5(1.f - 0.5f * dot(normal, wo))));
+            (28.f / (23.f*Pi) * (1.f - pow5(1.f - 0.5f * wi_local.z)) * (1.f - pow5(1.f - 0.5f * wo_local.z)));
 
     return diffuse_brdf + specular_brdf;
 }
@@ -460,8 +465,10 @@ ColorRGB Ashikhmin_Shirley_Phong_BRDF::sample(Vector2 u, float u_scattering_type
         *wi = local_to_world(local_dir);
     }
     else { // sample specular
-        Vector3 wh = sample_microfacet_normal(u, wo, alpha);
-        *wi = reflect(wo, wh);
+        Vector3 wo_local = world_to_local(wo);
+        Vector3 wh_local = sample_microfacet_normal_anisotropic(u, wo_local, alpha_x, alpha_y);
+        Vector3 wi_local = reflect(wo_local, wh_local);
+        *wi = local_to_world(wi_local);
     }
 
     if (dot(normal, *wi) <= 0.f) {
@@ -475,8 +482,10 @@ float Ashikhmin_Shirley_Phong_BRDF::pdf(const Vector3& wo, const Vector3& wi) co
     ASSERT(dot(normal, wi) >= 0.f);
     float diffuse_pdf = dot(normal, wi) / Pi;
 
-    Vector3 wh = (wo + wi).normalized();
-    float spec_pdf = microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+    Vector3 wo_local = world_to_local(wo);
+    Vector3 wi_local = world_to_local(wi);
+    Vector3 wh_local = (wo_local + wi_local).normalized();
+    float spec_pdf = microfacet_reflection_wi_pdf_anisotropic(wo_local, wh_local, alpha_x, alpha_y);
 
     float pdf = 0.5f * (diffuse_pdf + spec_pdf);
     return pdf;
