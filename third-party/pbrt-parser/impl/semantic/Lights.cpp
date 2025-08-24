@@ -158,8 +158,16 @@ namespace pbrt {
         continue;
       }
       if (name == "L") {
-        in->getParam3f(&light->L.x,name);
-        continue;
+          if (it.second->getSize() == 2) {
+              float v[2];
+              in->getParam2f(v, name);
+              light->temperature = v[0];
+              light->scale = vec3f(v[1]);
+          }
+          else {
+              in->getParam3f(&light->L.x, name);
+          }
+          continue;
       }
       if (name == "scale") {
         in->getParam3f(&light->scale.x,name);

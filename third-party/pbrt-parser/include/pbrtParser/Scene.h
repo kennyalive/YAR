@@ -149,8 +149,8 @@ namespace pbrt {
     vec3f to    { 0.f,0.f,1.f };
     vec3f L     { 1.f,1.f,1.f };
     vec3f scale { 1.f,1.f,1.f };
+    float temperature = 0.f; // Should be used instead of L if not zero (blackbody spectrum)
   };
-
 
   struct SpotLightSource : public LightSource {
     typedef std::shared_ptr<SpotLightSource> SP;

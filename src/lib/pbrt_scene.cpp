@@ -164,9 +164,13 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
         param.u_scale = image_texture->uscale;
         param.v_scale = image_texture->vscale;
     }
-    else
+    else if (auto marble_texture = std::dynamic_pointer_cast<pbrt::MarbleTexture>(pbrt_texture))
+    {
+        set_constant_parameter(param, Color_White);
+    }
+    else {
         error("Unsupported pbrt texture type");
-
+    }
     return param;
 }
 
@@ -712,8 +716,7 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
         shape.geometry = import_pbrt_sphere(pbrt_sphere, &shape.transform, scene);
 
         if (pbrt_shape->areaLight != nullptr) {
-            if (auto pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(pbrt_shape->areaLight))
-            {
+            if (auto pbrt_diffuse_area_light_rgb = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightRGB>(pbrt_shape->areaLight)) {
                 Diffuse_Sphere_Light light;
                 light.position = (instance_transform * shape.transform).get_column(3);
                 light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
@@ -722,8 +725,29 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                 scene->lights.diffuse_sphere_lights.push_back(light);
                 shape.area_light = {Light_Type::diffuse_sphere, (int)scene->lights.diffuse_sphere_lights.size() - 1};
             }
-            else
+            else if (auto pbrt_diffuse_area_light_blackbody = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightBB>(pbrt_shape->areaLight)) {
+                Diffuse_Sphere_Light light;
+                light.position = (instance_transform * shape.transform).get_column(3);
+
+                // There's a huge difference in black body brightness values between different temperatures (e.g. 1500K vs 6500K).
+                // We are mostly interesting in the chroma part, so use normalized representation. This is different from how we
+                // typically work with emission spectrum where we don't normalize and use emission_spectrum_to_XYZ().
+                // To have different brightness levels pbrt3 uses scale factor.
+                Sampled_Spectrum s = Sampled_Spectrum::blackbody_normalized_spectrum(pbrt_diffuse_area_light_blackbody->temperature);
+                if (pbrt_diffuse_area_light_blackbody->scale != 1.f) {
+                    s.apply_scale(pbrt_diffuse_area_light_blackbody->scale);
+                }
+                Vector3 xyz = s.emission_spectrum_to_XYZ_scale_by_CIE_Y_integral();
+                light.emitted_radiance = XYZ_to_sRGB(xyz);
+
+                light.radius = pbrt_sphere->radius;
+                light.sample_count = pbrt_diffuse_area_light_blackbody->nSamples;
+                scene->lights.diffuse_sphere_lights.push_back(light);
+                shape.area_light = { Light_Type::diffuse_sphere, (int)scene->lights.diffuse_sphere_lights.size() - 1 };
+            }
+            else {
                 error("unsupported area light type");
+            }
         }
     }
 
@@ -773,7 +797,21 @@ static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const M
 
         Directional_Light light;
         light.direction = light_vec.normalized();
-        light.irradiance = ColorRGB(&distant_light->L.x) * ColorRGB(&distant_light->scale.x);
+        if (distant_light->temperature != 0.f) {
+            // There's a huge difference in black body brightness values between different temperatures (e.g. 1500K vs 6500K).
+            // We are mostly interesting in the chroma part, so use normalized representation. This is different from how we
+            // typically work with emission spectrum where we don't normalize and use emission_spectrum_to_XYZ().
+            // To have different brightness levels pbrt3 uses scale factor.
+            Sampled_Spectrum s = Sampled_Spectrum::blackbody_normalized_spectrum(distant_light->temperature);
+            if (distant_light->scale.x != 1.f) {
+                s.apply_scale(distant_light->scale.x);
+            }
+            Vector3 xyz = s.emission_spectrum_to_XYZ_scale_by_CIE_Y_integral();
+            light.irradiance = XYZ_to_sRGB(xyz);
+        }
+        else {
+            light.irradiance = ColorRGB(&distant_light->L.x) * ColorRGB(&distant_light->scale.x);
+        }
         scene->lights.directional_lights.push_back(light);
         return;
     }
