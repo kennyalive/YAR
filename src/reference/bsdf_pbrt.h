@@ -6,7 +6,8 @@ struct Pbrt3_Uber_BRDF : public BSDF {
     ColorRGB opacity;
     ColorRGB diffuse_reflectance;
     ColorRGB specular_reflectance;
-    float alpha = 0.f;
+    float alpha_x = 0.f;
+    float alpha_y = 0.f;
     float index_of_refraction = 1.f;
 
     Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_Uber_Material& params);

@@ -582,13 +582,18 @@ namespace pbrt {
     Texture::SP map_shadowAlpha;
 
     float index { 1.5f };
-    float roughness { 0.1f };
-    float uRoughness { 0.f };
-    Texture::SP map_uRoughness;
-    float vRoughness { 0.f };
-    Texture::SP map_vRoughness;
 
+    float roughness { 0.1f };
     Texture::SP map_roughness;
+
+    float uRoughness{ 0.f };
+    Texture::SP map_uRoughness;
+    bool u_roughness_specified = false;
+
+    float vRoughness{ 0.f };
+    Texture::SP map_vRoughness;
+    bool v_roughness_specified = false;
+
     Texture::SP map_bump;
   };
 

@@ -18,8 +18,10 @@ Pbrt3_Uber_BRDF::Pbrt3_Uber_BRDF(const Thread_Context& thread_ctx, const Pbrt3_U
     opacity = evaluate_rgb_parameter(thread_ctx, params.opacity);
     diffuse_reflectance = evaluate_rgb_parameter(thread_ctx, params.diffuse_reflectance);
     specular_reflectance = evaluate_rgb_parameter(thread_ctx, params.specular_reflectance);
-    const float roughness = evaluate_float_parameter(thread_ctx, params.roughness);
-    alpha = GGX_Distribution::roughness_to_alpha(thread_ctx, roughness, false);
+    const float u_roughness = evaluate_float_parameter(thread_ctx, params.u_roughness);
+    const float v_roughness = evaluate_float_parameter(thread_ctx, params.v_roughness);
+    alpha_x = GGX_Distribution::roughness_to_alpha(thread_ctx, u_roughness, false);
+    alpha_y = GGX_Distribution::roughness_to_alpha(thread_ctx, v_roughness, false);
     index_of_refraction = evaluate_float_parameter(thread_ctx, params.index_of_refraction);
 
     bool trace_enter_event = thread_ctx.shading_context.nested_dielectric ?
@@ -34,16 +36,18 @@ ColorRGB Pbrt3_Uber_BRDF::evaluate(const Vector3& wo, const Vector3& wi) const
 {
     ColorRGB diffuse = Pi_Inv * diffuse_reflectance * opacity;
 
-    Vector3 wh = (wo + wi).normalized();
-    float cos_theta_i = dot(wi, wh);
-    ASSERT(cos_theta_i >= 0);
-    float F = dielectric_fresnel(cos_theta_i, index_of_refraction);
-    float G = GGX_Distribution::G(wi, wo, normal, alpha);
-    float D = GGX_Distribution::D(wh, normal, alpha);
-    float wo_dot_n = dot(wo, normal);
-    float wi_dot_n = dot(wi, normal);
+    Vector3 wo_local = world_to_local(wo);
+    Vector3 wi_local = world_to_local(wi);
+    Vector3 wh_local = (wo_local + wi_local).normalized();
 
-    float f = microfacet_reflection(F, G, D, wo_dot_n, wi_dot_n);
+    float cos_theta_i = dot(wi_local, wh_local);
+    ASSERT(cos_theta_i >= 0);
+
+    float F = dielectric_fresnel(cos_theta_i, index_of_refraction);
+    float G = GGX_Distribution::G_anisotropic(wi_local, wo_local, alpha_x, alpha_y);
+    float D = GGX_Distribution::D_anisotropic(wh_local, alpha_x, alpha_y);
+
+    float f = microfacet_reflection(F, G, D, wo_local.z, wi_local.z);
     ColorRGB specular = (specular_reflectance * opacity) * f;
 
     return diffuse + specular;
@@ -56,8 +60,10 @@ ColorRGB Pbrt3_Uber_BRDF::sample(Vector2 u, float u_scattering_type, const Vecto
         *wi = local_to_world(local_dir);
     }
     else { // sample specular
-        Vector3 wh = sample_microfacet_normal(u, wo, alpha);
-        *wi = reflect(wo, wh);
+        Vector3 wo_local = world_to_local(wo);
+        Vector3 wh_local = sample_microfacet_normal_anisotropic(u, wo_local, alpha_x, alpha_y);
+        Vector3 wi_local = reflect(wo_local, wh_local);
+        *wi = local_to_world(wi_local);
     }
 
     if (dot(normal, *wi) <= 0.f) {
@@ -72,8 +78,10 @@ float Pbrt3_Uber_BRDF::pdf(const Vector3& wo, const Vector3& wi) const
     ASSERT(dot(normal, wi) >= 0.f);
     float diffuse_pdf = dot(normal, wi) / Pi;
 
-    Vector3 wh = (wo + wi).normalized();
-    float specular_pdf = microfacet_reflection_wi_pdf(wo, wh, normal, alpha);
+    Vector3 wo_local = world_to_local(wo);
+    Vector3 wi_local = world_to_local(wi);
+    Vector3 wh_local = (wo_local + wi_local).normalized();
+    float specular_pdf = microfacet_reflection_wi_pdf_anisotropic(wo_local, wh_local, alpha_x, alpha_y);
 
     float pdf = 0.5f * (diffuse_pdf + specular_pdf);
     return pdf;

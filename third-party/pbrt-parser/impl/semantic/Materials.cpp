@@ -99,20 +99,14 @@ namespace pbrt {
           mat->roughness = in->getParam1f(name);
         else
           throw std::runtime_error("uber::roughness in un-recognized format...");
-        // else
-        //   in->getParam3f(&mat->roughness.x,name);
       }
       else if (name == "uroughness") {
-        // if (in->hasParamTexture(name))
-        //   mat->map_uRoughness = findOrCreateTexture(in->getParamTexture(name));
-        // else
           mat->uRoughness = in->getParam1f(name);
+          mat->u_roughness_specified = true;
       }
       else if (name == "vroughness") {
-        // if (in->hasParamTexture(name))
-        //   mat->map_vRoughness = findOrCreateTexture(in->getParamTexture(name));
-        // else
           mat->vRoughness = in->getParam1f(name);
+          mat->v_roughness_specified = true;
       }
       // else if (name == "remaproughness") {
       //   mat->remapRoughness = in->getParamBool(name);

@@ -64,7 +64,8 @@ struct Pbrt3_Uber_Material {
     //      L_before_scattering = Opacity * L_incoming.
     RGB_Parameter opacity;
 
-    Float_Parameter roughness;
+    Float_Parameter u_roughness;
+    Float_Parameter v_roughness;
     Float_Parameter index_of_refraction;
 
     // NOTE: the following are the derived fields. It's not mandatory to store them

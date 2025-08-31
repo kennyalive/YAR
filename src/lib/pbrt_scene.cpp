@@ -468,9 +468,7 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
         ASSERT(uber->map_alpha == nullptr);
         ASSERT(uber->shadowAlpha == 0.f);
         ASSERT(uber->map_shadowAlpha == nullptr);
-        ASSERT(uber->uRoughness == 0.f);
         ASSERT(uber->map_uRoughness == nullptr);
-        ASSERT(uber->vRoughness == 0.f);
         ASSERT(uber->map_vRoughness == nullptr);
 
         Pbrt3_Uber_Material mtl;
@@ -500,10 +498,24 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
 
         ASSERT(mtl.component_count <= std::size(mtl.components));
 
-        if (uber->map_roughness)
-            mtl.roughness = import_pbrt_texture_float(uber->map_roughness, scene);
-        else
-            set_constant_parameter(mtl.roughness, uber->roughness);
+        // u/v roughness initialization follows pbrt3 logic:
+        // if u_roughness is not specified then u_roughness it's roughness
+        // if v_roughness is not specified then v_roughness it's u_roughness
+        if (uber->u_roughness_specified) {
+            set_constant_parameter(mtl.u_roughness, uber->uRoughness);
+        }
+        else {
+            if (uber->map_roughness)
+                mtl.u_roughness = import_pbrt_texture_float(uber->map_roughness, scene);
+            else
+                set_constant_parameter(mtl.u_roughness, uber->roughness);
+        }
+        if (uber->v_roughness_specified) {
+            set_constant_parameter(mtl.v_roughness, uber->vRoughness);
+        }
+        else {
+            mtl.v_roughness = mtl.u_roughness;
+        }
 
         set_constant_parameter(mtl.index_of_refraction, uber->index);
         return add_material<Material_Type::pbrt3_uber>(materials, mtl);
