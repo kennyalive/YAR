@@ -56,8 +56,11 @@ inline T round_up(T k, T alignment) {
 }
 
 // Solves a * x = b equation where a is 2x2 matrix, x and b are two-component vectors.
+// Returns the determinant value. If determinant is 0.0f then the equation was not solved.
+// In other cases the computed solution is returned in x1 and x2. The caller can consider
+// rejecting solution if the determinant is close to zero (but not zero).
 template <typename T>
-bool solve_linear_system_2x2(float a[2][2], T b[2], T* x1, T* x2);
+float solve_linear_system_2x2(float a[2][2], T b[2], T* x1, T* x2);
 
 // Creates orthonormal coordinate system with axes v1, v2 and v where
 // axis v is specified, v1 and v2 are chosen arbitrarily.

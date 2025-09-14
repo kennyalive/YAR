@@ -215,12 +215,24 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
         };
 
         Vector3 bp[2] = { p[1] - p[0], p[2] - p[0] };
-        if (!solve_linear_system_2x2(a, bp, &dpdu, &dpdv)) {
+        if (float det = solve_linear_system_2x2(a, bp, &dpdu, &dpdv); std::abs(det) < 1e-9f) {
             coordinate_system_from_vector(geometric_normal, &dpdu, &dpdv);
         }
 
         Vector3 bn[2] = { n[1] - n[0], n[2] - n[0] };
-        solve_linear_system_2x2(a, bn, &dndu, &dndv);
+        if (float det = solve_linear_system_2x2(a, bn, &dndu, &dndv); std::abs(det) < 1e-9f) {
+            // NOTE: this is a pbrt's approximation
+            Vector3 dn = cross(bn[1], bn[0]);
+            // NOTE: length/squared_lenght can be zero even if the vector is non-zero but with small components.
+            // That's the reason to check here for a scalar length value compared to checking if vector is zero.
+            if (dn.length_squared() == 0.f) {
+                dndu = Vector3{};
+                dndv = Vector3{};
+            }
+            else {
+                coordinate_system_from_vector(dn, &dndu, &dndv);
+            }
+        }
     }
 }
 
