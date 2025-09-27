@@ -9,10 +9,11 @@
 template <typename Type>
 struct Parameter {
     bool is_specified = false;
+
     bool is_constant = false;
     Type constant_value = Type();
-    int texture_index = -1;
 
+    int texture_index = -1;
     float u_scale = 1.f;
     float v_scale = 1.f;
 

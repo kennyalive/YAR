@@ -200,9 +200,16 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
         scale_texture != nullptr)
     {
         ASSERT(scale_texture->tex1 != nullptr);
-        ASSERT(scale_texture->tex2 == nullptr);
         ASSERT(Vector3(&scale_texture->scale1.x) == Vector3(1));
         ASSERT(scale_texture->scale2.x == scale_texture->scale2.y && scale_texture->scale2.y == scale_texture->scale2.z);
+
+        float scale = scale_texture->scale2.x;
+
+        if (scale_texture->tex2) {
+            Float_Parameter tex2_param = import_pbrt_texture_float(scale_texture->tex2, scene);
+            assert(tex2_param.is_constant);
+            scale *= tex2_param.constant_value;
+        }
 
         // Do not support procedural pbrt3 textures.
         // The main idea it is not future proof, so prerfer system simplicity.
@@ -219,7 +226,7 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
         int texture_index = add_scene_texture(
             Texture_Descriptor{
                 .file_name = image_texture->fileName,
-                .scale = scale_texture->scale2.x,
+                .scale = scale,
             },
             scene
         );
@@ -228,9 +235,9 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
         param.u_scale = image_texture->uscale;
         param.v_scale = image_texture->vscale;
     }
-    else
+    else {
         error("Unsupported pbrt texture type");
-
+    }
     return param;
 }
 
