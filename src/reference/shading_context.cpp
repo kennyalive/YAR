@@ -200,7 +200,10 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
     Vector3 n[3];
     if (!ti.mesh->normals.empty()) {
         ti.mesh->get_normals(ti.triangle_index, n);
-        normal = barycentric_interpolate(n, ti.barycentrics).normalized();
+        Vector3 interpolated_normal = barycentric_interpolate(n, ti.barycentrics);
+        if (interpolated_normal.length_squared() != 0) {
+            normal = interpolated_normal.normalized();
+        }
     }
 
     if (!ti.mesh->uvs.empty()) {
