@@ -631,10 +631,18 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
 }
 
 static Geometry_Handle import_pbrt_sphere(const pbrt::Sphere::SP pbrt_sphere, Matrix3x4* sphere_transform, Scene* scene) {
+    *sphere_transform = to_matrix3x4(pbrt_sphere->transform);
+
+    // Check the cache of tesselated spheres. We tesselarate sphere only once for the given radius value.
+    if (auto it = scene->radius_to_sphere_geometry.find(pbrt_sphere->radius); it != scene->radius_to_sphere_geometry.end()) {
+        return it->second;
+    }
+
     Triangle_Mesh sphere = create_sphere_mesh(pbrt_sphere->radius, 6, true);
     scene->geometries.triangle_meshes.push_back(std::move(sphere));
-    *sphere_transform = to_matrix3x4(pbrt_sphere->transform);
-    return Geometry_Handle{ Geometry_Type::triangle_mesh, int(scene->geometries.triangle_meshes.size() - 1) };
+    Geometry_Handle sphere_geometry_handle = { Geometry_Type::triangle_mesh, int(scene->geometries.triangle_meshes.size() - 1) };
+    scene->radius_to_sphere_geometry.insert(std::make_pair(pbrt_sphere->radius, sphere_geometry_handle));
+    return sphere_geometry_handle;
 }
 
 static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& instance_transform, Scene* scene) {

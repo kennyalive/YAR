@@ -46,6 +46,9 @@ struct Scene {
 
     std::vector<Texture_Descriptor> texture_descriptors;
 
+    // Cache of tesselated spheres with different radius
+    std::unordered_map<float, Geometry_Handle> radius_to_sphere_geometry;
+
     //
     // Description of the virtual environment.
     //
