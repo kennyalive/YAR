@@ -25,7 +25,6 @@
     <ClInclude Include="..\src\lib\scene.h">
       <Filter>scene</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\lib\parameter.h" />
     <ClInclude Include="..\src\lib\scene_object.h">
       <Filter>scene</Filter>
     </ClInclude>
@@ -45,7 +44,12 @@
     <ClInclude Include="..\src\lib\raytracer_config.h">
       <Filter>scene</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\lib\material_pbrt.h" />
+    <ClInclude Include="..\src\lib\material_parameter.h">
+      <Filter>scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\lib\material_pbrt.h">
+      <Filter>scene</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />

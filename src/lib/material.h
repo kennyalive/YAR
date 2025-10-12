@@ -1,7 +1,7 @@
 #pragma once
 
 #include "color.h"
-#include "parameter.h"
+#include "material_parameter.h"
 
 enum class Material_Type : uint32_t {
     perfect_reflector,
