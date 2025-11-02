@@ -144,6 +144,14 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
     else if (auto scale_texture = std::dynamic_pointer_cast<pbrt::ScaleTexture>(pbrt_texture);
         scale_texture != nullptr)
     {
+        if (!scale_texture->tex1 && !scale_texture->tex2) {
+            const ColorRGB c1(&scale_texture->scale1.x);
+            const ColorRGB c2(&scale_texture->scale2.x);
+            const ColorRGB c = c1 * c2;
+            set_constant_parameter(param, c);
+            return param;
+        }
+
         ASSERT(scale_texture->tex1 != nullptr);
         ASSERT(scale_texture->tex2 == nullptr);
         ASSERT(Vector3(&scale_texture->scale1.x) == Vector3(1));

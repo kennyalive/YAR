@@ -89,8 +89,13 @@ bool HasExtension(const std::string& value, const std::string& ending) {
   Texture::SP SemanticParser::createTexture_scale(pbrt::syntactic::Texture::SP in)
   {
     ScaleTexture::SP tex = std::make_shared<ScaleTexture>();
-    if (in->hasParamTexture("tex1"))
-      tex->tex1 = findOrCreateTexture(in->getParamTexture("tex1"));
+    if (in->hasParamTexture("tex1")) {
+        tex->tex1 = findOrCreateTexture(in->getParamTexture("tex1"));
+        if (auto const_texture = std::dynamic_pointer_cast<ConstantTexture>(tex->tex1)) {
+            tex->scale1 = const_texture->value;
+            tex->tex1 = nullptr;
+        }
+    }
     else if (in->hasParam3f("tex1"))
       in->getParam3f(&tex->scale1.x,"tex1");
     else
