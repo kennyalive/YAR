@@ -133,16 +133,15 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
         int texture_index = add_scene_texture(texture_desc, scene);
         set_texture_parameter(param, texture_index);
 
-        param.u_scale = image_texture->uscale;
-        param.v_scale = image_texture->vscale;
+        param.value.texture.u_scale = image_texture->uscale;
+        param.value.texture.v_scale = image_texture->vscale;
     }
     else if (auto constant_texture = std::dynamic_pointer_cast<pbrt::ConstantTexture>(pbrt_texture);
         constant_texture != nullptr)
     {
         set_constant_parameter(param, ColorRGB(&constant_texture->value.x));
     }
-    else if (auto scale_texture = std::dynamic_pointer_cast<pbrt::ScaleTexture>(pbrt_texture);
-        scale_texture != nullptr)
+    else if (auto scale_texture = std::dynamic_pointer_cast<pbrt::ScaleTexture>(pbrt_texture))
     {
         if (!scale_texture->tex1 && !scale_texture->tex2) {
             const ColorRGB c1(&scale_texture->scale1.x);
@@ -152,31 +151,35 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
             return param;
         }
 
-        ASSERT(scale_texture->tex1 != nullptr);
-        ASSERT(scale_texture->tex2 == nullptr);
-        ASSERT(Vector3(&scale_texture->scale1.x) == Vector3(1));
-        ASSERT(scale_texture->scale2.x == scale_texture->scale2.y && scale_texture->scale2.y == scale_texture->scale2.z);
-
-        // Do not support procedural pbrt3 textures (support can be added if I find it useful).
+        // Do not support procedural pbrt3 textures (support can be added if needed though).
         if (std::dynamic_pointer_cast<pbrt::WrinkledTexture>(scale_texture->tex1)) {
             set_constant_parameter(param, Color_White);
             return param;
         }
 
-        auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(scale_texture->tex1);
-        ASSERT(image_texture != nullptr);
+        RGB_Parameter param1;
+        const ColorRGB scale1(&scale_texture->scale1.x);
+        if (scale_texture->tex1) {
+            param1 = import_pbrt_texture_rgb(scale_texture->tex1, scene);
+            ASSERT(scale1 == Color_White);
+        }
+        else {
+            set_constant_parameter(param1, scale1);
+        }
 
-        int texture_index = add_scene_texture(
-            Texture_Descriptor{
-                .file_name = image_texture->fileName,
-                .decode_srgb = image_texture->gamma,
-                .scale = scale_texture->scale2.x,
-            },
-            scene
-        );
-        set_texture_parameter(param, texture_index);
-        param.u_scale = image_texture->uscale;
-        param.v_scale = image_texture->vscale;
+        RGB_Parameter param2;
+        const ColorRGB scale2(&scale_texture->scale2.x);
+        if (scale_texture->tex2) {
+            param2 = import_pbrt_texture_rgb(scale_texture->tex2, scene);
+            ASSERT(scale2 == Color_White);
+        }
+        else {
+            set_constant_parameter(param2, scale2);
+        }
+
+        param.eval_mode = EvaluationMode::scale;
+        param.parameter0_index = add_scene_material_parameter(param1, scene);
+        param.parameter1_index = add_scene_material_parameter(param2, scene);
     }
     else if (auto marble_texture = std::dynamic_pointer_cast<pbrt::MarbleTexture>(pbrt_texture))
     {
@@ -201,8 +204,8 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
         int texture_index = add_scene_texture(texture_desc, scene);
         set_texture_parameter(param, texture_index);
 
-        param.u_scale = image_texture->uscale;
-        param.v_scale = image_texture->vscale;
+        param.value.texture.u_scale = image_texture->uscale;
+        param.value.texture.v_scale = image_texture->vscale;
     }
     else if (auto constant_texture = std::dynamic_pointer_cast<pbrt::ConstantTexture>(pbrt_texture);
         constant_texture != nullptr)
@@ -210,22 +213,20 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
         ColorRGB xyz = sRGB_to_XYZ(ColorRGB(&constant_texture->value.x));
         set_constant_parameter(param, xyz[1]);
     }
-    else if (auto scale_texture = std::dynamic_pointer_cast<pbrt::ScaleTexture>(pbrt_texture);
-        scale_texture != nullptr)
+    else if (auto scale_texture = std::dynamic_pointer_cast<pbrt::ScaleTexture>(pbrt_texture))
     {
-        ASSERT(scale_texture->tex1 != nullptr);
-        ASSERT(Vector3(&scale_texture->scale1.x) == Vector3(1));
+        ASSERT(scale_texture->scale1.x == scale_texture->scale1.y && scale_texture->scale1.y == scale_texture->scale1.z);
         ASSERT(scale_texture->scale2.x == scale_texture->scale2.y && scale_texture->scale2.y == scale_texture->scale2.z);
 
-        float scale = scale_texture->scale2.x;
+        const float scale1 = scale_texture->scale1.x;
+        const float scale2 = scale_texture->scale2.x;
 
-        if (scale_texture->tex2) {
-            Float_Parameter tex2_param = import_pbrt_texture_float(scale_texture->tex2, scene);
-            assert(tex2_param.eval_mode == EvaluationMode::constant);
-            scale *= tex2_param.constant_value;
+        if (!scale_texture->tex1 && !scale_texture->tex2) {
+            set_constant_parameter(param, scale1 * scale2);
+            return param;
         }
 
-        // Do not support procedural pbrt3 textures (support can be added if I find it useful).
+        // Do not support procedural pbrt3 textures (support can be added if needed though).
         if (std::dynamic_pointer_cast<pbrt::FbmTexture>(scale_texture->tex1) ||
             std::dynamic_pointer_cast<pbrt::WrinkledTexture>(scale_texture->tex1)) {
             Float_Parameter zero_value_param;
@@ -233,20 +234,27 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
             return zero_value_param;
         }
 
-        auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(scale_texture->tex1);
-        ASSERT(image_texture != nullptr);
+        Float_Parameter param1;
+        if (scale_texture->tex1) {
+            param1 = import_pbrt_texture_float(scale_texture->tex1, scene);
+            ASSERT(scale1 == 1.f);
+        }
+        else {
+            set_constant_parameter(param1, scale1);
+        }
 
-        int texture_index = add_scene_texture(
-            Texture_Descriptor{
-                .file_name = image_texture->fileName,
-                .scale = scale,
-            },
-            scene
-        );
-        set_texture_parameter(param, texture_index);
+        Float_Parameter param2;
+        if (scale_texture->tex2) {
+            param2 = import_pbrt_texture_float(scale_texture->tex2, scene);
+            ASSERT(scale2 == 1.f);
+        }
+        else {
+            set_constant_parameter(param2, scale2);
+        }
 
-        param.u_scale = image_texture->uscale;
-        param.v_scale = image_texture->vscale;
+        param.eval_mode = EvaluationMode::scale;
+        param.parameter0_index = add_scene_material_parameter(param1, scene);
+        param.parameter1_index = add_scene_material_parameter(param2, scene);
     }
     else {
         error("Unsupported pbrt texture type");
@@ -493,28 +501,38 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
 
         Pbrt3_Uber_Material mtl;
 
+        auto is_constant_color = [](const RGB_Parameter& param, const ColorRGB& color) {
+            return param.eval_mode == EvaluationMode::value && param.value.is_constant && param.value.constant == color;
+        };
+
         mtl.diffuse_reflectance = init_rgb_parameter_from_texture_or_constant(scene, uber->map_kd, uber->kd);
-        if (mtl.diffuse_reflectance.texture_index >= 0 || mtl.diffuse_reflectance.constant_value != Color_Black)
+        if (!is_constant_color(mtl.diffuse_reflectance, Color_Black)) {
             mtl.components[mtl.component_count++] = Pbrt3_Uber_Material::DIFFUSE;
+        }
 
         mtl.specular_reflectance = init_rgb_parameter_from_texture_or_constant(scene, uber->map_ks, uber->ks);
-        if (mtl.specular_reflectance.texture_index >= 0 || mtl.specular_reflectance.constant_value != Color_Black)
+        if (!is_constant_color(mtl.specular_reflectance, Color_Black)) {
             mtl.components[mtl.component_count++] = Pbrt3_Uber_Material::SPECULAR;
+        }
 
         mtl.delta_reflectance = init_rgb_parameter_from_texture_or_constant(scene, uber->map_kr, uber->kr);
-        if (mtl.delta_reflectance.texture_index >= 0 || mtl.delta_reflectance.constant_value != Color_Black)
+        if (!is_constant_color(mtl.delta_reflectance, Color_Black)) {
             mtl.components[mtl.component_count++] = Pbrt3_Uber_Material::DELTA_REFLECTION;
+        }
 
         mtl.delta_transmission = init_rgb_parameter_from_texture_or_constant(scene, uber->map_kt, uber->kt);
-        if (mtl.delta_transmission.texture_index >= 0 || mtl.delta_transmission.constant_value != Color_Black)
+        if (!is_constant_color(mtl.delta_transmission, Color_Black)) {
             mtl.components[mtl.component_count++] = Pbrt3_Uber_Material::DELTA_TRANSMISSION;
+        }
 
         mtl.opacity = init_rgb_parameter_from_texture_or_constant(scene, uber->map_opacity, uber->opacity);
-        if (mtl.opacity.texture_index >= 0 || mtl.opacity.constant_value != Color_White)
+        if (!is_constant_color(mtl.opacity, Color_White)) {
             mtl.components[mtl.component_count++] = Pbrt3_Uber_Material::OPACITY;
+        }
 
-        if (uber->map_bump)
+        if (uber->map_bump) {
             mtl.bump_map = import_pbrt_texture_float(uber->map_bump, scene);
+        }
 
         ASSERT(mtl.component_count <= std::size(mtl.components));
 

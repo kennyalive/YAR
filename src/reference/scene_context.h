@@ -9,6 +9,7 @@
 #include "lib/bounding_box.h"
 #include "lib/light.h"
 #include "lib/material.h"
+#include "lib/material_parameter.h"
 #include "lib/raytracer_config.h"
 
 struct Scene;
@@ -47,6 +48,7 @@ struct Scene_Context {
 
     // Materials
     Materials materials;
+    std::vector<Parameter> material_parameters;
     std::vector<Image_Texture> textures;
 
     // Lights

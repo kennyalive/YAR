@@ -127,6 +127,7 @@
     <ClCompile Include="..\src\lib\common.cpp" />
     <ClCompile Include="..\src\lib\flying_camera.cpp" />
     <ClCompile Include="..\src\lib\image.cpp" />
+    <ClCompile Include="..\src\lib\material_parameter.cpp" />
     <ClCompile Include="..\src\lib\material_pbrt.cpp" />
     <ClCompile Include="..\src\lib\math.cpp" />
     <ClCompile Include="..\src\lib\obj_loader.cpp" />

@@ -44,13 +44,8 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
 
                 if (!texture_desc.file_name.empty()) {
                     std::string path = scene.get_resource_absolute_path(texture_desc.file_name);
-                    std::string ext = get_extension(path);
-
                     init_params.decode_srgb = texture_desc.decode_srgb;
                     texture.initialize_from_file(path, init_params);
-
-                    if (texture_desc.scale != 1.f)
-                        texture.scale_all_mips(texture_desc.scale);
                 }
                 else if (texture_desc.is_constant_texture) {
                     texture.initialize_from_constant_value(texture_desc.constant_value);
@@ -606,6 +601,7 @@ void init_scene_context(const Scene& scene, const Renderer_Configuration& config
 
     scene_ctx.kdtree_data.initialize(scene, scene_ctx.textures, config.rebuild_kdtree_cache);
     scene_ctx.materials = scene.materials;
+    scene_ctx.material_parameters = scene.material_parameters;
     scene_ctx.lights = scene.lights;
 
     init_pixel_sampler_config(scene_ctx.pixel_sampler_config, scene_ctx);

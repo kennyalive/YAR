@@ -85,6 +85,9 @@
     <ClCompile Include="..\src\lib\material_pbrt.cpp">
       <Filter>scene</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\lib\material_parameter.cpp">
+      <Filter>scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="scene">

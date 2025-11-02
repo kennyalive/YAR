@@ -311,12 +311,25 @@ void Renderer::load_project(const std::string& input_file) {
         std::vector<GPU_Types::Lambertian_Material> gpu_lambertian_materials(scene.materials.diffuse.size());
         for (auto[i, lambertian] : enumerate(scene.materials.diffuse)) {
             const RGB_Parameter& param = lambertian.reflectance;
-            gpu_lambertian_materials[i].r = param.constant_value.r;
-            gpu_lambertian_materials[i].g = param.constant_value.g;
-            gpu_lambertian_materials[i].b = param.constant_value.b;
-            gpu_lambertian_materials[i].albedo_texture_index = param.texture_index;
-            gpu_lambertian_materials[i].u_scale = param.u_scale;
-            gpu_lambertian_materials[i].v_scale = param.v_scale;
+            assert(param.eval_mode == EvaluationMode::value);
+            if (param.value.is_constant) {
+                gpu_lambertian_materials[i].r = param.value.constant.r;
+                gpu_lambertian_materials[i].g = param.value.constant.g;
+                gpu_lambertian_materials[i].b = param.value.constant.b;
+
+                gpu_lambertian_materials[i].albedo_texture_index = -1;
+                gpu_lambertian_materials[i].u_scale = 1.f;
+                gpu_lambertian_materials[i].v_scale = 1.f;
+            }
+            else {
+                gpu_lambertian_materials[i].r = 1.f;
+                gpu_lambertian_materials[i].g = 1.f;
+                gpu_lambertian_materials[i].b = 1.f;
+
+                gpu_lambertian_materials[i].albedo_texture_index = param.value.texture.texture_index;
+                gpu_lambertian_materials[i].u_scale = param.value.texture.u_scale;
+                gpu_lambertian_materials[i].v_scale = param.value.texture.v_scale;
+            }
         }
 
         if (!gpu_lambertian_materials.empty()) {
