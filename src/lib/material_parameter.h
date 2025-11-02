@@ -2,15 +2,16 @@
 
 #include "color.h"
 
-// TODO: parameters should define more general protocol that will allow to evaluate more complex patterns.
-// For example, it should be possible to evalute pbrt style materials/textures.
-// Right now this implementation is an ad-hoc construct just to make some progress.
+enum class EvaluationMode {
+    none,
+    constant,
+    texture,
+};
 
 template <typename Type>
 struct Parameter {
-    bool is_specified = false;
+    EvaluationMode eval_mode = EvaluationMode::none;
 
-    bool is_constant = false;
     Type constant_value = Type();
 
     int texture_index = -1;
@@ -30,14 +31,12 @@ struct Float_Parameter : Parameter<float> {
 
 template <typename Parameter_Type, typename Type>
 void set_constant_parameter(Parameter_Type& param, const Type& value) {
-    param.is_specified = true;
-    param.is_constant = true;
+    param.eval_mode = EvaluationMode::constant;
     param.constant_value = value;
 }
 
 template <typename Parameter_Type>
 void set_texture_parameter(Parameter_Type& param, int texture_index) {
-    param.is_specified = true;
-    param.is_constant = false;
+    param.eval_mode = EvaluationMode::texture;
     param.texture_index = texture_index;
 }

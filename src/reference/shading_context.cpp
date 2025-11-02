@@ -418,7 +418,7 @@ Vector3 Shading_Context::get_ray_origin_using_control_point(const Vector3& hemis
 
 void Shading_Context::apply_bump_map(const Scene_Context& scene_ctx, Float_Parameter bump_map)
 {
-    if (bump_map.is_specified) {
+    if (bump_map.eval_mode != EvaluationMode::none) {
         float height = evaluate_float_parameter(scene_ctx, *this, bump_map);
 
         Vector2 duvdx = Vector2(dudx, dvdx);

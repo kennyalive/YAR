@@ -221,7 +221,7 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
 
         if (scale_texture->tex2) {
             Float_Parameter tex2_param = import_pbrt_texture_float(scale_texture->tex2, scene);
-            assert(tex2_param.is_constant);
+            assert(tex2_param.eval_mode == EvaluationMode::constant);
             scale *= tex2_param.constant_value;
         }
 

@@ -19,11 +19,11 @@ void load_obj_scene(const YAR_Project& project, Scene& scene) {
     scene.materials.diffuse.resize(obj_data.materials.size());
     for (auto [i, obj_material] : enumerate(obj_data.materials)) {
         if (obj_material.diffuse_texture.empty()) {
-            scene.materials.diffuse[i].reflectance.is_constant = true;
+            scene.materials.diffuse[i].reflectance.eval_mode = EvaluationMode::constant;
             scene.materials.diffuse[i].reflectance.constant_value = obj_material.k_diffuse;
         }
         else {
-            scene.materials.diffuse[i].reflectance.is_constant = false;
+            scene.materials.diffuse[i].reflectance.eval_mode = EvaluationMode::texture;
             scene.materials.diffuse[i].reflectance.texture_index = add_scene_texture(obj_material.diffuse_texture, &scene);
         }
     }
@@ -71,10 +71,9 @@ void load_obj_scene(const YAR_Project& project, Scene& scene) {
         }
     }
     if (add_default_material) {
-        scene.materials.diffuse.push_back({ 
+        scene.materials.diffuse.push_back({
             .reflectance = { {
-                    .is_specified = true,
-                    .is_constant = true,
+                    .eval_mode = EvaluationMode::constant,
                     .constant_value = Color_White
                 }
             }

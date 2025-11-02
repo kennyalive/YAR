@@ -9,8 +9,9 @@
 
 ColorRGB evaluate_rgb_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vector2 duvdx, Vector2 duvdy, const RGB_Parameter& param)
 {
-    if (param.is_constant)
+    if (param.eval_mode == EvaluationMode::constant) {
         return param.constant_value;
+    }
 
     ASSERT(param.texture_index >= 0);
     const Image_Texture& texture = scene_ctx.textures[param.texture_index];
@@ -54,8 +55,9 @@ ColorRGB evaluate_rgb_parameter(const Thread_Context& thread_ctx, const RGB_Para
 
 float evaluate_float_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vector2 duvdx, Vector2 duvdy, const Float_Parameter& param)
 {
-    if (param.is_constant)
+    if (param.eval_mode == EvaluationMode::constant) {
         return param.constant_value;
+    }
 
     ASSERT(param.texture_index >= 0);
     const Image_Texture& texture = scene_ctx.textures[param.texture_index];
