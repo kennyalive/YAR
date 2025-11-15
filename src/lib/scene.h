@@ -15,7 +15,6 @@ enum class Scene_Type {
 struct Texture_Descriptor {
     std::string file_name;
     bool decode_srgb = false;
-    float scale = 1.f;
 
     bool is_constant_texture = false;
     ColorRGB constant_value = Color_Black;
@@ -41,10 +40,11 @@ struct Scene {
     bool front_face_has_clockwise_winding = false;
     Raytracer_Config raytracer_config;
 
+    std::vector<Texture_Descriptor> texture_descriptors;
+    std::vector<Parameter> material_parameters;
+
     // Predefined camera positions.
     std::vector<Matrix3x4> view_points;
-
-    std::vector<Texture_Descriptor> texture_descriptors;
 
     // Cache of tesselated spheres with different radius
     std::unordered_map<float, Geometry_Handle> radius_to_sphere_geometry;

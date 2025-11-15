@@ -7,8 +7,6 @@
 
 #include "lib/material_parameter.h"
 
-#include <cassert>
-
 static ColorRGB evaluate_texture_parameter(const Scene_Context& scene_ctx, const TextureParameter& texture_parameter,
     Vector2 uv, Vector2 duvdx, Vector2 duvdy) {
     ASSERT(texture_parameter.texture_index >= 0);
@@ -60,7 +58,7 @@ ColorRGB evaluate_rgb_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vect
     if (param.eval_mode == EvaluationMode::value) {
         return evaluate_leaf_parameter_rgb(scene_ctx, param.value, uv, duvdx, duvdy);
     }
-    assert(false);
+    ASSERT(false);
     return Color_Black;
 }
 
@@ -85,7 +83,15 @@ float evaluate_float_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vecto
     if (param.eval_mode == EvaluationMode::value) {
         return evaluate_leaf_parameter_float(scene_ctx, param.value, uv, duvdx, duvdy);
     }
-    assert(false);
+    else if (param.eval_mode == EvaluationMode::scale) {
+        const Float_Parameter& param0 = static_cast<const Float_Parameter&>(scene_ctx.material_parameters[param.parameter0_index]);
+        const Float_Parameter& param1 = static_cast<const Float_Parameter&>(scene_ctx.material_parameters[param.parameter1_index]);
+        const float value0 = evaluate_float_parameter(scene_ctx, uv, duvdx, duvdy, param0);
+        const float value1 = evaluate_float_parameter(scene_ctx, uv, duvdx, duvdy, param1);
+        const float value = value0 * value1;
+        return value;
+    }
+    ASSERT(false);
     return 0.f;
 }
 

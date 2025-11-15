@@ -292,13 +292,6 @@ void Image_Texture::initialize_from_constant_value(const ColorRGB& color)
     mips[0].init_from_constant_value(1, 1, color);
 }
 
-void Image_Texture::scale_all_mips(float s)
-{
-    for (Image& image : mips)
-        for (ColorRGB& pixel : image.data)
-            pixel *= s;
-}
-
 void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool is_hdr_image) {
     struct Resample_Weight {
         int first_pixel;
