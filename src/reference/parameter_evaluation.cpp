@@ -66,6 +66,17 @@ ColorRGB evaluate_rgb_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vect
         const ColorRGB value = value0 * value1;
         return value;
     }
+    else if (param.eval_mode == EvaluationMode::mix) {
+        const Float_Parameter& param0 = static_cast<const Float_Parameter&>(scene_ctx.material_parameters[param.parameter0_index]);
+        const RGB_Parameter& param1 = static_cast<const RGB_Parameter&>(scene_ctx.material_parameters[param.parameter1_index]);
+        const RGB_Parameter& param2 = static_cast<const RGB_Parameter&>(scene_ctx.material_parameters[param.parameter2_index]);
+        const float amount = evaluate_float_parameter(scene_ctx, uv, duvdx, duvdy, param0);
+        const ColorRGB value0 = evaluate_rgb_parameter(scene_ctx, uv, duvdx, duvdy, param1);
+        const ColorRGB value1 = evaluate_rgb_parameter(scene_ctx, uv, duvdx, duvdy, param2);
+
+        const ColorRGB value = (1.f - amount) * value0 + amount * value1;
+        return value;
+    }
     ASSERT(false);
     return Color_Black;
 }
@@ -97,6 +108,17 @@ float evaluate_float_parameter(const Scene_Context& scene_ctx, Vector2 uv, Vecto
         const float value0 = evaluate_float_parameter(scene_ctx, uv, duvdx, duvdy, param0);
         const float value1 = evaluate_float_parameter(scene_ctx, uv, duvdx, duvdy, param1);
         const float value = value0 * value1;
+        return value;
+    }
+    else if (param.eval_mode == EvaluationMode::mix) {
+        const Float_Parameter& param0 = static_cast<const Float_Parameter&>(scene_ctx.material_parameters[param.parameter0_index]);
+        const Float_Parameter& param1 = static_cast<const Float_Parameter&>(scene_ctx.material_parameters[param.parameter1_index]);
+        const Float_Parameter& param2 = static_cast<const Float_Parameter&>(scene_ctx.material_parameters[param.parameter2_index]);
+        const float amount = evaluate_float_parameter(scene_ctx, uv, duvdx, duvdy, param0);
+        const float value0 = evaluate_float_parameter(scene_ctx, uv, duvdx, duvdy, param1);
+        const float value1 = evaluate_float_parameter(scene_ctx, uv, duvdx, duvdy, param2);
+
+        const float value = (1.f - amount) * value0 + amount * value1;
         return value;
     }
     ASSERT(false);

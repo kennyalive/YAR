@@ -6,6 +6,7 @@ enum class EvaluationMode {
     none,
     value,
     scale,
+    mix,
 };
 
 struct TextureParameter {
