@@ -667,6 +667,8 @@ namespace pbrt {
     bool  haveComputedBounds { false };
     box3f bounds;
     std::string fileName; // source geometry file name, if any
+
+    bool no_shadows = false;
   };
 
   /*! a plain qaud mesh, where every quad is a pair of two

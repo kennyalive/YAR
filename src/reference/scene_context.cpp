@@ -94,6 +94,15 @@ void KdTree_Data::initialize(const Scene& scene, const std::vector<Image_Texture
         if (meshes[i].alpha_texture_index >= 0) {
             triangle_mesh_geometry_data[i].alpha_texture = &textures[meshes[i].alpha_texture_index];
         }
+        // TODO: having visibility in TriangleMesh is temporary, so the following
+        // will extract visibility from some geom/shape definition instead of mesh directly
+        if (meshes[i].visibility == Visibility::invisible) {
+            triangle_mesh_geometry_data[i].ignore_intersector = true;
+            triangle_mesh_geometry_data[i].ignore_any_intersector = true;
+        }
+        else if (meshes[i].visibility == Visibility::visible_no_shadows) {
+            triangle_mesh_geometry_data[i].ignore_any_intersector = true;
+        }
     }
 
     std::array<int, Geometry_Type_Count> geometry_type_offsets;

@@ -79,6 +79,8 @@ struct KdNode {
 struct Triangle_Mesh_Geometry_Data {
     const Triangle_Mesh* mesh = nullptr;
     const Image_Texture* alpha_texture = nullptr;
+    bool ignore_intersector = false;
+    bool ignore_any_intersector = false;
 };
 
 // Data used by top level (entire scene) kdtree.

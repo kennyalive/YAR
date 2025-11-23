@@ -12,6 +12,10 @@ constexpr int max_traversal_depth = 40;
 static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
 {
     auto data = static_cast<const Triangle_Mesh_Geometry_Data*>(geometry_data);
+    if (data->ignore_intersector) {
+        return;
+    }
+
     Vector3 p[3];
     data->mesh->get_positions(primitive_index, p);
 
@@ -43,6 +47,10 @@ static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* ge
 static bool intersect_any_triangle_mesh_geometry_data(const Ray& ray, const void* geometry_data, uint32_t primitive_index, float ray_tmax)
 {
     auto data = static_cast<const Triangle_Mesh_Geometry_Data*>(geometry_data);
+    if (data->ignore_any_intersector) {
+        return false;
+    }
+
     Vector3 p[3];
     data->mesh->get_positions(primitive_index, p);
 

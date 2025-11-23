@@ -239,6 +239,11 @@ namespace pbrt {
       v = xfmNormal(xfm,v);
 
     extractTextures(ours,shape);
+
+    if (shape->hasParam1f("shadowalpha")) {
+        const bool no_shadows = shape->getParam1f("shadowalpha") == 0.f;
+        ours->no_shadows = no_shadows;
+    }
     return ours;
   }
 
@@ -263,7 +268,12 @@ namespace pbrt {
     for (vec3f &v : ours->normal)
       v = xfmNormal(xfm,v);
     extractTextures(ours,shape);
-      
+
+    if (shape->hasParam1f("shadowalpha")) {
+        const bool no_shadows = shape->getParam1f("shadowalpha") == 0.f;
+        ours->no_shadows = no_shadows;
+    }
+
     return ours;
   }
 

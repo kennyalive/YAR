@@ -734,6 +734,10 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
             mesh.alpha_texture_index = add_scene_texture(alpha_texture->fileName, scene);
     }
 
+    if (pbrt_mesh->no_shadows) {
+        mesh.visibility = Visibility::visible_no_shadows;
+    }
+
     scene->geometries.triangle_meshes.emplace_back(mesh);
     return Geometry_Handle{ Geometry_Type::triangle_mesh, (int)scene->geometries.triangle_meshes.size() - 1 };
 }
