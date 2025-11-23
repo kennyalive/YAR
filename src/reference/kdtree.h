@@ -76,9 +76,16 @@ struct KdNode {
     }
 };
 
+//enum class Visibility {
+//    visible,
+//    visible_no_shadows,
+//    invisible,
+//};
+
 struct Triangle_Mesh_Geometry_Data {
     const Triangle_Mesh* mesh = nullptr;
     const Image_Texture* alpha_texture = nullptr;
+    Visibility visibility = Visibility::visible;
 };
 
 // Data used by top level (entire scene) kdtree.

@@ -43,6 +43,11 @@ static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* ge
 static bool intersect_any_triangle_mesh_geometry_data(const Ray& ray, const void* geometry_data, uint32_t primitive_index, float ray_tmax)
 {
     auto data = static_cast<const Triangle_Mesh_Geometry_Data*>(geometry_data);
+
+    if (data->visibility == Visibility::visible_no_shadows) {
+        return false;
+    }
+
     Vector3 p[3];
     data->mesh->get_positions(primitive_index, p);
 
