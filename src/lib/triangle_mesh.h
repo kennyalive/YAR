@@ -8,6 +8,9 @@ struct Triangle_Mesh {
     std::vector<Vector3> normals;
     std::vector<Vector2> uvs;
     std::vector<int32_t> indices;
+
+    // TODO: the following fields should probably go into Scene_Object or somewhere
+
     int alpha_texture_index = -1;
 
     // Pbrt feature. It helps to be compatible with pbrt in the areas
