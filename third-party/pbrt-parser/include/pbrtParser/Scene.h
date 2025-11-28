@@ -621,6 +621,8 @@ namespace pbrt {
     /*! if enabled, the geometry normal of this shape should get
         flipped during rendering */
     bool reverseOrientation { false };
+
+    bool no_shadows = false;
     
     /*! textures directl assigned to the shape (ie, not to the
       material) */
@@ -666,6 +668,8 @@ namespace pbrt {
     bool  haveComputedBounds { false };
     box3f bounds;
     std::string fileName; // source geometry file name, if any
+
+    bool no_shadows = false;
   };
 
   /*! a plain qaud mesh, where every quad is a pair of two

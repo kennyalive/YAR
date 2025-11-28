@@ -94,6 +94,7 @@ void KdTree_Data::initialize(const Scene& scene, const std::vector<Image_Texture
         if (meshes[i].alpha_texture_index >= 0) {
             triangle_mesh_geometry_data[i].alpha_texture = &textures[meshes[i].alpha_texture_index];
         }
+        triangle_mesh_geometry_data[i].visibility = meshes[i].visibility;
     }
 
     std::array<int, Geometry_Type_Count> geometry_type_offsets;

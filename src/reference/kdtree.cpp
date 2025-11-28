@@ -9,9 +9,14 @@
 
 constexpr int max_traversal_depth = 40;
 
-static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
+static void intersect_triangle_mesh_geometry_data(const Ray& ray, uint32_t ray_flags, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
 {
     auto data = static_cast<const Triangle_Mesh_Geometry_Data*>(geometry_data);
+
+    if (data->visibility == Visibility::visible_no_shadows && (ray_flags & Ray_Flag_AnyIntersection) != 0) {
+        return;
+    }
+
     Vector3 p[3];
     data->mesh->get_positions(primitive_index, p);
 
