@@ -127,11 +127,15 @@ struct KdTree {
     // For scene kdtree it points to Scene_Geometry_Data object.  
     const void* geometry_data = nullptr;
 
-    // Performs intersection test between a ray and a primitive from kdtree leaf.
+    // Perform intersection test between a ray and a primitive from kdtree leaf.
     // 
     // The ray's parametric range is from the half-open interval [0, t_max), where
     // t_max is the initial value of Intersection::t. If intersection is found then
     // Intersection::t gets overwritten with a distance to the intersection point,
     // otherwise Intersection::t is unchanged.
     void (*intersector)(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection) = nullptr;
+
+    // Perform any-intersection test between a ray and a primitive from kdtree leaf.
+    // Return true if there is an intersection in the ray's parametric range [0, ray_tmax).
+    bool (*any_intersector)(const Ray& ray, const void* geometry_data, uint32_t primitive_index, float ray_tmax) = nullptr;
 };
