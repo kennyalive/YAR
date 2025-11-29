@@ -49,6 +49,8 @@ bool HasExtension(const std::string& value, const std::string& ending) {
       std::cerr << "warning: pbrt image texture, but no filename!?" << std::endl;
 
     ImageTexture::SP tex = std::make_shared<ImageTexture>(fileName);
+    if (in->hasParam1f("scale"))
+      tex->scale = in->getParam1f("scale");
     if (in->hasParam1f("uscale"))
       tex->uscale = in->getParam1f("uscale");
     if (in->hasParam1f("vscale"))

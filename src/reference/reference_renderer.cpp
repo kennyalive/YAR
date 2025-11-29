@@ -45,6 +45,7 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
                 if (!texture_desc.file_name.empty()) {
                     std::string path = scene.get_resource_absolute_path(texture_desc.file_name);
                     init_params.decode_srgb = texture_desc.decode_srgb;
+                    init_params.scale = texture_desc.scale;
                     texture.initialize_from_file(path, init_params);
                 }
                 else if (texture_desc.is_constant_texture) {

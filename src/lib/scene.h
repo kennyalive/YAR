@@ -15,6 +15,7 @@ enum class Scene_Type {
 struct Texture_Descriptor {
     std::string file_name;
     bool decode_srgb = false;
+    float scale = 1.f;
 
     bool is_constant_texture = false;
     ColorRGB constant_value = Color_Black;

@@ -25,6 +25,7 @@ public:
         bool generate_mips = false;
         Filter_Type mip_filter = Filter_Type::lanczos2;
         bool decode_srgb = false;
+        float scale = 1.f;
     };
 
     void initialize_from_file(const std::string& image_path, const Init_Params& params);

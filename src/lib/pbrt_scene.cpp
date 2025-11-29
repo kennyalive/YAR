@@ -123,12 +123,11 @@ static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size,
 static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_texture, Scene* scene) {
     RGB_Parameter param;
 
-    if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture);
-        image_texture != nullptr)
-    {
+    if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture)) {
         Texture_Descriptor texture_desc{
             .file_name = image_texture->fileName,
-            .decode_srgb = image_texture->gamma
+            .decode_srgb = image_texture->gamma,
+            .scale = image_texture->scale,
         };
         int texture_index = add_scene_texture(texture_desc, scene);
         set_texture_parameter(param, texture_index);
@@ -136,13 +135,10 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
         param.value.texture.u_scale = image_texture->uscale;
         param.value.texture.v_scale = image_texture->vscale;
     }
-    else if (auto constant_texture = std::dynamic_pointer_cast<pbrt::ConstantTexture>(pbrt_texture);
-        constant_texture != nullptr)
-    {
+    else if (auto constant_texture = std::dynamic_pointer_cast<pbrt::ConstantTexture>(pbrt_texture)) {
         set_constant_parameter(param, ColorRGB(&constant_texture->value.x));
     }
-    else if (auto scale_texture = std::dynamic_pointer_cast<pbrt::ScaleTexture>(pbrt_texture))
-    {
+    else if (auto scale_texture = std::dynamic_pointer_cast<pbrt::ScaleTexture>(pbrt_texture)) {
         if (!scale_texture->tex1 && !scale_texture->tex2) {
             const ColorRGB c1(&scale_texture->scale1.x);
             const ColorRGB c2(&scale_texture->scale2.x);
@@ -194,12 +190,11 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
 static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_texture, Scene* scene) {
     Float_Parameter param;
 
-    if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture);
-        image_texture != nullptr)
-    {
+    if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture)) {
         Texture_Descriptor texture_desc{
             .file_name = image_texture->fileName,
-            .decode_srgb = image_texture->gamma
+            .decode_srgb = image_texture->gamma,
+            .scale = image_texture->scale,
         };
         int texture_index = add_scene_texture(texture_desc, scene);
         set_texture_parameter(param, texture_index);
@@ -207,9 +202,7 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
         param.value.texture.u_scale = image_texture->uscale;
         param.value.texture.v_scale = image_texture->vscale;
     }
-    else if (auto constant_texture = std::dynamic_pointer_cast<pbrt::ConstantTexture>(pbrt_texture);
-        constant_texture != nullptr)
-    {
+    else if (auto constant_texture = std::dynamic_pointer_cast<pbrt::ConstantTexture>(pbrt_texture)) {
         ColorRGB xyz = sRGB_to_XYZ(ColorRGB(&constant_texture->value.x));
         set_constant_parameter(param, xyz[1]);
     }

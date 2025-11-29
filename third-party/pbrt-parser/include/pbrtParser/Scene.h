@@ -234,6 +234,7 @@ namespace pbrt {
     virtual std::string toString() const override { return "ImageTexture"; }
 
     std::string fileName;
+    float scale = 1.f; // scales texel values
     float uscale = 1.f;
     float vscale = 1.f;
     bool gamma = false;

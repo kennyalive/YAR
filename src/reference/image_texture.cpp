@@ -261,6 +261,13 @@ void Image_Texture::initialize_from_file(const std::string& image_path, const Im
     if (!base_mip.load_from_file(image_path, params.decode_srgb, &is_hdr_image))
         error("failed to load image file: %s", image_path.c_str());
 
+    // Apply scale if specified.
+    if (params.scale != 1.f) {
+        for (ColorRGB& texel : base_mip.data) {
+            texel *= params.scale;
+        }
+    }
+
     // Allocate mip array.
     int mip_count = 1;
     if (params.generate_mips) {
