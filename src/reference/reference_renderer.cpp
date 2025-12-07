@@ -26,13 +26,9 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
         std::atomic_int texture_counter{ 0 };
         scene_ctx.textures.resize(scene.texture_descriptors.size());
 
-        Image_Texture::Init_Params init_params;
-        init_params.generate_mips = true;
-
         auto load_texture_thread_func = [
             &scene,
             &scene_ctx,
-            &init_params,
             &texture_counter
         ]
         {
@@ -44,6 +40,8 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
 
                 if (!texture_desc.file_name.empty()) {
                     std::string path = scene.get_resource_absolute_path(texture_desc.file_name);
+                    Image_Texture::Init_Params init_params;
+                    init_params.generate_mips = true;
                     init_params.decode_srgb = texture_desc.decode_srgb;
                     init_params.scale = texture_desc.scale;
                     texture.initialize_from_file(path, init_params);
