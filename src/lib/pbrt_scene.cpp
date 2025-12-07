@@ -120,6 +120,8 @@ static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size,
     return true;
 }
 
+Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_texture, Scene* scene);
+
 static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_texture, Scene* scene) {
     RGB_Parameter param;
 
@@ -177,8 +179,46 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
         param.parameter0_index = add_scene_material_parameter(param1, scene);
         param.parameter1_index = add_scene_material_parameter(param2, scene);
     }
-    else if (auto marble_texture = std::dynamic_pointer_cast<pbrt::MarbleTexture>(pbrt_texture))
-    {
+    else if (auto mix_texture = std::dynamic_pointer_cast<pbrt::MixTexture>(pbrt_texture)) {
+        assert(mix_texture->amount.x == mix_texture->amount.y && mix_texture->amount.y == mix_texture->amount.z);
+        const float amount_constant = mix_texture->amount.x;
+
+        Float_Parameter amount_param;
+        if (mix_texture->map_amount) {
+            amount_param = import_pbrt_texture_float(mix_texture->map_amount, scene);
+            assert(amount_constant == 1.f);
+        }
+        else {
+            set_constant_parameter(amount_param, amount_constant);
+        }
+
+        RGB_Parameter tex1_param;
+        const ColorRGB scale1(&mix_texture->scale1.x);
+        if (mix_texture->tex1) {
+            tex1_param = import_pbrt_texture_rgb(mix_texture->tex1, scene);
+            assert(scale1 == ColorRGB(1.f));
+        }
+        else {
+            set_constant_parameter(tex1_param, scale1);
+        }
+
+        RGB_Parameter tex2_param;
+        const ColorRGB scale2(&mix_texture->scale2.x);
+        if (mix_texture->tex2) {
+            tex2_param = import_pbrt_texture_rgb(mix_texture->tex2, scene);
+            assert(scale2 == ColorRGB(1.f));
+        }
+        else {
+            set_constant_parameter(tex2_param, scale2);
+        }
+
+        param.eval_mode = EvaluationMode::mix;
+        param.parameter0_index = add_scene_material_parameter(amount_param, scene);
+        param.parameter1_index = add_scene_material_parameter(tex1_param, scene);
+        param.parameter2_index = add_scene_material_parameter(tex2_param, scene);
+    }
+    else if (std::dynamic_pointer_cast<pbrt::MarbleTexture>(pbrt_texture) ||
+        std::dynamic_pointer_cast<pbrt::WindyTexture>(pbrt_texture)) {
         set_constant_parameter(param, Color_White);
     }
     else {
@@ -248,6 +288,50 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
         param.eval_mode = EvaluationMode::scale;
         param.parameter0_index = add_scene_material_parameter(param1, scene);
         param.parameter1_index = add_scene_material_parameter(param2, scene);
+    }
+    else if (auto mix_texture = std::dynamic_pointer_cast<pbrt::MixTexture>(pbrt_texture)) {
+        assert(mix_texture->amount.x == mix_texture->amount.y && mix_texture->amount.y == mix_texture->amount.z);
+        const float amount_constant = mix_texture->amount.x;
+
+        ASSERT(mix_texture->scale1.x == mix_texture->scale1.y && mix_texture->scale1.y == mix_texture->scale1.z);
+        ASSERT(mix_texture->scale2.x == mix_texture->scale2.y && mix_texture->scale2.y == mix_texture->scale2.z);
+        const float scale1 = mix_texture->scale1.x;
+        const float scale2 = mix_texture->scale2.x;
+
+        Float_Parameter amount_param;
+        if (mix_texture->map_amount) {
+            amount_param = import_pbrt_texture_float(mix_texture->map_amount, scene);
+            assert(amount_constant == 1.f);
+        }
+        else {
+            set_constant_parameter(amount_param, amount_constant);
+        }
+
+        Float_Parameter tex1_param;
+        if (mix_texture->tex1) {
+            tex1_param = import_pbrt_texture_float(mix_texture->tex1, scene);
+            assert(scale1 == 1.f);
+        }
+        else {
+            set_constant_parameter(tex1_param, scale1);
+        }
+
+        Float_Parameter tex2_param;
+        if (mix_texture->tex2) {
+            tex2_param = import_pbrt_texture_float(mix_texture->tex2, scene);
+            assert(scale2 == 1.f);
+        }
+        else {
+            set_constant_parameter(tex2_param, scale2);
+        }
+
+        param.eval_mode = EvaluationMode::mix;
+        param.parameter0_index = add_scene_material_parameter(amount_param, scene);
+        param.parameter1_index = add_scene_material_parameter(tex1_param, scene);
+        param.parameter2_index = add_scene_material_parameter(tex2_param, scene);
+    }
+    else if (std::dynamic_pointer_cast<pbrt::WindyTexture>(pbrt_texture)) {
+        set_constant_parameter(param, Color_Black);
     }
     else {
         error("Unsupported pbrt texture type");
