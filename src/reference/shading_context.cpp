@@ -437,8 +437,17 @@ void Shading_Context::apply_bump_map(const Scene_Context& scene_ctx, Float_Param
         // bump map offset is relative to the unmodified shading normal direction, as defined by the geometry
         Vector3 original_shading_normal = original_shading_normal_was_flipped ? -normal_before_bump : normal_before_bump;
 
-        dpdu_shading = dpdu_shading_before_bump + ((height_du - height) / du) * original_shading_normal + height * dndu;
-        dpdv_shading = dpdv_shading_before_bump + ((height_dv - height) / dv) * original_shading_normal + height * dndv;
+        // Parameter evaluation takes into account uv scale and the returned height values are in
+        // the scaled uv space. To have matching units du/dv should also be scaled the same way.
+        float du_scale = 1.f;
+        float dv_scale = 1.f;
+        if (bump_map.eval_mode == EvaluationMode::value && !bump_map.value.is_constant) {
+            du_scale = bump_map.value.texture.u_scale;
+            dv_scale = bump_map.value.texture.v_scale;
+        }
+
+        dpdu_shading = dpdu_shading_before_bump + ((height_du - height) / (du * du_scale)) * original_shading_normal + height * (dndu * du_scale);
+        dpdv_shading = dpdv_shading_before_bump + ((height_dv - height) / (dv * dv_scale)) * original_shading_normal + height * (dndv * dv_scale);
         normal = cross(dpdu_shading, dpdv_shading).normalized();
 
         // renderer convention: shading normals should be in the hemisphere of the geometric normal.
