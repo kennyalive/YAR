@@ -1154,6 +1154,11 @@ void load_pbrt_scene(const YAR_Project& project, Scene& scene) {
             // In pbrt maxdepth denotes the max number of bounces.
             scene.raytracer_config.max_light_bounces = pbrt_integrator->maxDepth;
         }
+        else {
+            // When no integrator is specified then pbrt3 uses path integrator
+            // which has default value of maxDepth == 5
+            scene.raytracer_config.max_light_bounces = 5;
+        }
         scene.raytracer_config.russian_roulette_threshold = pbrt_integrator->russianRouletteThreshold;
     }
 
