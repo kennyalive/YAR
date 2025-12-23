@@ -20,6 +20,15 @@ enum class Material_Type : uint32_t {
     null_material = std::numeric_limits<uint32_t>::max()
 };
 
+// Returns false for the pure delta material, otherwise returns true.
+// If the function returns true it means either the entire material is 
+// described  by the bsdf function or the material has multiple layers
+// and at least one such layer is described by the bsdf function.
+inline bool material_has_bsdf(Material_Type type)
+{
+    return type != Material_Type::perfect_reflector && type != Material_Type::perfect_refractor;
+}
+
 struct Material_Handle {
     Material_Type type = Material_Type::null_material;
     int index = -1;

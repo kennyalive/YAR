@@ -149,6 +149,38 @@ static Delta_Info get_pbrt_uber_info(const Thread_Context& thread_ctx, const Pbr
     return result;
 }
 
+Delta_Info get_delta_info(const Thread_Context& thread_ctx, Material_Handle material, float* u_scattering_type);
+
+static Delta_Info get_mix_info(const Thread_Context& thread_ctx, const Mix_Material& params, float* u_scattering_type)
+{
+    const Shading_Context& shading_ctx = thread_ctx.shading_context;
+    Delta_Info delta_info;
+
+    const float mix_amount = std::min(evaluate_rgb_parameter(thread_ctx, params.mix_amount).luminance(), 1.f);
+
+    const bool mat1_has_bsdf = material_has_bsdf(params.material1.type);
+    const bool mat2_has_bsdf = material_has_bsdf(params.material2.type);
+    if (mat1_has_bsdf && mat2_has_bsdf) {
+        return {}; // entire mix material is described by bsdf function
+    }
+    ASSERT(mat1_has_bsdf || mat2_has_bsdf);
+
+    if (*u_scattering_type < mix_amount) {
+        // re-normalize u_scattering_type for re-use by the bsdf pipeline
+        *u_scattering_type /= mix_amount; 
+        // get delta info from the first sub-material
+        delta_info = get_delta_info(thread_ctx, params.material1, u_scattering_type);
+    }
+    else {
+        // re-normalize u_scattering_type for re-use by the bsdf pipeline
+        *u_scattering_type = (*u_scattering_type - mix_amount) / (1.f - mix_amount); 
+        // get delta info from the second sub-material
+        delta_info = get_delta_info(thread_ctx, params.material2, u_scattering_type);
+    }
+    delta_info.delta_layer_selection_probability = mat1_has_bsdf ? 1.f - mix_amount : mix_amount;
+    return delta_info;
+}
+
 static void apply_bump_map(Thread_Context& thread_ctx, Material_Handle material)
 {
     const Scene_Context& scene_ctx = thread_ctx.scene_context;
@@ -203,18 +235,8 @@ static Delta_Info get_delta_info(const Thread_Context& thread_ctx, Material_Hand
         delta_info = get_pbrt_uber_info(thread_ctx, params, u_scattering_type);
     }
     else if (material.type == Material_Type::mix) {
-        const Mix_Material& mix_params = scene_ctx.materials.mix[material.index];
-        const float material1_prob = evaluate_rgb_parameter(thread_ctx, mix_params.mix_amount).luminance();
-        if (*u_scattering_type < material1_prob) {
-            *u_scattering_type /= material1_prob;
-            delta_info = get_delta_info(thread_ctx, mix_params.material1, u_scattering_type);
-            delta_info.delta_layer_selection_probability *= material1_prob;
-        }
-        else {
-            *u_scattering_type = (*u_scattering_type - material1_prob) / (1.f - material1_prob);
-            delta_info = get_delta_info(thread_ctx, mix_params.material2, u_scattering_type);
-            delta_info.delta_layer_selection_probability *= (1.f - material1_prob);
-        }
+        const Mix_Material& params = scene_ctx.materials.mix[material.index];
+        delta_info = get_mix_info(thread_ctx, params, u_scattering_type);
     }
     return delta_info;
 }

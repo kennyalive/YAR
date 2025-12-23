@@ -118,4 +118,14 @@ struct Mix_BSDF : public BSDF {
     float pdf(const Vector3& wo, const Vector3& wi) const override;
 };
 
+struct Scaled_BSDF : public BSDF {
+    const BSDF* bsdf = nullptr;
+    float scale = 1.f;
+
+    Scaled_BSDF(const Thread_Context& thread_ctx, const BSDF* bsdf, float scale);
+    ColorRGB evaluate(const Vector3& wo, const Vector3& wi) const override;
+    ColorRGB sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const override;
+    float pdf(const Vector3& wo, const Vector3& wi) const override;
+};
+
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material);

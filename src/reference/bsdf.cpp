@@ -492,7 +492,7 @@ float Ashikhmin_Shirley_Phong_BRDF::pdf(const Vector3& wo, const Vector3& wi) co
 }
 
 //
-// Metal BRDF
+// Mix BRDF
 //
 Mix_BSDF::Mix_BSDF(const Thread_Context& thread_ctx, const BSDF* bsdf1, const BSDF* bsdf2, const RGB_Parameter& mix_amaount_parameter)
     : BSDF(thread_ctx.scene_context, thread_ctx.shading_context)
@@ -566,6 +566,68 @@ float Mix_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
     return pdf;
 }
 
+//
+// Scaled BRDF
+//
+Scaled_BSDF::Scaled_BSDF(const Thread_Context& thread_ctx, const BSDF* bsdf, float scale)
+    : BSDF(thread_ctx.scene_context, thread_ctx.shading_context), bsdf(bsdf), scale(scale)
+{
+    reflection_scattering = bsdf->reflection_scattering;
+    transmission_scattering = bsdf->transmission_scattering;
+}
+
+ColorRGB Scaled_BSDF::evaluate(const Vector3& wo, const Vector3& wi) const
+{
+    return scale * bsdf->evaluate(wo, wi);
+
+}
+ColorRGB Scaled_BSDF::sample(Vector2 u, float u_scattering_type, const Vector3& wo, Vector3* wi, float* pdf) const
+{
+    return scale * bsdf->sample(u, u_scattering_type, wo, wi, pdf);
+}
+
+float Scaled_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
+{
+    return bsdf->pdf(wo, wi); // obviously pdf is not scaled
+}
+
+// Creation of mix BSDF has more complicated logic than just allocating BSDF object.
+// We need to check if any sub material is a delta layer (handled by the delta pipeline),
+// and in that case we use bsdf of the non-delta sub-material as the mix material's bsdf.
+// We don't support mixers where both sub-materials are delta layers (it can be supported,
+// but that's not very interesting use case).
+static BSDF* create_mix_bsdf(Thread_Context& thread_ctx, Material_Handle material)
+{
+    const Scene_Context& scene_ctx = thread_ctx.scene_context;
+    const Shading_Context& shading_ctx = thread_ctx.shading_context;
+
+    const Mix_Material& params = scene_ctx.materials.mix[material.index];
+    const float mix_amount = evaluate_rgb_parameter(scene_ctx, shading_ctx, params.mix_amount).luminance();
+
+    const BSDF* bsdf1 = nullptr;
+    if (material_has_bsdf(params.material1.type)) {
+        bsdf1 = create_bsdf(thread_ctx, params.material1);
+    }
+    const BSDF* bsdf2 = nullptr;
+    if (material_has_bsdf(params.material2.type)) {
+        bsdf2 = create_bsdf(thread_ctx, params.material2);
+    }
+    ASSERT(bsdf1 || bsdf2); // don't support materials where both sub-materials are delta layers
+
+    if (!bsdf1) {
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Scaled_BSDF>();
+        return new (bsdf_allocation) Scaled_BSDF(thread_ctx, bsdf2, 1.f - mix_amount);
+    }
+    else if (!bsdf2) {
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Scaled_BSDF>();
+        return new (bsdf_allocation) Scaled_BSDF(thread_ctx, bsdf1, mix_amount);
+    }
+    else {
+        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Mix_BSDF>();
+        return new (bsdf_allocation) Mix_BSDF(thread_ctx, bsdf1, bsdf2, params.mix_amount);
+    }
+}
+
 const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
     const Scene_Context& scene_ctx = thread_ctx.scene_context;
     Shading_Context& shading_ctx = thread_ctx.shading_context;
@@ -620,11 +682,8 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
     }
     case Material_Type::mix:
     {
-        const Mix_Material& params = scene_ctx.materials.mix[material.index];
-        const BSDF* bsdf1 = create_bsdf(thread_ctx, params.material1);
-        const BSDF* bsdf2 = create_bsdf(thread_ctx, params.material2);
-        void* bsdf_allocation = thread_ctx.memory_pool.allocate<Mix_BSDF>();
-        return new (bsdf_allocation) Mix_BSDF(thread_ctx, bsdf1, bsdf2, params.mix_amount);
+        // mix has dedicated bsdf creation logic
+        return create_mix_bsdf(thread_ctx, material);
     }
     case Material_Type::pbrt3_uber:
     {
