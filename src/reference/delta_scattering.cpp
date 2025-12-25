@@ -160,24 +160,32 @@ static Delta_Info get_mix_info(const Thread_Context& thread_ctx, const Mix_Mater
 
     const bool mat1_has_bsdf = material_has_bsdf(params.material1.type);
     const bool mat2_has_bsdf = material_has_bsdf(params.material2.type);
-    if (mat1_has_bsdf && mat2_has_bsdf) {
-        return {}; // entire mix material is described by bsdf function
-    }
-    ASSERT(mat1_has_bsdf || mat2_has_bsdf);
+    const bool has_delta_submaterial = !mat1_has_bsdf || !mat2_has_bsdf;
+    ASSERT(mat1_has_bsdf || mat2_has_bsdf); // do not support two delta sub-materials
 
     if (*u_scattering_type < mix_amount) {
         // re-normalize u_scattering_type for re-use by the bsdf pipeline
         *u_scattering_type /= mix_amount; 
+
         // get delta info from the first sub-material
         delta_info = get_delta_info(thread_ctx, params.material1, u_scattering_type);
+        if (!has_delta_submaterial) {
+            delta_info.delta_layer_selection_probability *= mix_amount;
+        }
     }
     else {
         // re-normalize u_scattering_type for re-use by the bsdf pipeline
         *u_scattering_type = (*u_scattering_type - mix_amount) / (1.f - mix_amount); 
+
         // get delta info from the second sub-material
         delta_info = get_delta_info(thread_ctx, params.material2, u_scattering_type);
+        if (!has_delta_submaterial) {
+            delta_info.delta_layer_selection_probability *= (1.f - mix_amount);
+        }
     }
-    delta_info.delta_layer_selection_probability = mat1_has_bsdf ? 1.f - mix_amount : mix_amount;
+    if (has_delta_submaterial) {
+        delta_info.delta_layer_selection_probability = mat1_has_bsdf ? 1.f - mix_amount : mix_amount;
+    }
     return delta_info;
 }
 
