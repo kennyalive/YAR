@@ -75,7 +75,7 @@ namespace pbrt {
         } else
           in->getParam3f(&mat->opacity.x,name);
       }
-      else if (name == "index") {
+      else if (name == "index" || name == "eta") {
         mat->index = in->getParam1f(name);
       }
       else if (name == "roughness") {
