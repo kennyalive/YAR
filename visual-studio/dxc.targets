@@ -34,6 +34,8 @@
             </DxcCompile>
         </ItemGroup>
 
+        <MakeDir Directories="$(ProjectDir)../data/spirv" />
+
         <!-- Compile by forwarding to the Custom Build Tool infrastructure,
         so it will take care of .tlogs and error/warning parsing -->
         <CustomBuild
