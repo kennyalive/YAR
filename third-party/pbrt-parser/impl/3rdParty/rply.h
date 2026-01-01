@@ -173,28 +173,6 @@ int ply_read(p_ply ply);
 p_ply_element ply_get_next_element(p_ply ply, p_ply_element last);
 
 /* ----------------------------------------------------------------------
- * Iterates over all comments by returning the next comment.
- * Call with NULL to return pointer to first comment.
- *
- * ply: handle returned by ply_open
- * last: pointer to last comment returned (NULL for first comment)
- *
- * Returns comment if successfull or NULL if no more comments
- * ---------------------------------------------------------------------- */
-const char *ply_get_next_comment(p_ply ply, const char *last);
-
-/* ----------------------------------------------------------------------
- * Iterates over all obj_infos by returning the next obj_info.
- * Call with NULL to return pointer to first obj_info.
- *
- * ply: handle returned by ply_open
- * last: pointer to last obj_info returned (NULL for first obj_info)
- *
- * Returns obj_info if successfull or NULL if no more obj_infos
- * ---------------------------------------------------------------------- */
-const char *ply_get_next_obj_info(p_ply ply, const char *last);
-
-/* ----------------------------------------------------------------------
  * Returns information about an element
  *
  * element: element of interest

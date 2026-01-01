@@ -142,11 +142,10 @@ typedef struct t_ply_element_ {
 } t_ply_element;
 
 /* ----------------------------------------------------------------------
- * Input/output driver
+ * Input driver
  *
- * Depending on file mode, different functions are used to read/write
- * property fields. The drivers make it transparent to read/write in ascii,
- * big endian or little endian cases.
+ * Depending on file mode, different functions are used to read property fields.
+ The drivers make it transparent to read in ascii, big endian or little endian cases.
  * ---------------------------------------------------------------------- */
 typedef int (*p_ply_ihandler)(p_ply ply, double *value);
 typedef int (*p_ply_ichunk)(p_ply ply, void *anydata, size_t size);
@@ -156,15 +155,6 @@ typedef struct t_ply_idriver_ {
     const char *name;
 } t_ply_idriver;
 typedef t_ply_idriver *p_ply_idriver;
-
-typedef int (*p_ply_ohandler)(p_ply ply, double value);
-typedef int (*p_ply_ochunk)(p_ply ply, void *anydata, size_t size);
-typedef struct t_ply_odriver_ {
-    p_ply_ohandler ohandler[16];
-    p_ply_ochunk ochunk;
-    const char *name;
-} t_ply_odriver;
-typedef t_ply_odriver *p_ply_odriver;
 
 /* ----------------------------------------------------------------------
  * Ply file handle.
@@ -196,17 +186,12 @@ typedef struct t_ply_ {
     e_ply_storage_mode storage_mode;
     p_ply_element element;
     long nelements;
-    char *comment;
-    long ncomments;
-    char *obj_info;
-    long nobj_infos;
     FILE *fp;
     int own_fp;
     int rn;
     char buffer[BUFFERSIZE];
     size_t buffer_first, buffer_token, buffer_last;
     p_ply_idriver idriver;
-    p_ply_odriver odriver;
     t_ply_argument argument;
     long welement, wproperty;
     long winstance_index, wvalue_index, wlength;
@@ -455,10 +440,7 @@ int ply_add_comment(p_ply ply, const char *comment) {
         ply_ferror(ply, "Invalid arguments");
         return 0;
     }
-    new_comment = (char *) ply_grow_array(ply, (void **) &ply->comment,
-            &ply->ncomments, LINESIZE);
-    if (!new_comment) return 0;
-    strcpy(new_comment, comment);
+    // NOTE: do not support reading comments in this implementation
     return 1;
 }
 
@@ -469,10 +451,7 @@ int ply_add_obj_info(p_ply ply, const char *obj_info) {
         ply_ferror(ply, "Invalid arguments");
         return 0;
     }
-    new_obj_info = (char *) ply_grow_array(ply, (void **) &ply->obj_info,
-            &ply->nobj_infos, LINESIZE);
-    if (!new_obj_info) return 0;
-    strcpy(new_obj_info, obj_info);
+    // NOTE: do not support reading obj_info in this implementation
     return 1;
 }
 
@@ -496,8 +475,6 @@ int ply_close(p_ply ply) {
         }
         free(ply->element);
     }
-    if (ply->obj_info) free(ply->obj_info);
-    if (ply->comment) free(ply->comment);
     free(ply);
     return 1;
 }
@@ -540,22 +517,6 @@ int ply_get_property_info(p_ply_property property, const char** name,
     if (value_type) *value_type = property->value_type;
     return 1;
 
-}
-
-const char *ply_get_next_comment(p_ply ply, const char *last) {
-    assert(ply);
-    if (!last) return ply->comment;
-    last += LINESIZE;
-    if (last < ply->comment + LINESIZE*ply->ncomments) return last;
-    else return NULL;
-}
-
-const char *ply_get_next_obj_info(p_ply ply, const char *last) {
-    assert(ply);
-    if (!last) return ply->obj_info;
-    last += LINESIZE;
-    if (last < ply->obj_info + LINESIZE*ply->nobj_infos) return last;
-    else return NULL;
 }
 
 /* ----------------------------------------------------------------------
@@ -872,12 +833,7 @@ static void ply_reverse(void *anydata, size_t size) {
 static void ply_init(p_ply ply) {
     ply->element = NULL;
     ply->nelements = 0;
-    ply->comment = NULL;
-    ply->ncomments = 0;
-    ply->obj_info = NULL;
-    ply->nobj_infos = 0;
     ply->idriver = NULL;
-    ply->odriver = NULL;
     ply->buffer[0] = '\0';
     ply->buffer_first = ply->buffer_last = ply->buffer_token = 0;
     ply->welement = 0;
