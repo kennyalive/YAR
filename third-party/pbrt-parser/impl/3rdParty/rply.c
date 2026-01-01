@@ -221,9 +221,6 @@ typedef struct t_ply_ {
 static t_ply_idriver ply_idriver_ascii;
 static t_ply_idriver ply_idriver_binary;
 static t_ply_idriver ply_idriver_binary_reverse;
-static t_ply_odriver ply_odriver_ascii;
-static t_ply_odriver ply_odriver_binary;
-static t_ply_odriver ply_odriver_binary_reverse;
 
 static int ply_read_word(p_ply ply);
 static int ply_check_word(p_ply ply);
@@ -232,8 +229,6 @@ static int ply_read_line(p_ply ply);
 static int ply_check_line(p_ply ply);
 static int ply_read_chunk(p_ply ply, void *anybuffer, size_t size);
 static int ply_read_chunk_reverse(p_ply ply, void *anybuffer, size_t size);
-static int ply_write_chunk(p_ply ply, void *anybuffer, size_t size);
-static int ply_write_chunk_reverse(p_ply ply, void *anybuffer, size_t size);
 static void ply_reverse(void *anydata, size_t size);
 
 /* ----------------------------------------------------------------------
@@ -857,33 +852,6 @@ static int ply_read_chunk(p_ply ply, void *anybuffer, size_t size) {
     return 1;
 }
 
-static int ply_write_chunk(p_ply ply, void *anybuffer, size_t size) {
-    char *buffer = (char *) anybuffer;
-    size_t i = 0;
-    assert(ply && ply->fp && ply->io_mode == PLY_WRITE);
-    assert(ply->buffer_last <= BUFFERSIZE);
-    while (i < size) {
-        if (ply->buffer_last < BUFFERSIZE) {
-            ply->buffer[ply->buffer_last] = buffer[i];
-            ply->buffer_last++;
-            i++;
-        } else {
-            ply->buffer_last = 0;
-            if (fwrite(ply->buffer, 1, BUFFERSIZE, ply->fp) < BUFFERSIZE)
-                return 0;
-        }
-    }
-    return 1;
-}
-
-static int ply_write_chunk_reverse(p_ply ply, void *anybuffer, size_t size) {
-    int ret = 0;
-    ply_reverse(anybuffer, size);
-    ret = ply_write_chunk(ply, anybuffer, size);
-    ply_reverse(anybuffer, size);
-    return ret;
-}
-
 static int ply_read_chunk_reverse(p_ply ply, void *anybuffer, size_t size) {
     if (!ply_read_chunk(ply, anybuffer, size)) return 0;
     ply_reverse(anybuffer, size);
@@ -1114,95 +1082,6 @@ static int ply_type_check(void) {
 }
 
 /* ----------------------------------------------------------------------
- * Output handlers
- * ---------------------------------------------------------------------- */
-static int oascii_int8(p_ply ply, double value) {
-    if (value > PLY_INT8_MAX || value < PLY_INT8_MIN) return 0;
-    return fprintf(ply->fp, "%d", (t_ply_int8) value) > 0;
-}
-
-static int oascii_uint8(p_ply ply, double value) {
-    if (value > PLY_UINT8_MAX || value < 0) return 0;
-    return fprintf(ply->fp, "%d", (t_ply_uint8) value) > 0;
-}
-
-static int oascii_int16(p_ply ply, double value) {
-    if (value > PLY_INT16_MAX || value < PLY_INT16_MIN) return 0;
-    return fprintf(ply->fp, "%d", (t_ply_int16) value) > 0;
-}
-
-static int oascii_uint16(p_ply ply, double value) {
-    if (value > PLY_UINT16_MAX || value < 0) return 0;
-    return fprintf(ply->fp, "%d", (t_ply_uint16) value) > 0;
-}
-
-static int oascii_int32(p_ply ply, double value) {
-    if (value > PLY_INT32_MAX || value < PLY_INT32_MIN) return 0;
-    return fprintf(ply->fp, "%d", (t_ply_int32) value) > 0;
-}
-
-static int oascii_uint32(p_ply ply, double value) {
-    if (value > PLY_UINT32_MAX || value < 0) return 0;
-    return fprintf(ply->fp, "%d", (t_ply_uint32) value) > 0;
-}
-
-static int oascii_float32(p_ply ply, double value) {
-    if (value < -FLT_MAX || value > FLT_MAX) return 0;
-    return fprintf(ply->fp, "%g", (float) value) > 0;
-}
-
-static int oascii_float64(p_ply ply, double value) {
-    if (value < -DBL_MAX || value > DBL_MAX) return 0;
-    return fprintf(ply->fp, "%g", value) > 0;
-}
-
-static int obinary_int8(p_ply ply, double value) {
-    t_ply_int8 int8 = (t_ply_int8) value;
-    if (value > PLY_INT8_MAX || value < PLY_INT8_MIN) return 0;
-    return ply->odriver->ochunk(ply, &int8, sizeof(int8));
-}
-
-static int obinary_uint8(p_ply ply, double value) {
-    t_ply_uint8 uint8 = (t_ply_uint8) value;
-    if (value > PLY_UINT8_MAX || value < 0) return 0;
-    return ply->odriver->ochunk(ply, &uint8, sizeof(uint8));
-}
-
-static int obinary_int16(p_ply ply, double value) {
-    t_ply_int16 int16 = (t_ply_int16) value;
-    if (value > PLY_INT16_MAX || value < PLY_INT16_MIN) return 0;
-    return ply->odriver->ochunk(ply, &int16, sizeof(int16));
-}
-
-static int obinary_uint16(p_ply ply, double value) {
-    t_ply_uint16 uint16 = (t_ply_uint16) value;
-    if (value > PLY_UINT16_MAX || value < 0) return 0;
-    return ply->odriver->ochunk(ply, &uint16, sizeof(uint16));
-}
-
-static int obinary_int32(p_ply ply, double value) {
-    t_ply_int32 int32 = (t_ply_int32) value;
-    if (value > PLY_INT32_MAX || value < PLY_INT32_MIN) return 0;
-    return ply->odriver->ochunk(ply, &int32, sizeof(int32));
-}
-
-static int obinary_uint32(p_ply ply, double value) {
-    t_ply_uint32 uint32 = (t_ply_uint32) value;
-    if (value > PLY_UINT32_MAX || value < 0) return 0;
-    return ply->odriver->ochunk(ply, &uint32, sizeof(uint32));
-}
-
-static int obinary_float32(p_ply ply, double value) {
-    float float32 = (float) value;
-    if (value > FLT_MAX || value < -FLT_MAX) return 0;
-    return ply->odriver->ochunk(ply, &float32, sizeof(float32));
-}
-
-static int obinary_float64(p_ply ply, double value) {
-    return ply->odriver->ochunk(ply, &value, sizeof(value));
-}
-
-/* ----------------------------------------------------------------------
  * Input  handlers
  * ---------------------------------------------------------------------- */
 static int iascii_int8(p_ply ply, double *value) {
@@ -1353,36 +1232,6 @@ static t_ply_idriver ply_idriver_binary_reverse = {
     }, /* order matches e_ply_type enum */
     ply_read_chunk_reverse,
     "reverse binary input"
-};
-
-static t_ply_odriver ply_odriver_ascii = {
-    {   oascii_int8, oascii_uint8, oascii_int16, oascii_uint16,
-        oascii_int32, oascii_uint32, oascii_float32, oascii_float64,
-        oascii_int8, oascii_uint8, oascii_int16, oascii_uint16,
-        oascii_int32, oascii_uint32, oascii_float32, oascii_float64
-    }, /* order matches e_ply_type enum */
-    NULL,
-    "ascii output"
-};
-
-static t_ply_odriver ply_odriver_binary = {
-    {   obinary_int8, obinary_uint8, obinary_int16, obinary_uint16,
-        obinary_int32, obinary_uint32, obinary_float32, obinary_float64,
-        obinary_int8, obinary_uint8, obinary_int16, obinary_uint16,
-        obinary_int32, obinary_uint32, obinary_float32, obinary_float64
-    }, /* order matches e_ply_type enum */
-    ply_write_chunk,
-    "binary output"
-};
-
-static t_ply_odriver ply_odriver_binary_reverse = {
-    {   obinary_int8, obinary_uint8, obinary_int16, obinary_uint16,
-        obinary_int32, obinary_uint32, obinary_float32, obinary_float64,
-        obinary_int8, obinary_uint8, obinary_int16, obinary_uint16,
-        obinary_int32, obinary_uint32, obinary_float32, obinary_float64
-    }, /* order matches e_ply_type enum */
-    ply_write_chunk_reverse,
-    "reverse binary output"
 };
 
 /* ----------------------------------------------------------------------
