@@ -65,11 +65,6 @@ typedef uint32_t t_ply_uint32;
 #define LINESIZE 1024
 #define BUFFERSIZE (8*1024)
 
-typedef enum e_ply_io_mode_ {
-    PLY_READ,
-    PLY_WRITE
-} e_ply_io_mode;
-
 static const char *const ply_storage_mode_list[] = {
     "binary_big_endian", "binary_little_endian", "ascii", NULL
 };     /* order matches e_ply_storage_mode enum */
@@ -182,7 +177,6 @@ typedef t_ply_idriver *p_ply_idriver;
  * pdata/idata: user data defined with ply_open/ply_create
  * ---------------------------------------------------------------------- */
 typedef struct t_ply_ {
-    e_ply_io_mode io_mode;
     e_ply_storage_mode storage_mode;
     p_ply_element element;
     long nelements;
@@ -366,7 +360,6 @@ p_ply ply_open_from_file(FILE *fp, p_ply_error_cb error_cb,
     }
     ply->idata = idata;
     ply->pdata = pdata;
-    ply->io_mode = PLY_READ;
     ply->error_cb = error_cb;
     ply->fp = fp;
     ply->own_fp = 0;
@@ -374,7 +367,7 @@ p_ply ply_open_from_file(FILE *fp, p_ply_error_cb error_cb,
 }
 
 int ply_read_header(p_ply ply) {
-    assert(ply && ply->fp && ply->io_mode == PLY_READ);
+    assert(ply && ply->fp);
     if (!ply_read_header_magic(ply)) return 0;
     if (!ply_read_word(ply)) return 0;
     /* parse file format */
@@ -421,7 +414,7 @@ long ply_set_read_cb(p_ply ply, const char *element_name,
 int ply_read(p_ply ply) {
     long i;
     p_ply_argument argument;
-    assert(ply && ply->fp && ply->io_mode == PLY_READ);
+    assert(ply && ply->fp);
     argument = &ply->argument;
     /* for each element type */
     for (i = 0; i < ply->nelements; i++) {
@@ -460,12 +453,6 @@ int ply_close(p_ply ply) {
     assert(ply && ply->fp);
     assert(ply->element || ply->nelements == 0);
     assert(!ply->element || ply->nelements > 0);
-    /* write last chunk to file */
-    if (ply->io_mode == PLY_WRITE &&
-      fwrite(ply->buffer, 1, ply->buffer_last, ply->fp) < ply->buffer_last) {
-        ply_ferror(ply, "Error closing up");
-        return 0;
-    }
     if (ply->own_fp) fclose(ply->fp);
     /* free all memory used by handle */
     if (ply->element) {
@@ -704,7 +691,7 @@ static int ply_check_word(p_ply ply) {
 
 static int ply_read_word(p_ply ply) {
     size_t t = 0;
-    assert(ply && ply->fp && ply->io_mode == PLY_READ);
+    assert(ply && ply->fp);
     /* skip leading blanks */
     while (1) {
         t = strspn(BFIRST(ply), " \n\r\t");
@@ -761,7 +748,7 @@ static int ply_check_line(p_ply ply) {
 
 static int ply_read_line(p_ply ply) {
     const char *end = NULL;
-    assert(ply && ply->fp && ply->io_mode == PLY_READ);
+    assert(ply && ply->fp);
     /* look for a end of line */
     end = strchr(BFIRST(ply), '\n');
     /* if we didn't reach the end of the buffer, we are done */
@@ -797,7 +784,7 @@ static int ply_read_line(p_ply ply) {
 static int ply_read_chunk(p_ply ply, void *anybuffer, size_t size) {
     char *buffer = (char *) anybuffer;
     size_t i = 0;
-    assert(ply && ply->fp && ply->io_mode == PLY_READ);
+    assert(ply && ply->fp);
     assert(ply->buffer_first <= ply->buffer_last);
     while (i < size) {
         if (ply->buffer_first < ply->buffer_last) {
@@ -909,7 +896,7 @@ static p_ply_property ply_grow_property(p_ply ply, p_ply_element element) {
 }
 
 static int ply_read_header_format(p_ply ply) {
-    assert(ply && ply->fp && ply->io_mode == PLY_READ);
+    assert(ply && ply->fp);
     if (strcmp(BWORD(ply), "format")) return 0;
     if (!ply_read_word(ply)) return 0;
     ply->storage_mode = ply_find_string(BWORD(ply), ply_storage_mode_list);
@@ -925,7 +912,7 @@ static int ply_read_header_format(p_ply ply) {
 }
 
 static int ply_read_header_comment(p_ply ply) {
-    assert(ply && ply->fp && ply->io_mode == PLY_READ);
+    assert(ply && ply->fp);
     if (strcmp(BWORD(ply), "comment")) return 0;
     if (!ply_read_line(ply)) return 0;
     if (!ply_add_comment(ply, BLINE(ply))) return 0;
@@ -934,7 +921,7 @@ static int ply_read_header_comment(p_ply ply) {
 }
 
 static int ply_read_header_obj_info(p_ply ply) {
-    assert(ply && ply->fp && ply->io_mode == PLY_READ);
+    assert(ply && ply->fp);
     if (strcmp(BWORD(ply), "obj_info")) return 0;
     if (!ply_read_line(ply)) return 0;
     if (!ply_add_obj_info(ply, BLINE(ply))) return 0;
@@ -973,7 +960,7 @@ static int ply_read_header_property(p_ply ply) {
 static int ply_read_header_element(p_ply ply) {
     p_ply_element element = NULL;
     long dummy;
-    assert(ply && ply->fp && ply->io_mode == PLY_READ);
+    assert(ply && ply->fp);
     if (strcmp(BWORD(ply), "element")) return 0;
     /* allocate room for new element */
     element = ply_grow_element(ply);
