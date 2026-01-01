@@ -26,14 +26,6 @@ typedef struct t_ply_element_ *p_ply_element;
 typedef struct t_ply_property_ *p_ply_property;
 typedef struct t_ply_argument_ *p_ply_argument;
 
-/* ply format mode type */
-typedef enum e_ply_storage_mode_ {
-    PLY_BIG_ENDIAN,
-    PLY_LITTLE_ENDIAN,
-    PLY_ASCII,
-    PLY_DEFAULT      /* has to be the last in enum */
-} e_ply_storage_mode; /* order matches ply_storage_mode_list */
-
 /* ply data type */
 typedef enum e_ply_type {
     PLY_INT8, PLY_UINT8, PLY_INT16, PLY_UINT16,

@@ -64,10 +64,6 @@ typedef uint32_t t_ply_uint32;
 #define WORDSIZE 256
 #define LINESIZE 1024
 
-static const char *const ply_storage_mode_list[] = {
-    "binary_big_endian", "binary_little_endian", "ascii", NULL
-};     /* order matches e_ply_storage_mode enum */
-
 static const char *const ply_type_list[] = {
     "int8", "uint8", "int16", "uint16",
     "int32", "uint32", "float32", "float64",
@@ -153,19 +149,10 @@ typedef t_ply_idriver *p_ply_idriver;
 /* ----------------------------------------------------------------------
  * Ply file handle.
  *
- * io_mode: read or write (from e_ply_io_mode)
- * storage_mode: mode of file associated with handle (from e_ply_storage_mode)
- * element: elements description for this file
+  * element: elements description for this file
  * nelement: number of different elements in file
- * comment: comments for this file
- * ncomments: number of comments in file
- * obj_info: obj_info items for this file
- * nobj_infos: number of obj_info items in file
- * fp: file pointer associated with ply file
  * rn: skip extra char after end_header?
- * buffer: last word/chunck of data read from ply file
- * buffer_first, buffer_last: interval of untouched good data in buffer
- * buffer_token: start of parsed token (line or word) in buffer
+ * token_start: start of parsed token (line or word) in buffer
  * idriver, odriver: input driver used to get property fields from file
  * argument: storage space for callback arguments
  * welement, wproperty: element/property type being written
@@ -176,7 +163,6 @@ typedef t_ply_idriver *p_ply_idriver;
  * pdata/idata: user data defined with ply_open/ply_create
  * ---------------------------------------------------------------------- */
 typedef struct t_ply_ {
-    e_ply_storage_mode storage_mode;
     p_ply_element element;
     long nelements;
     uint8_t* content;
@@ -196,9 +182,7 @@ typedef struct t_ply_ {
 /* ----------------------------------------------------------------------
  * I/O functions and drivers
  * ---------------------------------------------------------------------- */
-static t_ply_idriver ply_idriver_ascii;
 static t_ply_idriver ply_idriver_binary;
-static t_ply_idriver ply_idriver_binary_reverse;
 
 static int ply_read_word(p_ply ply);
 static int ply_check_word(p_ply ply);
@@ -206,8 +190,6 @@ static void ply_finish_word(p_ply ply, size_t size);
 static int ply_read_line(p_ply ply);
 static int ply_check_line(p_ply ply);
 static int ply_read_chunk(p_ply ply, void *anybuffer, size_t size);
-static int ply_read_chunk_reverse(p_ply ply, void *anybuffer, size_t size);
-static void ply_reverse(void *anydata, size_t size);
 
 /* ----------------------------------------------------------------------
  * String functions
@@ -247,7 +229,6 @@ static void *ply_grow_array(p_ply ply, void **pointer, long *nmemb, long size);
 /* ----------------------------------------------------------------------
  * Special functions
  * ---------------------------------------------------------------------- */
-static e_ply_storage_mode ply_arch_endian(void);
 static int ply_type_check(void);
 
 /* ----------------------------------------------------------------------
@@ -767,23 +748,6 @@ static int ply_read_chunk(p_ply ply, void *anybuffer, size_t size) {
     return 1;
 }
 
-static int ply_read_chunk_reverse(p_ply ply, void *anybuffer, size_t size) {
-    if (!ply_read_chunk(ply, anybuffer, size)) return 0;
-    ply_reverse(anybuffer, size);
-    return 1;
-}
-
-static void ply_reverse(void *anydata, size_t size) {
-    char *data = (char *) anydata;
-    char temp;
-    size_t i;
-    for (i = 0; i < size/2; i++) {
-        temp = data[i];
-        data[i] = data[size-i-1];
-        data[size-i-1] = temp;
-    }
-}
-
 static void ply_init(p_ply ply) {
     ply->element = NULL;
     ply->nelements = 0;
@@ -868,12 +832,11 @@ static int ply_read_header_format(p_ply ply) {
     assert(ply);
     if (strcmp(BWORD(ply), "format")) return 0;
     if (!ply_read_word(ply)) return 0;
-    ply->storage_mode = ply_find_string(BWORD(ply), ply_storage_mode_list);
-    if (ply->storage_mode == (e_ply_storage_mode) (-1)) return 0;
-    if (ply->storage_mode == PLY_ASCII) ply->idriver = &ply_idriver_ascii;
-    else if (ply->storage_mode == ply_arch_endian())
-        ply->idriver = &ply_idriver_binary;
-    else ply->idriver = &ply_idriver_binary_reverse;
+    if (strcmp(BWORD(ply), "binary_little_endian") != 0) {
+        // NOTE: this implementation supports only binary little endian ply files
+        return 0;
+    }
+    ply->idriver = &ply_idriver_binary;
     if (!ply_read_word(ply)) return 0;
     if (strcmp(BWORD(ply), "1.0")) return 0;
     if (!ply_read_word(ply)) return 0;
@@ -966,13 +929,6 @@ static void ply_ferror(p_ply ply, const char *fmt, ...) {
     ply->error_cb(ply, buffer);
 }
 
-static e_ply_storage_mode ply_arch_endian(void) {
-    unsigned long i = 1;
-    unsigned char *s = (unsigned char *) &i;
-    if (*s == 1) return PLY_LITTLE_ENDIAN;
-    else return PLY_BIG_ENDIAN;
-}
-
 static int ply_type_check(void) {
     assert(sizeof(t_ply_int8) == 1);
     assert(sizeof(t_ply_uint8) == 1);
@@ -996,70 +952,6 @@ static int ply_type_check(void) {
 /* ----------------------------------------------------------------------
  * Input  handlers
  * ---------------------------------------------------------------------- */
-static int iascii_int8(p_ply ply, double *value) {
-    char *end;
-    if (!ply_read_word(ply)) return 0;
-    *value = strtol(BWORD(ply), &end, 10);
-    if (*end || *value > PLY_INT8_MAX || *value < PLY_INT8_MIN) return 0;
-    return 1;
-}
-
-static int iascii_uint8(p_ply ply, double *value) {
-    char *end;
-    if (!ply_read_word(ply)) return 0;
-    *value = strtol(BWORD(ply), &end, 10);
-    if (*end || *value > PLY_UINT8_MAX || *value < 0) return 0;
-    return 1;
-}
-
-static int iascii_int16(p_ply ply, double *value) {
-    char *end;
-    if (!ply_read_word(ply)) return 0;
-    *value = strtol(BWORD(ply), &end, 10);
-    if (*end || *value > PLY_INT16_MAX || *value < PLY_INT16_MIN) return 0;
-    return 1;
-}
-
-static int iascii_uint16(p_ply ply, double *value) {
-    char *end;
-    if (!ply_read_word(ply)) return 0;
-    *value = strtol(BWORD(ply), &end, 10);
-    if (*end || *value > PLY_UINT16_MAX || *value < 0) return 0;
-    return 1;
-}
-
-static int iascii_int32(p_ply ply, double *value) {
-    char *end;
-    if (!ply_read_word(ply)) return 0;
-    *value = strtol(BWORD(ply), &end, 10);
-    if (*end || *value > PLY_INT32_MAX || *value < PLY_INT32_MIN) return 0;
-    return 1;
-}
-
-static int iascii_uint32(p_ply ply, double *value) {
-    char *end;
-    if (!ply_read_word(ply)) return 0;
-    *value = strtol(BWORD(ply), &end, 10);
-    if (*end || *value > PLY_UINT32_MAX || *value < 0) return 0;
-    return 1;
-}
-
-static int iascii_float32(p_ply ply, double *value) {
-    char *end;
-    if (!ply_read_word(ply)) return 0;
-    *value = strtod(BWORD(ply), &end);
-    if (*end || *value < -FLT_MAX || *value > FLT_MAX) return 0;
-    return 1;
-}
-
-static int iascii_float64(p_ply ply, double *value) {
-    char *end;
-    if (!ply_read_word(ply)) return 0;
-    *value = strtod(BWORD(ply), &end);
-    if (*end || *value < -DBL_MAX || *value > DBL_MAX) return 0;
-    return 1;
-}
-
 static int ibinary_int8(p_ply ply, double *value) {
     t_ply_int8 int8;
     if (!ply->idriver->ichunk(ply, &int8, 1)) return 0;
@@ -1116,16 +1008,6 @@ static int ibinary_float64(p_ply ply, double *value) {
 /* ----------------------------------------------------------------------
  * Constants
  * ---------------------------------------------------------------------- */
-static t_ply_idriver ply_idriver_ascii = {
-    {   iascii_int8, iascii_uint8, iascii_int16, iascii_uint16,
-        iascii_int32, iascii_uint32, iascii_float32, iascii_float64,
-        iascii_int8, iascii_uint8, iascii_int16, iascii_uint16,
-        iascii_int32, iascii_uint32, iascii_float32, iascii_float64
-    }, /* order matches e_ply_type enum */
-    NULL,
-    "ascii input"
-};
-
 static t_ply_idriver ply_idriver_binary = {
     {   ibinary_int8, ibinary_uint8, ibinary_int16, ibinary_uint16,
         ibinary_int32, ibinary_uint32, ibinary_float32, ibinary_float64,
@@ -1134,16 +1016,6 @@ static t_ply_idriver ply_idriver_binary = {
     }, /* order matches e_ply_type enum */
     ply_read_chunk,
     "binary input"
-};
-
-static t_ply_idriver ply_idriver_binary_reverse = {
-    {   ibinary_int8, ibinary_uint8, ibinary_int16, ibinary_uint16,
-        ibinary_int32, ibinary_uint32, ibinary_float32, ibinary_float64,
-        ibinary_int8, ibinary_uint8, ibinary_int16, ibinary_uint16,
-        ibinary_int32, ibinary_uint32, ibinary_float32, ibinary_float64
-    }, /* order matches e_ply_type enum */
-    ply_read_chunk_reverse,
-    "reverse binary input"
 };
 
 /* ----------------------------------------------------------------------
