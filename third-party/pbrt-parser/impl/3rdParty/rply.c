@@ -141,8 +141,6 @@ typedef int (*p_ply_ihandler)(p_ply ply, double *value);
 typedef int (*p_ply_ichunk)(p_ply ply, void *anydata, size_t size);
 typedef struct t_ply_idriver_ {
     p_ply_ihandler ihandler[16];
-    p_ply_ichunk ichunk;
-    const char *name;
 } t_ply_idriver;
 typedef t_ply_idriver *p_ply_idriver;
 
@@ -189,7 +187,6 @@ static int ply_check_word(p_ply ply);
 static void ply_finish_word(p_ply ply, size_t size);
 static int ply_read_line(p_ply ply);
 static int ply_check_line(p_ply ply);
-static int ply_read_chunk(p_ply ply, void *anybuffer, size_t size);
 
 /* ----------------------------------------------------------------------
  * String functions
@@ -731,23 +728,6 @@ static int ply_read_line(p_ply ply) {
     return ply_check_line(ply);
 }
 
-static int ply_read_chunk(p_ply ply, void *anybuffer, size_t size) {
-    char *buffer = (char *) anybuffer;
-    size_t i = 0;
-    assert(ply);
-    assert(ply->content_offset <= ply->content_size);
-    while (i < size) {
-        if (ply->content_offset < ply->content_size) {
-            buffer[i] = ply->content[ply->content_offset];
-            ply->content_offset++;
-            i++;
-        } else {
-            return 0;
-        }
-    }
-    return 1;
-}
-
 static void ply_init(p_ply ply) {
     ply->element = NULL;
     ply->nelements = 0;
@@ -953,56 +933,89 @@ static int ply_type_check(void) {
  * Input  handlers
  * ---------------------------------------------------------------------- */
 static int ibinary_int8(p_ply ply, double *value) {
-    t_ply_int8 int8;
-    if (!ply->idriver->ichunk(ply, &int8, 1)) return 0;
+    if (BSIZE(ply) < 1) {
+        return 0;
+    }
+    int8_t int8;
+    memcpy(&int8, BFIRST(ply), 1);
+    BSKIP(ply, 1);
     *value = int8;
     return 1;
 }
 
 static int ibinary_uint8(p_ply ply, double *value) {
-    t_ply_uint8 uint8;
-    if (!ply->idriver->ichunk(ply, &uint8, 1)) return 0;
+    if (BSIZE(ply) < 1) {
+        return 0;
+    }
+    uint8_t uint8;
+    memcpy(&uint8, BFIRST(ply), 1);
+    BSKIP(ply, 1);
     *value = uint8;
     return 1;
 }
 
 static int ibinary_int16(p_ply ply, double *value) {
-    t_ply_int16 int16;
-    if (!ply->idriver->ichunk(ply, &int16, sizeof(int16))) return 0;
+    if (BSIZE(ply) < 2) {
+        return 0;
+    }
+    int16_t int16;
+    memcpy(&int16, BFIRST(ply), 2);
+    BSKIP(ply, 2);
     *value = int16;
     return 1;
 }
 
 static int ibinary_uint16(p_ply ply, double *value) {
-    t_ply_uint16 uint16;
-    if (!ply->idriver->ichunk(ply, &uint16, sizeof(uint16))) return 0;
+    if (BSIZE(ply) < 2) {
+        return 0;
+    }
+    uint16_t uint16;
+    memcpy(&uint16, BFIRST(ply), 2);
+    BSKIP(ply, 2);
     *value = uint16;
     return 1;
 }
 
 static int ibinary_int32(p_ply ply, double *value) {
-    t_ply_int32 int32;
-    if (!ply->idriver->ichunk(ply, &int32, sizeof(int32))) return 0;
+    if (BSIZE(ply) < 4) {
+        return 0;
+    }
+    int32_t int32;
+    memcpy(&int32, BFIRST(ply), 4);
+    BSKIP(ply, 4);
     *value = int32;
     return 1;
 }
 
 static int ibinary_uint32(p_ply ply, double *value) {
-    t_ply_uint32 uint32;
-    if (!ply->idriver->ichunk(ply, &uint32, sizeof(uint32))) return 0;
+    if (BSIZE(ply) < 4) {
+        return 0;
+    }
+    uint32_t uint32;
+    memcpy(&uint32, BFIRST(ply), 4);
+    BSKIP(ply, 4);
     *value = uint32;
     return 1;
 }
 
 static int ibinary_float32(p_ply ply, double *value) {
+    if (BSIZE(ply) < 4) {
+        return 0;
+    }
     float float32;
-    if (!ply->idriver->ichunk(ply, &float32, sizeof(float32))) return 0;
+    memcpy(&float32, BFIRST(ply), 4);
+    BSKIP(ply, 4);
     *value = float32;
     return 1;
 }
 
 static int ibinary_float64(p_ply ply, double *value) {
-    return ply->idriver->ichunk(ply, value, sizeof(double));
+    if (BSIZE(ply) < 8) {
+        return 0;
+    }
+    memcpy(value, BFIRST(ply), 8);
+    BSKIP(ply, 8);
+    return 1;
 }
 
 /* ----------------------------------------------------------------------
@@ -1013,9 +1026,7 @@ static t_ply_idriver ply_idriver_binary = {
         ibinary_int32, ibinary_uint32, ibinary_float32, ibinary_float64,
         ibinary_int8, ibinary_uint8, ibinary_int16, ibinary_uint16,
         ibinary_int32, ibinary_uint32, ibinary_float32, ibinary_float64
-    }, /* order matches e_ply_type enum */
-    ply_read_chunk,
-    "binary input"
+    }
 };
 
 /* ----------------------------------------------------------------------
