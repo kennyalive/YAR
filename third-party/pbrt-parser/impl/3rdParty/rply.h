@@ -235,68 +235,6 @@ int ply_get_property_info(p_ply_property property, const char** name,
         e_ply_type *type, e_ply_type *length_type, e_ply_type *value_type);
 
 /* ----------------------------------------------------------------------
- * Creates new PLY file
- *
- * name: file name
- * storage_mode: file format mode
- * error_cb: error callback function
- * idata,pdata: contextual information available to users
- *
- * Returns handle to PLY file if successfull, NULL otherwise
- * ---------------------------------------------------------------------- */
-p_ply ply_create(const char *name, e_ply_storage_mode storage_mode,
-        p_ply_error_cb error_cb, long idata, void *pdata);
-
-/* ----------------------------------------------------------------------
- * Adds a new element to the PLY file created by ply_create
- *
- * ply: handle returned by ply_create
- * name: name of new element
- * ninstances: number of element of this time in file
- *
- * Returns 1 if successfull, 0 otherwise
- * ---------------------------------------------------------------------- */
-int ply_add_element(p_ply ply, const char *name, long ninstances);
-
-/* ----------------------------------------------------------------------
- * Adds a new property to the last element added by ply_add_element
- *
- * ply: handle returned by ply_create
- * name: name of new property
- * type: property type
- * length_type: scalar type of length field of a list property
- * value_type: scalar type of value fields of a list property
- *
- * Returns 1 if successfull, 0 otherwise
- * ---------------------------------------------------------------------- */
-int ply_add_property(p_ply ply, const char *name, e_ply_type type,
-        e_ply_type length_type, e_ply_type value_type);
-
-/* ----------------------------------------------------------------------
- * Adds a new list property to the last element added by ply_add_element
- *
- * ply: handle returned by ply_create
- * name: name of new property
- * length_type: scalar type of length field of a list property
- * value_type: scalar type of value fields of a list property
- *
- * Returns 1 if successfull, 0 otherwise
- * ---------------------------------------------------------------------- */
-int ply_add_list_property(p_ply ply, const char *name,
-        e_ply_type length_type, e_ply_type value_type);
-
-/* ----------------------------------------------------------------------
- * Adds a new property to the last element added by ply_add_element
- *
- * ply: handle returned by ply_create
- * name: name of new property
- * type: property type
- *
- * Returns 1 if successfull, 0 otherwise
- * ---------------------------------------------------------------------- */
-int ply_add_scalar_property(p_ply ply, const char *name, e_ply_type type);
-
-/* ----------------------------------------------------------------------
  * Adds a new comment item
  *
  * ply: handle returned by ply_create
@@ -315,29 +253,6 @@ int ply_add_comment(p_ply ply, const char *comment);
  * Returns 1 if successfull, 0 otherwise
  * ---------------------------------------------------------------------- */
 int ply_add_obj_info(p_ply ply, const char *obj_info);
-
-/* ----------------------------------------------------------------------
- * Writes the PLY file header after all element and properties have been
- * defined by calls to ply_add_element and ply_add_property
- *
- * ply: handle returned by ply_create
- *
- * Returns 1 if successfull, 0 otherwise
- * ---------------------------------------------------------------------- */
-int ply_write_header(p_ply ply);
-
-/* ----------------------------------------------------------------------
- * Writes one property value, in the order they should be written to the
- * file. For each element type, write all elements of that type in order.
- * For each element, write all its properties in order. For scalar
- * properties, just write the value. For list properties, write the length
- * and then each of the values.
- *
- * ply: handle returned by ply_create
- *
- * Returns 1 if successfull, 0 otherwise
- * ---------------------------------------------------------------------- */
-int ply_write(p_ply ply, double value);
 
 /* ----------------------------------------------------------------------
  * Closes a PLY file handle. Releases all memory used by handle

@@ -25,19 +25,6 @@ extern "C" {
 p_ply ply_open_from_file(FILE *file_pointer, p_ply_error_cb error_cb,
     long idata, void *pdata);
 
-/* ----------------------------------------------------------------------
- * Creates new PLY file
- *
- * file_pointer: FILE * to a file open for writing
- * storage_mode: file format mode
- * error_cb: error callback function
- * idata,pdata: contextual information available to users
- *
- * Returns handle to PLY file if successfull, NULL otherwise
- * ---------------------------------------------------------------------- */
-p_ply ply_create_to_file(FILE *file_pointer, e_ply_storage_mode storage_mode,
-        p_ply_error_cb error_cb, long idata, void *pdata);
-
 #ifdef __cplusplus
 }
 #endif
