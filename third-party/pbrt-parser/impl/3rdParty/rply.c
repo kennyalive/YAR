@@ -63,7 +63,6 @@ typedef uint32_t t_ply_uint32;
  * ---------------------------------------------------------------------- */
 #define WORDSIZE 256
 #define LINESIZE 1024
-#define BUFFERSIZE (8*1024)
 
 static const char *const ply_storage_mode_list[] = {
     "binary_big_endian", "binary_little_endian", "ascii", NULL
@@ -180,11 +179,11 @@ typedef struct t_ply_ {
     e_ply_storage_mode storage_mode;
     p_ply_element element;
     long nelements;
-    FILE *fp;
-    int own_fp;
+    uint8_t* content;
+    size_t content_size;
+    size_t content_offset;
     int rn;
-    char buffer[BUFFERSIZE];
-    size_t buffer_first, buffer_token, buffer_last;
+    size_t token_start;
     p_ply_idriver idriver;
     t_ply_argument argument;
     long welement, wproperty;
@@ -267,34 +266,17 @@ static int ply_read_scalar_property(p_ply ply, p_ply_element element,
  * Buffer support functions
  * ---------------------------------------------------------------------- */
 /* pointers to tokenized word and line in buffer */
-#define BWORD(p) (p->buffer + p->buffer_token)
-#define BLINE(p) (p->buffer + p->buffer_token)
+#define BWORD(p) (p->content + p->token_start)
+#define BLINE(p) (p->content + p->token_start)
 
 /* pointer to start of untouched bytes in buffer */
-#define BFIRST(p) (p->buffer + p->buffer_first)
+#define BFIRST(p) (p->content + p->content_offset)
 
 /* number of bytes untouched in buffer */
-#define BSIZE(p) (p->buffer_last - p->buffer_first)
+#define BSIZE(p) (p->content_size - p->content_offset)
 
 /* consumes data from buffer */
-#define BSKIP(p, s) (p->buffer_first += s)
-
-/* refills the buffer */
-static int BREFILL(p_ply ply) {
-    /* move untouched data to beginning of buffer */
-    size_t size = BSIZE(ply);
-    memmove(ply->buffer, BFIRST(ply), size);
-    ply->buffer_last = size;
-    ply->buffer_first = ply->buffer_token = 0;
-    /* fill remaining with new data */
-    size = fread(ply->buffer+size, 1, BUFFERSIZE-size-1, ply->fp);
-    /* increase size to account for new data */
-    ply->buffer_last += size;
-    /* place sentinel so we can use str* functions with buffer */
-    ply->buffer[ply->buffer_last] = '\0';
-    /* check if read failed */
-    return size > 0;
-}
+#define BSKIP(p, s) (p->content_offset += s)
 
 /* We don't care about end-of-line, generally, because we
  * separate words by any white-space character.
@@ -303,9 +285,9 @@ static int BREFILL(p_ply ply) {
 /* We use the end-of-line marker after the 'ply' magic
  * number to figure out what to do */
 static int ply_read_header_magic(p_ply ply) {
-    char *magic = ply->buffer;
-    if (!BREFILL(ply)) {
-        ply->error_cb(ply, "Unable to read magic number from file");
+    char* magic = (char*)ply->content + ply->content_offset;
+    if (ply->content_offset + 3 >= ply->content_size) {
+        ply->error_cb(ply, "Unable to read magic number");
         return 0;
     }
     /* check if it is ply */
@@ -339,8 +321,7 @@ p_ply ply_open(const char *name, p_ply_error_cb error_cb,
         return NULL;
     }
     ply = ply_open_from_file(fp, error_cb, idata, pdata);
-    if (ply) ply->own_fp = 1;
-    else fclose(fp);
+    fclose(fp);
     return ply;
 }
 
@@ -349,6 +330,20 @@ p_ply ply_open_from_file(FILE *fp, p_ply_error_cb error_cb,
     p_ply ply;
     if (error_cb == NULL) error_cb = ply_error_cb;
     assert(fp);
+
+    if (fseek(fp, 0, SEEK_END) != 0) {
+        return NULL;
+    }
+    size_t content_size = ftell(fp);
+    if (fseek(fp, 0, SEEK_SET) != 0) {
+        return NULL;
+    }
+    uint8_t* content = malloc(content_size);
+    if (fread(content, 1, content_size, fp) != content_size) {
+        free(content);
+        return NULL;
+    }
+
     if (!ply_type_check()) {
         error_cb(NULL, "Incompatible type system");
         return NULL;
@@ -361,13 +356,14 @@ p_ply ply_open_from_file(FILE *fp, p_ply_error_cb error_cb,
     ply->idata = idata;
     ply->pdata = pdata;
     ply->error_cb = error_cb;
-    ply->fp = fp;
-    ply->own_fp = 0;
+    ply->content = content;
+    ply->content_size = content_size;
+    ply->content_offset = 0;
     return ply;
 }
 
 int ply_read_header(p_ply ply) {
-    assert(ply && ply->fp);
+    assert(ply);
     if (!ply_read_header_magic(ply)) return 0;
     if (!ply_read_word(ply)) return 0;
     /* parse file format */
@@ -386,7 +382,7 @@ int ply_read_header(p_ply ply) {
     }
     /* skip extra character? */
     if (ply->rn) {
-        if (BSIZE(ply) < 1 && !BREFILL(ply)) {
+        if (BSIZE(ply) < 1) {
             ply_ferror(ply, "Unexpected end of file");
             return 0;
         }
@@ -414,7 +410,7 @@ long ply_set_read_cb(p_ply ply, const char *element_name,
 int ply_read(p_ply ply) {
     long i;
     p_ply_argument argument;
-    assert(ply && ply->fp);
+    assert(ply);
     argument = &ply->argument;
     /* for each element type */
     for (i = 0; i < ply->nelements; i++) {
@@ -450,10 +446,9 @@ int ply_add_obj_info(p_ply ply, const char *obj_info) {
 
 int ply_close(p_ply ply) {
     long i;
-    assert(ply && ply->fp);
+    assert(ply);
     assert(ply->element || ply->nelements == 0);
     assert(!ply->element || ply->nelements > 0);
-    if (ply->own_fp) fclose(ply->fp);
     /* free all memory used by handle */
     if (ply->element) {
         for (i = 0; i < ply->nelements; i++) {
@@ -462,6 +457,7 @@ int ply_close(p_ply ply) {
         }
         free(ply->element);
     }
+    free(ply->content);
     free(ply);
     return 1;
 }
@@ -691,48 +687,25 @@ static int ply_check_word(p_ply ply) {
 
 static int ply_read_word(p_ply ply) {
     size_t t = 0;
-    assert(ply && ply->fp);
+    assert(ply);
     /* skip leading blanks */
     while (1) {
         t = strspn(BFIRST(ply), " \n\r\t");
         /* check if all buffer was made of blanks */
         if (t >= BSIZE(ply)) {
-            if (!BREFILL(ply)) {
-                ply_ferror(ply, "Unexpected end of file");
-                return 0;
-            }
+            ply_ferror(ply, "Unexpected end of file");
+            return 0;
         } else break;
     }
     BSKIP(ply, t);
     /* look for a space after the current word */
     t = strcspn(BFIRST(ply), " \n\r\t");
-    /* if we didn't reach the end of the buffer, we are done */
-    if (t < BSIZE(ply)) {
-        ply_finish_word(ply, t);
-        return ply_check_word(ply);
-    }
-    /* otherwise, try to refill buffer */
-    if (!BREFILL(ply)) {
-        /* if we reached the end of file, try to do with what we have */
-        ply_finish_word(ply, t);
-        return ply_check_word(ply);
-        /* ply_ferror(ply, "Unexpected end of file"); */
-        /* return 0; */
-    }
-    /* keep looking from where we left */
-    t += strcspn(BFIRST(ply) + t, " \n\r\t");
-    /* check if the token is too large for our buffer */
-    if (t >= BSIZE(ply)) {
-        ply_ferror(ply, "Token too large");
-        return 0;
-    }
-    /* we are done */
     ply_finish_word(ply, t);
     return ply_check_word(ply);
 }
 
 static void ply_finish_word(p_ply ply, size_t size) {
-    ply->buffer_token = ply->buffer_first;
+    ply->token_start = ply->content_offset;
     BSKIP(ply, size);
     *BFIRST(ply) = '\0';
     BSKIP(ply, 1);
@@ -748,23 +721,19 @@ static int ply_check_line(p_ply ply) {
 
 static int ply_read_line(p_ply ply) {
     const char *end = NULL;
-    assert(ply && ply->fp);
+    assert(ply);
     /* look for a end of line */
     end = strchr(BFIRST(ply), '\n');
     /* if we didn't reach the end of the buffer, we are done */
     if (end) {
-        ply->buffer_token = ply->buffer_first;
+        ply->token_start = ply->content_offset;
         BSKIP(ply, end - BFIRST(ply));
         *BFIRST(ply) = '\0';
         BSKIP(ply, 1);
         return ply_check_line(ply);
     } else {
-        end = ply->buffer + BSIZE(ply);
-        /* otherwise, try to refill buffer */
-        if (!BREFILL(ply)) {
-            ply_ferror(ply, "Unexpected end of file");
-            return 0;
-        }
+        ply_ferror(ply, "Unexpected end of file");
+        return 0;
     }
     /* keep looking from where we left */
     end = strchr(end, '\n');
@@ -774,7 +743,7 @@ static int ply_read_line(p_ply ply) {
         return 0;
     }
     /* we are done */
-    ply->buffer_token = ply->buffer_first;
+    ply->token_start = ply->content_offset;
     BSKIP(ply, end - BFIRST(ply));
     *BFIRST(ply) = '\0';
     BSKIP(ply, 1);
@@ -784,17 +753,15 @@ static int ply_read_line(p_ply ply) {
 static int ply_read_chunk(p_ply ply, void *anybuffer, size_t size) {
     char *buffer = (char *) anybuffer;
     size_t i = 0;
-    assert(ply && ply->fp);
-    assert(ply->buffer_first <= ply->buffer_last);
+    assert(ply);
+    assert(ply->content_offset <= ply->content_size);
     while (i < size) {
-        if (ply->buffer_first < ply->buffer_last) {
-            buffer[i] = ply->buffer[ply->buffer_first];
-            ply->buffer_first++;
+        if (ply->content_offset < ply->content_size) {
+            buffer[i] = ply->content[ply->content_offset];
+            ply->content_offset++;
             i++;
         } else {
-            ply->buffer_first = 0;
-            ply->buffer_last = fread(ply->buffer, 1, BUFFERSIZE, ply->fp);
-            if (ply->buffer_last <= 0) return 0;
+            return 0;
         }
     }
     return 1;
@@ -820,9 +787,11 @@ static void ply_reverse(void *anydata, size_t size) {
 static void ply_init(p_ply ply) {
     ply->element = NULL;
     ply->nelements = 0;
+    ply->content = NULL;
+    ply->content_size = 0;
+    ply->content_offset = 0;
+    ply->token_start = 0;
     ply->idriver = NULL;
-    ply->buffer[0] = '\0';
-    ply->buffer_first = ply->buffer_last = ply->buffer_token = 0;
     ply->welement = 0;
     ply->wproperty = 0;
     ply->winstance_index = 0;
@@ -896,7 +865,7 @@ static p_ply_property ply_grow_property(p_ply ply, p_ply_element element) {
 }
 
 static int ply_read_header_format(p_ply ply) {
-    assert(ply && ply->fp);
+    assert(ply);
     if (strcmp(BWORD(ply), "format")) return 0;
     if (!ply_read_word(ply)) return 0;
     ply->storage_mode = ply_find_string(BWORD(ply), ply_storage_mode_list);
@@ -912,7 +881,7 @@ static int ply_read_header_format(p_ply ply) {
 }
 
 static int ply_read_header_comment(p_ply ply) {
-    assert(ply && ply->fp);
+    assert(ply);
     if (strcmp(BWORD(ply), "comment")) return 0;
     if (!ply_read_line(ply)) return 0;
     if (!ply_add_comment(ply, BLINE(ply))) return 0;
@@ -921,7 +890,7 @@ static int ply_read_header_comment(p_ply ply) {
 }
 
 static int ply_read_header_obj_info(p_ply ply) {
-    assert(ply && ply->fp);
+    assert(ply);
     if (strcmp(BWORD(ply), "obj_info")) return 0;
     if (!ply_read_line(ply)) return 0;
     if (!ply_add_obj_info(ply, BLINE(ply))) return 0;
@@ -960,7 +929,7 @@ static int ply_read_header_property(p_ply ply) {
 static int ply_read_header_element(p_ply ply) {
     p_ply_element element = NULL;
     long dummy;
-    assert(ply && ply->fp);
+    assert(ply);
     if (strcmp(BWORD(ply), "element")) return 0;
     /* allocate room for new element */
     element = ply_grow_element(ply);
