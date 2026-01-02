@@ -15,48 +15,10 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "rply.h"
 #include "rplyfile.h"
-
-/* ----------------------------------------------------------------------
- * Make sure we get our integer types right
- * ---------------------------------------------------------------------- */
-#if defined(_MSC_VER) && (_MSC_VER < 1600)
-/* C99 stdint.h only supported in MSVC++ 10.0 and up */
-typedef __int8 t_ply_int8;
-typedef __int16 t_ply_int16;
-typedef __int32 t_ply_int32;
-typedef unsigned __int8 t_ply_uint8;
-typedef unsigned __int16 t_ply_uint16;
-typedef unsigned __int32 t_ply_uint32;
-#define PLY_INT8_MAX (127)
-#define PLY_INT8_MIN (-PLY_INT8_MAX-1)
-#define PLY_INT16_MAX (32767)
-#define PLY_INT16_MIN (-PLY_INT16_MAX-1)
-#define PLY_INT32_MAX (2147483647)
-#define PLY_INT32_MIN (-PLY_INT32_MAX-1)
-#define PLY_UINT8_MAX (255)
-#define PLY_UINT16_MAX (65535)
-#define PLY_UINT32_MAX  (4294967295)
-#else
-#include <stdint.h>
-typedef int8_t t_ply_int8;
-typedef int16_t t_ply_int16;
-typedef int32_t t_ply_int32;
-typedef uint8_t t_ply_uint8;
-typedef uint16_t t_ply_uint16;
-typedef uint32_t t_ply_uint32;
-#define PLY_INT8_MIN INT8_MIN
-#define PLY_INT8_MAX INT8_MAX
-#define PLY_INT16_MIN INT16_MIN
-#define PLY_INT16_MAX INT16_MAX
-#define PLY_INT32_MIN INT32_MIN
-#define PLY_INT32_MAX INT32_MAX
-#define PLY_UINT8_MAX UINT8_MAX
-#define PLY_UINT16_MAX UINT16_MAX
-#define PLY_UINT32_MAX UINT32_MAX
-#endif
 
 /* ----------------------------------------------------------------------
  * Constants
@@ -209,11 +171,6 @@ static p_ply_property ply_grow_property(p_ply ply, p_ply_element element);
 static void *ply_grow_array(p_ply ply, void **pointer, long *nmemb, long size);
 
 /* ----------------------------------------------------------------------
- * Special functions
- * ---------------------------------------------------------------------- */
-static int ply_type_check(void);
-
-/* ----------------------------------------------------------------------
  * Auxiliary read functions
  * ---------------------------------------------------------------------- */
 static int ply_read_element(p_ply ply, p_ply_element element,
@@ -307,10 +264,6 @@ p_ply ply_open_from_file(FILE *fp, p_ply_error_cb error_cb,
         return NULL;
     }
 
-    if (!ply_type_check()) {
-        error_cb(NULL, "Incompatible type system");
-        return NULL;
-    }
     ply = ply_alloc();
     if (!ply) {
         error_cb(NULL, "Out of memory");
@@ -511,7 +464,7 @@ int ply_get_ply_user_data(p_ply ply, void **pdata, long *idata) {
 }
 
 /* ----------------------------------------------------------------------
- * Property type handlers
+ * Internal functions
  * ---------------------------------------------------------------------- */
 static int binary_int8(p_ply ply, double* value) {
     if (BSIZE(ply) < 1) {
@@ -608,9 +561,6 @@ static p_ply_type_handler ply_type_handlers[16] = {
     binary_int32, binary_uint32, binary_float32, binary_float64
 };
 
-/* ----------------------------------------------------------------------
- * Internal functions
- * ---------------------------------------------------------------------- */
 static int ply_read_list_property(p_ply ply, p_ply_element element,
         p_ply_property property, p_ply_argument argument) {
     int l;
@@ -986,26 +936,6 @@ static void ply_ferror(p_ply ply, const char *fmt, ...) {
     vsprintf(buffer, fmt, ap);
     va_end(ap);
     ply->error_cb(ply, buffer);
-}
-
-static int ply_type_check(void) {
-    assert(sizeof(t_ply_int8) == 1);
-    assert(sizeof(t_ply_uint8) == 1);
-    assert(sizeof(t_ply_int16) == 2);
-    assert(sizeof(t_ply_uint16) == 2);
-    assert(sizeof(t_ply_int32) == 4);
-    assert(sizeof(t_ply_uint32) == 4);
-    assert(sizeof(float) == 4);
-    assert(sizeof(double) == 8);
-    if (sizeof(t_ply_int8) != 1) return 0;
-    if (sizeof(t_ply_uint8) != 1) return 0;
-    if (sizeof(t_ply_int16) != 2) return 0;
-    if (sizeof(t_ply_uint16) != 2) return 0;
-    if (sizeof(t_ply_int32) != 4) return 0;
-    if (sizeof(t_ply_uint32) != 4) return 0;
-    if (sizeof(float) != 4) return 0;
-    if (sizeof(double) != 8) return 0;
-    return 1;
 }
 
 /* ----------------------------------------------------------------------
