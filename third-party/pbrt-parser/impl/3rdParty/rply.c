@@ -131,18 +131,6 @@ typedef struct t_ply_element_ {
     long nproperties;
 } t_ply_element;
 
-/* ----------------------------------------------------------------------
- * Input driver
- *
- * Depending on file mode, different functions are used to read property fields.
- The drivers make it transparent to read in ascii, big endian or little endian cases.
- * ---------------------------------------------------------------------- */
-typedef int (*p_ply_ihandler)(p_ply ply, double *value);
-typedef int (*p_ply_ichunk)(p_ply ply, void *anydata, size_t size);
-typedef struct t_ply_idriver_ {
-    p_ply_ihandler ihandler[16];
-} t_ply_idriver;
-typedef t_ply_idriver *p_ply_idriver;
 
 /* ----------------------------------------------------------------------
  * Ply file handle.
@@ -168,7 +156,6 @@ typedef struct t_ply_ {
     size_t content_offset;
     int rn;
     size_t token_start;
-    p_ply_idriver idriver;
     t_ply_argument argument;
     long welement, wproperty;
     long winstance_index, wvalue_index, wlength;
@@ -178,10 +165,8 @@ typedef struct t_ply_ {
 } t_ply;
 
 /* ----------------------------------------------------------------------
- * I/O functions and drivers
+ * I/O functions
  * ---------------------------------------------------------------------- */
-static t_ply_idriver ply_idriver_binary;
-
 static int ply_read_word(p_ply ply);
 static int ply_check_word(p_ply ply);
 static void ply_finish_word(p_ply ply, size_t size);
@@ -526,15 +511,112 @@ int ply_get_ply_user_data(p_ply ply, void **pdata, long *idata) {
 }
 
 /* ----------------------------------------------------------------------
+ * Property type handlers
+ * ---------------------------------------------------------------------- */
+static int binary_int8(p_ply ply, double* value) {
+    if (BSIZE(ply) < 1) {
+        return 0;
+    }
+    int8_t int8;
+    memcpy(&int8, BFIRST(ply), 1);
+    BSKIP(ply, 1);
+    *value = int8;
+    return 1;
+}
+
+static int binary_uint8(p_ply ply, double* value) {
+    if (BSIZE(ply) < 1) {
+        return 0;
+    }
+    uint8_t uint8;
+    memcpy(&uint8, BFIRST(ply), 1);
+    BSKIP(ply, 1);
+    *value = uint8;
+    return 1;
+}
+
+static int binary_int16(p_ply ply, double* value) {
+    if (BSIZE(ply) < 2) {
+        return 0;
+    }
+    int16_t int16;
+    memcpy(&int16, BFIRST(ply), 2);
+    BSKIP(ply, 2);
+    *value = int16;
+    return 1;
+}
+
+static int binary_uint16(p_ply ply, double* value) {
+    if (BSIZE(ply) < 2) {
+        return 0;
+    }
+    uint16_t uint16;
+    memcpy(&uint16, BFIRST(ply), 2);
+    BSKIP(ply, 2);
+    *value = uint16;
+    return 1;
+}
+
+static int binary_int32(p_ply ply, double* value) {
+    if (BSIZE(ply) < 4) {
+        return 0;
+    }
+    int32_t int32;
+    memcpy(&int32, BFIRST(ply), 4);
+    BSKIP(ply, 4);
+    *value = int32;
+    return 1;
+}
+
+static int binary_uint32(p_ply ply, double* value) {
+    if (BSIZE(ply) < 4) {
+        return 0;
+    }
+    uint32_t uint32;
+    memcpy(&uint32, BFIRST(ply), 4);
+    BSKIP(ply, 4);
+    *value = uint32;
+    return 1;
+}
+
+static int binary_float32(p_ply ply, double* value) {
+    if (BSIZE(ply) < 4) {
+        return 0;
+    }
+    float float32;
+    memcpy(&float32, BFIRST(ply), 4);
+    BSKIP(ply, 4);
+    *value = float32;
+    return 1;
+}
+
+static int binary_float64(p_ply ply, double* value) {
+    if (BSIZE(ply) < 8) {
+        return 0;
+    }
+    memcpy(value, BFIRST(ply), 8);
+    BSKIP(ply, 8);
+    return 1;
+}
+
+typedef int (*p_ply_type_handler)(p_ply ply, double* value);
+
+static p_ply_type_handler ply_type_handlers[16] = {
+    binary_int8, binary_uint8, binary_int16, binary_uint16,
+    binary_int32, binary_uint32, binary_float32, binary_float64,
+    binary_int8, binary_uint8, binary_int16, binary_uint16,
+    binary_int32, binary_uint32, binary_float32, binary_float64
+};
+
+/* ----------------------------------------------------------------------
  * Internal functions
  * ---------------------------------------------------------------------- */
 static int ply_read_list_property(p_ply ply, p_ply_element element,
         p_ply_property property, p_ply_argument argument) {
     int l;
     p_ply_read_cb read_cb = property->read_cb;
-    p_ply_ihandler *driver = ply->idriver->ihandler;
     /* get list length */
-    p_ply_ihandler handler = driver[property->length_type];
+    p_ply_type_handler handler = ply_type_handlers[property->length_type];
     double length;
     if (!handler(ply, &length)) {
         ply_ferror(ply, "Error reading '%s' of '%s' number %d",
@@ -550,7 +632,7 @@ static int ply_read_list_property(p_ply ply, p_ply_element element,
         return 0;
     }
     /* read list values */
-    handler = driver[property->value_type];
+    handler = ply_type_handlers[property->value_type];
     /* for each value in list */
     for (l = 0; l < (long) length; l++) {
         /* read value from file */
@@ -573,8 +655,7 @@ static int ply_read_list_property(p_ply ply, p_ply_element element,
 static int ply_read_scalar_property(p_ply ply, p_ply_element element,
         p_ply_property property, p_ply_argument argument) {
     p_ply_read_cb read_cb = property->read_cb;
-    p_ply_ihandler *driver = ply->idriver->ihandler;
-    p_ply_ihandler handler = driver[property->type];
+    p_ply_type_handler handler = ply_type_handlers[property->type];
     argument->length = 1;
     argument->value_index = 0;
     if (!handler(ply, &argument->value)) {
@@ -735,7 +816,6 @@ static void ply_init(p_ply ply) {
     ply->content_size = 0;
     ply->content_offset = 0;
     ply->token_start = 0;
-    ply->idriver = NULL;
     ply->welement = 0;
     ply->wproperty = 0;
     ply->winstance_index = 0;
@@ -816,7 +896,6 @@ static int ply_read_header_format(p_ply ply) {
         // NOTE: this implementation supports only binary little endian ply files
         return 0;
     }
-    ply->idriver = &ply_idriver_binary;
     if (!ply_read_word(ply)) return 0;
     if (strcmp(BWORD(ply), "1.0")) return 0;
     if (!ply_read_word(ply)) return 0;
@@ -928,106 +1007,6 @@ static int ply_type_check(void) {
     if (sizeof(double) != 8) return 0;
     return 1;
 }
-
-/* ----------------------------------------------------------------------
- * Input  handlers
- * ---------------------------------------------------------------------- */
-static int ibinary_int8(p_ply ply, double *value) {
-    if (BSIZE(ply) < 1) {
-        return 0;
-    }
-    int8_t int8;
-    memcpy(&int8, BFIRST(ply), 1);
-    BSKIP(ply, 1);
-    *value = int8;
-    return 1;
-}
-
-static int ibinary_uint8(p_ply ply, double *value) {
-    if (BSIZE(ply) < 1) {
-        return 0;
-    }
-    uint8_t uint8;
-    memcpy(&uint8, BFIRST(ply), 1);
-    BSKIP(ply, 1);
-    *value = uint8;
-    return 1;
-}
-
-static int ibinary_int16(p_ply ply, double *value) {
-    if (BSIZE(ply) < 2) {
-        return 0;
-    }
-    int16_t int16;
-    memcpy(&int16, BFIRST(ply), 2);
-    BSKIP(ply, 2);
-    *value = int16;
-    return 1;
-}
-
-static int ibinary_uint16(p_ply ply, double *value) {
-    if (BSIZE(ply) < 2) {
-        return 0;
-    }
-    uint16_t uint16;
-    memcpy(&uint16, BFIRST(ply), 2);
-    BSKIP(ply, 2);
-    *value = uint16;
-    return 1;
-}
-
-static int ibinary_int32(p_ply ply, double *value) {
-    if (BSIZE(ply) < 4) {
-        return 0;
-    }
-    int32_t int32;
-    memcpy(&int32, BFIRST(ply), 4);
-    BSKIP(ply, 4);
-    *value = int32;
-    return 1;
-}
-
-static int ibinary_uint32(p_ply ply, double *value) {
-    if (BSIZE(ply) < 4) {
-        return 0;
-    }
-    uint32_t uint32;
-    memcpy(&uint32, BFIRST(ply), 4);
-    BSKIP(ply, 4);
-    *value = uint32;
-    return 1;
-}
-
-static int ibinary_float32(p_ply ply, double *value) {
-    if (BSIZE(ply) < 4) {
-        return 0;
-    }
-    float float32;
-    memcpy(&float32, BFIRST(ply), 4);
-    BSKIP(ply, 4);
-    *value = float32;
-    return 1;
-}
-
-static int ibinary_float64(p_ply ply, double *value) {
-    if (BSIZE(ply) < 8) {
-        return 0;
-    }
-    memcpy(value, BFIRST(ply), 8);
-    BSKIP(ply, 8);
-    return 1;
-}
-
-/* ----------------------------------------------------------------------
- * Constants
- * ---------------------------------------------------------------------- */
-static t_ply_idriver ply_idriver_binary = {
-    {   ibinary_int8, ibinary_uint8, ibinary_int16, ibinary_uint16,
-        ibinary_int32, ibinary_uint32, ibinary_float32, ibinary_float64,
-        ibinary_int8, ibinary_uint8, ibinary_int16, ibinary_uint16,
-        ibinary_int32, ibinary_uint32, ibinary_float32, ibinary_float64
-    }
-};
 
 /* ----------------------------------------------------------------------
  * Copyright (C) 2003-2015 Diego Nehab.  All rights reserved.
