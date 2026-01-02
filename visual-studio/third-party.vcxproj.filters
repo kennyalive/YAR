@@ -135,7 +135,7 @@
     <ClCompile Include="..\third-party\pbrt-parser\impl\syntactic\Scene.cpp">
       <Filter>pbrt-parser\impl\syntactic</Filter>
     </ClCompile>
-    <ClCompile Include="..\third-party\pbrt-parser\impl\3rdParty\rply.c">
+    <ClCompile Include="..\third-party\pbrt-parser\impl\3rdParty\rply_reader.c">
       <Filter>pbrt-parser\impl\3rdParty</Filter>
     </ClCompile>
     <ClCompile Include="..\third-party\pbrt-parser\impl\semantic\Sampler.cpp">
@@ -245,7 +245,7 @@
     <ClInclude Include="..\third-party\tiny\tiny_obj_loader.h">
       <Filter>tiny</Filter>
     </ClInclude>
-    <ClInclude Include="..\third-party\pbrt-parser\impl\3rdParty\rply.h">
+    <ClInclude Include="..\third-party\pbrt-parser\impl\3rdParty\rply_reader.h">
       <Filter>pbrt-parser\impl\3rdParty</Filter>
     </ClInclude>
     <ClInclude Include="..\third-party\tinyexr\tinyexr.h">

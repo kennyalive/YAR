@@ -17,7 +17,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "rply.h"
+#include "rply_reader.h"
 
 /* ----------------------------------------------------------------------
  * Constants

@@ -3,7 +3,7 @@
 
 #include "SemanticParser.h"
 // ply parser:
-#include "../3rdParty/rply.h"
+#include "../3rdParty/rply_reader.h"
 
 static int rply_vertex_callback_vec3(p_ply_argument argument) {
   float* buffer;
