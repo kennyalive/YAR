@@ -4,6 +4,8 @@
  * RPly library, read/write PLY files
  * Diego Nehab, IMPA
  * http://www.impa.br/~diego/software/rply
+ * 
+ * Modified by Artem Kharytoniuk, 2026.
  *
  * This library is distributed under the MIT License. See notice
  * at the end of this file.
