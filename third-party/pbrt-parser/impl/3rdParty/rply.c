@@ -18,7 +18,6 @@
 #include <stdint.h>
 
 #include "rply.h"
-#include "rplyfile.h"
 
 /* ----------------------------------------------------------------------
  * Constants
@@ -229,24 +228,8 @@ static int ply_read_header_magic(p_ply ply) {
 /* ----------------------------------------------------------------------
  * Read support functions
  * ---------------------------------------------------------------------- */
-p_ply ply_open(const char *name, p_ply_error_cb error_cb,
-        long idata, void *pdata) {
-    FILE *fp;
-    p_ply ply;
-    if (error_cb == NULL) error_cb = ply_error_cb;
-    assert(name);
-    fp = fopen(name, "rb");
-    if (!fp) {
-        error_cb(NULL, "Unable to open file");
-        return NULL;
-    }
-    ply = ply_open_from_file(fp, error_cb, idata, pdata);
-    fclose(fp);
-    return ply;
-}
-
-p_ply ply_open_from_file(FILE *fp, p_ply_error_cb error_cb,
-        long idata, void *pdata) {
+static p_ply ply_open_from_file(FILE* fp, p_ply_error_cb error_cb,
+    long idata, void* pdata) {
     p_ply ply;
     if (error_cb == NULL) error_cb = ply_error_cb;
     assert(fp);
@@ -275,6 +258,22 @@ p_ply ply_open_from_file(FILE *fp, p_ply_error_cb error_cb,
     ply->content = content;
     ply->content_size = content_size;
     ply->content_offset = 0;
+    return ply;
+}
+
+p_ply ply_open(const char *name, p_ply_error_cb error_cb,
+        long idata, void *pdata) {
+    FILE *fp;
+    p_ply ply;
+    if (error_cb == NULL) error_cb = ply_error_cb;
+    assert(name);
+    fp = fopen(name, "rb");
+    if (!fp) {
+        error_cb(NULL, "Unable to open file");
+        return NULL;
+    }
+    ply = ply_open_from_file(fp, error_cb, idata, pdata);
+    fclose(fp);
     return ply;
 }
 
@@ -338,7 +337,7 @@ int ply_read(p_ply ply) {
     return 1;
 }
 
-int ply_add_comment(p_ply ply, const char *comment) {
+static int ply_add_comment(p_ply ply, const char *comment) {
     char *new_comment = NULL;
     assert(ply && comment && strlen(comment) < LINESIZE);
     if (!comment || strlen(comment) >= LINESIZE) {
@@ -349,7 +348,7 @@ int ply_add_comment(p_ply ply, const char *comment) {
     return 1;
 }
 
-int ply_add_obj_info(p_ply ply, const char *obj_info) {
+static int ply_add_obj_info(p_ply ply, const char *obj_info) {
     char *new_obj_info = NULL;
     assert(ply && obj_info && strlen(obj_info) < LINESIZE);
     if (!obj_info || strlen(obj_info) >= LINESIZE) {

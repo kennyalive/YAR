@@ -161,7 +161,6 @@
     <ClInclude Include="..\third-party\jsmn\jsmn.h" />
     <ClInclude Include="..\third-party\meow-hash\meow_hash_x64_aesni.h" />
     <ClInclude Include="..\third-party\pbrt-parser\impl\3rdParty\rply.h" />
-    <ClInclude Include="..\third-party\pbrt-parser\impl\3rdParty\rplyfile.h" />
     <ClInclude Include="..\third-party\pbrt-parser\impl\semantic\SemanticParser.h" />
     <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\Buffer.h" />
     <ClInclude Include="..\third-party\pbrt-parser\impl\syntactic\FileMapping.h" />

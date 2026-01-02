@@ -248,9 +248,6 @@
     <ClInclude Include="..\third-party\pbrt-parser\impl\3rdParty\rply.h">
       <Filter>pbrt-parser\impl\3rdParty</Filter>
     </ClInclude>
-    <ClInclude Include="..\third-party\pbrt-parser\impl\3rdParty\rplyfile.h">
-      <Filter>pbrt-parser\impl\3rdParty</Filter>
-    </ClInclude>
     <ClInclude Include="..\third-party\tinyexr\tinyexr.h">
       <Filter>tinyexr</Filter>
     </ClInclude>

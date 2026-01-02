@@ -205,26 +205,6 @@ int ply_get_property_info(p_ply_property property, const char** name,
         e_ply_type *type, e_ply_type *length_type, e_ply_type *value_type);
 
 /* ----------------------------------------------------------------------
- * Adds a new comment item
- *
- * ply: handle returned by ply_create
- * comment: pointer to string with comment text
- *
- * Returns 1 if successfull, 0 otherwise
- * ---------------------------------------------------------------------- */
-int ply_add_comment(p_ply ply, const char *comment);
-
-/* ----------------------------------------------------------------------
- * Adds a new obj_info item
- *
- * ply: handle returned by ply_create
- * comment: pointer to string with obj_info data
- *
- * Returns 1 if successfull, 0 otherwise
- * ---------------------------------------------------------------------- */
-int ply_add_obj_info(p_ply ply, const char *obj_info);
-
-/* ----------------------------------------------------------------------
  * Closes a PLY file handle. Releases all memory used by handle
  *
  * ply: handle to be closed.
