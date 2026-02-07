@@ -1,4 +1,4 @@
-#include "rt_utils.hlsli"
+#include "rt_utils.slangi"
 
 [shader("closesthit")]
 void main(inout Shadow_Ray_Payload payload, in Attribs attribs)

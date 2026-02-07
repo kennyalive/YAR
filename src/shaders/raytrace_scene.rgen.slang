@@ -1,4 +1,4 @@
-#include "shared_main.hlsli"
+#include "shared_main.slangi"
 
 struct PushConstants {
     uint spp4;
@@ -9,7 +9,7 @@ struct PushConstants {
 PushConstants push_constants;
 
 #define RGEN_SHADER
-#include "rt_utils.hlsli"
+#include "rt_utils.slangi"
 
 [[vk::image_format("rgba16f")]]
 [[vk::binding(0, KERNEL_SET_0)]]

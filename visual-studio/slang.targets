@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+        <PropertyPageSchema Include=" $(MSBuildThisFileDirectory)$(MSBuildThisFileName).xml"/>
+        <AvailableItemName Include="SlangCompile">
+            <Targets>SlangCompile</Targets>
+        </AvailableItemName>
+    </ItemGroup>
+
+    <Target
+        Name="SlangCompile"
+        Condition="'@(SlangCompile)' != ''"
+        BeforeTargets="ClCompile">
+
+        <Message Importance="High" Text="Compiling shaders" />
+
+        <!-- Find all shader headers (.slangi files) -->
+        <ItemGroup>
+            <ShaderHeader Include="$(MSBuildThisFileDirectory)../src/shaders/*.slangi" />
+        </ItemGroup>
+        <PropertyGroup>
+            <ShaderHeaders>@(ShaderHeader)</ShaderHeaders>
+        </PropertyGroup>
+
+        <!-- Setup metadata for custom build tool -->
+        <ItemGroup>
+            <SlangCompile>
+                <Message>%(Filename)%(Extension)</Message>
+                <Command>
+                     %(SlangCompile.SlangPath) %(Identity) -target spirv -matrix-layout-row-major -o %(SlangCompile.ObjectFileName) %(SlangCompile.AdditionalOptions)
+                </Command>
+                <AdditionalInputs>$(ShaderHeaders)</AdditionalInputs>
+                <Outputs>%(SlangCompile.ObjectFileName)</Outputs>
+            </SlangCompile>
+        </ItemGroup>
+
+        <MakeDir Directories="$(ProjectDir)../data/spirv" />
+
+        <!-- Compile by forwarding to the Custom Build Tool infrastructure,
+        so it will take care of .tlogs and error/warning parsing -->
+        <CustomBuild
+            Sources="@(SlangCompile)"
+            MinimalRebuildFromTracking="true"
+            TrackerLogDirectory="$(TLogLocation)"
+            ErrorListRegex="(?'FILENAME'.+):(?'LINE'\d+):(?'COLUMN'\d+): (?'CATEGORY'error|warning): (?'TEXT'.*)">
+        </CustomBuild>
+    </Target>
+
+</Project>

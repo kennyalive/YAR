@@ -1,7 +1,7 @@
 #ifndef BASE_RESOURCES_HLSL
 #define BASE_RESOURCES_HLSL
 
-#include "shared_main.hlsli"
+#include "shared_main.slangi"
 
 [[vk::binding(0, BASE_SET_INDEX)]]
 Texture2D images_2d[];

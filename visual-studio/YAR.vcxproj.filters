@@ -59,61 +59,61 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\shaders\material_resources.hlsli">
+    <None Include="..\src\shaders\material_resources.slangi">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\shared_material.hlsli">
+    <None Include="..\src\shaders\shared_material.slangi">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\shared_main.hlsli">
+    <None Include="..\src\shaders\shared_main.slangi">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\rt_utils.hlsli">
+    <None Include="..\src\shaders\rt_utils.slangi">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\common.hlsli">
+    <None Include="..\src\shaders\common.slangi">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\shading_context.hlsli">
+    <None Include="..\src\shaders\shading_context.slangi">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\base_resources.hlsli">
+    <None Include="..\src\shaders\base_resources.slangi">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\light_resources.hlsli">
+    <None Include="..\src\shaders\light_resources.slangi">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\shared_light.hlsli">
+    <None Include="..\src\shaders\shared_light.slangi">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\direct_lighting.hlsli">
+    <None Include="..\src\shaders\direct_lighting.slangi">
       <Filter>shaders</Filter>
     </None>
-    <None Include="..\src\shaders\evaluate_bsdf.hlsli">
+    <None Include="..\src\shaders\evaluate_bsdf.slangi">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <DxcCompile Include="..\src\shaders\apply_tone_mapping.hlsl">
+    <SlangCompile Include="..\src\shaders\apply_tone_mapping.slang">
       <Filter>shaders</Filter>
-    </DxcCompile>
-    <DxcCompile Include="..\src\shaders\copy_to_swapchain.hlsl">
+    </SlangCompile>
+    <SlangCompile Include="..\src\shaders\copy_to_swapchain.slang">
       <Filter>shaders</Filter>
-    </DxcCompile>
-    <DxcCompile Include="..\src\shaders\patch_materials.hlsl">
+    </SlangCompile>
+    <SlangCompile Include="..\src\shaders\patch_materials.slang">
       <Filter>shaders</Filter>
-    </DxcCompile>
-    <DxcCompile Include="..\src\shaders\raytrace_scene.miss.hlsl">
+    </SlangCompile>
+    <SlangCompile Include="..\src\shaders\raytrace_scene.miss.slang">
       <Filter>shaders</Filter>
-    </DxcCompile>
-    <DxcCompile Include="..\src\shaders\raytrace_scene_shadow_ray.chit.hlsl">
+    </SlangCompile>
+    <SlangCompile Include="..\src\shaders\raytrace_scene_shadow_ray.chit.slang">
       <Filter>shaders</Filter>
-    </DxcCompile>
-    <DxcCompile Include="..\src\shaders\raytrace_scene.rgen.hlsl">
+    </SlangCompile>
+    <SlangCompile Include="..\src\shaders\raytrace_scene.rgen.slang">
       <Filter>shaders</Filter>
-    </DxcCompile>
-    <DxcCompile Include="..\src\shaders\raytrace_scene.chit.hlsl">
+    </SlangCompile>
+    <SlangCompile Include="..\src\shaders\raytrace_scene.chit.slang">
       <Filter>shaders</Filter>
-    </DxcCompile>
+    </SlangCompile>
   </ItemGroup>
 </Project>

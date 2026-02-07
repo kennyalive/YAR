@@ -1,8 +1,8 @@
 #ifndef MATERIAL_RESOURCES_HLSL
 #define MATERIAL_RESOURCES_HLSL
 
-#include "shared_main.hlsli"
-#include "shared_material.hlsli"
+#include "shared_main.slangi"
+#include "shared_material.slangi"
 
 static const int Material_Lambertian = 0;
 static const int Material_None = -1;

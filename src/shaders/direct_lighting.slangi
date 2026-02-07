@@ -1,11 +1,11 @@
 #ifndef DIRECT_LIGHTING_HLSL
 #define DIRECT_LIGHTING_HLSL
 
-#include "common.hlsli"
-#include "evaluate_bsdf.hlsli"
-#include "light_resources.hlsli"
-#include "rt_utils.hlsli"
-#include "shading_context.hlsli"
+#include "common.slangi"
+#include "evaluate_bsdf.slangi"
+#include "light_resources.slangi"
+#include "rt_utils.slangi"
+#include "shading_context.slangi"
 
 bool trace_shadow_ray(RaytracingAccelerationStructure accel, float3 position, float3 direction, float distance)
 {

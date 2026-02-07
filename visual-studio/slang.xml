@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ProjectSchemaDefinitions
+    xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+    <Rule
+        Name="Slang"
+        PageTemplate="tool"
+        DisplayName="Slang Compiler"
+        SwitchPrefix="-"
+        Separator=" "
+        Order="300"
+        xmlns="http://schemas.microsoft.com/build/2009/properties">
+
+        <Rule.Categories>
+            <Category Name="General" DisplayName="General" />
+            <Category Name="Output Files" DisplayName="Output Files" />
+            <Category Name="Command Line" DisplayName="Command Line" Subtype="CommandLine" />
+        </Rule.Categories>
+
+        <Rule.DataSource>
+            <DataSource Persistence="ProjectFile" ItemType="SlangCompile" Label="" HasConfigurationCondition="true" />
+        </Rule.DataSource>
+
+        <StringProperty Name="SlangPath"
+            DisplayName="Slang Path"
+            Description="Path to the Slang compiler executable"
+            Category="General"
+            IncludeInCommandLine="false">
+        </StringProperty>
+
+        <StringProperty
+            Name="ObjectFileName"
+            DisplayName="Object File Name"
+            Description="Specifies a name for object file. (-o &lt;name&gt;)."
+            Category="Output Files"
+            Switch="o">
+        </StringProperty>
+
+        <StringProperty
+            Name="AdditionalOptions"
+            DisplayName="Additional Options"
+            Description="Additional Options."
+            Category="Command Line">
+        </StringProperty>
+    </Rule>
+
+    <ContentType
+        Name="Slang"
+        DisplayName="Slang Compiler"
+        ItemType="SlangCompile" />
+    <ItemType
+        Name="SlangCompile"
+        DisplayName="Slang Compiler" />
+    <FileExtension
+        Name=".slang"
+        ContentType="Slang" />
+
+</ProjectSchemaDefinitions>

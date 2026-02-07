@@ -36,11 +36,11 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="dxc.props" />
+    <Import Project="slang.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="dxc.props" />
+    <Import Project="slang.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -72,9 +72,9 @@
     <Manifest>
       <AdditionalManifestFiles>DeclareDPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
-    <DxcCompile>
+    <SlangCompile>
       <ObjectFileName>$(ProjectDir)..\data\spirv\%(Filename).spv</ObjectFileName>
-    </DxcCompile>
+    </SlangCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -101,9 +101,9 @@
     <Manifest>
       <AdditionalManifestFiles>DeclareDPIAware.manifest %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
-    <DxcCompile>
+    <SlangCompile>
       <ObjectFileName>$(ProjectDir)..\data\spirv\%(Filename).spv</ObjectFileName>
-    </DxcCompile>
+    </SlangCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\renderer\acceleration_structure.cpp" />
@@ -136,56 +136,35 @@
     <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\shaders\base_resources.hlsli" />
-    <None Include="..\src\shaders\common.hlsli" />
-    <None Include="..\src\shaders\evaluate_bsdf.hlsli" />
-    <None Include="..\src\shaders\direct_lighting.hlsli" />
-    <None Include="..\src\shaders\light_resources.hlsli" />
-    <None Include="..\src\shaders\rt_utils.hlsli" />
+    <None Include="..\src\shaders\base_resources.slangi" />
+    <None Include="..\src\shaders\common.slangi" />
+    <None Include="..\src\shaders\evaluate_bsdf.slangi" />
+    <None Include="..\src\shaders\direct_lighting.slangi" />
+    <None Include="..\src\shaders\light_resources.slangi" />
+    <None Include="..\src\shaders\rt_utils.slangi" />
   </ItemGroup>
   <ItemGroup>
-    <DxcCompile Include="..\src\shaders\apply_tone_mapping.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cs</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cs</ShaderType>
-    </DxcCompile>
-    <DxcCompile Include="..\src\shaders\copy_to_swapchain.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cs</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cs</ShaderType>
-    </DxcCompile>
-    <DxcCompile Include="..\src\shaders\raytrace_scene.chit.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib</ShaderType>
-    </DxcCompile>
-    <DxcCompile Include="..\src\shaders\raytrace_scene.miss.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib</ShaderType>
-    </DxcCompile>
-    <DxcCompile Include="..\src\shaders\raytrace_scene.rgen.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib</ShaderType>
-    </DxcCompile>
-    <DxcCompile Include="..\src\shaders\raytrace_scene_shadow_ray.chit.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">lib</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lib</ShaderType>
-    </DxcCompile>
-    <None Include="..\src\shaders\material_resources.hlsli">
+    <SlangCompile Include="..\src\shaders\apply_tone_mapping.slang" />
+    <SlangCompile Include="..\src\shaders\copy_to_swapchain.slang" />
+    <SlangCompile Include="..\src\shaders\raytrace_scene.chit.slang" />
+    <SlangCompile Include="..\src\shaders\raytrace_scene.miss.slang" />
+    <SlangCompile Include="..\src\shaders\raytrace_scene.rgen.slang" />
+    <SlangCompile Include="..\src\shaders\raytrace_scene_shadow_ray.chit.slang" />
+    <None Include="..\src\shaders\material_resources.slangi">
       <FileType>Document</FileType>
     </None>
-    <DxcCompile Include="..\src\shaders\patch_materials.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cs</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cs</ShaderType>
-    </DxcCompile>
-    <None Include="..\src\shaders\shading_context.hlsli" />
-    <None Include="..\src\shaders\shared_light.hlsli" />
-    <None Include="..\src\shaders\shared_main.hlsli">
+    <SlangCompile Include="..\src\shaders\patch_materials.slang" />
+    <None Include="..\src\shaders\shading_context.slangi" />
+    <None Include="..\src\shaders\shared_light.slangi" />
+    <None Include="..\src\shaders\shared_main.slangi">
       <FileType>Document</FileType>
     </None>
-    <None Include="..\src\shaders\shared_material.hlsli">
+    <None Include="..\src\shaders\shared_material.slangi">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="dxc.targets" />
+    <Import Project="slang.targets" />
   </ImportGroup>
 </Project>

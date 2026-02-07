@@ -1,7 +1,7 @@
 #ifndef SHARED_LIGHT_HLSL
 #define SHARED_LIGHT_HLSL
 
-#include "shared_main.hlsli"
+#include "shared_main.slangi"
 
 #ifdef __cplusplus
 namespace GPU_Types {

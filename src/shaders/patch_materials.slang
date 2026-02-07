@@ -1,8 +1,5 @@
 #define MATERIAL_SET_INDEX 0
-#include "material_resources.hlsli"
-
-#define MATERIAL_SET_INDEX 0
-#include "material_resources.hlsli"
+#include "material_resources.slangi"
 
 void patch_black(inout int texture_index)
 {
