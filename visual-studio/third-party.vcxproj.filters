@@ -46,9 +46,6 @@
     <Filter Include="tinyexr">
       <UniqueIdentifier>{91a23dae-2eb1-4011-88a0-9a0e66f0424d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="imgui\impl">
-      <UniqueIdentifier>{61be6261-d514-4674-81a4-079c97d6d0cb}</UniqueIdentifier>
-    </Filter>
     <Filter Include="vma">
       <UniqueIdentifier>{6a6d85f1-a835-4e62-9cb6-7db120416a01}</UniqueIdentifier>
     </Filter>
@@ -162,11 +159,11 @@
     <ClCompile Include="..\third-party\imgui\imgui_widgets.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\third-party\imgui\impl\imgui_impl_glfw.cpp">
-      <Filter>imgui\impl</Filter>
+    <ClCompile Include="..\third-party\imgui\imgui_impl_glfw.cpp">
+      <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\third-party\imgui\impl\imgui_impl_vulkan.cpp">
-      <Filter>imgui\impl</Filter>
+    <ClCompile Include="..\third-party\imgui\imgui_impl_vulkan.cpp">
+      <Filter>imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -269,14 +266,14 @@
     <ClInclude Include="..\third-party\imgui\imstb_truetype.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\third-party\imgui\impl\imgui_impl_glfw.h">
-      <Filter>imgui\impl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\third-party\imgui\impl\imgui_impl_vulkan.h">
-      <Filter>imgui\impl</Filter>
-    </ClInclude>
     <ClInclude Include="..\third-party\vma\vk_mem_alloc.h">
       <Filter>vma</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\imgui\imgui_impl_glfw.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\third-party\imgui\imgui_impl_vulkan.h">
+      <Filter>imgui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

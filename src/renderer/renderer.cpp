@@ -5,9 +5,9 @@
 #include "geometry.h"
 #include "vk.h"
 #include "vk_utils.h"
-#include "shaders/shared_main.hlsli"
-#include "shaders/shared_light.hlsli"
-#include "shaders/shared_material.hlsli"
+#include "shaders/shared_main.slangi"
+#include "shaders/shared_light.slangi"
+#include "shaders/shared_material.slangi"
 
 #include "lib/matrix.h"
 #include "lib/scene_loader.h"
@@ -16,9 +16,8 @@
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
-#include "imgui/imgui_internal.h"
-#include "imgui/impl/imgui_impl_vulkan.h"
-#include "imgui/impl/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_vulkan.h"
+#include "imgui/imgui_impl_glfw.h"
 
 static VkFormat get_depth_image_format() {
     VkFormat candidates[2] = { VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT };
@@ -74,7 +73,6 @@ void Renderer::initialize(GLFWwindow* window, bool enable_vulkan_validation, int
         vk_set_debug_name(point_sampler, "point_sampler");
     }
 
-    create_render_passes();
     apply_tone_mapping.create();
     copy_to_swapchain.create();
     restore_resolution_dependent_resources();
@@ -94,14 +92,14 @@ void Renderer::initialize(GLFWwindow* window, bool enable_vulkan_validation, int
         init_info.DescriptorPool = vk.descriptor_pool;
         init_info.MinImageCount = 2;
         init_info.ImageCount = (uint32_t)vk.swapchain_info.images.size();
-        ImGui_ImplVulkan_Init(&init_info, ui_render_pass);
+        init_info.UseDynamicRendering = true;
+        init_info.PipelineRenderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
+        init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+        init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &vk.surface_format.format;
 
+        ImGui_ImplVulkan_Init(&init_info);
         ImGui::StyleColorsDark();
-
-        vk_execute(vk.command_pools[0], vk.queue, [](VkCommandBuffer cb) {
-            ImGui_ImplVulkan_CreateFontsTexture(cb);
-        });
-        ImGui_ImplVulkan_DestroyFontUploadObjects();
+        ImGui_ImplVulkan_CreateFontsTexture();
     }
 
     gpu_times.frame = time_keeper.allocate_time_scope("frame");
@@ -154,7 +152,6 @@ void Renderer::shutdown() {
 
     apply_tone_mapping.destroy();
     copy_to_swapchain.destroy();
-    vkDestroyRenderPass(vk.device, ui_render_pass, nullptr);
     release_resolution_dependent_resources();
 
     if (project_loaded) {
@@ -166,10 +163,6 @@ void Renderer::shutdown() {
 }
 
 void Renderer::release_resolution_dependent_resources() {
-    for (VkFramebuffer framebuffer : ui_framebuffers) {
-        vkDestroyFramebuffer(vk.device, framebuffer, nullptr);
-    }
-    ui_framebuffers.resize(0);
     depth_buffer_image.destroy();
     output_image.destroy();
 }
@@ -203,21 +196,6 @@ void Renderer::restore_resolution_dependent_resources() {
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
         });
-    }
-
-    // imgui framebuffer
-    {
-        VkFramebufferCreateInfo create_info { VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
-        create_info.renderPass = ui_render_pass;
-        create_info.attachmentCount = 1;
-        create_info.width = vk.surface_size.width;
-        create_info.height = vk.surface_size.height;
-        create_info.layers = 1;
-        ui_framebuffers.resize(vk.swapchain_info.image_views.size());
-        for (int i = 0; i < (int)vk.swapchain_info.image_views.size(); i++) {
-            create_info.pAttachments = &vk.swapchain_info.image_views[i];
-            VK_CHECK(vkCreateFramebuffer(vk.device, &create_info, nullptr, &ui_framebuffers[i]));;
-        }
     }
 
     if (project_loaded) {
@@ -502,7 +480,7 @@ void Renderer::run_frame() {
     last_frame_time = current_time;
 
     if (!ImGui::GetIO().WantCaptureKeyboard) {
-        if (ImGui::IsKeyDown(GLFW_KEY_F1)) {
+        if (ImGui::IsKeyDown(ImGuiKey_F1)) {
             Matrix3x4 camera_pose = flying_camera.get_camera_pose();
             FILE* f = fopen("camera.txt", "w");
 
@@ -535,39 +513,6 @@ void Renderer::run_frame() {
     draw_frame();
 }
 
-void Renderer::create_render_passes() {
-    // UI render pass.
-    {
-        VkAttachmentDescription attachments[1] = {};
-        attachments[0].format           = vk.surface_format.format;
-        attachments[0].samples          = VK_SAMPLE_COUNT_1_BIT;
-        attachments[0].loadOp           = VK_ATTACHMENT_LOAD_OP_LOAD;
-        attachments[0].storeOp          = VK_ATTACHMENT_STORE_OP_STORE;
-        attachments[0].stencilLoadOp    = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        attachments[0].stencilStoreOp   = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        attachments[0].initialLayout    = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        attachments[0].finalLayout      = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference color_attachment_ref;
-        color_attachment_ref.attachment = 0;
-        color_attachment_ref.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount    = 1;
-        subpass.pColorAttachments       = &color_attachment_ref;
-
-        VkRenderPassCreateInfo create_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
-        create_info.attachmentCount = (uint32_t)std::size(attachments);
-        create_info.pAttachments = attachments;
-        create_info.subpassCount = 1;
-        create_info.pSubpasses = &subpass;
-
-        VK_CHECK(vkCreateRenderPass(vk.device, &create_info, nullptr, &ui_render_pass));
-        vk_set_debug_name(ui_render_pass, "ui_render_pass");
-    }
-}
-
 void Renderer::create_default_textures() {
     ASSERT(gpu_scene.images_2d.empty());
     gpu_scene.images_2d.resize(Predefined_Texture_Count);
@@ -597,14 +542,14 @@ void Renderer::draw_frame() {
     tone_mapping();
 
     vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     copy_output_image_to_swapchain();
 
     vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL,
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     draw_imgui();
 
@@ -627,22 +572,31 @@ void Renderer::tone_mapping()
     apply_tone_mapping.dispatch();
 }
 
-void Renderer::draw_imgui() {
+void Renderer::draw_imgui()
+{
     GPU_TIME_SCOPE(gpu_times.ui);
 
     ImGui::Render();
 
-    VkRenderPassBeginInfo render_pass_begin_info{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-    render_pass_begin_info.renderPass = ui_render_pass;
-    render_pass_begin_info.framebuffer = ui_framebuffers[vk.swapchain_image_index];
-    render_pass_begin_info.renderArea.extent = vk.surface_size;
+    VkRenderingAttachmentInfo color_attachment{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+    color_attachment.imageView = vk.swapchain_info.image_views[vk.swapchain_image_index];
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
-    vkCmdBeginRenderPass(vk.command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    VkRenderingInfo rendering_info{ VK_STRUCTURE_TYPE_RENDERING_INFO };
+    rendering_info.renderArea.extent = vk.surface_size;
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    vkCmdBeginRendering(vk.command_buffer, &rendering_info);
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk.command_buffer);
-    vkCmdEndRenderPass(vk.command_buffer);
+    vkCmdEndRendering(vk.command_buffer);
 }
 
-void Renderer::copy_output_image_to_swapchain() {
+void Renderer::copy_output_image_to_swapchain()
+{
     GPU_TIME_SCOPE(gpu_times.compute_copy);
     copy_to_swapchain.dispatch();
 }

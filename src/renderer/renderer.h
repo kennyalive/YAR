@@ -32,7 +32,6 @@ public:
     void run_frame();
 
 private:
-    void create_render_passes();
     void create_default_textures();
     void draw_frame();
     void draw_raytraced_image();
@@ -45,9 +44,6 @@ private:
     bool spp4 = false;
 
     Flying_Camera flying_camera;
-
-    VkRenderPass ui_render_pass;
-    std::vector<VkFramebuffer> ui_framebuffers; // per swapchain image
 
     Vk_Image depth_buffer_image;
     Vk_Image output_image;

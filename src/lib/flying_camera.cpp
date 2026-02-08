@@ -20,22 +20,22 @@ void Flying_Camera::update(double dt) {
     int up_motion = 0;
 
     if (!ImGui::GetIO().WantCaptureKeyboard) {
-        if (ImGui::IsKeyDown(GLFW_KEY_D)) {
+        if (ImGui::IsKeyDown(ImGuiKey_D)) {
             right_motion += 1;
         }
-        if (ImGui::IsKeyDown(GLFW_KEY_A)) {
+        if (ImGui::IsKeyDown(ImGuiKey_A)) {
             right_motion -= 1;
         }
-        if (ImGui::IsKeyDown(GLFW_KEY_W) || ImGui::IsKeyDown(GLFW_KEY_UP)) {
+        if (ImGui::IsKeyDown(ImGuiKey_W) || ImGui::IsKeyDown(ImGuiKey_UpArrow)) {
             forward_motion += 1;
         }
-        if (ImGui::IsKeyDown(GLFW_KEY_S) || ImGui::IsKeyDown(GLFW_KEY_DOWN)) {
+        if (ImGui::IsKeyDown(ImGuiKey_S) || ImGui::IsKeyDown(ImGuiKey_DownArrow)) {
             forward_motion -= 1;
         }
-        if (ImGui::IsKeyDown(GLFW_KEY_E)) {
+        if (ImGui::IsKeyDown(ImGuiKey_E)) {
             up_motion += 1;
         }
-        if (ImGui::IsKeyDown(GLFW_KEY_Q)) {
+        if (ImGui::IsKeyDown(ImGuiKey_Q)) {
             up_motion -= 1;
         }
     }
@@ -70,7 +70,7 @@ void Flying_Camera::update(double dt) {
 
     if (forward_motion || right_motion || up_motion) {
         Vector3 position = camera_pose.get_column(3);
-        float speed = speed_multiplier * (ImGui::IsKeyDown(GLFW_KEY_LEFT_SHIFT) ? 3.0f : 1.f);
+        float speed = speed_multiplier * (ImGui::IsKeyDown(ImGuiKey_LeftShift) ? 3.0f : 1.f);
         float distance_delta = float(speed * dt);
 
         position += camera_pose.get_column(0) * (distance_delta * right_motion);

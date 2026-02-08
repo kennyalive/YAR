@@ -13,11 +13,12 @@
 
 static const VkDescriptorPoolSize descriptor_pool_sizes[] = {
     {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,             16},
-    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             16},
+    {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,             32},
     {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,              16},
     {VK_DESCRIPTOR_TYPE_SAMPLER,                    16},
     {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,              16},
     {VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 16},
+    {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,     16}, // for imgui
 };
 
 constexpr uint32_t max_descriptor_sets = 64;
@@ -159,6 +160,7 @@ static void create_device(GLFWwindow* window, int physical_device_index) {
         std::vector<const char*> device_extensions = {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, // nullDescriptor feature
+            VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, // imgui v1.90.6 WIP uses extension endpoints instead of core
         };
 
         uint32_t count = 0;
@@ -409,6 +411,7 @@ void vk_initialize(GLFWwindow* window, const Vk_Init_Params& init_params) {
             pool_sizes.push_back(descriptor_pool_sizes[i]);
         }
         VkDescriptorPoolCreateInfo desc{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+        desc.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT; // used by imgui
         desc.maxSets = max_descriptor_sets;
         desc.poolSizeCount = (uint32_t)pool_sizes.size();
         desc.pPoolSizes = pool_sizes.data();
