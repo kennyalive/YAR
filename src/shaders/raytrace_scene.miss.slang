@@ -1,5 +1,5 @@
-#include "common.slangi"
-#include "rt_utils.slangi"
+#include "common.slang"
+#include "rt_utils.slang"
 
 [shader("miss")]
 void main(inout Ray_Payload payload)

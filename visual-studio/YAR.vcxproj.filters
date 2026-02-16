@@ -59,61 +59,64 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\src\shaders\material_resources.slangi">
+    <SlangShader Include="..\src\shaders\material_resources.slang">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\shared_material.slangi">
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\shared_material.slang">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\shared_main.slangi">
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\shared_main.slang">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\rt_utils.slangi">
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\rt_utils.slang">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\common.slangi">
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\common.slang">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\shading_context.slangi">
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\shading_context.slang">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\base_resources.slangi">
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\base_resources.slang">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\light_resources.slangi">
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\light_resources.slang">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\shared_light.slangi">
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\shared_light.slang">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\direct_lighting.slangi">
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\direct_lighting.slang">
       <Filter>shaders</Filter>
-    </None>
-    <None Include="..\src\shaders\evaluate_bsdf.slangi">
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\evaluate_bsdf.slang">
       <Filter>shaders</Filter>
-    </None>
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\apply_tone_mapping.slang">
+      <Filter>shaders</Filter>
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\copy_to_swapchain.slang">
+      <Filter>shaders</Filter>
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\patch_materials.slang">
+      <Filter>shaders</Filter>
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\raytrace_scene.miss.slang">
+      <Filter>shaders</Filter>
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\raytrace_scene_shadow_ray.chit.slang">
+      <Filter>shaders</Filter>
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\raytrace_scene.rgen.slang">
+      <Filter>shaders</Filter>
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\raytrace_scene.chit.slang">
+      <Filter>shaders</Filter>
+    </SlangShader>
   </ItemGroup>
   <ItemGroup>
-    <SlangCompile Include="..\src\shaders\apply_tone_mapping.slang">
+    <CustomBuild Include="compile_shaders.trigger">
       <Filter>shaders</Filter>
-    </SlangCompile>
-    <SlangCompile Include="..\src\shaders\copy_to_swapchain.slang">
-      <Filter>shaders</Filter>
-    </SlangCompile>
-    <SlangCompile Include="..\src\shaders\patch_materials.slang">
-      <Filter>shaders</Filter>
-    </SlangCompile>
-    <SlangCompile Include="..\src\shaders\raytrace_scene.miss.slang">
-      <Filter>shaders</Filter>
-    </SlangCompile>
-    <SlangCompile Include="..\src\shaders\raytrace_scene_shadow_ray.chit.slang">
-      <Filter>shaders</Filter>
-    </SlangCompile>
-    <SlangCompile Include="..\src\shaders\raytrace_scene.rgen.slang">
-      <Filter>shaders</Filter>
-    </SlangCompile>
-    <SlangCompile Include="..\src\shaders\raytrace_scene.chit.slang">
-      <Filter>shaders</Filter>
-    </SlangCompile>
+    </CustomBuild>
   </ItemGroup>
 </Project>

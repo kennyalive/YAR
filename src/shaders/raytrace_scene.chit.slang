@@ -1,9 +1,9 @@
-#include "common.slangi"
-#include "base_resources.slangi"
-#include "direct_lighting.slangi"
-#include "light_resources.slangi"
-#include "rt_utils.slangi"
-#include "shading_context.slangi"
+#include "common.slang"
+#include "base_resources.slang"
+#include "direct_lighting.slang"
+#include "light_resources.slang"
+#include "rt_utils.slang"
+#include "shading_context.slang"
 
 [[vk::binding(1, KERNEL_SET_0)]]
 RaytracingAccelerationStructure accel;

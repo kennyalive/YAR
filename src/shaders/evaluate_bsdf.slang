@@ -1,10 +1,10 @@
 #ifndef EVALUATE_BSDF_HLSL
 #define EVALUATE_BSDF_HLSL
 
-#include "base_resources.slangi"
-#include "common.slangi"
-#include "material_resources.slangi"
-#include "shared_main.slangi"
+#include "base_resources.slang"
+#include "common.slang"
+#include "material_resources.slang"
+#include "shared_main.slang"
 
 float3 evaluate_bsdf(Material_Handle mtl_handle, float2 uv, float3 wi, float3 wo)
 {

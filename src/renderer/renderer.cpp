@@ -5,9 +5,9 @@
 #include "geometry.h"
 #include "vk.h"
 #include "vk_utils.h"
-#include "shaders/shared_main.slangi"
-#include "shaders/shared_light.slangi"
-#include "shaders/shared_material.slangi"
+#include "shaders/shared_main.slang"
+#include "shaders/shared_light.slang"
+#include "shaders/shared_material.slang"
 
 #include "lib/matrix.h"
 #include "lib/scene_loader.h"

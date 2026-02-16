@@ -1,7 +1,7 @@
 #ifndef LIGHT_RESOURCES_HLSL
 #define LIGHT_RESOURCES_HLSL
 
-#include "shared_light.slangi"
+#include "shared_light.slang"
 
 static const int Light_None = -1;
 static const int Light_Point = 0;
