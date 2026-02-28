@@ -1,4 +1,4 @@
-#include "rt_utils.slang"
+import raytrace_types;
 
 [shader("closesthit")]
 void main(inout Shadow_Ray_Payload payload, in Attribs attribs)

@@ -1,4 +1,6 @@
-#include "shared_main.slang"
+import shared_main;
+import generate_ray;
+import raytrace_types;
 
 struct PushConstants {
     uint spp4;
@@ -8,28 +10,27 @@ struct PushConstants {
 [[vk::push_constant]]
 PushConstants push_constants;
 
-#define RGEN_SHADER
-#include "rt_utils.slang"
+struct KernelParams {
+    [[vk::image_format("rgba16f")]]
+    RWTexture2D<float4> output_image;
 
-[[vk::image_format("rgba16f")]]
+    RaytracingAccelerationStructure accel;
+
+    cbuffer Constants
+    {
+        float3x4 camera_to_world;
+    };
+}
+
 [[vk::binding(0, KERNEL_SET_0)]]
-RWTexture2D<float4> output_image;
-
-[[vk::binding(1, KERNEL_SET_0)]]
-RaytracingAccelerationStructure accel;
-
-[[vk::binding(2, KERNEL_SET_0)]]
-cbuffer Constants
-{
-    float3x4 camera_to_world;
-};
+ParameterBlock<KernelParams> params;
 
 static const float tmin = 1e-3f;
 static const float tmax = 1e+3f;
 
-float3 trace_ray(float2 sample_pos)
+float3 trace_ray(float2 sample_pos, PushConstants push_constants)
 {
-    Ray ray = generate_ray(camera_to_world, sample_pos);
+    Ray ray = generate_ray(params.camera_to_world, sample_pos, push_constants.tan_fovy_over_2, push_constants.z_is_up);
     
     RayDesc ray_desc;
     ray_desc.Origin = ray.origin;
@@ -38,7 +39,7 @@ float3 trace_ray(float2 sample_pos)
     ray_desc.TMax = tmax;
 
     Ray_Payload payload;
-    TraceRay(accel, RAY_FLAG_FORCE_OPAQUE, 0xffu, 0, 0, 0, ray_desc, payload);
+    TraceRay(params.accel, RAY_FLAG_FORCE_OPAQUE, 0xffu, 0, 0, 0, ray_desc, payload);
     return payload.color;
 }
 
@@ -49,14 +50,14 @@ void main()
     
     float3 color;
     if (push_constants.spp4 != 0) {
-        color = trace_ray(sample_origin + float2(0.125, 0.375));
-        color += trace_ray(sample_origin + float2(0.375, 0.875));
-        color += trace_ray(sample_origin + float2(0.625, 0.125));
-        color += trace_ray(sample_origin + float2(0.875, 0.625));
+        color = trace_ray(sample_origin + float2(0.125, 0.375), push_constants);
+        color += trace_ray(sample_origin + float2(0.375, 0.875), push_constants);
+        color += trace_ray(sample_origin + float2(0.625, 0.125), push_constants);
+        color += trace_ray(sample_origin + float2(0.875, 0.625), push_constants);
         color *= 0.25;
     }
     else {
-        color = trace_ray(sample_origin + float2(0.5, 0.5));
+        color = trace_ray(sample_origin + float2(0.5, 0.5), push_constants);
     }
-    output_image[DispatchRaysIndex().xy] = float4(color, 1);
+    params.output_image[DispatchRaysIndex().xy] = float4(color, 1);
 }

@@ -1,9 +1,16 @@
-#include "common.slang"
-#include "base_resources.slang"
-#include "direct_lighting.slang"
-#include "light_resources.slang"
-#include "rt_utils.slang"
-#include "shading_context.slang"
+import common;
+import shared_main;
+
+import direct_lighting;
+import raytrace_types;
+import shading_context;
+
+import base_resources;
+import light_resources;
+import material_resources;
+
+[[vk::binding(0, 1)]]
+ParameterBlock<Materials> materials;
 
 [[vk::binding(1, KERNEL_SET_0)]]
 RaytracingAccelerationStructure accel;
@@ -78,7 +85,7 @@ void main(inout Ray_Payload payload, in Attribs attribs)
 {
     Shading_Context sc = init_shading_context(attribs.barycentrics);
     
-    float3 L = estimate_direct_lighting(sc, accel, point_light_count, directional_light_count, diffuse_rectangular_light_count);
+    float3 L = estimate_direct_lighting(materials, sc, accel, point_light_count, directional_light_count, diffuse_rectangular_light_count);
 
     int area_light_index = instance_infos[InstanceID()].area_light_index;
     if (area_light_index != -1) {

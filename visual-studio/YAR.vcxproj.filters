@@ -68,7 +68,7 @@
     <SlangShader Include="..\src\shaders\shared_main.slang">
       <Filter>shaders</Filter>
     </SlangShader>
-    <SlangShader Include="..\src\shaders\rt_utils.slang">
+    <SlangShader Include="..\src\shaders\raytrace_types.slang">
       <Filter>shaders</Filter>
     </SlangShader>
     <SlangShader Include="..\src\shaders\common.slang">
@@ -118,5 +118,10 @@
     <CustomBuild Include="compile_shaders.trigger">
       <Filter>shaders</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\shaders\generate_ray.slang">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
-#include "common.slang"
-#include "rt_utils.slang"
+import common;
+import raytrace_types;
 
 [shader("miss")]
 void main(inout Ray_Payload payload)

@@ -137,7 +137,7 @@
     <SlangShader Include="..\src\shaders\raytrace_scene.miss.slang" />
     <SlangShader Include="..\src\shaders\raytrace_scene.rgen.slang" />
     <SlangShader Include="..\src\shaders\raytrace_scene_shadow_ray.chit.slang" />
-    <SlangShader Include="..\src\shaders\rt_utils.slang" />
+    <SlangShader Include="..\src\shaders\raytrace_types.slang" />
     <SlangShader Include="..\src\shaders\shading_context.slang" />
     <SlangShader Include="..\src\shaders\shared_light.slang" />
     <SlangShader Include="..\src\shaders\shared_main.slang" />
@@ -148,6 +148,9 @@
       <AdditionalInputs>@(SlangShader)</AdditionalInputs>
       <Outputs>$(ProjectDir)..\data\spirv\compile_shaders.stamp</Outputs>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\shaders\generate_ray.slang" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,15 +1,16 @@
-#ifndef EVALUATE_BSDF_HLSL
-#define EVALUATE_BSDF_HLSL
+module evaluate_bsdf;
 
-#include "base_resources.slang"
-#include "common.slang"
-#include "material_resources.slang"
-#include "shared_main.slang"
+import common;
+import shared_main;
+import shared_material;
 
-float3 evaluate_bsdf(Material_Handle mtl_handle, float2 uv, float3 wi, float3 wo)
+import base_resources;
+import material_resources;
+
+public float3 evaluate_bsdf(Materials materials, Material_Handle mtl_handle, float2 uv, float3 wi, float3 wo)
 {
     if (mtl_handle.type == Material_Lambertian) {
-        Lambertian_Material mtl = lambertian_materials[mtl_handle.index];
+        Lambertian_Material mtl = materials.lambertian_materials[mtl_handle.index];
         float3 albedo;
         if (mtl.albedo_texture_index > 0) {
             float2 uv_scaled = uv * float2(mtl.u_scale, mtl.v_scale);
@@ -22,5 +23,3 @@ float3 evaluate_bsdf(Material_Handle mtl_handle, float2 uv, float3 wi, float3 wo
     }
     return float3(1, 0, 0);
 }
-
-#endif

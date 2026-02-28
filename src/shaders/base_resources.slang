@@ -1,27 +1,24 @@
-#ifndef BASE_RESOURCES_HLSL
-#define BASE_RESOURCES_HLSL
+module base_resources;
 
-#include "shared_main.slang"
+import shared_main;
 
-[[vk::binding(0, BASE_SET_INDEX)]]
-Texture2D images_2d[];
-
-[[vk::binding(1, BASE_SET_INDEX)]]
-SamplerState image_sampler;
-
-[[vk::binding(BASE_SET_BINDING_INSTANCE_INFO, BASE_SET_INDEX)]]
-StructuredBuffer<Instance_Info> instance_infos;
-
-[[vk::binding(3, BASE_SET_INDEX)]]
-StructuredBuffer<uint> index_buffers[];
-
-struct Mesh_Vertex {
-    float x, y, z;
-    float nx, ny, nz;
-    float u, v;
+public struct Mesh_Vertex {
+    public float x, y, z;
+    public float nx, ny, nz;
+    public float u, v;
 };
 
-[[vk::binding(4, BASE_SET_INDEX)]]
-StructuredBuffer<Mesh_Vertex> vertex_buffers[];
+[[vk::binding(0, BASE_SET_INDEX)]]
+public Texture2D images_2d[];
 
-#endif
+[[vk::binding(1, BASE_SET_INDEX)]]
+public SamplerState image_sampler;
+
+[[vk::binding(BASE_SET_BINDING_INSTANCE_INFO, BASE_SET_INDEX)]]
+public StructuredBuffer<Instance_Info> instance_infos;
+
+[[vk::binding(3, BASE_SET_INDEX)]]
+public StructuredBuffer<uint> index_buffers[];
+
+[[vk::binding(4, BASE_SET_INDEX)]]
+public StructuredBuffer<Mesh_Vertex> vertex_buffers[];

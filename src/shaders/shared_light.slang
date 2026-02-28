@@ -1,16 +1,17 @@
-#ifndef SHARED_LIGHT_HLSL
-#define SHARED_LIGHT_HLSL
-
-#include "shared_main.slang"
-
 #ifdef __cplusplus
-namespace GPU_Types {
+    #pragma once
+    #include "shared_main.slang"
+    namespace GPU_Types {
+#else
+    module shared_light;
+    import shared_main;
+    #define SLANG_PUBLIC public
 #endif
 
-struct Point_Light {
-    Vector3 position;
+SLANG_PUBLIC struct Point_Light {
+    SLANG_PUBLIC Vector3 position;
     float pad0;
-    ColorRGB intensity;
+    SLANG_PUBLIC ColorRGB intensity;
     float pad1;
 
 #ifdef __cplusplus
@@ -24,10 +25,10 @@ struct Point_Light {
 #endif
 };
 
-struct Directional_Light {
-    Vector3 direction;
+SLANG_PUBLIC struct Directional_Light {
+    SLANG_PUBLIC Vector3 direction;
     float pad0;
-    ColorRGB irradiance;
+    SLANG_PUBLIC ColorRGB irradiance;
     float pad1;
 
 #ifdef __cplusplus
@@ -40,15 +41,15 @@ struct Directional_Light {
 #endif
 };
 
-struct Diffuse_Rectangular_Light {
-    Matrix3x4 light_to_world_transform;
+SLANG_PUBLIC struct Diffuse_Rectangular_Light {
+    SLANG_PUBLIC Matrix3x4 light_to_world_transform;
 
-    ColorRGB emitted_radiance;
+    SLANG_PUBLIC ColorRGB emitted_radiance;
     float pad0;
 
-    Vector2 size;
-    float area;
-    int shadow_ray_count;
+    SLANG_PUBLIC Vector2 size;
+    SLANG_PUBLIC float area;
+    SLANG_PUBLIC int shadow_ray_count;
 
 #ifdef __cplusplus
     void init(const ::Diffuse_Rectangular_Light& data) {
@@ -66,6 +67,4 @@ struct Diffuse_Rectangular_Light {
 
 #ifdef __cplusplus
 } // namespace GPU_Types
-#endif
-
 #endif

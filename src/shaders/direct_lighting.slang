@@ -1,11 +1,17 @@
-#ifndef DIRECT_LIGHTING_HLSL
-#define DIRECT_LIGHTING_HLSL
+module direct_lighting;
 
-#include "common.slang"
-#include "evaluate_bsdf.slang"
-#include "light_resources.slang"
-#include "rt_utils.slang"
-#include "shading_context.slang"
+import common;
+import shared_main;
+import shared_light;
+import shared_material;
+
+import evaluate_bsdf;
+import raytrace_types;
+import shading_context;
+
+import base_resources;
+import light_resources;
+import material_resources;
 
 bool trace_shadow_ray(RaytracingAccelerationStructure accel, float3 position, float3 direction, float distance)
 {
@@ -22,7 +28,7 @@ bool trace_shadow_ray(RaytracingAccelerationStructure accel, float3 position, fl
     return shadow_ray_payload.shadow_factor != 0.0;
 }
 
-float3 estimate_direct_lighting(Shading_Context sc, RaytracingAccelerationStructure accel,
+public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, RaytracingAccelerationStructure accel,
     int point_light_count,
     int directional_light_count,
     int diffuse_rectangular_light_count)
@@ -45,7 +51,7 @@ float3 estimate_direct_lighting(Shading_Context sc, RaytracingAccelerationStruct
         if (!trace_shadow_ray(accel, P, light_dir, light_dist - Shadow_Epsilon))
             continue;
 
-        float3 bsdf = evaluate_bsdf(mtl_handle, sc.UV, light_dir, sc.Wo);
+        float3 bsdf = evaluate_bsdf(materials, mtl_handle, sc.UV, light_dir, sc.Wo);
         float3 irradiance = point_lights[i].intensity * (n_dot_l / (light_dist * light_dist));
         L += irradiance * bsdf;
     }
@@ -61,7 +67,7 @@ float3 estimate_direct_lighting(Shading_Context sc, RaytracingAccelerationStruct
         if (!trace_shadow_ray(accel, P, light_dir, 1e5 /* compute tmax? */))
             continue;
 
-        float3 bsdf = evaluate_bsdf(mtl_handle, sc.UV, light_dir, sc.Wo);
+        float3 bsdf = evaluate_bsdf(materials, mtl_handle, sc.UV, light_dir, sc.Wo);
         L += bsdf * directional_lights[i].irradiance * n_dot_l;
     }
 
@@ -105,7 +111,7 @@ float3 estimate_direct_lighting(Shading_Context sc, RaytracingAccelerationStruct
             if (!trace_shadow_ray(accel, P, light_dir, light_dist - Shadow_Epsilon))
                 continue;
 
-            float3 bsdf = evaluate_bsdf(mtl_handle, sc.UV, light_dir, sc.Wo);
+            float3 bsdf = evaluate_bsdf(materials, mtl_handle, sc.UV, light_dir, sc.Wo);
             L2 += bsdf * light.area * light.emitted_radiance * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
         L2 /= float(light.shadow_ray_count);
@@ -114,5 +120,3 @@ float3 estimate_direct_lighting(Shading_Context sc, RaytracingAccelerationStruct
 
     return L;
 }
-
-#endif

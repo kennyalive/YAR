@@ -1,10 +1,6 @@
-#ifndef SHARED_MAIN_HLSL
-#define SHARED_MAIN_HLSL
-
 // shared_xxx.h files contain definitions that are shared between
 // shader and cpp code. For shared structures this ensures that
 // CPU and GPU sees the same memory layout.
-// shared_main.h should be included before any other shared_xxx.h
 
 #ifdef __cplusplus
     #pragma once
@@ -13,47 +9,44 @@
     #include "../lib/light.h"
     #include "../lib/material.h"
     #include "../lib/vector.h"
+    #define SLANG_PUBLIC
 #else
-    #define ColorRGB float3
-    #define Vector2 float2
-    #define Vector3 float3
-    #define Matrix3x4 float3x4
+    module shared_main;
+    public typealias ColorRGB = float3;
+    public typealias Vector2 = float2;
+    public typealias Vector3 = float3;
+    public typealias Matrix3x4 = float3x4;
+    #define SLANG_PUBLIC public
 #endif
 
 // Bindings configuration.
-#ifndef BASE_SET_INDEX 
-#define BASE_SET_INDEX 0
-#endif
+SLANG_PUBLIC static const int BASE_SET_INDEX = 0;
 static const int BASE_SET_BINDING_TEXTURES = 0;
 static const int BASE_SET_BINDING_SAMPLER = 1;
-static const int BASE_SET_BINDING_INSTANCE_INFO = 2;
+SLANG_PUBLIC static const int BASE_SET_BINDING_INSTANCE_INFO = 2;
 
-#ifndef MATERIAL_SET_INDEX
-#define MATERIAL_SET_INDEX 1
-#endif
+static const int MATERIAL_SET_INDEX = 1;
 static const int LAMBERTIAN_MATERIAL_BINDING = 0;
 
-#ifndef LIGHT_SET_INDEX
-#define LIGHT_SET_INDEX 2
-#endif
-static const int POINT_LIGHT_BINDING = 0;
-static const int DIRECTIONAL_LIGHT_BINDING = 1;
-static const int DIFFUSE_RECTANGULAR_LIGHT_BINDING = 2;
+SLANG_PUBLIC static const int LIGHT_SET_INDEX = 2;
+SLANG_PUBLIC static const int POINT_LIGHT_BINDING = 0;
+SLANG_PUBLIC static const int DIRECTIONAL_LIGHT_BINDING = 1;
+SLANG_PUBLIC static const int DIFFUSE_RECTANGULAR_LIGHT_BINDING = 2;
 
-#define KERNEL_SET_0 3
+SLANG_PUBLIC static const int KERNEL_SET_0 = 3;
 
 // Default texture indices.
-static const int Black_2D_Texture_Index = 0;
+SLANG_PUBLIC static const int Black_2D_Texture_Index = 0;
 static const int White_2D_Texture_Index = 1;
-static const int Predefined_Texture_Count = 2;
+SLANG_PUBLIC static const int Predefined_Texture_Count = 2;
 
 #ifdef __cplusplus
 namespace GPU_Types {
 #endif
 
-struct Geometry_Handle {
+SLANG_PUBLIC struct Geometry_Handle {
     int type;
-    int index;
+    SLANG_PUBLIC int index;
 #ifdef __cplusplus
     void init(const ::Geometry_Handle& data) {
         type = static_cast<int>(data.type);
@@ -62,9 +55,9 @@ struct Geometry_Handle {
 #endif
 };
 
-struct Material_Handle {
-    int type;
-    int index;
+SLANG_PUBLIC struct Material_Handle {
+    SLANG_PUBLIC int type;
+    SLANG_PUBLIC int index;
 #ifdef __cplusplus
     void init(const ::Material_Handle& data) {
         type = static_cast<int>(data.type);
@@ -84,11 +77,11 @@ struct Light_Handle {
 #endif
 };
 
-struct Instance_Info {
-    Material_Handle material;
-    Geometry_Handle geometry;
+SLANG_PUBLIC struct Instance_Info {
+    SLANG_PUBLIC Material_Handle material;
+    SLANG_PUBLIC Geometry_Handle geometry;
     
-    int area_light_index; // -1 if not an area light
+    SLANG_PUBLIC int area_light_index; // -1 if not an area light
     float pad0;
     float pad1;
     float pad2;
@@ -98,6 +91,4 @@ struct Instance_Info {
 
 #ifdef __cplusplus
 } // namespace GPU_Types
-#endif
-
 #endif

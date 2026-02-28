@@ -1,5 +1,8 @@
-#define MATERIAL_SET_INDEX 0
-#include "material_resources.slang"
+import shared_main;
+import material_resources;
+
+[[vk::binding(0, 0)]]
+ParameterBlock<Materials> materials;
 
 void patch_black(inout int texture_index)
 {
@@ -13,8 +16,8 @@ void patch_black(inout int texture_index)
 void main()
 {
     uint count, stride;
-    lambertian_materials.GetDimensions(count, stride);
+    materials.lambertian_materials.GetDimensions(count, stride);
     
     for (uint i = 0; i < count; i++)
-        patch_black(lambertian_materials[i].albedo_texture_index);
+        patch_black(materials.lambertian_materials[i].albedo_texture_index);
 }

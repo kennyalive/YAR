@@ -1,12 +1,9 @@
-#ifndef SHADING_CONTEXT_HLSL
-#define SHADING_CONTEXT_HLSL
+module shading_context;
 
-struct Shading_Context {
-    float3 Wo; // outgoing direction
-    float3 P; // shading point position in world coordinates
-    float3 Ng; // geometric normal oriented to be in the same hemisphere as Wo.
-    float3 N; // shading normal
-    float2 UV; // surface UV parameterization
+public struct Shading_Context {
+    public float3 Wo; // outgoing direction
+    public float3 P;  // shading point position in world coordinates
+    public float3 Ng; // geometric normal oriented to be in the same hemisphere as Wo.
+    public float3 N;  // shading normal
+    public float2 UV; // surface UV parameterization
 };
-
-#endif
