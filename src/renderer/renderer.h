@@ -3,7 +3,7 @@
 #include "kernels/apply_tone_mapping.h"
 #include "kernels/copy_to_swapchain.h"
 #include "kernels/patch_materials.h"
-#include "kernels/raytrace_scene.h"
+#include "kernels/direct_lighting.h"
 #include "kernel_context.h"
 
 #include "ui/ui.h"
@@ -84,7 +84,7 @@ private:
     Apply_Tone_Mapping apply_tone_mapping;
     Copy_To_Swapchain copy_to_swapchain;
     Patch_Materials patch_materials;
-    Raytrace_Scene raytrace_scene;
+    Direct_Lighting direct_lighting;
 
     GPU_Time_Keeper time_keeper;
     struct {

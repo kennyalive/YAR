@@ -3,7 +3,7 @@ module material_resources;
 import shared_main;
 import shared_material;
 
-public static const int Material_Lambertian = 0;
+public static const int Material_Lambertian = 2;
 static const int Material_None = -1;
 
 public struct Materials {

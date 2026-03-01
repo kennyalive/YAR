@@ -10,7 +10,7 @@
     <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\renderer\kernels\raytrace_scene.cpp">
+    <ClCompile Include="..\src\renderer\kernels\direct_lighting.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
     <ClCompile Include="..\src\renderer\acceleration_structure.cpp" />
@@ -32,7 +32,7 @@
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h">
       <Filter>kernels</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\renderer\kernels\raytrace_scene.h">
+    <ClInclude Include="..\src\renderer\kernels\direct_lighting.h">
       <Filter>kernels</Filter>
     </ClInclude>
     <ClInclude Include="..\src\renderer\acceleration_structure.h" />

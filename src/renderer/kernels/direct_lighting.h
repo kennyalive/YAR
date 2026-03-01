@@ -7,7 +7,7 @@ struct Rt_Uniform_Buffer;
 struct Scene;
 struct Kernel_Context;
 
-struct Raytrace_Scene {
+struct Direct_Lighting {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR properties;
     Vk_Intersection_Accelerator accelerator;
     Vk_Buffer mesh_materials;

@@ -41,11 +41,11 @@ void Renderer::initialize(GLFWwindow* window, bool enable_vulkan_validation, int
 
     // Device properties.
     {
-        raytrace_scene.properties = VkPhysicalDeviceRayTracingPipelinePropertiesKHR{
+        direct_lighting.properties = VkPhysicalDeviceRayTracingPipelinePropertiesKHR{
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
 
         VkPhysicalDeviceProperties2 physical_device_properties { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
-        physical_device_properties.pNext = &raytrace_scene.properties;
+        physical_device_properties.pNext = &direct_lighting.properties;
         vkGetPhysicalDeviceProperties2(vk.physical_device, &physical_device_properties);
 
         printf("Device: %s\n", physical_device_properties.properties.deviceName);
@@ -57,13 +57,13 @@ void Renderer::initialize(GLFWwindow* window, bool enable_vulkan_validation, int
 
         printf("\n");
         printf("VkPhysicalDeviceRayTracingPipelinePropertiesKHR:\n");
-        printf("  shaderGroupHandleSize = %u\n", raytrace_scene.properties.shaderGroupHandleSize);
-        printf("  maxRayRecursionDepth = %u\n", raytrace_scene.properties.maxRayRecursionDepth);
-        printf("  maxShaderGroupStride = %u\n", raytrace_scene.properties.maxShaderGroupStride);
-        printf("  shaderGroupBaseAlignment = %u\n", raytrace_scene.properties.shaderGroupBaseAlignment);
-        printf("  maxRayDispatchInvocationCount = %u\n", raytrace_scene.properties.maxRayDispatchInvocationCount);
-        printf("  shaderGroupHandleAlignment = %u\n", raytrace_scene.properties.shaderGroupHandleAlignment);
-        printf("  maxRayHitAttributeSize = %u\n", raytrace_scene.properties.maxRayHitAttributeSize);
+        printf("  shaderGroupHandleSize = %u\n", direct_lighting.properties.shaderGroupHandleSize);
+        printf("  maxRayRecursionDepth = %u\n", direct_lighting.properties.maxRayRecursionDepth);
+        printf("  maxShaderGroupStride = %u\n", direct_lighting.properties.maxShaderGroupStride);
+        printf("  shaderGroupBaseAlignment = %u\n", direct_lighting.properties.shaderGroupBaseAlignment);
+        printf("  maxRayDispatchInvocationCount = %u\n", direct_lighting.properties.maxRayDispatchInvocationCount);
+        printf("  shaderGroupHandleAlignment = %u\n", direct_lighting.properties.shaderGroupHandleAlignment);
+        printf("  maxRayHitAttributeSize = %u\n", direct_lighting.properties.maxRayHitAttributeSize);
     }
 
     // point sampler
@@ -156,7 +156,7 @@ void Renderer::shutdown() {
 
     if (project_loaded) {
         patch_materials.destroy();
-        raytrace_scene.destroy();
+        direct_lighting.destroy();
     }
 
     vk_shutdown();
@@ -199,7 +199,7 @@ void Renderer::restore_resolution_dependent_resources() {
     }
 
     if (project_loaded) {
-        raytrace_scene.update_output_image_descriptor(output_image.view);
+        direct_lighting.update_output_image_descriptor(output_image.view);
     }
 
     apply_tone_mapping.update_resolution_dependent_descriptors(output_image.view);
@@ -454,11 +454,11 @@ void Renderer::load_project(const std::string& input_file) {
         patch_materials.dispatch(command_buffer, gpu_scene.material_descriptor_set);
     });
 
-    raytrace_scene.create(kernel_context, scene, gpu_meshes);
-    raytrace_scene.update_output_image_descriptor(output_image.view);
-    raytrace_scene.update_point_lights(gpu_scene.point_light_count);
-    raytrace_scene.update_directional_lights(gpu_scene.directional_light_count);
-    raytrace_scene.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_light_count);
+    direct_lighting.create(kernel_context, scene, gpu_meshes);
+    direct_lighting.update_output_image_descriptor(output_image.view);
+    direct_lighting.update_point_lights(gpu_scene.point_light_count);
+    direct_lighting.update_directional_lights(gpu_scene.directional_light_count);
+    direct_lighting.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_light_count);
 
     Descriptor_Writes(gpu_scene.light_descriptor_set).storage_buffer(POINT_LIGHT_BINDING, gpu_scene.point_lights.handle, 0, VK_WHOLE_SIZE);
     Descriptor_Writes(gpu_scene.light_descriptor_set).storage_buffer(DIRECTIONAL_LIGHT_BINDING, gpu_scene.directional_lights.handle, 0, VK_WHOLE_SIZE);
@@ -502,7 +502,7 @@ void Renderer::run_frame() {
     ui.camera_position = flying_camera.get_camera_pose().get_column(3);
 
     if (project_loaded) {
-        raytrace_scene.update_camera_transform(flying_camera.get_camera_pose());
+        direct_lighting.update_camera_transform(flying_camera.get_camera_pose());
     }
 
     if (ui.ui_result.reference_render_requested) {
@@ -563,7 +563,7 @@ void Renderer::draw_frame() {
 
 void Renderer::draw_raytraced_image() {
     GPU_TIME_SCOPE(gpu_times.draw);
-    raytrace_scene.dispatch(scene.camera_fov_y, spp4, scene.z_is_up);
+    direct_lighting.dispatch(scene.camera_fov_y, spp4, scene.z_is_up);
 }
 
 void Renderer::tone_mapping()

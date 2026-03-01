@@ -1,6 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
-#include "raytrace_scene.h"
+#include "direct_lighting.h"
 
 #include "renderer/geometry.h"
 #include "renderer/kernel_context.h"
@@ -24,7 +24,7 @@ struct GPU_Vertex {
     Vector2 uv;
 };
 
-void Raytrace_Scene::create(const Kernel_Context& ctx, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
+void Direct_Lighting::create(const Kernel_Context& ctx, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Rt_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &(void*&)mapped_uniform_buffer, "rt_uniform_buffer");
 
@@ -45,7 +45,7 @@ void Raytrace_Scene::create(const Kernel_Context& ctx, const Scene& scene, const
     }
 }
 
-void Raytrace_Scene::destroy() {
+void Direct_Lighting::destroy() {
     uniform_buffer.destroy();
     shader_binding_table.destroy();
     accelerator.destroy();
@@ -55,27 +55,27 @@ void Raytrace_Scene::destroy() {
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
 
-void Raytrace_Scene::update_output_image_descriptor(VkImageView output_image_view) {
+void Direct_Lighting::update_output_image_descriptor(VkImageView output_image_view) {
     Descriptor_Writes(descriptor_set).storage_image(0, output_image_view);
 }
 
-void Raytrace_Scene::update_camera_transform(const Matrix3x4& camera_to_world_transform) {
+void Direct_Lighting::update_camera_transform(const Matrix3x4& camera_to_world_transform) {
     mapped_uniform_buffer->camera_to_world = camera_to_world_transform;
 }
 
-void Raytrace_Scene::update_point_lights(uint32_t light_count) {
+void Direct_Lighting::update_point_lights(uint32_t light_count) {
     mapped_uniform_buffer->point_light_count = light_count;
 }
 
-void Raytrace_Scene::update_directional_lights(uint32_t light_count) {
+void Direct_Lighting::update_directional_lights(uint32_t light_count) {
     mapped_uniform_buffer->directional_light_count = light_count;
 }
 
-void Raytrace_Scene::update_diffuse_rectangular_lights(uint32_t light_count) {
+void Direct_Lighting::update_diffuse_rectangular_lights(uint32_t light_count) {
     mapped_uniform_buffer->diffuse_rectangular_light_count = light_count;
 }
 
-void Raytrace_Scene::create_pipeline(const Kernel_Context& ctx, const std::vector<GPU_Mesh>& gpu_meshes)
+void Direct_Lighting::create_pipeline(const Kernel_Context& ctx, const std::vector<GPU_Mesh>& gpu_meshes)
 {
     descriptor_set_layout = Descriptor_Set_Layout()
         .storage_image(0, VK_SHADER_STAGE_RAYGEN_BIT_KHR)
@@ -183,7 +183,7 @@ void Raytrace_Scene::create_pipeline(const Kernel_Context& ctx, const std::vecto
         .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer));
 }
 
-void Raytrace_Scene::dispatch(float fovy, bool spp4, bool z_is_up)
+void Direct_Lighting::dispatch(float fovy, bool spp4, bool z_is_up)
 {
     vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
         pipeline_layout, KERNEL_SET_0, 1, &descriptor_set, 0, nullptr);
