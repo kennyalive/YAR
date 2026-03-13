@@ -41,8 +41,11 @@ void Renderer::initialize(GLFWwindow* window, bool enable_vulkan_validation, int
 
     // Device properties.
     {
+        descriptor_heap_properties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_PROPERTIES_EXT };
+
         direct_lighting.properties = VkPhysicalDeviceRayTracingPipelinePropertiesKHR{
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
+        direct_lighting.properties.pNext = &descriptor_heap_properties;
 
         VkPhysicalDeviceProperties2 physical_device_properties { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
         physical_device_properties.pNext = &direct_lighting.properties;
@@ -66,6 +69,9 @@ void Renderer::initialize(GLFWwindow* window, bool enable_vulkan_validation, int
         printf("  maxRayHitAttributeSize = %u\n", direct_lighting.properties.maxRayHitAttributeSize);
     }
 
+    descriptor_heap.create(descriptor_heap_properties);
+    descriptors.initialize(descriptor_heap);
+
     // point sampler
     {
         VkSamplerCreateInfo create_info { VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
@@ -73,8 +79,8 @@ void Renderer::initialize(GLFWwindow* window, bool enable_vulkan_validation, int
         vk_set_debug_name(point_sampler, "point_sampler");
     }
 
-    apply_tone_mapping.create();
-    copy_to_swapchain.create();
+    apply_tone_mapping.create(descriptors);
+    copy_to_swapchain.create(descriptors);
     restore_resolution_dependent_resources();
     create_default_textures();
 
@@ -121,6 +127,7 @@ void Renderer::shutdown() {
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 
+    descriptor_heap.destroy();
     gpu_scene.point_lights.destroy();
     gpu_scene.point_light_count = 0;
     gpu_scene.directional_lights.destroy();
@@ -188,7 +195,8 @@ void Renderer::restore_resolution_dependent_resources() {
 
     // output image
     {
-        output_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, VK_FORMAT_R16G16B16A16_SFLOAT,
+        const VkFormat output_image_format = VK_FORMAT_R16G16B16A16_SFLOAT;
+        output_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, output_image_format,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "output_image");
 
         vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
@@ -196,14 +204,63 @@ void Renderer::restore_resolution_dependent_resources() {
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
         });
+
+        {
+            VkImageViewCreateInfo image_view_ci{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+            image_view_ci.image = output_image.handle;
+            image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            image_view_ci.format = output_image_format;
+            image_view_ci.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+
+            VkImageDescriptorInfoEXT image_descriptor_info{ VK_STRUCTURE_TYPE_IMAGE_DESCRIPTOR_INFO_EXT };
+            image_descriptor_info.pView = &image_view_ci;
+            image_descriptor_info.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+            VkResourceDescriptorInfoEXT descriptor_info{ VK_STRUCTURE_TYPE_RESOURCE_DESCRIPTOR_INFO_EXT };
+            descriptor_info.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+            descriptor_info.data.pImage = &image_descriptor_info;
+
+            uint8_t* descriptor_data = static_cast<uint8_t*>(descriptor_heap.resource_heap_buffer.mapped_ptr);
+            VkHostAddressRangeEXT host_range = {};
+            host_range.address = descriptor_data + descriptors.output_image;
+            host_range.size = descriptor_heap.properties.imageDescriptorSize;
+
+            vkWriteResourceDescriptorsEXT(vk.device, 1, &descriptor_info, &host_range);
+        }
+        {
+            const uint32_t count = (uint32_t)vk.swapchain_info.images.size();
+            std::vector<VkImageViewCreateInfo> image_view_ci(count);
+            std::vector<VkImageDescriptorInfoEXT> image_descriptor_infos(count);
+            std::vector<VkResourceDescriptorInfoEXT> descriptor_infos(count);
+            std::vector< VkHostAddressRangeEXT> host_ranges(count);
+
+            uint8_t* descriptor_data = static_cast<uint8_t*>(descriptor_heap.resource_heap_buffer.mapped_ptr);
+            ASSERT((uint32_t)vk.swapchain_info.images.size() < max_swapchain_images);
+            for (size_t i = 0; i < vk.swapchain_info.images.size(); i++) {
+                image_view_ci[i] = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+                image_view_ci[i].image = vk.swapchain_info.images[i];
+                image_view_ci[i].viewType = VK_IMAGE_VIEW_TYPE_2D;
+                image_view_ci[i].format = vk.surface_format.format;
+                image_view_ci[i].subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+
+                image_descriptor_infos[i] = { VK_STRUCTURE_TYPE_IMAGE_DESCRIPTOR_INFO_EXT };
+                image_descriptor_infos[i].pView = &image_view_ci[i];
+                image_descriptor_infos[i].layout = VK_IMAGE_LAYOUT_GENERAL;
+
+                descriptor_infos[i] = { VK_STRUCTURE_TYPE_RESOURCE_DESCRIPTOR_INFO_EXT };
+                descriptor_infos[i].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                descriptor_infos[i].data.pImage = &image_descriptor_infos[i];
+
+                host_ranges[i].address = descriptor_data + descriptors.swapchain_images + i * descriptor_heap.properties.imageDescriptorSize;
+                host_ranges[i].size = descriptor_heap.properties.imageDescriptorSize;
+            }
+            vkWriteResourceDescriptorsEXT(vk.device, count, descriptor_infos.data(), host_ranges.data());
+        }
     }
 
     if (project_loaded) {
         direct_lighting.update_output_image_descriptor(output_image.view);
     }
-
-    apply_tone_mapping.update_resolution_dependent_descriptors(output_image.view);
-    copy_to_swapchain.update_resolution_dependent_descriptors(output_image.view);
 }
 
 void Renderer::load_project(const std::string& input_file) {
@@ -569,6 +626,7 @@ void Renderer::draw_raytraced_image() {
 void Renderer::tone_mapping()
 {
     GPU_TIME_SCOPE(gpu_times.tone_map);
+    descriptor_heap.bind();
     apply_tone_mapping.dispatch();
 }
 

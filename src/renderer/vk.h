@@ -31,7 +31,9 @@ struct Vk_Image {
 struct Vk_Buffer {
     VkBuffer handle = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
+    VkDeviceSize size = 0;
     VkDeviceAddress device_address = 0;
+    void* mapped_ptr = nullptr;
     void destroy();
 };
 
@@ -69,7 +71,10 @@ void vk_destroy_swapchain();
 
 void vk_ensure_staging_buffer_allocation(VkDeviceSize size);
 Vk_Buffer vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, const void* data = nullptr, const char* name = nullptr);
+Vk_Buffer vk_create_buffer_with_alignment(VkDeviceSize size, VkBufferUsageFlags usage, uint32_t min_alignment,
+    const void* data = nullptr, const char* name = nullptr);
 Vk_Buffer vk_create_mapped_buffer(VkDeviceSize size, VkBufferUsageFlags usage, void** buffer_ptr, const char* name = nullptr);
+Vk_Buffer vk_create_mapped_buffer_with_alignment(VkDeviceSize size, VkBufferUsageFlags usage, uint32_t alignment, const char* name = nullptr);
 Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate_mipmaps, const uint8_t* pixels, int bytes_per_pixel, const char*  name);
 Vk_Image vk_create_image(int width, int height, VkFormat format, VkImageUsageFlags usage_flags, const char* name);
 Vk_Image vk_load_texture(const std::string& texture_file);
@@ -102,6 +107,10 @@ void vk_cmd_image_barrier_for_subresource(VkCommandBuffer command_buffer, VkImag
 
 
 uint32_t vk_allocate_timestamp_queries(uint32_t count);
+
+// Workaround for static_assert(false). It should be used like this: static_assert(dependent_false_v<T>)
+template<typename>
+inline constexpr bool vk_dependent_false_v = false;
 
 template <typename Vk_Object_Type>
 void vk_set_debug_name(Vk_Object_Type object, const char* name) {
@@ -140,7 +149,7 @@ void vk_set_debug_name(Vk_Object_Type object, const char* name) {
     else IF_TYPE_THEN_ENUM(VkSwapchainKHR,              VK_OBJECT_TYPE_SWAPCHAIN_KHR                )
     else IF_TYPE_THEN_ENUM(VkAccelerationStructureKHR,  VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR   )
     else IF_TYPE_THEN_ENUM(VkDebugUtilsMessengerEXT,    VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT    )
-    else static_assert(dependent_false_v<Vk_Object_Type>, "Unknown Vulkan object type");
+    else static_assert(vk_dependent_false_v<Vk_Object_Type>, "Unknown Vulkan object type");
 #undef IF_TYPE_THEN_ENUM
 
     void set_debug_name_impl(VkObjectType object_type, uint64_t object_handle, const char* name);

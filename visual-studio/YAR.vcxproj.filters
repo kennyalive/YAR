@@ -22,6 +22,8 @@
       <Filter>kernels</Filter>
     </ClCompile>
     <ClCompile Include="..\src\renderer\vk_utils.cpp" />
+    <ClCompile Include="..\src\renderer\descriptor_heap.cpp" />
+    <ClCompile Include="..\src\renderer\descriptors.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\std.h" />
@@ -46,6 +48,8 @@
       <Filter>kernels</Filter>
     </ClInclude>
     <ClInclude Include="..\src\renderer\vk_utils.h" />
+    <ClInclude Include="..\src\renderer\descriptor_heap.h" />
+    <ClInclude Include="..\src\renderer\descriptors.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">

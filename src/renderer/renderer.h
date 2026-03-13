@@ -8,6 +8,8 @@
 
 #include "ui/ui.h"
 
+#include "descriptor_heap.h"
+#include "descriptors.h"
 #include "geometry.h"
 #include "vk_utils.h"
 #include "vk.h"
@@ -45,6 +47,8 @@ private:
 
     Flying_Camera flying_camera;
 
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT descriptor_heap_properties;
+
     Vk_Image depth_buffer_image;
     Vk_Image output_image;
 
@@ -53,6 +57,9 @@ private:
     VkSampler point_sampler = VK_NULL_HANDLE;
 
     std::vector<GPU_Mesh> gpu_meshes;
+
+    Descriptor_Heap descriptor_heap;
+    Descriptors descriptors;
 
     struct GPU_Scene_Resources {
         std::vector<Vk_Image> images_2d;

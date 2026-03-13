@@ -8,6 +8,13 @@ VkPipelineLayout create_pipeline_layout(
     const char* name);
 
 VkPipeline create_compute_pipeline(const std::string& spirv_file, VkPipelineLayout pipeline_layout, const char* name);
+
+VkPipeline create_compute_pipeline_with_heap_mappings(
+    const std::string& spirv_file,
+    const VkShaderDescriptorSetAndBindingMappingInfoEXT& mapping_info,
+    const char* name
+);
+
 VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout set_layout);
 
 struct Shader_Module {

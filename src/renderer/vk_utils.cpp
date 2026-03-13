@@ -39,6 +39,30 @@ VkPipeline create_compute_pipeline(const std::string& spirv_file, VkPipelineLayo
     return pipeline;
 }
 
+VkPipeline create_compute_pipeline_with_heap_mappings(const std::string& spirv_file,
+    const VkShaderDescriptorSetAndBindingMappingInfoEXT& mapping_info, const char* name)
+{
+    Shader_Module shader(spirv_file);
+
+    VkPipelineShaderStageCreateInfo compute_stage{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+    compute_stage.pNext = &mapping_info;
+    compute_stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    compute_stage.module = shader.handle;
+    compute_stage.pName = "main";
+
+    VkPipelineCreateFlags2CreateInfo flags_create_info = { VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO };
+    flags_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkComputePipelineCreateInfo create_info{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+    create_info.pNext = &flags_create_info;
+    create_info.stage = compute_stage;
+
+    VkPipeline pipeline;
+    VK_CHECK(vkCreateComputePipelines(vk.device, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
+    vk_set_debug_name(pipeline, name);
+    return pipeline;
+}
+
 VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout set_layout)
 {
     VkDescriptorSetAllocateInfo alloc_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
