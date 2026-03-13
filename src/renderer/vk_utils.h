@@ -8,6 +8,13 @@ VkPipelineLayout create_pipeline_layout(
     const char* name);
 
 VkPipeline create_compute_pipeline(const std::string& spirv_file, VkPipelineLayout pipeline_layout, const char* name);
+
+VkPipeline create_compute_pipeline_with_heap_mappings(
+    const std::string& spirv_file,
+    std::span<const VkDescriptorSetAndBindingMappingEXT> binding_mappings,
+    const char* name
+);
+
 VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout set_layout);
 
 struct Shader_Module {
@@ -78,6 +85,11 @@ struct Descriptor_Set_Layout {
     Descriptor_Set_Layout& accelerator(uint32_t binding, VkShaderStageFlags stage_flags);
     VkDescriptorSetLayout create(const char* name);
 };
+
+VkDescriptorSetAndBindingMappingEXT map_binding_to_heap_offset(
+    uint32_t set, uint32_t binding, VkSpirvResourceTypeFlagBitsEXT resource_type,
+    uint32_t heap_offset, uint32_t heap_array_stride = 0
+);
 
 //
 // GPU time queries.

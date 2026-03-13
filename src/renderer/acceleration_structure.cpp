@@ -105,6 +105,10 @@ static TLAS_Info create_TLAS(uint32_t instance_count, VkDeviceAddress instances_
     VK_CHECK(vkCreateAccelerationStructureKHR(vk.device, &create_info, nullptr, &tlas.aceleration_structure));
     vk_set_debug_name(tlas.aceleration_structure, "tlas");
 
+    VkAccelerationStructureDeviceAddressInfoKHR device_address_info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR };
+    device_address_info.accelerationStructure = tlas.aceleration_structure;
+    tlas.device_address = vkGetAccelerationStructureDeviceAddressKHR(vk.device, &device_address_info);
+
     // Build acceleration structure.
     tlas.scratch_buffer = vk_create_buffer(build_sizes.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     build_info.dstAccelerationStructure = tlas.aceleration_structure;

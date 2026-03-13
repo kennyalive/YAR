@@ -2,14 +2,12 @@
 
 #include "../vk.h"
 
-struct Copy_To_Swapchain {
-    VkDescriptorSetLayout set_layout;
-    VkPipelineLayout pipeline_layout;
-    VkPipeline pipeline;
-    std::vector<VkDescriptorSet> sets; // per swapchain image
+struct Descriptors;
 
-    void create();
+struct Copy_To_Swapchain {
+    VkPipeline pipeline;
+
+    void create(const Descriptors& descriptors);
     void destroy();
-    void update_resolution_dependent_descriptors(VkImageView output_image_view);
     void dispatch();
 };

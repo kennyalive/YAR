@@ -19,6 +19,7 @@
 #include <mutex>
 #include <numeric>
 #include <set>
+#include <span>
 #include <sstream>
 #include <string>
 #include <thread>

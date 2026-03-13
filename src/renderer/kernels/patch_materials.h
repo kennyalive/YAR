@@ -2,12 +2,12 @@
 
 #include "renderer/vk.h"
 
+struct Descriptors;
+
 struct Patch_Materials {
-    VkPipelineLayout pipeline_layout;
     VkPipeline pipeline;
 
-    void create(VkDescriptorSetLayout material_descriptor_set_layout);
+    void create(Descriptors& descriptors);
     void destroy();
-    void dispatch(VkCommandBuffer command_buffer, VkDescriptorSet material_descriptor_set);
+    void dispatch(VkCommandBuffer command_buffer);
 };
-

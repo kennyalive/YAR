@@ -39,6 +39,34 @@ VkPipeline create_compute_pipeline(const std::string& spirv_file, VkPipelineLayo
     return pipeline;
 }
 
+VkPipeline create_compute_pipeline_with_heap_mappings(const std::string& spirv_file,
+    std::span<const VkDescriptorSetAndBindingMappingEXT> binding_mappings, const char* name)
+{
+    Shader_Module shader(spirv_file);
+
+    VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info{ VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT };
+    mapping_info.mappingCount = (uint32_t)binding_mappings.size();
+    mapping_info.pMappings = binding_mappings.data();
+
+    VkPipelineShaderStageCreateInfo compute_stage{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+    compute_stage.pNext = &mapping_info;
+    compute_stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    compute_stage.module = shader.handle;
+    compute_stage.pName = "main";
+
+    VkPipelineCreateFlags2CreateInfo flags_create_info = { VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO };
+    flags_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
+    VkComputePipelineCreateInfo create_info{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+    create_info.pNext = &flags_create_info;
+    create_info.stage = compute_stage;
+
+    VkPipeline pipeline;
+    VK_CHECK(vkCreateComputePipelines(vk.device, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
+    vk_set_debug_name(pipeline, name);
+    return pipeline;
+}
+
 VkDescriptorSet allocate_descriptor_set(VkDescriptorSetLayout set_layout)
 {
     VkDescriptorSetAllocateInfo alloc_info { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
@@ -260,6 +288,21 @@ VkDescriptorSetLayout Descriptor_Set_Layout::create(const char* name) {
     VK_CHECK(vkCreateDescriptorSetLayout(vk.device, &create_info, nullptr, &set_layout));
     vk_set_debug_name(set_layout, name);
     return set_layout;
+}
+
+VkDescriptorSetAndBindingMappingEXT map_binding_to_heap_offset(
+    uint32_t set, uint32_t binding, VkSpirvResourceTypeFlagBitsEXT resource_type,
+    uint32_t heap_offset, uint32_t heap_array_stride)
+{
+    VkDescriptorSetAndBindingMappingEXT mapping{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_AND_BINDING_MAPPING_EXT };
+    mapping.descriptorSet = set;
+    mapping.firstBinding = binding;
+    mapping.bindingCount = 1;
+    mapping.resourceMask = resource_type;
+    mapping.source = VK_DESCRIPTOR_MAPPING_SOURCE_HEAP_WITH_CONSTANT_OFFSET_EXT;
+    mapping.sourceData.constantOffset.heapOffset = heap_offset;
+    mapping.sourceData.constantOffset.heapArrayStride = heap_array_stride;
+    return mapping;
 }
 
 //

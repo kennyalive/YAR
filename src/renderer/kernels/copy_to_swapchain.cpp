@@ -1,46 +1,27 @@
 #include "std.h"
 #include "lib/common.h"
 #include "copy_to_swapchain.h"
+
+#include "../descriptors.h"
 #include "../vk_utils.h"
 
-void Copy_To_Swapchain::create()
+void Copy_To_Swapchain::create(const Descriptors& descriptors)
 {
-    set_layout = Descriptor_Set_Layout()
-        .sampled_image(0, VK_SHADER_STAGE_COMPUTE_BIT)
-        .storage_image(1, VK_SHADER_STAGE_COMPUTE_BIT)
-        .create("copy_to_swapchain_set_layout");
-
-    pipeline_layout = create_pipeline_layout(
-        { set_layout },
-        { VkPushConstantRange{VK_SHADER_STAGE_COMPUTE_BIT, 0, 8 /*uint32 width + uint32 height*/} },
-        "copy_to_swapchain_pipeline_layout");
-
-    pipeline = create_compute_pipeline("spirv/copy_to_swapchain.spv", pipeline_layout, "copy_to_swapchain_pipeline");
+    VkDescriptorSetAndBindingMappingEXT mappings[2];
+    mappings[0] = map_binding_to_heap_offset(
+        0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
+        descriptors.output_image
+    );
+    mappings[1] = map_binding_to_heap_offset(
+        0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
+        descriptors.swapchain_images, descriptors.image_descriptor_size
+    );
+    pipeline = create_compute_pipeline_with_heap_mappings("spirv/copy_to_swapchain.spv", mappings, "copy_to_swapchain_pipeline");
 }
 
 void Copy_To_Swapchain::destroy()
 {
-    vkDestroyDescriptorSetLayout(vk.device, set_layout, nullptr);
-    vkDestroyPipelineLayout(vk.device, pipeline_layout, nullptr);
     vkDestroyPipeline(vk.device, pipeline, nullptr);
-    sets.clear();
-}
-
-void Copy_To_Swapchain::update_resolution_dependent_descriptors(VkImageView output_image_view)
-{
-    if (sets.size() < vk.swapchain_info.images.size()) {
-        size_t n = vk.swapchain_info.images.size() - sets.size();
-        for (size_t i = 0; i < n; i++) {
-            VkDescriptorSet set = allocate_descriptor_set(set_layout);
-            sets.push_back(set);
-        }
-    }
-
-    for (size_t i = 0; i < vk.swapchain_info.images.size(); i++) {
-        Descriptor_Writes(sets[i])
-            .sampled_image(0, output_image_view, VK_IMAGE_LAYOUT_GENERAL)
-            .storage_image(1, vk.swapchain_info.image_views[i]);
-    }
 }
 
 void Copy_To_Swapchain::dispatch()
@@ -50,11 +31,13 @@ void Copy_To_Swapchain::dispatch()
 
     uint32_t group_count_x = (vk.surface_size.width + group_size_x - 1) / group_size_x;
     uint32_t group_count_y = (vk.surface_size.height + group_size_y - 1) / group_size_y;
+    uint32_t push_data[] = { vk.surface_size.width, vk.surface_size.height, vk.swapchain_image_index };
 
-    uint32_t push_constants[] = { vk.surface_size.width, vk.surface_size.height };
+    VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
+    push_data_info.data.address = push_data;
+    push_data_info.data.size = 12;
+    vkCmdPushDataEXT(vk.command_buffer, &push_data_info);
 
-    vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(push_constants), push_constants);
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &sets[vk.swapchain_image_index], 0, nullptr);
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vkCmdDispatch(vk.command_buffer, group_count_x, group_count_y, 1);
 }

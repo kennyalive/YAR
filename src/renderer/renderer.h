@@ -4,10 +4,11 @@
 #include "kernels/copy_to_swapchain.h"
 #include "kernels/patch_materials.h"
 #include "kernels/direct_lighting.h"
-#include "kernel_context.h"
 
 #include "ui/ui.h"
 
+#include "descriptor_heap.h"
+#include "descriptors.h"
 #include "geometry.h"
 #include "vk_utils.h"
 #include "vk.h"
@@ -45,24 +46,19 @@ private:
 
     Flying_Camera flying_camera;
 
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT descriptor_heap_properties;
+
     Vk_Image depth_buffer_image;
     Vk_Image output_image;
 
-    Kernel_Context kernel_context;
-
-    VkSampler point_sampler = VK_NULL_HANDLE;
-
     std::vector<GPU_Mesh> gpu_meshes;
+
+    Descriptor_Heap descriptor_heap;
+    Descriptors descriptors;
 
     struct GPU_Scene_Resources {
         std::vector<Vk_Image> images_2d;
         Vk_Buffer instance_info_buffer;
-
-        // Layout for resources that are bound for the most part of the frame.
-        VkPipelineLayout per_frame_pipeline_layout;
-
-        VkDescriptorSetLayout base_descriptor_set_layout;
-        VkDescriptorSet base_descriptor_set;
 
         Vk_Buffer point_lights;
         uint32_t point_light_count = 0;
@@ -73,12 +69,7 @@ private:
         Vk_Buffer diffuse_rectangular_lights;
         uint32_t diffuse_rectangular_light_count = 0;
 
-        VkDescriptorSetLayout light_descriptor_set_layout;
-        VkDescriptorSet light_descriptor_set;
-
         Vk_Buffer lambertian_material_buffer;
-        VkDescriptorSetLayout material_descriptor_set_layout;
-        VkDescriptorSet material_descriptor_set;
     } gpu_scene;
 
     Apply_Tone_Mapping apply_tone_mapping;

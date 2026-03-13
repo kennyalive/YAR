@@ -68,7 +68,7 @@ static void create_instance(bool enable_validation_layer) {
     }
 
     VkApplicationInfo app_info { VK_STRUCTURE_TYPE_APPLICATION_INFO };
-    app_info.apiVersion = VK_API_VERSION_1_3;
+    app_info.apiVersion = VK_API_VERSION_1_4;
 
     VkInstanceCreateInfo instance_create_info { VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
     instance_create_info.pApplicationInfo = &app_info;
@@ -161,6 +161,7 @@ static void create_device(GLFWwindow* window, int physical_device_index) {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
             VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, // nullDescriptor feature
             VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, // imgui v1.90.6 WIP uses extension endpoints instead of core
+            VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME,
         };
 
         uint32_t count = 0;
@@ -248,6 +249,10 @@ static void create_device(GLFWwindow* window, int physical_device_index) {
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT };
         robustness2_features.nullDescriptor = VK_TRUE;
 
+        VkPhysicalDeviceDescriptorHeapFeaturesEXT descriptor_heap_features{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT };
+        descriptor_heap_features.descriptorHeap = VK_TRUE;
+
         buffer_device_address_features.pNext = &dynamic_rendering_features;
         dynamic_rendering_features.pNext = &synchronization2_features;
         synchronization2_features.pNext = &descriptor_indexing_features;
@@ -256,6 +261,7 @@ static void create_device(GLFWwindow* window, int physical_device_index) {
         acceleration_structure_features.pNext = &ray_tracing_pipeline_features;
         ray_tracing_pipeline_features.pNext = &ray_query_features;
         ray_query_features.pNext = &robustness2_features;
+        robustness2_features.pNext = &descriptor_heap_features;
 
         VkPhysicalDeviceFeatures2 features2 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
         features2.pNext = &buffer_device_address_features;
@@ -366,7 +372,7 @@ void vk_initialize(GLFWwindow* window, const Vk_Init_Params& init_params) {
         allocator_info.device = vk.device;
         allocator_info.instance = vk.instance;
         allocator_info.pVulkanFunctions = &alloc_funcs;
-        allocator_info.vulkanApiVersion = VK_API_VERSION_1_3;
+        allocator_info.vulkanApiVersion = VK_API_VERSION_1_4;
         VK_CHECK(vmaCreateAllocator(&allocator_info, &vk.allocator));
     }
 
@@ -617,6 +623,7 @@ Vk_Buffer vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, const vo
     alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
 
     Vk_Buffer buffer;
+    buffer.size = size;
     VK_CHECK(vmaCreateBuffer(vk.allocator, &buffer_create_info, &alloc_create_info, &buffer.handle, &buffer.allocation, nullptr));
     vk_set_debug_name(buffer.handle, name);
 
@@ -639,6 +646,38 @@ Vk_Buffer vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, const vo
     return buffer;
 }
 
+Vk_Buffer vk_create_buffer_with_alignment(VkDeviceSize size, VkBufferUsageFlags usage, uint32_t min_alignment,
+    const void* data, const char* name)
+{
+    VkBufferCreateInfo buffer_create_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+    buffer_create_info.size = size;
+    buffer_create_info.usage = usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    VmaAllocationCreateInfo alloc_create_info{};
+    alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
+
+    Vk_Buffer buffer;
+    buffer.size = size;
+    VK_CHECK(vmaCreateBufferWithAlignment(vk.allocator, &buffer_create_info, &alloc_create_info, min_alignment,
+        &buffer.handle, &buffer.allocation, nullptr));
+    vk_set_debug_name(buffer.handle, name);
+
+    VkBufferDeviceAddressInfo buffer_address_info{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
+    buffer_address_info.buffer = buffer.handle;
+    buffer.device_address = vkGetBufferDeviceAddress(vk.device, &buffer_address_info);
+
+    if (data != nullptr) {
+        vk_ensure_staging_buffer_allocation(size);
+        memcpy(vk.staging_buffer_ptr, data, size);
+        vk_execute(vk.command_pools[0], vk.queue, [size, &buffer](VkCommandBuffer command_buffer) {
+            VkBufferCopy region{};
+            region.size = size;
+            vkCmdCopyBuffer(command_buffer, vk.staging_buffer, buffer.handle, 1, &region);
+            });
+    }
+    return buffer;
+}
+
 Vk_Buffer vk_create_mapped_buffer(VkDeviceSize size, VkBufferUsageFlags usage, void** buffer_ptr, const char* name) {
     VkBufferCreateInfo buffer_create_info { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     buffer_create_info.size = size;
@@ -651,6 +690,7 @@ Vk_Buffer vk_create_mapped_buffer(VkDeviceSize size, VkBufferUsageFlags usage, v
 
     VmaAllocationInfo alloc_info;
     Vk_Buffer buffer;
+    buffer.size = size;
     VK_CHECK(vmaCreateBuffer(vk.allocator, &buffer_create_info, &alloc_create_info, &buffer.handle, &buffer.allocation, &alloc_info));
     vk_set_debug_name(buffer.handle, name);
 
@@ -663,8 +703,33 @@ Vk_Buffer vk_create_mapped_buffer(VkDeviceSize size, VkBufferUsageFlags usage, v
     return buffer;
 }
 
+Vk_Buffer vk_create_mapped_buffer_with_alignment(VkDeviceSize size, VkBufferUsageFlags usage, uint32_t alignment, const char* name) {
+    VkBufferCreateInfo buffer_create_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+    buffer_create_info.size = size;
+    buffer_create_info.usage = usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    VmaAllocationCreateInfo alloc_create_info{};
+    alloc_create_info.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+    alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
+    alloc_create_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT; // to avoid manual flush/invalidation
+
+    VmaAllocationInfo alloc_info;
+    Vk_Buffer buffer;
+    buffer.size = size;
+    VK_CHECK(vmaCreateBufferWithAlignment(vk.allocator, &buffer_create_info, &alloc_create_info, alignment,
+        &buffer.handle, &buffer.allocation, &alloc_info));
+    vk_set_debug_name(buffer.handle, name);
+
+    VkBufferDeviceAddressInfo buffer_address_info{ VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO };
+    buffer_address_info.buffer = buffer.handle;
+    buffer.device_address = vkGetBufferDeviceAddress(vk.device, &buffer_address_info);
+    buffer.mapped_ptr = alloc_info.pMappedData;
+    return buffer;
+}
+
 Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate_mipmaps, const uint8_t* pixels, int bytes_per_pixel, const char* name) {
     Vk_Image image;
+    image.format = format;
 
     uint32_t mip_levels = 1;
     if (generate_mipmaps) {
@@ -922,6 +987,7 @@ VkShaderModule vk_load_spirv(const std::string& spirv_file) {
 
 Vk_Image vk_create_image(int width, int height, VkFormat format, VkImageUsageFlags usage_flags, const char* name) {
     Vk_Image image;
+    image.format = format;
 
     // create image
     {

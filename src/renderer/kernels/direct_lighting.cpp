@@ -2,8 +2,9 @@
 #include "lib/common.h"
 #include "direct_lighting.h"
 
+#include "renderer/descriptors.h"
+#include "renderer/descriptor_heap.h"
 #include "renderer/geometry.h"
-#include "renderer/kernel_context.h"
 #include "renderer/vk_utils.h"
 #include "shaders/shared_main.slang"
 #include "shaders/shared_light.slang"
@@ -24,12 +25,18 @@ struct GPU_Vertex {
     Vector2 uv;
 };
 
-void Direct_Lighting::create(const Kernel_Context& ctx, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
+void Direct_Lighting::create(Descriptor_Heap& descriptor_heap, const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
     uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Rt_Uniform_Buffer)),
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &(void*&)mapped_uniform_buffer, "rt_uniform_buffer");
 
     accelerator = create_intersection_accelerator(scene.objects, gpu_meshes);
-    create_pipeline(ctx, gpu_meshes);
+    accelerator_heap_offset = descriptor_heap.allocate_buffer_descriptor();
+    uniform_buffer_heap_offset = descriptor_heap.allocate_buffer_descriptor();
+
+    descriptor_heap.write_acceleration_structure_descriptor(accelerator.top_level_accel.device_address, accelerator_heap_offset);
+    descriptor_heap.write_buffer_descriptor(uniform_buffer.range(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniform_buffer_heap_offset);
+
+    create_pipeline(descriptors, global_heap_mappings, gpu_meshes);
 
     // Shader binding table.
     {
@@ -50,13 +57,7 @@ void Direct_Lighting::destroy() {
     shader_binding_table.destroy();
     accelerator.destroy();
 
-    vkDestroyDescriptorSetLayout(vk.device, descriptor_set_layout, nullptr);
-    vkDestroyPipelineLayout(vk.device, pipeline_layout, nullptr);
     vkDestroyPipeline(vk.device, pipeline, nullptr);
-}
-
-void Direct_Lighting::update_output_image_descriptor(VkImageView output_image_view) {
-    Descriptor_Writes(descriptor_set).storage_image(0, output_image_view);
 }
 
 void Direct_Lighting::update_camera_transform(const Matrix3x4& camera_to_world_transform) {
@@ -75,30 +76,8 @@ void Direct_Lighting::update_diffuse_rectangular_lights(uint32_t light_count) {
     mapped_uniform_buffer->diffuse_rectangular_light_count = light_count;
 }
 
-void Direct_Lighting::create_pipeline(const Kernel_Context& ctx, const std::vector<GPU_Mesh>& gpu_meshes)
+void Direct_Lighting::create_pipeline(const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const std::vector<GPU_Mesh>& gpu_meshes)
 {
-    descriptor_set_layout = Descriptor_Set_Layout()
-        .storage_image(0, VK_SHADER_STAGE_RAYGEN_BIT_KHR)
-        .accelerator(1, VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
-        .uniform_buffer(2, VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR)
-        .create("rt_set_layout");
-
-    pipeline_layout = create_pipeline_layout(
-        {
-            ctx.base_descriptor_set_layout,
-            ctx.material_descriptor_set_layout,
-            ctx.light_descriptor_set_layout,
-            descriptor_set_layout
-        },
-        {
-            // offset 0: spp (samples per pixel)
-            // offset 4: fovy
-            // offset 8: is_z_up
-            VkPushConstantRange{VK_SHADER_STAGE_ALL, 0, Compatible_Layout_Push_Constant_Count * sizeof(uint32_t)}
-        },
-        "rt_pipeline_layout"
-    );
-
     // pipeline
     {
         Shader_Module rgen_shader("spirv/raytrace_scene.rgen.spv");
@@ -126,6 +105,34 @@ void Direct_Lighting::create_pipeline(const Kernel_Context& ctx, const std::vect
         stage_infos[3].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         stage_infos[3].module = shadow_ray_chit_shader.handle;
         stage_infos[3].pName = "main";
+
+        const VkDescriptorSetAndBindingMappingEXT raygen_output_image_mapping = map_binding_to_heap_offset(
+            KERNEL_SET_0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
+            descriptors.output_image
+        );
+        const VkDescriptorSetAndBindingMappingEXT raygen_accel_mapping = map_binding_to_heap_offset(
+            KERNEL_SET_0, 1, VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT,
+            accelerator_heap_offset
+        );
+        const VkDescriptorSetAndBindingMappingEXT raygen_uniform_buffer_mapping = map_binding_to_heap_offset(
+            KERNEL_SET_0, 2, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT,
+            uniform_buffer_heap_offset
+        );
+
+        VkDescriptorSetAndBindingMappingEXT raygen_mappings[3] = {
+            raygen_output_image_mapping,
+            raygen_accel_mapping,
+            raygen_uniform_buffer_mapping
+        };
+
+        std::vector<VkDescriptorSetAndBindingMappingEXT> mappings = global_heap_mappings;
+        mappings.insert(mappings.begin(), raygen_mappings, raygen_mappings + std::size(raygen_mappings));
+
+        VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info{ VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT };
+        mapping_info.mappingCount = (uint32_t)mappings.size();
+        mapping_info.pMappings = mappings.data();
+        stage_infos[0].pNext = &mapping_info;
+        stage_infos[2].pNext = &mapping_info;
 
         VkRayTracingShaderGroupCreateInfoKHR shader_groups[4];
         {
@@ -165,7 +172,11 @@ void Direct_Lighting::create_pipeline(const Kernel_Context& ctx, const std::vect
             group.intersectionShader = VK_SHADER_UNUSED_KHR;
         }
 
+        VkPipelineCreateFlags2CreateInfo flags_create_info = { VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO };
+        flags_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+
         VkRayTracingPipelineCreateInfoKHR create_info{ VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR };
+        create_info.pNext = &flags_create_info;
         create_info.flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR |
                             VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
         create_info.stageCount = (uint32_t)std::size(stage_infos);
@@ -173,26 +184,22 @@ void Direct_Lighting::create_pipeline(const Kernel_Context& ctx, const std::vect
         create_info.groupCount = (uint32_t)std::size(shader_groups);
         create_info.pGroups = shader_groups;
         create_info.maxPipelineRayRecursionDepth = 2;
-        create_info.layout = pipeline_layout;
         VK_CHECK(vkCreateRayTracingPipelinesKHR(vk.device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
     }
 
-    descriptor_set = allocate_descriptor_set(descriptor_set_layout);
-    Descriptor_Writes(descriptor_set)
-        .accelerator(1, accelerator.top_level_accel.aceleration_structure)
-        .uniform_buffer(2, uniform_buffer.handle, 0, sizeof(Rt_Uniform_Buffer));
 }
 
 void Direct_Lighting::dispatch(float fovy, bool spp4, bool z_is_up)
 {
-    vkCmdBindDescriptorSets(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR,
-        pipeline_layout, KERNEL_SET_0, 1, &descriptor_set, 0, nullptr);
-
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 
     float tan_fovy_over2 = std::tan(radians(fovy/2.f));
-    uint32_t push_constants[3] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2), z_is_up };
-    vkCmdPushConstants(vk.command_buffer, pipeline_layout, VK_SHADER_STAGE_ALL, 0, 12, &push_constants[0]);
+    uint32_t push_data[3] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2), z_is_up };
+
+    VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
+    push_data_info.data.address = push_data;
+    push_data_info.data.size = 12;
+    vkCmdPushDataEXT(vk.command_buffer, &push_data_info);
 
     const VkBuffer sbt = shader_binding_table.handle;
     const uint32_t sbt_slot_size = properties.shaderGroupHandleSize;
