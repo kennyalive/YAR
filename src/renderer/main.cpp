@@ -6,7 +6,6 @@
 #include "imgui/imgui.h"
 
 static std::string input_file;
-static bool enable_vulkan_validation = false;
 static int gpu_index = -1;
 
 static int window_width = 960;
@@ -24,9 +23,6 @@ static bool parse_command_line(int argc, char** argv) {
                 gpu_index = std::stoi(argv[i + 1]);
                 i++;
             }
-        }
-        else if (strcmp(argv[i], "--validation") == 0) {
-            enable_vulkan_validation = true;
         }
         else if (strcmp(argv[i], "--data-dir") == 0) {
             if (i == argc-1) {
@@ -85,7 +81,7 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
     }
 }
 
-int run_realtime_renderer(bool enable_vulkan_validation, int gpu_index) {
+int run_realtime_renderer(int gpu_index) {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         error("glfwInit failed");
@@ -96,7 +92,7 @@ int run_realtime_renderer(bool enable_vulkan_validation, int gpu_index) {
     glfwSetKeyCallback(window, glfw_key_callback);
 
     Renderer renderer{};
-    renderer.initialize(window, enable_vulkan_validation, gpu_index);
+    renderer.initialize(window, gpu_index);
     glfwSetWindowUserPointer(window, &renderer);
 
     if (!input_file.empty())
@@ -147,6 +143,6 @@ int main(int argc, char** argv) {
     if (!parse_command_line(argc, argv))
         return 0;
 
-    run_realtime_renderer(enable_vulkan_validation, gpu_index);
+    run_realtime_renderer(gpu_index);
     return 0;
 }

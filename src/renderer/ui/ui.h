@@ -2,7 +2,7 @@
 
 #include "lib/vector.h"
 
-struct GPU_Time_Scope;
+struct Vk_Timer;
 
 struct UI {
     void run_imgui();
@@ -15,7 +15,7 @@ struct UI {
     bool vsync = true;
 
     bool* spp4 = nullptr;
-    const GPU_Time_Scope* frame_time_scope = nullptr;
+    const Vk_Timer* frame_time_scope = nullptr;
 
     Vector3 camera_position;
 

@@ -40,6 +40,8 @@ std::string read_text_file(const std::string& file_path);
 // Returns extension in lower case in the form ".ext".
 std::string get_extension(const std::string& file_path);
 
+std::string get_spirv_file(const char* spirv_base_name);
+
 struct Timestamp {
     Timestamp() : t(std::chrono::steady_clock::now()) {}
     std::chrono::time_point<std::chrono::steady_clock> t;

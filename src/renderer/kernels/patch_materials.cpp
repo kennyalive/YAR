@@ -3,7 +3,6 @@
 #include "patch_materials.h"
 
 #include "renderer/descriptors.h"
-#include "renderer/vk_utils.h"
 
 void Patch_Materials::create(Descriptors& descriptors)
 {
@@ -11,7 +10,8 @@ void Patch_Materials::create(Descriptors& descriptors)
         0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT,
         descriptors.lambertian_materials
     );
-    pipeline = create_compute_pipeline_with_heap_mappings("spirv/patch_materials.spv", std::span(&mapping, 1), "patch_materials_pipeline");
+    Vk_Shader_Module shader(get_spirv_file("patch_materials"));
+    pipeline = vk_create_compute_pipeline(shader.handle, std::span(&mapping, 1), "patch_materials_pipeline");
 }
 
 void Patch_Materials::destroy()

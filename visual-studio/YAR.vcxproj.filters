@@ -21,7 +21,6 @@
     <ClCompile Include="..\src\renderer\kernels\apply_tone_mapping.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\renderer\vk_utils.cpp" />
     <ClCompile Include="..\src\renderer\descriptor_heap.cpp" />
     <ClCompile Include="..\src\renderer\descriptors.cpp" />
   </ItemGroup>
@@ -47,7 +46,6 @@
     <ClInclude Include="..\src\renderer\kernels\apply_tone_mapping.h">
       <Filter>kernels</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\renderer\vk_utils.h" />
     <ClInclude Include="..\src\renderer\descriptor_heap.h" />
     <ClInclude Include="..\src\renderer\descriptors.h" />
   </ItemGroup>

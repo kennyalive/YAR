@@ -4,7 +4,6 @@
 
 #include "geometry.h"
 #include "vk.h"
-#include "vk_utils.h"
 #include "shaders/shared_main.slang"
 #include "shaders/shared_light.slang"
 #include "shaders/shared_material.slang"
@@ -34,11 +33,82 @@ static VkFormat get_depth_image_format() {
     return VK_FORMAT_UNDEFINED;
 }
 
-void Renderer::initialize(GLFWwindow* window, bool enable_vulkan_validation, int gpu_index) {
+void Renderer::initialize(GLFWwindow* window, int gpu_index) {
+    std::array instance_extensions = {
+        VK_KHR_SURFACE_EXTENSION_NAME,
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+        VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+#endif
+        VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+    };
+    std::array device_extensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, // nullDescriptor feature
+        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, // imgui v1.90.6 WIP uses extension endpoints instead of core
+        VK_EXT_DESCRIPTOR_HEAP_EXTENSION_NAME,
+        VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+        VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, // required by VK_KHR_acceleration_structure
+        VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+    };
+    // use non-srgb formats for swapchain images, so we can render to swapchain from compute,
+    // also it means we should do srgb encoding manually.
+    std::array surface_formats = {
+        VK_FORMAT_R8G8B8A8_UNORM,
+        VK_FORMAT_B8G8R8A8_UNORM
+    };
+
+    // Specify required features.
+    VkPhysicalDeviceFeatures2 features2{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
+    Vk_PNexer pnexer(features2);
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures buffer_device_address_features{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES };
+    buffer_device_address_features.bufferDeviceAddress = VK_TRUE;
+    pnexer.next(buffer_device_address_features);
+
+    VkPhysicalDeviceDescriptorHeapFeaturesEXT descriptor_heap_features{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_FEATURES_EXT };
+    descriptor_heap_features.descriptorHeap = VK_TRUE;
+    pnexer.next(descriptor_heap_features);
+
+    VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_features{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES };
+    descriptor_indexing_features.runtimeDescriptorArray = VK_TRUE;
+    pnexer.next(descriptor_indexing_features);
+
+    VkPhysicalDeviceSynchronization2Features synchronization2_features{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES };
+    synchronization2_features.synchronization2 = VK_TRUE;
+    pnexer.next(synchronization2_features);
+
+    VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_features{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES };
+    dynamic_rendering_features.dynamicRendering = VK_TRUE;
+    pnexer.next(dynamic_rendering_features);
+
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR acceleration_structure_features{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR };
+    acceleration_structure_features.accelerationStructure = VK_TRUE;
+    pnexer.next(acceleration_structure_features);
+
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR ray_tracing_pipeline_features{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR };
+    ray_tracing_pipeline_features.rayTracingPipeline = VK_TRUE;
+    pnexer.next(ray_tracing_pipeline_features);
+
+    VkPhysicalDeviceRobustness2FeaturesEXT robustness2_features{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT };
+    robustness2_features.nullDescriptor = VK_TRUE;
+    pnexer.next(robustness2_features);
+
     Vk_Init_Params vk_init_params;
-    vk_init_params.enable_validation_layer = enable_vulkan_validation;
     vk_init_params.physical_device_index = gpu_index;
     vk_init_params.vsync = ui.vsync;
+    vk_init_params.instance_extensions = std::span{ instance_extensions };
+    vk_init_params.device_extensions = std::span{ device_extensions };
+    vk_init_params.device_create_info_pnext = (const VkBaseInStructure*)&features2;
+    vk_init_params.supported_surface_formats = std::span{ surface_formats };
+    vk_init_params.surface_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
     vk_initialize(window, vk_init_params);
 
     // Device properties.
@@ -90,7 +160,7 @@ void Renderer::initialize(GLFWwindow* window, bool enable_vulkan_validation, int
         init_info.Device = vk.device;
         init_info.QueueFamily = vk.queue_family_index;
         init_info.Queue = vk.queue;
-        init_info.DescriptorPool = vk.descriptor_pool;
+        init_info.DescriptorPool = vk.imgui_descriptor_pool;
         init_info.MinImageCount = 2;
         init_info.ImageCount = (uint32_t)vk.swapchain_info.images.size();
         init_info.UseDynamicRendering = true;
@@ -103,15 +173,15 @@ void Renderer::initialize(GLFWwindow* window, bool enable_vulkan_validation, int
         ImGui_ImplVulkan_CreateFontsTexture();
     }
 
-    gpu_times.frame = time_keeper.allocate_time_scope("frame");
-    gpu_times.draw = time_keeper.allocate_time_scope("draw");
-    gpu_times.tone_map = time_keeper.allocate_time_scope("tone_map");
-    gpu_times.ui = time_keeper.allocate_time_scope("ui");
-    gpu_times.compute_copy = time_keeper.allocate_time_scope("compute copy");
-    gpu_times.frame->child_scopes = {gpu_times.draw, gpu_times.tone_map, gpu_times.ui, gpu_times.compute_copy};
-    time_keeper.initialize_time_scopes();
+    gpu_timers.frame = time_keeper.allocate_timer("frame");
+    gpu_timers.draw = time_keeper.allocate_timer("draw");
+    gpu_timers.tone_map = time_keeper.allocate_timer("tone_map");
+    gpu_timers.ui = time_keeper.allocate_timer("ui");
+    gpu_timers.compute_copy = time_keeper.allocate_timer("compute copy");
+    gpu_timers.frame->nested_timers = {gpu_timers.draw, gpu_timers.tone_map, gpu_timers.ui, gpu_timers.compute_copy};
+    time_keeper.initialize_timers();
     
-    ui.frame_time_scope = gpu_times.frame;
+    ui.frame_time_scope = gpu_timers.frame;
     ui.spp4 = &spp4;
 }
 
@@ -310,7 +380,7 @@ void Renderer::load_project(const std::string& input_file) {
             gpu_scene.lambertian_material_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 gpu_lambertian_materials.data(), "lambertian_material_buffer");
         }
-        descriptor_heap.write_buffer_descriptor(gpu_scene.lambertian_material_buffer.range(),
+        descriptor_heap.write_buffer_descriptor(gpu_scene.lambertian_material_buffer.address_range(),
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.lambertian_materials);
     }
 
@@ -332,16 +402,16 @@ void Renderer::load_project(const std::string& input_file) {
         descriptors.index_buffers = descriptor_heap.allocate_buffer_descriptor((uint32_t)gpu_meshes.size());
         descriptors.vertex_buffers = descriptor_heap.allocate_buffer_descriptor((uint32_t)gpu_meshes.size());
 
-        descriptor_heap.write_buffer_descriptor(gpu_scene.instance_info_buffer.range(),
+        descriptor_heap.write_buffer_descriptor(gpu_scene.instance_info_buffer.address_range(),
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.instance_infos);
 
         for (size_t i = 0; i < gpu_meshes.size(); i++) {
             const uint32_t element_offset = uint32_t(i * descriptor_heap.properties.bufferDescriptorSize);
 
-            descriptor_heap.write_buffer_descriptor(gpu_meshes[i].index_buffer.range(),
+            descriptor_heap.write_buffer_descriptor(gpu_meshes[i].index_buffer.address_range(),
                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.index_buffers + element_offset);
 
-            descriptor_heap.write_buffer_descriptor(gpu_meshes[i].vertex_buffer.range(),
+            descriptor_heap.write_buffer_descriptor(gpu_meshes[i].vertex_buffer.address_range(),
                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.vertex_buffers + element_offset);
         }
     }
@@ -400,13 +470,13 @@ void Renderer::load_project(const std::string& input_file) {
             printf("No supported lights found. Added default directional light\n");
         }
 
-        descriptor_heap.write_buffer_descriptor(gpu_scene.point_lights.range(), 
+        descriptor_heap.write_buffer_descriptor(gpu_scene.point_lights.address_range(), 
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.point_lights);
 
-        descriptor_heap.write_buffer_descriptor(gpu_scene.directional_lights.range(), 
+        descriptor_heap.write_buffer_descriptor(gpu_scene.directional_lights.address_range(), 
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.directional_lights);
 
-        descriptor_heap.write_buffer_descriptor(gpu_scene.diffuse_rectangular_lights.range(),
+        descriptor_heap.write_buffer_descriptor(gpu_scene.diffuse_rectangular_lights.address_range(),
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.diffuse_rectangular_lights);
     }
 
@@ -523,7 +593,7 @@ void Renderer::create_default_textures() {
 void Renderer::draw_frame() {
     vk_begin_frame();
     time_keeper.retrieve_query_results(); // get timestamp values from the previous frame
-    gpu_times.frame->begin();
+    gpu_timers.frame->start();
 
     descriptor_heap.bind(vk.command_buffer);
 
@@ -549,24 +619,24 @@ void Renderer::draw_frame() {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-    gpu_times.frame->end();
+    gpu_timers.frame->stop();
     vk_end_frame();
 }
 
 void Renderer::draw_raytraced_image() {
-    GPU_TIME_SCOPE(gpu_times.draw);
+    VK_TIME_SCOPE(gpu_timers.draw);
     direct_lighting.dispatch(scene.camera_fov_y, spp4, scene.z_is_up);
 }
 
 void Renderer::tone_mapping()
 {
-    GPU_TIME_SCOPE(gpu_times.tone_map);
+    VK_TIME_SCOPE(gpu_timers.tone_map);
     apply_tone_mapping.dispatch();
 }
 
 void Renderer::draw_imgui()
 {
-    GPU_TIME_SCOPE(gpu_times.ui);
+    VK_TIME_SCOPE(gpu_timers.ui);
 
     ImGui::Render();
 
@@ -589,7 +659,7 @@ void Renderer::draw_imgui()
 
 void Renderer::copy_output_image_to_swapchain()
 {
-    GPU_TIME_SCOPE(gpu_times.compute_copy);
+    VK_TIME_SCOPE(gpu_timers.compute_copy);
     copy_to_swapchain.dispatch();
 }
 

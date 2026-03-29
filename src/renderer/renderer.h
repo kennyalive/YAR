@@ -10,7 +10,6 @@
 #include "descriptor_heap.h"
 #include "descriptors.h"
 #include "geometry.h"
-#include "vk_utils.h"
 #include "vk.h"
 
 #include "lib/flying_camera.h"
@@ -21,7 +20,7 @@ struct GLFWwindow;
 
 class Renderer {
 public:
-    void initialize(GLFWwindow* glfw_window, bool enable_vulkan_validation, int gpu_index);
+    void initialize(GLFWwindow* glfw_window, int gpu_index);
     void shutdown();
 
     void release_resolution_dependent_resources();
@@ -77,14 +76,14 @@ private:
     Patch_Materials patch_materials;
     Direct_Lighting direct_lighting;
 
-    GPU_Time_Keeper time_keeper;
+    Vk_Time_Keeper time_keeper;
     struct {
-        GPU_Time_Scope* frame;
-        GPU_Time_Scope* draw;
-        GPU_Time_Scope* tone_map;
-        GPU_Time_Scope* ui;
-        GPU_Time_Scope* compute_copy;
-    } gpu_times;
+        Vk_Timer* frame;
+        Vk_Timer* draw;
+        Vk_Timer* tone_map;
+        Vk_Timer* ui;
+        Vk_Timer* compute_copy;
+    } gpu_timers;
 
     bool project_loaded = false;
     Scene scene;

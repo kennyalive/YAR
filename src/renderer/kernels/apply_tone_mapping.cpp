@@ -3,7 +3,6 @@
 #include "apply_tone_mapping.h"
 
 #include "../descriptors.h"
-#include "../vk_utils.h"
 
 void Apply_Tone_Mapping::create(Descriptors& descriptors)
 {
@@ -11,7 +10,8 @@ void Apply_Tone_Mapping::create(Descriptors& descriptors)
         0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
         descriptors.output_image
     );
-    pipeline = create_compute_pipeline_with_heap_mappings("spirv/apply_tone_mapping.spv", std::span(&mapping, 1), "apply_tone_mapping_pipeline_layout");
+    Vk_Shader_Module shader(get_spirv_file("apply_tone_mapping"));
+    pipeline = vk_create_compute_pipeline(shader.handle, std::span(&mapping, 1), "apply_tone_mapping_pipeline_layout");
 }
 
 void Apply_Tone_Mapping::destroy()

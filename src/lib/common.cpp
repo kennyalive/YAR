@@ -76,6 +76,11 @@ std::string get_project_unique_name(const std::string& scene_path) {
     return oss.str();
 }
 
+std::string get_spirv_file(const char* spirv_base_name)
+{
+    return (get_data_directory() / "spirv" / (std::string(spirv_base_name) + ".spv")).string();
+}
+
 std::vector<uint8_t> read_binary_file(const std::string& file_path) {
     std::ifstream file(file_path, std::ios_base::in | std::ios_base::binary);
     if (!file)

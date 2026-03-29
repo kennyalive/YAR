@@ -1,32 +1,37 @@
 #pragma once
 
+constexpr unsigned int VK_VERSION = -1;
+
 #ifdef _WIN32
-#define VK_USE_PLATFORM_WIN32_KHR
 #define NOMINMAX
 #endif
 
 #include "volk/volk.h"
-#include "vulkan/vk_enum_string_helper.h"
 
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
 #include "vma/vk_mem_alloc.h"
 
-#define VK_CHECK_RESULT(result) if (result < 0) error(std::string("Error: ") + string_VkResult(result));
+#include <functional>
+#include <span>
+#include <string>
+#include <vector>
+
+const char* vk_result_to_string(VkResult result);
+#define VK_CHECK_RESULT(result) if (result < 0 && vk.error) vk.error(std::string("Error: ") + vk_result_to_string(result));
 #define VK_CHECK(function_call) { VkResult result = function_call;  VK_CHECK_RESULT(result); }
 
+using Vk_Error_Func = void (*)(const std::string& error_message);
+
 struct Vk_Init_Params {
-    bool enable_validation_layer = false;
+    Vk_Error_Func error_reporter = nullptr;
     int physical_device_index = -1;
     bool vsync = false;
-};
-
-struct Vk_Image {
-    VkImage handle = VK_NULL_HANDLE;
-    VkImageView view = VK_NULL_HANDLE;
-    VmaAllocation allocation = VK_NULL_HANDLE;
-    VkFormat format = VK_FORMAT_UNDEFINED;
-    void destroy();
+    std::span<const char*> instance_extensions;
+    std::span<const char*> device_extensions;
+    const VkBaseInStructure* device_create_info_pnext = nullptr;
+    std::span<VkFormat> supported_surface_formats;
+    VkImageUsageFlags surface_usage_flags = 0;
 };
 
 struct Vk_Buffer {
@@ -35,13 +40,25 @@ struct Vk_Buffer {
     VkDeviceSize size = 0;
     VkDeviceAddress device_address = 0;
     void* mapped_ptr = nullptr;
+
     void destroy();
-    VkDeviceAddressRangeEXT range() const {
-        VkDeviceAddressRangeEXT range{};
-        range.address = device_address;
-        range.size = size;
-        return range;
+    VkDeviceAddressRangeEXT address_range() const
+    {
+        return VkDeviceAddressRangeEXT{ device_address, size };
     }
+    template <typename T>
+    T* get_mapped_data()
+    {
+        return static_cast<T*>(mapped_ptr);
+    }
+};
+
+struct Vk_Image {
+    VkImage handle = VK_NULL_HANDLE;
+    VkImageView view = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
+    VkFormat format = VK_FORMAT_UNDEFINED;
+    void destroy();
 };
 
 struct Vk_Graphics_Pipeline_State {
@@ -77,25 +94,39 @@ void vk_create_swapchain(bool vsync);
 void vk_destroy_swapchain();
 
 void vk_ensure_staging_buffer_allocation(VkDeviceSize size);
-Vk_Buffer vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, const void* data = nullptr, const char* name = nullptr);
-Vk_Buffer vk_create_buffer_with_alignment(VkDeviceSize size, VkBufferUsageFlags usage, uint32_t min_alignment,
+
+// Buffers
+Vk_Buffer vk_create_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
     const void* data = nullptr, const char* name = nullptr);
-Vk_Buffer vk_create_mapped_buffer(VkDeviceSize size, VkBufferUsageFlags usage, void** buffer_ptr, const char* name = nullptr);
-Vk_Buffer vk_create_mapped_buffer_with_alignment(VkDeviceSize size, VkBufferUsageFlags usage, uint32_t alignment, const char* name = nullptr);
-Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate_mipmaps, const uint8_t* pixels, int bytes_per_pixel, const char*  name);
+Vk_Buffer vk_create_buffer_with_alignment(VkDeviceSize size, VkBufferUsageFlags usage,
+    uint32_t alignment, const void* data = nullptr, const char* name = nullptr);
+Vk_Buffer vk_create_mapped_buffer(VkDeviceSize size, VkBufferUsageFlags usage,
+    const char* name = nullptr);
+Vk_Buffer vk_create_mapped_buffer_with_alignment(VkDeviceSize size, VkBufferUsageFlags usage,
+    uint32_t alignment, const char* name = nullptr);
+
+// Images
 Vk_Image vk_create_image(int width, int height, VkFormat format, VkImageUsageFlags usage_flags, const char* name);
+Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate_mipmaps, const uint8_t* pixels, int bytes_per_pixel, const char*  name);
 Vk_Image vk_load_texture(const std::string& texture_file);
+
 VkShaderModule vk_load_spirv(const std::string& spirv_file);
+
+VkPipelineLayout vk_create_pipeline_layout(
+    std::initializer_list<VkDescriptorSetLayout> set_layouts,
+    std::initializer_list<VkPushConstantRange> push_constant_ranges,
+    const char* name);
 
 Vk_Graphics_Pipeline_State get_default_graphics_pipeline_state();
 
-VkPipeline vk_create_graphics_pipeline(
-    const Vk_Graphics_Pipeline_State&   state,
-    VkPipelineLayout                    pipeline_layout,
-    VkShaderModule                      vertex_shader,
-    VkShaderModule                      fragment_shader
-);
+VkPipeline vk_create_graphics_pipeline(const Vk_Graphics_Pipeline_State& state,
+    VkShaderModule vertex_shader, VkShaderModule fragment_shader, const char* name);
 
+VkPipeline vk_create_compute_pipeline(
+    VkShaderModule compute_shader,
+    std::span<const VkDescriptorSetAndBindingMappingEXT> binding_mappings,
+    const char* name
+);
 
 void vk_begin_frame();
 void vk_end_frame();
@@ -104,23 +135,24 @@ void vk_execute(VkCommandPool command_pool, VkQueue queue, std::function<void(Vk
 
 // Barrier for all subresources of non-depth image.
 void vk_cmd_image_barrier(VkCommandBuffer command_buffer, VkImage image,
-    VkPipelineStageFlags src_stage_mask, VkAccessFlags src_access_mask, VkImageLayout old_layout,
-    VkPipelineStageFlags dst_stage_mask, VkAccessFlags dst_access_mask, VkImageLayout new_layout);
+    VkPipelineStageFlags2 src_stage_mask, VkAccessFlags2 src_access_mask, VkImageLayout old_layout,
+    VkPipelineStageFlags2 dst_stage_mask, VkAccessFlags2 dst_access_mask, VkImageLayout new_layout);
 
 // General image barrier.
 void vk_cmd_image_barrier_for_subresource(VkCommandBuffer command_buffer, VkImage image, const VkImageSubresourceRange& subresource_range,
-    VkPipelineStageFlags src_stage_mask, VkAccessFlags src_access_mask, VkImageLayout old_layout,
-    VkPipelineStageFlags dst_stage_mask, VkAccessFlags dst_access_mask, VkImageLayout new_layout);
+    VkPipelineStageFlags2 src_stage_mask, VkAccessFlags2 src_access_mask, VkImageLayout old_layout,
+    VkPipelineStageFlags2 dst_stage_mask, VkAccessFlags2 dst_access_mask, VkImageLayout new_layout);
 
 
 uint32_t vk_allocate_timestamp_queries(uint32_t count);
 
-// Workaround for static_assert(false). It should be used like this: static_assert(dependent_false_v<T>)
+// Workaround for static_assert(false). It should be used like this: static_assert(vk_dependent_false_v<T>)
 template<typename>
 inline constexpr bool vk_dependent_false_v = false;
 
 template <typename Vk_Object_Type>
-void vk_set_debug_name(Vk_Object_Type object, const char* name) {
+void vk_set_debug_name(Vk_Object_Type object, const char* name)
+{
     VkObjectType object_type;
 
 #define IF_TYPE_THEN_ENUM(vk_type, vk_object_type_enum) \
@@ -167,11 +199,13 @@ struct Swapchain_Info {
     VkSwapchainKHR handle = VK_NULL_HANDLE;
     std::vector<VkImage> images;
     std::vector<VkImageView> image_views;
+    std::vector<VkSemaphore> ready_for_present_semaphores;
 };
 
 // Vk_Instance contains vulkan resources that do not depend on applicaton logic.
 // This structure is initialized/deinitialized by vk_initialize/vk_shutdown functions correspondingly.
 struct Vk_Instance {
+    Vk_Error_Func                   error = nullptr;
     VkInstance                      instance;
     VkPhysicalDevice                physical_device;
     uint32_t                        queue_family_index;
@@ -182,6 +216,7 @@ struct Vk_Instance {
     VmaAllocator                    allocator;
 
     VkSurfaceKHR                    surface;
+    VkImageUsageFlags               surface_usage_flags;
     VkSurfaceFormatKHR              surface_format;
     VkExtent2D                      surface_size;
     Swapchain_Info                  swapchain_info;
@@ -193,10 +228,7 @@ struct Vk_Instance {
     VkCommandBuffer                 command_buffer; // command_buffers[frame_index]
     int                             frame_index;
 
-    VkDescriptorPool                descriptor_pool;
-
     VkSemaphore                     image_acquired_semaphore[2];
-    VkSemaphore                     rendering_finished_semaphore[2];
     VkFence                         frame_fence[2];
 
     VkQueryPool                     timestamp_query_pools[2];
@@ -210,6 +242,106 @@ struct Vk_Instance {
     uint8_t*                        staging_buffer_ptr; // pointer to mapped staging buffer
 
     VkDebugUtilsMessengerEXT        debug_utils_messenger;
+
+    VkDescriptorPool                imgui_descriptor_pool;
 };
 
 extern Vk_Instance vk;
+
+//*****************************************************************************
+//
+// Misc Vulkan utilities section
+//
+//*****************************************************************************
+struct Vk_PNexer {
+    VkBaseOutStructure* tail = nullptr;
+    template <typename TVkStruct>
+    Vk_PNexer(TVkStruct& vk_struct)
+    {
+        tail = reinterpret_cast<VkBaseOutStructure*>(&vk_struct);
+    }
+    template <typename TVkStruct>
+    void next(TVkStruct& vk_struct)
+    {
+        tail->pNext = reinterpret_cast<VkBaseOutStructure*>(&vk_struct);
+        tail = tail->pNext;
+    }
+};
+
+struct Vk_Shader_Module {
+    Vk_Shader_Module(const std::string& spirv_file);
+    ~Vk_Shader_Module();
+    VkShaderModule handle;
+};
+
+VkDescriptorSetAndBindingMappingEXT map_binding_to_heap_offset(
+    uint32_t set, uint32_t binding, VkSpirvResourceTypeFlagBitsEXT resource_type,
+    uint32_t heap_offset, uint32_t heap_array_stride = 0
+);
+
+//
+// Time queries
+//
+struct Vk_Time_Keeper;
+
+struct Vk_Timer {
+    Vk_Time_Keeper* time_keeper = nullptr;
+    const char* name = nullptr;
+    uint32_t start_query; // end_query == start_query + 1
+    float duration_ms;
+    std::vector<Vk_Timer*> nested_timers;
+
+    void start();
+    void stop();
+};
+
+struct Vk_Time_Keeper {
+    static constexpr uint32_t max_timers = 128;
+
+    Vk_Timer timers[max_timers];
+    uint32_t timer_count = 0;
+
+    Vk_Timer* frame_active_timers[max_timers];
+    int frame_active_timer_count = 0;
+
+    Vk_Timer* allocate_timer(const char* name);
+    void initialize_timers();
+    void retrieve_query_results();
+};
+
+struct Vk_Time_Scope {
+    Vk_Time_Scope(Vk_Timer* timer)
+        : timer(timer)
+    {
+        timer->start();
+    }
+    ~Vk_Time_Scope()
+    {
+        timer->stop();
+    }
+    Vk_Timer* timer = nullptr;
+};
+
+#define VK_TIME_SCOPE(timer) Vk_Time_Scope time_scope##__LINE__(timer)
+
+//
+// Debug markers
+//
+void vk_begin_marker(VkCommandBuffer command_buffer, const char* name);
+void vk_end_marker(VkCommandBuffer command_buffer);
+void vk_write_marker(VkCommandBuffer command_buffer, const char* name);
+
+struct Vk_Marker_Scope {
+    Vk_Marker_Scope(VkCommandBuffer command_buffer, const char* name) {
+        this->command_buffer = command_buffer;
+        vk_begin_marker(command_buffer, name);
+    }
+    ~Vk_Marker_Scope() {
+        vk_end_marker(command_buffer);
+    }
+
+private:
+    VkCommandBuffer command_buffer;
+};
+
+#define VK_MARKER_SCOPE(command_buffer, name) Vk_Marker_Scope marker_scope##__LINE__(command_buffer, name)

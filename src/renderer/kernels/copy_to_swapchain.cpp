@@ -2,8 +2,7 @@
 #include "lib/common.h"
 #include "copy_to_swapchain.h"
 
-#include "../descriptors.h"
-#include "../vk_utils.h"
+#include "renderer/descriptors.h"
 
 void Copy_To_Swapchain::create(const Descriptors& descriptors)
 {
@@ -16,7 +15,8 @@ void Copy_To_Swapchain::create(const Descriptors& descriptors)
         0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
         descriptors.swapchain_images, descriptors.image_descriptor_size
     );
-    pipeline = create_compute_pipeline_with_heap_mappings("spirv/copy_to_swapchain.spv", mappings, "copy_to_swapchain_pipeline");
+    Vk_Shader_Module shader(get_spirv_file("copy_to_swapchain"));
+    pipeline = vk_create_compute_pipeline(shader.handle, mappings, "copy_to_swapchain_pipeline");
 }
 
 void Copy_To_Swapchain::destroy()

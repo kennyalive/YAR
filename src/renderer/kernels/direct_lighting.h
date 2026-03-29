@@ -3,24 +3,22 @@
 #include "renderer/acceleration_structure.h"
 
 struct Matrix3x4;
-struct Rt_Uniform_Buffer;
 struct Scene;
 struct Descriptor_Heap;
 struct Descriptors;
 
 struct Direct_Lighting {
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR properties;
-    Vk_Intersection_Accelerator accelerator;
-    Vk_Buffer mesh_materials;
 
-    VkPipeline pipeline;
+    Vk_Intersection_Accelerator accelerator;
+    uint32_t accelerator_heap_offset = 0;
+
+    Vk_Buffer uniform_buffer;
+    uint32_t uniform_buffer_heap_offset = 0;
 
     Vk_Buffer shader_binding_table;
 
-    Vk_Buffer uniform_buffer;
-    Rt_Uniform_Buffer* mapped_uniform_buffer;
-    uint32_t accelerator_heap_offset = 0;
-    uint32_t uniform_buffer_heap_offset = 0;
+    VkPipeline pipeline;
 
     void create(Descriptor_Heap& descriptor_heap, const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes);
     void destroy();

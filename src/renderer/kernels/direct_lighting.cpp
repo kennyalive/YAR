@@ -5,7 +5,6 @@
 #include "renderer/descriptors.h"
 #include "renderer/descriptor_heap.h"
 #include "renderer/geometry.h"
-#include "renderer/vk_utils.h"
 #include "shaders/shared_main.slang"
 #include "shaders/shared_light.slang"
 #include "lib/scene.h"
@@ -26,15 +25,14 @@ struct GPU_Vertex {
 };
 
 void Direct_Lighting::create(Descriptor_Heap& descriptor_heap, const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
-    uniform_buffer = vk_create_mapped_buffer(static_cast<VkDeviceSize>(sizeof(Rt_Uniform_Buffer)),
-        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, &(void*&)mapped_uniform_buffer, "rt_uniform_buffer");
+    uniform_buffer = vk_create_mapped_buffer(sizeof(Rt_Uniform_Buffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, "rt_uniform_buffer");
 
     accelerator = create_intersection_accelerator(scene.objects, gpu_meshes);
     accelerator_heap_offset = descriptor_heap.allocate_buffer_descriptor();
     uniform_buffer_heap_offset = descriptor_heap.allocate_buffer_descriptor();
 
     descriptor_heap.write_acceleration_structure_descriptor(accelerator.top_level_accel.device_address, accelerator_heap_offset);
-    descriptor_heap.write_buffer_descriptor(uniform_buffer.range(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniform_buffer_heap_offset);
+    descriptor_heap.write_buffer_descriptor(uniform_buffer.address_range(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniform_buffer_heap_offset);
 
     create_pipeline(descriptors, global_heap_mappings, gpu_meshes);
 
@@ -60,30 +58,34 @@ void Direct_Lighting::destroy() {
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
 
-void Direct_Lighting::update_camera_transform(const Matrix3x4& camera_to_world_transform) {
-    mapped_uniform_buffer->camera_to_world = camera_to_world_transform;
+void Direct_Lighting::update_camera_transform(const Matrix3x4& camera_to_world_transform)
+{
+    uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->camera_to_world = camera_to_world_transform;
 }
 
-void Direct_Lighting::update_point_lights(uint32_t light_count) {
-    mapped_uniform_buffer->point_light_count = light_count;
+void Direct_Lighting::update_point_lights(uint32_t light_count)
+{
+    uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->point_light_count = light_count;
 }
 
-void Direct_Lighting::update_directional_lights(uint32_t light_count) {
-    mapped_uniform_buffer->directional_light_count = light_count;
+void Direct_Lighting::update_directional_lights(uint32_t light_count)
+{
+    uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->directional_light_count = light_count;
 }
 
-void Direct_Lighting::update_diffuse_rectangular_lights(uint32_t light_count) {
-    mapped_uniform_buffer->diffuse_rectangular_light_count = light_count;
+void Direct_Lighting::update_diffuse_rectangular_lights(uint32_t light_count)
+{
+    uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->diffuse_rectangular_light_count = light_count;
 }
 
 void Direct_Lighting::create_pipeline(const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const std::vector<GPU_Mesh>& gpu_meshes)
 {
     // pipeline
     {
-        Shader_Module rgen_shader("spirv/raytrace_scene.rgen.spv");
-        Shader_Module miss_shader("spirv/raytrace_scene.miss.spv");
-        Shader_Module chit_shader("spirv/raytrace_scene.chit.spv");
-        Shader_Module shadow_ray_chit_shader("spirv/raytrace_scene_shadow_ray.chit.spv");
+        Vk_Shader_Module rgen_shader(get_spirv_file("raytrace_scene.rgen"));
+        Vk_Shader_Module miss_shader(get_spirv_file("raytrace_scene.miss"));
+        Vk_Shader_Module chit_shader(get_spirv_file("raytrace_scene.chit"));
+        Vk_Shader_Module shadow_ray_chit_shader(get_spirv_file("raytrace_scene_shadow_ray.chit"));
 
         VkPipelineShaderStageCreateInfo stage_infos[4] {};
         stage_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
