@@ -12,6 +12,12 @@ public struct Shadow_Ray_Payload {
     public float shadow_factor; // 0.0 or 1.0
 };
 
+public struct Path_Payload {
+    public float3 color;
+    public float t;
+    public float3 normal;
+}
+
 public struct Vertex {
     public float3 p;
     public float3 n;

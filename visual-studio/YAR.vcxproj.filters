@@ -23,6 +23,9 @@
     </ClCompile>
     <ClCompile Include="..\src\renderer\descriptor_heap.cpp" />
     <ClCompile Include="..\src\renderer\descriptors.cpp" />
+    <ClCompile Include="..\src\renderer\kernels\path_tracing.cpp">
+      <Filter>kernels</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\std.h" />
@@ -48,6 +51,9 @@
     </ClInclude>
     <ClInclude Include="..\src\renderer\descriptor_heap.h" />
     <ClInclude Include="..\src\renderer\descriptors.h" />
+    <ClInclude Include="..\src\renderer\kernels\path_tracing.h">
+      <Filter>kernels</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
@@ -113,6 +119,18 @@
       <Filter>shaders</Filter>
     </SlangShader>
     <SlangShader Include="..\src\shaders\raytrace_scene.chit.slang">
+      <Filter>shaders</Filter>
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\path_tracing.chit.slang">
+      <Filter>shaders</Filter>
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\path_tracing.miss.slang">
+      <Filter>shaders</Filter>
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\path_tracing.rgen.slang">
+      <Filter>shaders</Filter>
+    </SlangShader>
+    <SlangShader Include="..\src\shaders\path_tracing_shadow_ray.chit.slang">
       <Filter>shaders</Filter>
     </SlangShader>
   </ItemGroup>

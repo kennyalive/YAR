@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lib/vector.h"
+#include "lib/raytracer_config.h"
 
 struct Vk_Timer;
 
@@ -13,6 +14,7 @@ struct UI {
     UI_Result ui_result;
     bool show_ui = true;
     bool vsync = true;
+    int rendering_algorithm = 0;
 
     bool* spp4 = nullptr;
     const Vk_Timer* frame_time_scope = nullptr;
@@ -25,4 +27,3 @@ struct UI {
     };
     Reference_Renderer_Params ref_params;
 };
-

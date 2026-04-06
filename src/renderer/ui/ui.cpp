@@ -47,6 +47,9 @@ void UI::run_imgui() {
             ImGui::Checkbox("Vertical sync", &vsync);
             ImGui::Checkbox("4 rays per pixel", spp4);
 
+            ImGui::RadioButton("direct lighting", &rendering_algorithm, 0);
+            ImGui::RadioButton("path tracing", &rendering_algorithm, 1);
+
             ImGui::Text("Camera position: %.2f %.2f %.2f", camera_position.x, camera_position.y, camera_position.z);
 
             ImGui::Separator();

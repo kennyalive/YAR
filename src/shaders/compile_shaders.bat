@@ -19,5 +19,9 @@ set SPIRV=%BASEDIR%..\..\data\spirv
 %SLANGC% %BASEDIR%\raytrace_scene.miss.slang -target spirv -matrix-layout-row-major -o %SPIRV%\raytrace_scene.miss.spv
 %SLANGC% %BASEDIR%\raytrace_scene.rgen.slang -target spirv -matrix-layout-row-major -o %SPIRV%\raytrace_scene.rgen.spv
 %SLANGC% %BASEDIR%\raytrace_scene_shadow_ray.chit.slang -target spirv -matrix-layout-row-major -o %SPIRV%\raytrace_scene_shadow_ray.chit.spv
+%SLANGC% %BASEDIR%\path_tracing.chit.slang -target spirv -matrix-layout-row-major -o %SPIRV%\path_tracing.chit.spv
+%SLANGC% %BASEDIR%\path_tracing.miss.slang -target spirv -matrix-layout-row-major -o %SPIRV%\path_tracing.miss.spv
+%SLANGC% %BASEDIR%\path_tracing.rgen.slang -target spirv -matrix-layout-row-major -o %SPIRV%\path_tracing.rgen.spv
+%SLANGC% %BASEDIR%\path_tracing_shadow_ray.chit.slang -target spirv -matrix-layout-row-major -o %SPIRV%\path_tracing_shadow_ray.chit.spv
 
 echo %DATE% %TIME% > %~dp0\..\..\data\spirv\compile_shaders.stamp
