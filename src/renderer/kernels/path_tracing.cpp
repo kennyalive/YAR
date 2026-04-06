@@ -1,6 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
-#include "direct_lighting.h"
+#include "path_tracing.h"
 
 #include "renderer/descriptors.h"
 #include "renderer/descriptor_heap.h"
@@ -24,7 +24,7 @@ struct GPU_Vertex {
     Vector2 uv;
 };
 
-void Direct_Lighting::create(Descriptor_Heap& descriptor_heap, const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
+void Path_Tracing::create(Descriptor_Heap& descriptor_heap, const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
     uniform_buffer = vk_create_mapped_buffer(sizeof(Rt_Uniform_Buffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, "rt_uniform_buffer");
 
     accelerator = create_intersection_accelerator(scene.objects, gpu_meshes);
@@ -56,7 +56,7 @@ void Direct_Lighting::create(Descriptor_Heap& descriptor_heap, const Descriptors
     }
 }
 
-void Direct_Lighting::destroy() {
+void Path_Tracing::destroy() {
     uniform_buffer.destroy();
     shader_binding_table.destroy();
     accelerator.destroy();
@@ -64,36 +64,36 @@ void Direct_Lighting::destroy() {
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
 
-void Direct_Lighting::update_camera_transform(const Matrix3x4& camera_to_world_transform)
+void Path_Tracing::update_camera_transform(const Matrix3x4& camera_to_world_transform)
 {
     uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->camera_to_world = camera_to_world_transform;
 }
 
-void Direct_Lighting::update_point_lights(uint32_t light_count)
+void Path_Tracing::update_point_lights(uint32_t light_count)
 {
     uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->point_light_count = light_count;
 }
 
-void Direct_Lighting::update_directional_lights(uint32_t light_count)
+void Path_Tracing::update_directional_lights(uint32_t light_count)
 {
     uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->directional_light_count = light_count;
 }
 
-void Direct_Lighting::update_diffuse_rectangular_lights(uint32_t light_count)
+void Path_Tracing::update_diffuse_rectangular_lights(uint32_t light_count)
 {
     uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->diffuse_rectangular_light_count = light_count;
 }
 
-void Direct_Lighting::create_pipeline(const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const std::vector<GPU_Mesh>& gpu_meshes)
+void Path_Tracing::create_pipeline(const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const std::vector<GPU_Mesh>& gpu_meshes)
 {
     // pipeline
     {
-        Vk_Shader_Module rgen_shader(get_spirv_file("raytrace_scene.rgen"));
-        Vk_Shader_Module miss_shader(get_spirv_file("raytrace_scene.miss"));
-        Vk_Shader_Module chit_shader(get_spirv_file("raytrace_scene.chit"));
-        Vk_Shader_Module shadow_ray_chit_shader(get_spirv_file("raytrace_scene_shadow_ray.chit"));
+        Vk_Shader_Module rgen_shader(get_spirv_file("path_tracing.rgen"));
+        Vk_Shader_Module miss_shader(get_spirv_file("path_tracing.miss"));
+        Vk_Shader_Module chit_shader(get_spirv_file("path_tracing.chit"));
+        Vk_Shader_Module shadow_ray_chit_shader(get_spirv_file("path_tracing_shadow_ray.chit"));
 
-        VkPipelineShaderStageCreateInfo stage_infos[4] {};
+        VkPipelineShaderStageCreateInfo stage_infos[4]{};
         stage_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         stage_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         stage_infos[0].module = rgen_shader.handle;
@@ -197,13 +197,14 @@ void Direct_Lighting::create_pipeline(const Descriptors& descriptors, const std:
         create_info.maxPipelineRayRecursionDepth = 2;
         VK_CHECK(vkCreateRayTracingPipelinesKHR(vk.device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
     }
+
 }
 
-void Direct_Lighting::dispatch(float fovy, bool spp4, bool z_is_up)
+void Path_Tracing::dispatch(float fovy, bool spp4, bool z_is_up)
 {
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 
-    float tan_fovy_over2 = std::tan(radians(fovy/2.f));
+    float tan_fovy_over2 = std::tan(radians(fovy / 2.f));
     uint32_t push_data[3] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2), z_is_up };
 
     VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };

@@ -39,6 +39,24 @@ Vertex fetch_vertex(int index)
     return v;
 }
 
+float solve_linear_system_2x2(float a[2][2], float3 b[2], out float3 x1, out float3 x2)
+{
+    float determinant = a[0][0] * a[1][1] - a[0][1] * a[1][0];
+    if (determinant != 0.f) {
+        float inv_det = 1.f / determinant;
+        x1 = (a[1][1] * b[0] - a[0][1] * b[1]) * inv_det;
+        x2 = (-a[1][0] * b[0] + a[0][0] * b[1]) * inv_det;
+    }
+    return determinant;
+}
+
+void coordinate_system_from_vector(float3 v, out float3 v1, out float3 v2)
+{
+    v1 = abs(v.x) > abs(v.y) ? float3(-v.z, 0, v.x) : float3(0, -v.z, v.y);
+    v1 = normalize(v1);
+    v2 = cross(v, v1);
+}
+
 Shading_Context init_shading_context(float2 attribs)
 {
     Vertex v0 = fetch_vertex(PrimitiveIndex() * 3 + 0);
@@ -46,7 +64,8 @@ Shading_Context init_shading_context(float2 attribs)
     Vertex v2 = fetch_vertex(PrimitiveIndex() * 3 + 2);
 
     float3 wo = -WorldRayDirection();
-    float3x3 normal_transform = (float3x3) ObjectToWorld3x4();
+    float3x3 object_to_world_3x3 = (float3x3)ObjectToWorld3x4();
+    float3x3 normal_transform = object_to_world_3x3;
 
     // Compute geometric normal.
     // Ensure it's in the same hemisphere as Wo (renderer's convention).
@@ -71,17 +90,36 @@ Shading_Context init_shading_context(float2 attribs)
         n = ng;
     }
 
+    // Compute dpdu/dpdv
+    float3 dpdu, dpdv;
+    {
+        float a[2][2] = {
+            { v1.uv.x - v0.uv.x, v1.uv.y - v0.uv.y },
+            { v2.uv.x - v0.uv.x, v2.uv.y - v0.uv.y }
+        };
+        float3 bp[2] = { v1.p - v0.p, v2.p - v0.p };
+        float det = solve_linear_system_2x2(a, bp, dpdu, dpdv);
+        if (abs(det) < 1e-9f) {
+            coordinate_system_from_vector(ng, dpdu, dpdv);
+        } else {
+            dpdu = mul(object_to_world_3x3, dpdu);
+            dpdv = mul(object_to_world_3x3, dpdv);
+        }
+    }
+
     Shading_Context sc;
     sc.Wo = wo;
     sc.P = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
     sc.Ng = ng;
     sc.N = n;
     sc.UV = barycentric_interpolate(attribs.x, attribs.y, v0.uv, v1.uv, v2.uv);
+    sc.dpdu = dpdu;
+    sc.dpdv = dpdv;
     return sc;
 }
 
 [shader("closesthit")]
-void main(inout Ray_Payload payload, in Attribs attribs)
+void main(inout Path_Payload payload, in Attribs attribs)
 {
     Shading_Context sc = init_shading_context(attribs.barycentrics);
     
@@ -92,5 +130,11 @@ void main(inout Ray_Payload payload, in Attribs attribs)
         L += diffuse_rectangular_lights[area_light_index].emitted_radiance;
     }
 
+    payload.hit = true;
     payload.color = L;
+    payload.t = RayTCurrent();
+    payload.normal = sc.N;
+    payload.dpdu = sc.dpdu;
+    payload.uv = sc.UV;
+    payload.mtl_handle = instance_infos[InstanceID()].material;
 }

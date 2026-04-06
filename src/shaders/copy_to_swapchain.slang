@@ -1,3 +1,5 @@
+import common;
+
 struct Constants {
     uint2 viewport_size;
     uint swapchain_index;
@@ -17,5 +19,5 @@ RWTexture2D<float4> swapchain_image[];
 void main(uint2 id : SV_DispatchThreadID) 
 {
     if (id.x < constants.viewport_size.x && id.y < constants.viewport_size.y)
-        swapchain_image[constants.swapchain_index][id] = output_image[id];
+        swapchain_image[constants.swapchain_index][id] = float4(srgb_encode(output_image[id].rgb), 1.0);
 }

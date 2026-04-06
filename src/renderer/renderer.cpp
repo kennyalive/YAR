@@ -110,6 +110,8 @@ void Renderer::initialize(GLFWwindow* window, int gpu_index) {
         physical_device_properties.pNext = &direct_lighting.properties;
         vkGetPhysicalDeviceProperties2(vk.physical_device, &physical_device_properties);
 
+        path_tracing.properties = direct_lighting.properties;
+
         printf("Device: %s\n", physical_device_properties.properties.deviceName);
         printf("Vulkan API version: %d.%d.%d\n",
             VK_VERSION_MAJOR(physical_device_properties.properties.apiVersion),
@@ -206,6 +208,7 @@ void Renderer::shutdown() {
     if (project_loaded) {
         patch_materials.destroy();
         direct_lighting.destroy();
+        path_tracing.destroy();
     }
 
     vk_shutdown();
@@ -498,6 +501,11 @@ void Renderer::load_project(const std::string& input_file) {
     direct_lighting.update_directional_lights(gpu_scene.directional_light_count);
     direct_lighting.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_light_count);
 
+    path_tracing.create(descriptor_heap, descriptors, global_heap_mappings, scene, gpu_meshes);
+    path_tracing.update_point_lights(gpu_scene.point_light_count);
+    path_tracing.update_directional_lights(gpu_scene.directional_light_count);
+    path_tracing.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_light_count);
+
     project_loaded = true;
 }
 
@@ -537,6 +545,7 @@ void Renderer::run_frame() {
 
     if (project_loaded) {
         direct_lighting.update_camera_transform(flying_camera.get_camera_pose());
+        path_tracing.update_camera_transform(flying_camera.get_camera_pose());
     }
 
     if (ui.ui_result.reference_render_requested) {
@@ -593,7 +602,12 @@ void Renderer::draw_frame() {
 
 void Renderer::draw_raytraced_image() {
     VK_TIME_SCOPE(gpu_timers.draw);
-    direct_lighting.dispatch(scene.camera_fov_y, spp4, scene.z_is_up);
+    if (ui.rendering_algorithm == 0) {
+        direct_lighting.dispatch(scene.camera_fov_y, spp4, scene.z_is_up);
+    }
+    else if (ui.rendering_algorithm == 1) {
+        path_tracing.dispatch(scene.camera_fov_y, spp4, scene.z_is_up);
+    }
 }
 
 void Renderer::tone_mapping()

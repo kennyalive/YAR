@@ -103,6 +103,7 @@
     <ClCompile Include="..\src\renderer\descriptor_heap.cpp" />
     <ClCompile Include="..\src\renderer\kernels\copy_to_swapchain.cpp" />
     <ClCompile Include="..\src\renderer\kernels\apply_tone_mapping.cpp" />
+    <ClCompile Include="..\src\renderer\kernels\path_tracing.cpp" />
     <ClCompile Include="..\src\renderer\main.cpp" />
     <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp" />
     <ClCompile Include="..\src\renderer\renderer.cpp">
@@ -128,6 +129,7 @@
     <ClInclude Include="..\src\renderer\kernels\copy_to_swapchain.h" />
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h" />
     <ClInclude Include="..\src\renderer\kernels\apply_tone_mapping.h" />
+    <ClInclude Include="..\src\renderer\kernels\path_tracing.h" />
     <ClInclude Include="..\src\renderer\kernel_context.h" />
     <ClInclude Include="..\src\renderer\renderer.h" />
     <ClInclude Include="..\src\renderer\kernels\direct_lighting.h" />
@@ -152,15 +154,17 @@
     <SlangShader Include="..\src\shaders\shared_light.slang" />
     <SlangShader Include="..\src\shaders\shared_main.slang" />
     <SlangShader Include="..\src\shaders\shared_material.slang" />
+    <SlangShader Include="..\src\shaders\path_tracing.chit.slang" />
+    <SlangShader Include="..\src\shaders\path_tracing.miss.slang" />
+    <SlangShader Include="..\src\shaders\path_tracing.rgen.slang" />
+    <SlangShader Include="..\src\shaders\path_tracing_shadow_ray.chit.slang" />
+    <SlangShader Include="..\src\shaders\generate_ray.slang" />
     <CustomBuild Include="compile_shaders.trigger">
       <Message>Compiling Slang shaders...</Message>
       <Command>call $(ProjectDir)..\src\shaders\compile_shaders.bat</Command>
       <AdditionalInputs>@(SlangShader)</AdditionalInputs>
       <Outputs>$(ProjectDir)..\data\spirv\compile_shaders.stamp</Outputs>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\src\shaders\generate_ray.slang" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

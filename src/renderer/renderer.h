@@ -4,6 +4,7 @@
 #include "kernels/copy_to_swapchain.h"
 #include "kernels/patch_materials.h"
 #include "kernels/direct_lighting.h"
+#include "kernels/path_tracing.h"
 
 #include "ui/ui.h"
 
@@ -74,6 +75,7 @@ private:
     Copy_To_Swapchain copy_to_swapchain;
     Patch_Materials patch_materials;
     Direct_Lighting direct_lighting;
+    Path_Tracing path_tracing;
 
     Vk_Time_Keeper time_keeper;
     struct {
