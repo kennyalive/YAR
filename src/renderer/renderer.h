@@ -47,7 +47,6 @@ private:
 
     VkPhysicalDeviceDescriptorHeapPropertiesEXT descriptor_heap_properties;
 
-    Vk_Image depth_buffer_image;
     Vk_Image output_image;
 
     std::vector<GPU_Mesh> gpu_meshes;

@@ -20,19 +20,6 @@
 
 const VkFormat output_image_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 
-static VkFormat get_depth_image_format() {
-    VkFormat candidates[2] = { VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D32_SFLOAT_S8_UINT };
-    for (auto format : candidates) {
-        VkFormatProperties props;
-        vkGetPhysicalDeviceFormatProperties(vk.physical_device, format, &props);
-        if ((props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
-            return format;
-        }
-    }
-    error("failed to select depth attachment format");
-    return VK_FORMAT_UNDEFINED;
-}
-
 void Renderer::initialize(GLFWwindow* window, int gpu_index) {
     std::array instance_extensions = {
         VK_KHR_SURFACE_EXTENSION_NAME,
@@ -225,29 +212,10 @@ void Renderer::shutdown() {
 }
 
 void Renderer::release_resolution_dependent_resources() {
-    depth_buffer_image.destroy();
     output_image.destroy();
 }
 
 void Renderer::restore_resolution_dependent_resources() {
-    // create depth buffer
-    {
-        VkFormat depth_format = get_depth_image_format();
-        depth_buffer_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, depth_format,
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, "depth_buffer");
-
-        vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
-            VkImageSubresourceRange subresource_range{};
-            subresource_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-            subresource_range.levelCount = 1;
-            subresource_range.layerCount = 1;
-
-            vk_cmd_image_barrier_for_subresource(command_buffer, depth_buffer_image.handle, subresource_range,
-                VK_PIPELINE_STAGE_NONE, 0, VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_PIPELINE_STAGE_NONE, 0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-            });
-    }
-
     // output image
     {
         output_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, output_image_format,
