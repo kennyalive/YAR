@@ -14,7 +14,7 @@ struct UI {
     UI_Result ui_result;
     bool show_ui = true;
     bool vsync = true;
-    int rendering_algorithm = 0;
+    int rendering_algorithm = 1;
 
     bool* spp4 = nullptr;
     const Vk_Timer* frame_time_scope = nullptr;

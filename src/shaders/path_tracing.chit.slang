@@ -39,6 +39,17 @@ Vertex fetch_vertex(int index)
     return v;
 }
 
+float solve_linear_system_2x2(float a[2][2], float3 b[2], out float3 x1, out float3 x2)
+{
+    float determinant = a[0][0] * a[1][1] - a[0][1] * a[1][0];
+    if (determinant != 0.f) {
+        float inv_det = 1.f / determinant;
+        x1 = (a[1][1] * b[0] - a[0][1] * b[1]) * inv_det;
+        x2 = (-a[1][0] * b[0] + a[0][0] * b[1]) * inv_det;
+    }
+    return determinant;
+}
+
 Shading_Context init_shading_context(float2 attribs)
 {
     Vertex v0 = fetch_vertex(PrimitiveIndex() * 3 + 0);
@@ -71,17 +82,30 @@ Shading_Context init_shading_context(float2 attribs)
         n = ng;
     }
 
+    // Compute dpdu/dpdv
+    float3 dpdu, dpdv;
+    {
+        float a[2][2] = {
+            { v1.uv.x - v0.uv.x, v1.uv.y - v0.uv.y },
+            { v2.uv.x - v0.uv.x, v2.uv.y - v0.uv.y }
+        };
+        float3 bp[2] = { v1.p - v0.p, v2.p - v0.p };
+        float det = solve_linear_system_2x2(a, bp, dpdu, dpdv);
+    }
+
     Shading_Context sc;
     sc.Wo = wo;
     sc.P = WorldRayOrigin() + WorldRayDirection() * RayTCurrent();
     sc.Ng = ng;
     sc.N = n;
     sc.UV = barycentric_interpolate(attribs.x, attribs.y, v0.uv, v1.uv, v2.uv);
+    sc.dpdu = dpdu;
+    sc.dpdv = dpdv;
     return sc;
 }
 
 [shader("closesthit")]
-void main(inout Ray_Payload payload, in Attribs attribs)
+void main(inout Path_Payload payload, in Attribs attribs)
 {
     Shading_Context sc = init_shading_context(attribs.barycentrics);
     
@@ -92,5 +116,11 @@ void main(inout Ray_Payload payload, in Attribs attribs)
         L += diffuse_rectangular_lights[area_light_index].emitted_radiance;
     }
 
+    payload.hit = true;
     payload.color = srgb_encode(L);
+    payload.t = RayTCurrent();
+    payload.normal = sc.N;
+    payload.dpdu = sc.dpdu;
+    payload.uv = sc.UV;
+    payload.mtl_handle = instance_infos[InstanceID()].material;
 }

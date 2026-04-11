@@ -2,7 +2,8 @@ import common;
 import raytrace_types;
 
 [shader("miss")]
-void main(inout Ray_Payload payload)
+void main(inout Path_Payload payload)
 {
-    payload.color = srgb_encode(float3(0, 0, 0));
+    payload.hit = false;
+    payload.color = srgb_encode(float3(0, 1, 0));
 }
