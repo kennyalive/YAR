@@ -72,8 +72,8 @@ public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, 
     }
 
     // Diffuse rectangular lights
-    uint seed = DispatchRaysIndex().y * 800 + DispatchRaysIndex().x;
-    uint rng_state = wang_hash(seed);
+    const uint pixel_index = get_current_pixel_index();
+    uint rng_state = init_rng(pixel_index);
 
     for (int i = 0; i < diffuse_rectangular_light_count; i++) {
         Diffuse_Rectangular_Light light = diffuse_rectangular_lights[i];
@@ -82,11 +82,7 @@ public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, 
 
         float3 L2 = float3(0, 0, 0);
         for (int k = 0; k < light.shadow_ray_count; k++) {
-            float2 u;
-            u.x = float(rng_state) * (1.0 / float(0xffffffffu));
-            rng_state = rand_xorshift(rng_state);
-            u.y = float(rng_state) * (1.0 / float(0xffffffffu));
-            u = 2.0 * u - 1.0;
+            float2 u = 2.0 * rand_float2(rng_state) - 1.0;
 
             float3 local_light_point = float3(light.size.x / 2.0 * u.x, light.size.y / 2.0 * u.y, 0.f);
             float3 light_point = mul(light.light_to_world_transform, float4(local_light_point, 1.0));

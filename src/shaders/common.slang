@@ -46,6 +46,32 @@ public uint rand_xorshift(uint rng_state)
     return rng_state;
 }
 
+public uint init_rng(uint pixel_index)
+{
+    const uint seed = pixel_index;
+    const uint rng_state = wang_hash(seed);
+    return rng_state;
+}
+
+public float rand_float(inout uint rng_state)
+{
+    float f = float(rng_state) * (1.0 / float(0xffffffffu));
+    rng_state = rand_xorshift(rng_state);
+    return f;
+}
+
+public float2 rand_float2(inout uint rng_state)
+{
+    float x = rand_float(rng_state);
+    float y = rand_float(rng_state);
+    return float2(x, y);
+}
+
+public uint get_current_pixel_index()
+{
+    return DispatchRaysIndex().y * DispatchRaysDimensions().x + DispatchRaysIndex().x;
+}
+
 // Ray Tracing Gems, chapter 6: A Fast and Robust Method for Avoiding Self-Intersection.
 public float3 offset_ray(float3 p, float3 n)
 {

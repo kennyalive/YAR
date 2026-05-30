@@ -59,8 +59,8 @@ void main()
     Ray ray = generate_ray(params.camera_to_world, sample_pos, push_constants.tan_fovy_over_2, push_constants.z_is_up);
     float3 L = float3(0);
 
-    uint seed = DispatchRaysIndex().y * 800 + DispatchRaysIndex().x;
-    uint rng_state = wang_hash(seed);
+    const uint pixel_index = get_current_pixel_index();
+    uint rng_state = init_rng(pixel_index);
 
     for (int i = 0; i < bounce_count; i++) {
         float3 wo = -ray.dir;
@@ -84,12 +84,7 @@ void main()
         float3 bitangent = normalize(payload.dpdu);
         float3 tangent = normalize(cross(bitangent, normal));
 
-        float2 u;
-        u.x = float(rng_state) * (1.0 / float(0xffffffffu));
-        rng_state = rand_xorshift(rng_state);
-        u.y = float(rng_state) * (1.0 / float(0xffffffffu));
-        rng_state = rand_xorshift(rng_state);
-
+        float2 u = rand_float2(rng_state);
         float3 local_dir = sample_hemisphere_cosine(u);
         float3 wi = local_dir.x * tangent + local_dir.y * bitangent + local_dir.z * normal;
 
