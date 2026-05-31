@@ -11,7 +11,10 @@ struct UI {
     struct UI_Result {
         bool reference_render_requested;
     };
+
     UI_Result ui_result;
+    bool reset_accumulation = false;
+
     bool show_ui = true;
     bool vsync = true;
     int rendering_algorithm = 1;

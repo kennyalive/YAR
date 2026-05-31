@@ -6,7 +6,11 @@ Constants constants;
 
 [[vk::image_format("rgba16f")]]
 [[vk::binding(0, 0)]]
-RWTexture2D<float4> output_image;
+Texture2D<float4> output_image;
+
+[[vk::image_format("rgba16f")]]
+[[vk::binding(1, 0)]]
+RWTexture2D<float4> tonemapped_image;
 
 float get_luminance(float3 color) {
     return dot(color, float3(0.2126, 0.7152, 0.0722));
@@ -26,6 +30,6 @@ void main(uint2 id : SV_DispatchThreadID) {
         float luminance_ldr = tonemap_reinhard(luminance_hdr);
         float scale = luminance_ldr / luminance_hdr;
         color.rgb *= scale;
-        output_image[id] = color;
+        tonemapped_image[id] = color;
     }
 }

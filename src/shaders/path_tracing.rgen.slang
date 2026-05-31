@@ -10,6 +10,8 @@ struct PushConstants {
     uint spp4;
     float tan_fovy_over_2;
     uint z_is_up;
+    uint frame_index;
+    uint accumulation_index;
 };
 [[vk::push_constant]]
 PushConstants push_constants;
@@ -51,16 +53,17 @@ float3 sample_hemisphere_cosine(float2 u)
 [shader("raygeneration")]
 void main()
 {
-    const float2 sample_origin = float2(DispatchRaysIndex().xy);
-    const float2 sample_pos = sample_origin + float2(0.5, 0.5);
+    const uint pixel_index = get_current_pixel_index();
+    uint rng_state = init_rng(pixel_index, push_constants.frame_index);
+
+    const uint2 sample_pixel = DispatchRaysIndex().xy;
+    const float2 sample_offset = rand_float2(rng_state);
+    const float2 sample_pos = float2(sample_pixel) + sample_offset;
 
     float3 path_coeff = float3(1);
 
     Ray ray = generate_ray(params.camera_to_world, sample_pos, push_constants.tan_fovy_over_2, push_constants.z_is_up);
     float3 L = float3(0);
-
-    const uint pixel_index = get_current_pixel_index();
-    uint rng_state = init_rng(pixel_index);
 
     for (int i = 0; i < bounce_count; i++) {
         float3 wo = -ray.dir;
@@ -96,5 +99,11 @@ void main()
         float3 bsdf = evaluate_bsdf(materials, payload.mtl_handle, payload.uv, wi, wo);
         path_coeff *= bsdf * abs(dot(payload.normal, wi)) / diffuse_bsdf_pdf;
     }
-    params.output_image[DispatchRaysIndex().xy] = float4(L, 1);
+
+    float3 current_L = params.output_image[DispatchRaysIndex().xy].rgb;
+    float k = float(push_constants.accumulation_index + 1);
+    float3 new_L = current_L * (k - 1) / k + L / k;
+    params.output_image[DispatchRaysIndex().xy] = float4(new_L, 1);
+
+    //params.output_image[DispatchRaysIndex().xy] = float4(L, 1);
 }

@@ -6,12 +6,20 @@
 
 void Apply_Tone_Mapping::create(Descriptors& descriptors)
 {
-    const VkDescriptorSetAndBindingMappingEXT mapping = map_binding_to_heap_offset(
-        0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
+    const VkDescriptorSetAndBindingMappingEXT output_imagemapping = map_binding_to_heap_offset(
+        0, 0, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT,
         descriptors.output_image
     );
+    const VkDescriptorSetAndBindingMappingEXT tonemapped_image_mapping = map_binding_to_heap_offset(
+        0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
+        descriptors.tonemapped_image
+    );
+    const VkDescriptorSetAndBindingMappingEXT mappings[2] = {
+            output_imagemapping,
+            tonemapped_image_mapping,
+    };
     Vk_Shader_Module shader(get_spirv_file("apply_tone_mapping"));
-    pipeline = vk_create_compute_pipeline(shader.handle, std::span(&mapping, 1), "apply_tone_mapping_pipeline_layout");
+    pipeline = vk_create_compute_pipeline(shader.handle, std::span(mappings, 2), "apply_tone_mapping_pipeline_layout");
 }
 
 void Apply_Tone_Mapping::destroy()

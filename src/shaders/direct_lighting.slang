@@ -28,7 +28,7 @@ bool trace_shadow_ray(RaytracingAccelerationStructure accel, float3 position, fl
     return shadow_ray_payload.shadow_factor != 0.0;
 }
 
-public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, RaytracingAccelerationStructure accel,
+public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, RaytracingAccelerationStructure accel, inout uint rng_state,
     int point_light_count,
     int directional_light_count,
     int diffuse_rectangular_light_count)
@@ -72,9 +72,6 @@ public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, 
     }
 
     // Diffuse rectangular lights
-    const uint pixel_index = get_current_pixel_index();
-    uint rng_state = init_rng(pixel_index);
-
     for (int i = 0; i < diffuse_rectangular_light_count; i++) {
         Diffuse_Rectangular_Light light = diffuse_rectangular_lights[i];
         if (light.shadow_ray_count == 0)

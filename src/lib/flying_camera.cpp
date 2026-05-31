@@ -14,7 +14,8 @@ void Flying_Camera::initialize(Matrix3x4 camera_pose, bool z_is_up) {
     camera_transform_changes_handedness = is_transform_changes_handedness(camera_pose);
 }
 
-void Flying_Camera::update(double dt) {
+bool Flying_Camera::update(double dt) {
+    bool changed = false;
     int forward_motion = 0;
     int right_motion = 0;
     int up_motion = 0;
@@ -83,6 +84,7 @@ void Flying_Camera::update(double dt) {
             position += Vector3(0, 1, 0) * float(distance_delta * up_motion);
         }
         camera_pose.set_column(3, position);
+        changed = true;
     }
     if (yaw_delta || pitch_delta) {
         Vector3 temp_position = camera_pose.get_column(3);
@@ -100,7 +102,9 @@ void Flying_Camera::update(double dt) {
 
         camera_pose = yaw_rotation * camera_pose * pitch_rotation;
         camera_pose.set_column(3, temp_position);
+        changed = true;
     }
+    return changed;
 }
 
 Matrix3x4 Flying_Camera::get_view_transform() const {

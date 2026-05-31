@@ -27,7 +27,7 @@ public float3 barycentric_interpolate(float b1, float b2, float3 v0, float3 v1, 
     return (1.0 - b1 - b2) * v0 + b1 * v1 + b2 * v2;
 }
 
-public uint wang_hash(uint seed)
+uint wang_hash(uint seed)
 {
     seed = (seed ^ 61) ^ (seed >> 16);
     seed *= 9;
@@ -46,16 +46,26 @@ public uint rand_xorshift(uint rng_state)
     return rng_state;
 }
 
-public uint init_rng(uint pixel_index)
+public uint init_rng(uint pixel_index, uint frame_index)
 {
-    const uint seed = pixel_index;
-    const uint rng_state = wang_hash(seed);
-    return rng_state;
+    uint h = pixel_index;
+    h = wang_hash(h ^ wang_hash(frame_index));
+    return h;
+}
+
+public uint hash_uint(uint value)
+{
+    return wang_hash(value);
+}
+
+public float uint_to_float01(uint value)
+{
+    return float(value) * (1.0 / float(0xffffffffu));
 }
 
 public float rand_float(inout uint rng_state)
 {
-    float f = float(rng_state) * (1.0 / float(0xffffffffu));
+    float f = uint_to_float01(rng_state);
     rng_state = rand_xorshift(rng_state);
     return f;
 }

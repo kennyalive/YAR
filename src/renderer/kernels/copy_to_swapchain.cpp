@@ -9,7 +9,7 @@ void Copy_To_Swapchain::create(const Descriptors& descriptors)
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = map_binding_to_heap_offset(
         0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
-        descriptors.output_image
+        descriptors.tonemapped_image
     );
     mappings[1] = map_binding_to_heap_offset(
         0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,

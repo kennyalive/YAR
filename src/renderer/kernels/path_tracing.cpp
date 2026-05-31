@@ -200,16 +200,16 @@ void Path_Tracing::create_pipeline(const Descriptors& descriptors, const std::ve
 
 }
 
-void Path_Tracing::dispatch(float fovy, bool spp4, bool z_is_up)
+void Path_Tracing::dispatch(float fovy, bool spp4, bool z_is_up, uint32_t frame_index, uint32_t accumulation_index)
 {
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 
     float tan_fovy_over2 = std::tan(radians(fovy / 2.f));
-    uint32_t push_data[3] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2), z_is_up };
+    uint32_t push_data[5] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2), z_is_up, frame_index, accumulation_index};
 
     VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
     push_data_info.data.address = push_data;
-    push_data_info.data.size = 12;
+    push_data_info.data.size = 20;
     vkCmdPushDataEXT(vk.command_buffer, &push_data_info);
 
     const uint32_t handle_size = properties.shaderGroupHandleSize;

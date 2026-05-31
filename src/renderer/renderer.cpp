@@ -216,6 +216,7 @@ void Renderer::shutdown() {
 
 void Renderer::release_resolution_dependent_resources() {
     output_image.destroy();
+    tonemapped_image.destroy();
 }
 
 void Renderer::restore_resolution_dependent_resources() {
@@ -232,6 +233,21 @@ void Renderer::restore_resolution_dependent_resources() {
 
         descriptor_heap.write_image_descriptor(output_image.handle, output_image.format,
             VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, descriptors.output_image);
+    }
+
+    // tone mapped image
+    {
+        tonemapped_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, output_image_format,
+            VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "tonemapped_image");
+
+        vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
+            vk_cmd_image_barrier(command_buffer, tonemapped_image.handle,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
+            });
+
+        descriptor_heap.write_image_descriptor(tonemapped_image.handle, tonemapped_image.format,
+            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, descriptors.tonemapped_image);
     }
 
     // swapchain images
@@ -540,7 +556,9 @@ void Renderer::run_frame() {
         }
     }
 
-    flying_camera.update(dt);
+    if (flying_camera.update(dt)) {
+        accumulation_index = 0;
+    }
     ui.camera_position = flying_camera.get_camera_pose().get_column(3);
 
     if (project_loaded) {
@@ -548,12 +566,17 @@ void Renderer::run_frame() {
         path_tracing.update_camera_transform(flying_camera.get_camera_pose());
     }
 
+    if (ui.reset_accumulation) {
+        accumulation_index = 0;
+    }
     if (ui.ui_result.reference_render_requested) {
         start_reference_renderer();
         ui.ui_result.reference_render_requested = false;
     }
 
     draw_frame();
+    frame_index++;
+    accumulation_index++;
 }
 
 void Renderer::create_default_textures() {
@@ -606,7 +629,7 @@ void Renderer::draw_raytraced_image() {
         direct_lighting.dispatch(scene.camera_fov_y, spp4, scene.z_is_up);
     }
     else if (ui.rendering_algorithm == 1) {
-        path_tracing.dispatch(scene.camera_fov_y, spp4, scene.z_is_up);
+        path_tracing.dispatch(scene.camera_fov_y, spp4, scene.z_is_up, frame_index, accumulation_index);
     }
 }
 

@@ -6,6 +6,7 @@ constexpr uint32_t max_swapchain_images = 8;
 
 struct Descriptors {
     uint32_t output_image = 0;
+    uint32_t tonemapped_image = 0;
     uint32_t swapchain_images = 0;
     uint32_t images_2d = 0;
     uint32_t image_sampler = 0;

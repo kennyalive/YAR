@@ -7,6 +7,7 @@
 void Descriptors::initialize(Descriptor_Heap& descriptor_heap)
 {
     output_image = descriptor_heap.allocate_image_descriptor();
+    tonemapped_image = descriptor_heap.allocate_image_descriptor();
     swapchain_images = descriptor_heap.allocate_image_descriptor(max_swapchain_images);
     image_sampler = descriptor_heap.allocate_sampler_descriptor();
 

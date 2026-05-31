@@ -9,7 +9,7 @@ Constants constants;
 
 [[vk::image_format("rgba16f")]]
 [[vk::binding(0, 0)]]
-RWTexture2D<float4> output_image;
+RWTexture2D<float4> tonemapped_image;
 
 [[vk::image_format("rgba8")]]
 [[vk::binding(1, 0)]]
@@ -19,5 +19,5 @@ RWTexture2D<float4> swapchain_image[];
 void main(uint2 id : SV_DispatchThreadID) 
 {
     if (id.x < constants.viewport_size.x && id.y < constants.viewport_size.y)
-        swapchain_image[constants.swapchain_index][id] = float4(srgb_encode(output_image[id].rgb), 1.0);
+        swapchain_image[constants.swapchain_index][id] = float4(srgb_encode(tonemapped_image[id].rgb), 1.0);
 }

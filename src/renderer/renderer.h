@@ -42,6 +42,8 @@ private:
     void start_reference_renderer();
 
 private:
+    uint32_t frame_index = 0;
+    uint32_t accumulation_index = 0;
     bool spp4 = false;
 
     Flying_Camera flying_camera;
@@ -49,6 +51,7 @@ private:
     VkPhysicalDeviceDescriptorHeapPropertiesEXT descriptor_heap_properties;
 
     Vk_Image output_image;
+    Vk_Image tonemapped_image;
 
     std::vector<GPU_Mesh> gpu_meshes;
 

@@ -27,7 +27,7 @@ struct Path_Tracing {
     void update_directional_lights(uint32_t light_count);
     void update_diffuse_rectangular_lights(uint32_t light_count);
 
-    void dispatch(float fovy, bool spp4, bool z_is_up);
+    void dispatch(float fovy, bool spp4, bool z_is_up, uint32_t frame_index, uint32_t accumulation_index);
 
 private:
     void create_pipeline(const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const std::vector<GPU_Mesh>& gpu_meshes);

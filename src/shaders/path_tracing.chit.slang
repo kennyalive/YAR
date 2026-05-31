@@ -24,6 +24,16 @@ cbuffer Constants {
     float2 pad0;
 };
 
+struct PushConstants {
+    uint spp4;
+    float tan_fovy_over_2;
+    uint z_is_up;
+    uint frame_index;
+    uint accumulation_index;
+};
+[[vk::push_constant]]
+PushConstants push_constants;
+
 Vertex fetch_vertex(int index)
 {
     // TODO: here we assume that geometry.type is Triangle_Mesh. Will be invalid in the presence of other geom types.
@@ -121,9 +131,12 @@ Shading_Context init_shading_context(float2 attribs)
 [shader("closesthit")]
 void main(inout Path_Payload payload, in Attribs attribs)
 {
+    const uint pixel_index = get_current_pixel_index();
+    uint rng_state = init_rng(pixel_index, push_constants.frame_index);
+
     Shading_Context sc = init_shading_context(attribs.barycentrics);
-    
-    float3 L = estimate_direct_lighting(materials, sc, accel, point_light_count, directional_light_count, diffuse_rectangular_light_count);
+
+    float3 L = estimate_direct_lighting(materials, sc, accel, rng_state, point_light_count, directional_light_count, diffuse_rectangular_light_count);
 
     int area_light_index = instance_infos[InstanceID()].area_light_index;
     if (area_light_index != -1) {
