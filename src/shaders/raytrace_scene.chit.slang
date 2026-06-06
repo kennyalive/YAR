@@ -4,10 +4,7 @@ import shared_main;
 import direct_lighting;
 import raytrace_types;
 import shading_context;
-
-import base_resources;
-import light_resources;
-import material_resources;
+import resources;
 
 [[vk::binding(0, 1)]]
 ParameterBlock<Materials> materials;

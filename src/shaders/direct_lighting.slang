@@ -4,14 +4,11 @@ import common;
 import shared_main;
 import shared_light;
 import shared_material;
+import resources;
 
 import evaluate_bsdf;
 import raytrace_types;
 import shading_context;
-
-import base_resources;
-import light_resources;
-import material_resources;
 
 bool trace_shadow_ray(RaytracingAccelerationStructure accel, float3 position, float3 direction, float distance)
 {

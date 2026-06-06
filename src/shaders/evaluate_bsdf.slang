@@ -3,9 +3,7 @@ module evaluate_bsdf;
 import common;
 import shared_main;
 import shared_material;
-
-import base_resources;
-import material_resources;
+import resources;
 
 public float3 evaluate_bsdf(Materials materials, Material_Handle mtl_handle, float2 uv, float3 wi, float3 wo)
 {

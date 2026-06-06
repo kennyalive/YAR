@@ -1,5 +1,5 @@
 import shared_main;
-import material_resources;
+import resources;
 
 [[vk::binding(0, 0)]]
 ParameterBlock<Materials> materials;

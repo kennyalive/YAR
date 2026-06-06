@@ -137,13 +137,11 @@
     <ClInclude Include="..\src\renderer\vk.h" />
     <ClInclude Include="..\src\std.h" />
     <SlangShader Include="..\src\shaders\apply_tone_mapping.slang" />
-    <SlangShader Include="..\src\shaders\base_resources.slang" />
+    <SlangShader Include="..\src\shaders\resources.slang" />
     <SlangShader Include="..\src\shaders\common.slang" />
     <SlangShader Include="..\src\shaders\copy_to_swapchain.slang" />
     <SlangShader Include="..\src\shaders\direct_lighting.slang" />
     <SlangShader Include="..\src\shaders\evaluate_bsdf.slang" />
-    <SlangShader Include="..\src\shaders\light_resources.slang" />
-    <SlangShader Include="..\src\shaders\material_resources.slang" />
     <SlangShader Include="..\src\shaders\patch_materials.slang" />
     <SlangShader Include="..\src\shaders\raytrace_scene.chit.slang" />
     <SlangShader Include="..\src\shaders\raytrace_scene.miss.slang" />

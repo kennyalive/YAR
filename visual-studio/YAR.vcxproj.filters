@@ -67,9 +67,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <SlangShader Include="..\src\shaders\material_resources.slang">
-      <Filter>shaders</Filter>
-    </SlangShader>
     <SlangShader Include="..\src\shaders\shared_material.slang">
       <Filter>shaders</Filter>
     </SlangShader>
@@ -85,10 +82,7 @@
     <SlangShader Include="..\src\shaders\shading_context.slang">
       <Filter>shaders</Filter>
     </SlangShader>
-    <SlangShader Include="..\src\shaders\base_resources.slang">
-      <Filter>shaders</Filter>
-    </SlangShader>
-    <SlangShader Include="..\src\shaders\light_resources.slang">
+    <SlangShader Include="..\src\shaders\resources.slang">
       <Filter>shaders</Filter>
     </SlangShader>
     <SlangShader Include="..\src\shaders\shared_light.slang">
@@ -138,10 +132,5 @@
     <CustomBuild Include="compile_shaders.trigger">
       <Filter>shaders</Filter>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\src\shaders\generate_ray.slang">
-      <Filter>shaders</Filter>
-    </None>
   </ItemGroup>
 </Project>

@@ -4,7 +4,7 @@ import generate_ray;
 import raytrace_types;
 import evaluate_bsdf;
 import shared_material;
-import material_resources;
+import resources;
 
 struct PushConstants {
     uint spp4;
