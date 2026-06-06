@@ -50,7 +50,7 @@ public struct Materials {
 static const int Light_None = -1;
 static const int Light_Point = 0;
 static const int Light_Directional = 1;
-static const int Light_Diffuse_Rectangular = 2;
+static const int Light_Rect = 2;
 
 [[vk::binding(POINT_LIGHT_BINDING, LIGHT_SET_INDEX)]]
 public StructuredBuffer<Point_Light> point_lights;
@@ -58,5 +58,5 @@ public StructuredBuffer<Point_Light> point_lights;
 [[vk::binding(DIRECTIONAL_LIGHT_BINDING, LIGHT_SET_INDEX)]]
 public StructuredBuffer<Directional_Light> directional_lights;
 
-[[vk::binding(DIFFUSE_RECTANGULAR_LIGHT_BINDING, LIGHT_SET_INDEX)]]
-public StructuredBuffer<Diffuse_Rectangular_Light> diffuse_rectangular_lights;
+[[vk::binding(RECT_LIGHT_BINDING, LIGHT_SET_INDEX)]]
+public StructuredBuffer<Rect_Light> rect_lights;

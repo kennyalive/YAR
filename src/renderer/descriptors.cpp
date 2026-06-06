@@ -14,7 +14,7 @@ void Descriptors::initialize(Descriptor_Heap& descriptor_heap)
     lambertian_materials = descriptor_heap.allocate_buffer_descriptor();
     point_lights = descriptor_heap.allocate_buffer_descriptor();
     directional_lights = descriptor_heap.allocate_buffer_descriptor();
-    diffuse_rectangular_lights = descriptor_heap.allocate_buffer_descriptor();
+    rect_lights = descriptor_heap.allocate_buffer_descriptor();
 
     image_descriptor_size = (uint32_t)descriptor_heap.properties.imageDescriptorSize;
     buffer_descriptor_size = (uint32_t)descriptor_heap.properties.bufferDescriptorSize;

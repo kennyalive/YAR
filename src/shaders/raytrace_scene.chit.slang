@@ -96,7 +96,7 @@ void main(inout Ray_Payload payload, in Attribs attribs)
 
     int area_light_index = instance_infos[InstanceID()].area_light_index;
     if (area_light_index != -1) {
-        L += diffuse_rectangular_lights[area_light_index].emitted_radiance;
+        L += rect_lights[area_light_index].emitted_radiance;
     }
 
     payload.color = L;

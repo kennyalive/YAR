@@ -424,7 +424,7 @@ void Renderer::load_project(const std::string& input_file) {
         }
         if (!scene.lights.diffuse_rectangular_lights.empty()) {
             found_supported_lights = true;
-            std::vector<GPU_Types::Diffuse_Rectangular_Light> lights(scene.lights.diffuse_rectangular_lights.size());
+            std::vector<GPU_Types::Rect_Light> lights(scene.lights.diffuse_rectangular_lights.size());
             for (auto [i, data] : enumerate(scene.lights.diffuse_rectangular_lights)) {
                 lights[i].init(data);
             }
@@ -456,7 +456,7 @@ void Renderer::load_project(const std::string& input_file) {
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.directional_lights);
 
         descriptor_heap.write_buffer_descriptor(gpu_scene.rect_lights.address_range(),
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.diffuse_rectangular_lights);
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.rect_lights);
     }
 
     // Scene info
@@ -524,8 +524,8 @@ void Renderer::load_project(const std::string& input_file) {
         descriptors.directional_lights
     ));
     global_heap_mappings.push_back(map_binding_to_heap_offset(
-        LIGHT_SET_INDEX, DIFFUSE_RECTANGULAR_LIGHT_BINDING, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
-        descriptors.diffuse_rectangular_lights
+        LIGHT_SET_INDEX, RECT_LIGHT_BINDING, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        descriptors.rect_lights
     ));
 
     patch_materials.create(descriptors);

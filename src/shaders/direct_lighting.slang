@@ -33,7 +33,7 @@ public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, 
     const Scene_Info scene_info = get_scene_info();
     const uint point_light_count = scene_info.point_light_count;
     const uint directional_light_count = scene_info.directional_light_count;
-    const uint diffuse_rectangular_light_count = scene_info.rect_light_count;
+    const uint rect_light_count = scene_info.rect_light_count;
 
     // Point lights
     for (int i = 0; i < point_light_count; i++) {
@@ -68,9 +68,9 @@ public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, 
         L += bsdf * directional_lights[i].irradiance * n_dot_l;
     }
 
-    // Diffuse rectangular lights
-    for (int i = 0; i < diffuse_rectangular_light_count; i++) {
-        Diffuse_Rectangular_Light light = diffuse_rectangular_lights[i];
+    // Rectangle lights
+    for (int i = 0; i < rect_light_count; i++) {
+        Rect_Light light = rect_lights[i];
         if (light.shadow_ray_count == 0)
             continue;
 

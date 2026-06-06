@@ -19,7 +19,7 @@ struct Descriptors {
     uint32_t lambertian_materials = 0;
     uint32_t point_lights = 0;
     uint32_t directional_lights = 0;
-    uint32_t diffuse_rectangular_lights = 0;
+    uint32_t rect_lights = 0;
 
     uint32_t image_descriptor_size = 0;
     uint32_t buffer_descriptor_size = 0;

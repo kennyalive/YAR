@@ -31,7 +31,7 @@ static const int LAMBERTIAN_MATERIAL_BINDING = 0;
 SLANG_PUBLIC static const int LIGHT_SET_INDEX = 2;
 SLANG_PUBLIC static const int POINT_LIGHT_BINDING = 0;
 SLANG_PUBLIC static const int DIRECTIONAL_LIGHT_BINDING = 1;
-SLANG_PUBLIC static const int DIFFUSE_RECTANGULAR_LIGHT_BINDING = 2;
+SLANG_PUBLIC static const int RECT_LIGHT_BINDING = 2;
 
 SLANG_PUBLIC static const int KERNEL_SET_0 = 3;
 
@@ -152,7 +152,7 @@ SLANG_PUBLIC struct Directional_Light {
 #endif
 };
 
-SLANG_PUBLIC struct Diffuse_Rectangular_Light {
+SLANG_PUBLIC struct Rect_Light {
     SLANG_PUBLIC Matrix3x4 light_to_world_transform;
 
     SLANG_PUBLIC ColorRGB emitted_radiance;
