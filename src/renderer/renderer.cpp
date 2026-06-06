@@ -576,11 +576,6 @@ void Renderer::run_frame() {
     }
     ui.camera_position = flying_camera.get_camera_pose().get_column(3);
 
-    if (project_loaded) {
-        direct_lighting.update_camera_transform(flying_camera.get_camera_pose());
-        path_tracing.update_camera_transform(flying_camera.get_camera_pose());
-    }
-
     if (ui.reset_accumulation) {
         accumulation_index = 0;
     }
@@ -609,12 +604,33 @@ void Renderer::draw_frame() {
     vk_begin_frame();
     time_keeper.retrieve_query_results(); // get timestamp values from the previous frame
     gpu_timers.frame->start();
-
     descriptor_heap.bind(vk.command_buffer);
+
+    // Set per-frame parameters
+    static_assert(sizeof(GPU_Types::Frame_Params) <= 256); // Vulkan guarantees 256 min limit
+    GPU_Types::Frame_Params frame_params{};
+    frame_params.frame_index = frame_index;
+    frame_params.accumulation_index = accumulation_index;
+    frame_params.swapchain_image_index = vk.swapchain_image_index;
+    frame_params.spp4 = uint32_t(spp4);
+
+    frame_params.camera_to_world = flying_camera.get_camera_pose();
+
+    frame_params.viewport_size = { vk.surface_size.width, vk.surface_size.height };
+    frame_params.tan_fovy_over_2 = std::tan(radians(scene.camera_fov_y / 2.f));
+    frame_params.z_is_up = uint32_t(scene.z_is_up);
+    
+
+    VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
+    push_data_info.data.address = &frame_params;
+    push_data_info.data.size = sizeof(frame_params);
+    vkCmdPushDataEXT(vk.command_buffer, &push_data_info);
 
     if (project_loaded) {
         draw_raytraced_image();
     }
+
+    
 
     tone_mapping();
 
@@ -641,10 +657,10 @@ void Renderer::draw_frame() {
 void Renderer::draw_raytraced_image() {
     VK_TIME_SCOPE(gpu_timers.draw);
     if (ui.rendering_algorithm == 0) {
-        direct_lighting.dispatch(scene.camera_fov_y, spp4, scene.z_is_up);
+        direct_lighting.dispatch();
     }
     else if (ui.rendering_algorithm == 1) {
-        path_tracing.dispatch(scene.camera_fov_y, spp4, scene.z_is_up, frame_index, accumulation_index);
+        path_tracing.dispatch();
     }
 }
 

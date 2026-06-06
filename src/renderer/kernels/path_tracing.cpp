@@ -8,11 +8,6 @@
 #include "shaders/shared.slang"
 #include "lib/scene.h"
 
-struct Rt_Uniform_Buffer {
-    Matrix3x4   camera_to_world;
-    Vector4     pad0;
-};
-
 // TODO: temp structure. Use separate buffer per attribute.
 struct GPU_Vertex {
     Vector3 position;
@@ -21,14 +16,10 @@ struct GPU_Vertex {
 };
 
 void Path_Tracing::create(Descriptor_Heap& descriptor_heap, const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
-    uniform_buffer = vk_create_mapped_buffer(sizeof(Rt_Uniform_Buffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, "rt_uniform_buffer");
-
     accelerator = create_intersection_accelerator(scene.objects, gpu_meshes);
     accelerator_heap_offset = descriptor_heap.allocate_buffer_descriptor();
-    uniform_buffer_heap_offset = descriptor_heap.allocate_buffer_descriptor();
 
     descriptor_heap.write_acceleration_structure_descriptor(accelerator.top_level_accel.device_address, accelerator_heap_offset);
-    descriptor_heap.write_buffer_descriptor(uniform_buffer.address_range(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, uniform_buffer_heap_offset);
 
     create_pipeline(descriptors, global_heap_mappings, gpu_meshes);
 
@@ -53,16 +44,10 @@ void Path_Tracing::create(Descriptor_Heap& descriptor_heap, const Descriptors& d
 }
 
 void Path_Tracing::destroy() {
-    uniform_buffer.destroy();
     shader_binding_table.destroy();
     accelerator.destroy();
 
     vkDestroyPipeline(vk.device, pipeline, nullptr);
-}
-
-void Path_Tracing::update_camera_transform(const Matrix3x4& camera_to_world_transform)
-{
-    uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->camera_to_world = camera_to_world_transform;
 }
 
 void Path_Tracing::create_pipeline(const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const std::vector<GPU_Mesh>& gpu_meshes)
@@ -103,15 +88,9 @@ void Path_Tracing::create_pipeline(const Descriptors& descriptors, const std::ve
             KERNEL_SET_0, 1, VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT,
             accelerator_heap_offset
         );
-        const VkDescriptorSetAndBindingMappingEXT raygen_uniform_buffer_mapping = map_binding_to_heap_offset(
-            KERNEL_SET_0, 2, VK_SPIRV_RESOURCE_TYPE_UNIFORM_BUFFER_BIT_EXT,
-            uniform_buffer_heap_offset
-        );
-
-        VkDescriptorSetAndBindingMappingEXT raygen_mappings[3] = {
+        VkDescriptorSetAndBindingMappingEXT raygen_mappings[2] = {
             raygen_output_image_mapping,
-            raygen_accel_mapping,
-            raygen_uniform_buffer_mapping
+            raygen_accel_mapping
         };
 
         std::vector<VkDescriptorSetAndBindingMappingEXT> mappings = global_heap_mappings;
@@ -181,17 +160,9 @@ void Path_Tracing::create_pipeline(const Descriptors& descriptors, const std::ve
 
 }
 
-void Path_Tracing::dispatch(float fovy, bool spp4, bool z_is_up, uint32_t frame_index, uint32_t accumulation_index)
+void Path_Tracing::dispatch()
 {
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
-
-    float tan_fovy_over2 = std::tan(radians(fovy / 2.f));
-    uint32_t push_data[5] = { spp4, *reinterpret_cast<uint32_t*>(&tan_fovy_over2), z_is_up, frame_index, accumulation_index};
-
-    VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
-    push_data_info.data.address = push_data;
-    push_data_info.data.size = 20;
-    vkCmdPushDataEXT(vk.command_buffer, &push_data_info);
 
     const uint32_t handle_size = properties.shaderGroupHandleSize;
     const uint32_t base_alignment = properties.shaderGroupBaseAlignment;

@@ -1,11 +1,8 @@
 import common;
+import shared;
 
-struct Constants {
-    uint2 viewport_size;
-    uint swapchain_index;
-};
 [[vk::push_constant]]
-Constants constants;
+Frame_Params frame_params;
 
 [[vk::image_format("rgba16f")]]
 [[vk::binding(0, 0)]]
@@ -16,8 +13,8 @@ RWTexture2D<float4> tonemapped_image;
 RWTexture2D<float4> swapchain_image[];
 
 [numthreads(32, 32, 1)]
-void main(uint2 id : SV_DispatchThreadID) 
+void main(uint2 id : SV_DispatchThreadID)
 {
-    if (id.x < constants.viewport_size.x && id.y < constants.viewport_size.y)
-        swapchain_image[constants.swapchain_index][id] = float4(srgb_encode(tonemapped_image[id].rgb), 1.0);
+    if (id.x < frame_params.viewport_size.x && id.y < frame_params.viewport_size.y)
+        swapchain_image[frame_params.swapchain_image_index][id] = float4(srgb_encode(tonemapped_image[id].rgb), 1.0);
 }

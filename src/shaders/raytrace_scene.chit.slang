@@ -1,32 +1,19 @@
 import common;
 import shared;
+import resources;
 
 import direct_lighting;
 import raytrace_types;
 import shading_context;
-import resources;
+
+[[vk::push_constant]]
+Frame_Params frame_params;
 
 [[vk::binding(0, 1)]]
 ParameterBlock<Materials> materials;
 
 [[vk::binding(1, KERNEL_SET_0)]]
 RaytracingAccelerationStructure accel;
-
-[[vk::binding(2, KERNEL_SET_0)]]
-cbuffer Constants {
-    float3x4 camera_to_world;
-    float4 pad0;
-};
-
-struct PushConstants {
-    uint spp4;
-    float tan_fovy_over_2;
-    uint z_is_up;
-    uint frame_index;
-    uint accumulation_index;
-};
-[[vk::push_constant]]
-PushConstants push_constants;
 
 Vertex fetch_vertex(int index)
 {
@@ -88,7 +75,7 @@ Shading_Context init_shading_context(float2 attribs)
 void main(inout Ray_Payload payload, in Attribs attribs)
 {
     const uint pixel_index = get_current_pixel_index();
-    uint rng_state = init_rng(pixel_index, push_constants.frame_index);
+    uint rng_state = init_rng(pixel_index, frame_params.frame_index);
 
     Shading_Context sc = init_shading_context(attribs.barycentrics);
 

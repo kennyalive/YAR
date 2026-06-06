@@ -130,7 +130,6 @@
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h" />
     <ClInclude Include="..\src\renderer\kernels\apply_tone_mapping.h" />
     <ClInclude Include="..\src\renderer\kernels\path_tracing.h" />
-    <ClInclude Include="..\src\renderer\kernel_context.h" />
     <ClInclude Include="..\src\renderer\renderer.h" />
     <ClInclude Include="..\src\renderer\kernels\direct_lighting.h" />
     <ClInclude Include="..\src\renderer\ui\ui.h" />

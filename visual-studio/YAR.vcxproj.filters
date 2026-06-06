@@ -40,7 +40,6 @@
       <Filter>kernels</Filter>
     </ClInclude>
     <ClInclude Include="..\src\renderer\acceleration_structure.h" />
-    <ClInclude Include="..\src\renderer\kernel_context.h" />
     <ClInclude Include="..\src\renderer\geometry.h" />
     <ClInclude Include="..\src\renderer\ui\ui.h">
       <Filter>ui</Filter>

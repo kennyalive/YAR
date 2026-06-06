@@ -1,8 +1,7 @@
-struct Constants {
-	uint2 viewport_size;
-};
+import shared;
+
 [[vk::push_constant]]
-Constants constants;
+Frame_Params frame_params;
 
 [[vk::image_format("rgba16f")]]
 [[vk::binding(0, 0)]]
@@ -23,8 +22,8 @@ float tonemap_reinhard(float luminance) {
 }
 
 [numthreads(32, 32, 1)]
-void main(uint2 id : SV_DispatchThreadID) {
-    if (id.x < constants.viewport_size.x && id.y < constants.viewport_size.y) {
+void main(uint2 id: SV_DispatchThreadID) {
+    if (id.x < frame_params.viewport_size.x && id.y < frame_params.viewport_size.y) {
         float4 color = output_image[id];
         float luminance_hdr = get_luminance(color.rgb);
         float luminance_ldr = tonemap_reinhard(luminance_hdr);

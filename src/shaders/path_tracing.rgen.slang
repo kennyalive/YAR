@@ -6,26 +6,14 @@ import generate_ray;
 import raytrace_types;
 import evaluate_bsdf;
 
-struct PushConstants {
-    uint spp4;
-    float tan_fovy_over_2;
-    uint z_is_up;
-    uint frame_index;
-    uint accumulation_index;
-};
 [[vk::push_constant]]
-PushConstants push_constants;
+Frame_Params frame_params;
 
 struct KernelParams {
     [[vk::image_format("rgba16f")]]
     RWTexture2D<float4> output_image;
 
     RaytracingAccelerationStructure accel;
-
-    cbuffer Constants
-    {
-        float3x4 camera_to_world;
-    };
 }
 
 [[vk::binding(0, 1)]]
@@ -54,7 +42,7 @@ float3 sample_hemisphere_cosine(float2 u)
 void main()
 {
     const uint pixel_index = get_current_pixel_index();
-    uint rng_state = init_rng(pixel_index, push_constants.frame_index);
+    uint rng_state = init_rng(pixel_index, frame_params.frame_index);
 
     const uint2 sample_pixel = DispatchRaysIndex().xy;
     const float2 sample_offset = rand_float2(rng_state);
@@ -62,7 +50,7 @@ void main()
 
     float3 path_coeff = float3(1);
 
-    Ray ray = generate_ray(params.camera_to_world, sample_pos, push_constants.tan_fovy_over_2, push_constants.z_is_up);
+    Ray ray = generate_ray(frame_params.camera_to_world, sample_pos, frame_params.tan_fovy_over_2, frame_params.z_is_up);
     float3 L = float3(0);
 
     for (int i = 0; i < bounce_count; i++) {
@@ -101,7 +89,7 @@ void main()
     }
 
     float3 current_L = params.output_image[DispatchRaysIndex().xy].rgb;
-    float k = float(push_constants.accumulation_index + 1);
+    float k = float(frame_params.accumulation_index + 1);
     float3 new_L = current_L * (k - 1) / k + L / k;
     params.output_image[DispatchRaysIndex().xy] = float4(new_L, 1);
 

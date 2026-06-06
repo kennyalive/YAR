@@ -10,6 +10,7 @@
     #include "../lib/vector.h"
     #define SLANG_PUBLIC
     using uint = uint32_t;
+    using uint2 = struct { uint x; uint y; };
 #else
     module shared;
     public typealias ColorRGB = float3;
@@ -94,6 +95,23 @@ SLANG_PUBLIC struct Instance_Info {
     float pad2;
    
     Matrix3x4 object_to_world_transform;
+};
+
+//
+// Per-frame parameters
+//
+SLANG_PUBLIC struct Frame_Params
+{
+    SLANG_PUBLIC uint frame_index;
+    SLANG_PUBLIC uint accumulation_index;
+    SLANG_PUBLIC uint swapchain_image_index;
+    SLANG_PUBLIC uint spp4;
+
+    SLANG_PUBLIC Matrix3x4 camera_to_world;
+
+    SLANG_PUBLIC uint2 viewport_size;
+    SLANG_PUBLIC float tan_fovy_over_2;
+    SLANG_PUBLIC uint z_is_up;
 };
 
 //
