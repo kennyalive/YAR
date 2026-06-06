@@ -1,5 +1,5 @@
 import common;
-import shared_main;
+import shared;
 import resources;
 
 import direct_lighting;

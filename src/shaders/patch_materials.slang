@@ -1,4 +1,4 @@
-import shared_main;
+import shared;
 import resources;
 
 [[vk::binding(0, 0)]]

@@ -1,8 +1,6 @@
 module resources;
 
-import shared_main;
-import shared_light;
-import shared_material;
+import shared;
 
 public struct Mesh_Vertex {
     public float x, y, z;

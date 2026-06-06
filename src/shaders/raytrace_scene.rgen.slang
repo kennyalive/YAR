@@ -1,4 +1,4 @@
-import shared_main;
+import shared;
 import generate_ray;
 import raytrace_types;
 

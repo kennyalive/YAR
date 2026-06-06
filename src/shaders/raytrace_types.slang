@@ -1,6 +1,6 @@
 module raytrace_types;
 
-import shared_main;
+import shared;
 
 public struct Attribs {
     public float2 barycentrics;

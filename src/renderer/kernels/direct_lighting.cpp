@@ -5,8 +5,7 @@
 #include "renderer/descriptors.h"
 #include "renderer/descriptor_heap.h"
 #include "renderer/geometry.h"
-#include "shaders/shared_main.slang"
-#include "shaders/shared_light.slang"
+#include "shaders/shared.slang"
 #include "lib/scene.h"
 
 struct Rt_Uniform_Buffer {

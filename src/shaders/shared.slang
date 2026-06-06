@@ -1,6 +1,5 @@
-// shared_xxx.h files contain definitions that are shared between
-// shader and cpp code. For shared structures this ensures that
-// CPU and GPU sees the same memory layout.
+// Contains definitions that are shared between shader and cpp code.
+// For shared structures this ensures that CPU and GPU sees the same memory layout.
 
 #ifdef __cplusplus
     #pragma once
@@ -11,7 +10,7 @@
     #include "../lib/vector.h"
     #define SLANG_PUBLIC
 #else
-    module shared_main;
+    module shared;
     public typealias ColorRGB = float3;
     public typealias Vector2 = float2;
     public typealias Vector3 = float3;
@@ -87,6 +86,76 @@ SLANG_PUBLIC struct Instance_Info {
     float pad2;
    
     Matrix3x4 object_to_world_transform;
+};
+
+//
+// Materials
+//
+SLANG_PUBLIC struct Lambertian_Material {
+    SLANG_PUBLIC float r, g, b; // albedo in [0, 1] range
+    SLANG_PUBLIC int albedo_texture_index;
+    SLANG_PUBLIC float u_scale;
+    SLANG_PUBLIC float v_scale;
+};
+
+//
+// Lights
+//
+SLANG_PUBLIC struct Point_Light {
+    SLANG_PUBLIC Vector3 position;
+    float pad0;
+    SLANG_PUBLIC ColorRGB intensity;
+    float pad1;
+
+#ifdef __cplusplus
+    void init(const ::Point_Light &data) {
+        position = data.position;
+        pad0 = 0.f;
+
+        intensity = data.intensity;
+        pad1 = 0.f;
+    }
+#endif
+};
+
+SLANG_PUBLIC struct Directional_Light {
+    SLANG_PUBLIC Vector3 direction;
+    float pad0;
+    SLANG_PUBLIC ColorRGB irradiance;
+    float pad1;
+
+#ifdef __cplusplus
+    void init(const ::Directional_Light &data) {
+        direction = data.direction;
+        pad0 = 0.f;
+        irradiance = data.irradiance;
+        pad1 = 0.f;
+    }
+#endif
+};
+
+SLANG_PUBLIC struct Diffuse_Rectangular_Light {
+    SLANG_PUBLIC Matrix3x4 light_to_world_transform;
+
+    SLANG_PUBLIC ColorRGB emitted_radiance;
+    float pad0;
+
+    SLANG_PUBLIC Vector2 size;
+    SLANG_PUBLIC float area;
+    SLANG_PUBLIC int shadow_ray_count;
+
+#ifdef __cplusplus
+    void init(const ::Diffuse_Rectangular_Light &data) {
+        light_to_world_transform = data.light_to_world_transform;
+
+        emitted_radiance = data.emitted_radiance;
+        pad0 = 0.f;
+
+        size = data.size;
+        area = data.size.x * data.size.y;
+        shadow_ray_count = data.sample_count;
+    }
+#endif
 };
 
 #ifdef __cplusplus

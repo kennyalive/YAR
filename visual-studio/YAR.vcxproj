@@ -149,9 +149,7 @@
     <SlangShader Include="..\src\shaders\raytrace_scene_shadow_ray.chit.slang" />
     <SlangShader Include="..\src\shaders\raytrace_types.slang" />
     <SlangShader Include="..\src\shaders\shading_context.slang" />
-    <SlangShader Include="..\src\shaders\shared_light.slang" />
-    <SlangShader Include="..\src\shaders\shared_main.slang" />
-    <SlangShader Include="..\src\shaders\shared_material.slang" />
+    <SlangShader Include="..\src\shaders\shared.slang" />
     <SlangShader Include="..\src\shaders\path_tracing.chit.slang" />
     <SlangShader Include="..\src\shaders\path_tracing.miss.slang" />
     <SlangShader Include="..\src\shaders\path_tracing.rgen.slang" />

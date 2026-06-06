@@ -1,10 +1,10 @@
 import common;
-import shared_main;
+import shared;
+import resources;
+
 import generate_ray;
 import raytrace_types;
 import evaluate_bsdf;
-import shared_material;
-import resources;
 
 struct PushConstants {
     uint spp4;

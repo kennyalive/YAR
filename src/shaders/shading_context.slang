@@ -1,7 +1,5 @@
 module shading_context;
 
-import shared_main;
-
 public struct Shading_Context {
     public float3 Wo; // outgoing direction
     public float3 P;  // shading point position in world coordinates

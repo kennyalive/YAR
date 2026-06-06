@@ -1,9 +1,7 @@
 module direct_lighting;
 
 import common;
-import shared_main;
-import shared_light;
-import shared_material;
+import shared;
 import resources;
 
 import evaluate_bsdf;

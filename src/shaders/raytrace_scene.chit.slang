@@ -1,5 +1,5 @@
 import common;
-import shared_main;
+import shared;
 
 import direct_lighting;
 import raytrace_types;

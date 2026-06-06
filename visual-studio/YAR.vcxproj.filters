@@ -67,10 +67,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <SlangShader Include="..\src\shaders\shared_material.slang">
-      <Filter>shaders</Filter>
-    </SlangShader>
-    <SlangShader Include="..\src\shaders\shared_main.slang">
+    <SlangShader Include="..\src\shaders\shared.slang">
       <Filter>shaders</Filter>
     </SlangShader>
     <SlangShader Include="..\src\shaders\raytrace_types.slang">
@@ -83,9 +80,6 @@
       <Filter>shaders</Filter>
     </SlangShader>
     <SlangShader Include="..\src\shaders\resources.slang">
-      <Filter>shaders</Filter>
-    </SlangShader>
-    <SlangShader Include="..\src\shaders\shared_light.slang">
       <Filter>shaders</Filter>
     </SlangShader>
     <SlangShader Include="..\src\shaders\direct_lighting.slang">
