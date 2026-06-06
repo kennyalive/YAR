@@ -8,11 +8,13 @@ struct Descriptors {
     uint32_t output_image = 0;
     uint32_t tonemapped_image = 0;
     uint32_t swapchain_images = 0;
+
     uint32_t images_2d = 0;
     uint32_t image_sampler = 0;
     uint32_t instance_infos = 0;
     uint32_t index_buffers = 0;
     uint32_t vertex_buffers = 0;
+    uint32_t scene_info_buffer = 0;
 
     uint32_t lambertian_materials = 0;
     uint32_t point_lights = 0;

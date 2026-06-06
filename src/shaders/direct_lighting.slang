@@ -23,15 +23,17 @@ bool trace_shadow_ray(RaytracingAccelerationStructure accel, float3 position, fl
     return shadow_ray_payload.shadow_factor != 0.0;
 }
 
-public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, RaytracingAccelerationStructure accel, inout uint rng_state,
-    int point_light_count,
-    int directional_light_count,
-    int diffuse_rectangular_light_count)
+public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, RaytracingAccelerationStructure accel, inout uint rng_state)
 {
     Material_Handle mtl_handle = instance_infos[InstanceID()].material;
     float3 P = offset_ray(sc.P, sc.Ng);
 
     float3 L = float3(0, 0, 0);
+
+    const Scene_Info scene_info = get_scene_info();
+    const uint point_light_count = scene_info.point_light_count;
+    const uint directional_light_count = scene_info.directional_light_count;
+    const uint diffuse_rectangular_light_count = scene_info.rect_light_count;
 
     // Point lights
     for (int i = 0; i < point_light_count; i++) {

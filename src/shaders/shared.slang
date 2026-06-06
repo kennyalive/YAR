@@ -9,6 +9,7 @@
     #include "../lib/material.h"
     #include "../lib/vector.h"
     #define SLANG_PUBLIC
+    using uint = uint32_t;
 #else
     module shared;
     public typealias ColorRGB = float3;
@@ -39,10 +40,17 @@ SLANG_PUBLIC static const int Black_2D_Texture_Index = 0;
 static const int White_2D_Texture_Index = 1;
 SLANG_PUBLIC static const int Predefined_Texture_Count = 2;
 
+//===========================================================
+// Shared structures.
+// C++ definitions are in the GPU_Types namespace.
+//===========================================================
 #ifdef __cplusplus
 namespace GPU_Types {
 #endif
 
+//
+// Main types
+//
 SLANG_PUBLIC struct Geometry_Handle {
     int type;
     SLANG_PUBLIC int index;
@@ -79,13 +87,23 @@ struct Light_Handle {
 SLANG_PUBLIC struct Instance_Info {
     SLANG_PUBLIC Material_Handle material;
     SLANG_PUBLIC Geometry_Handle geometry;
-    
+
     SLANG_PUBLIC int area_light_index; // -1 if not an area light
     float pad0;
     float pad1;
     float pad2;
    
     Matrix3x4 object_to_world_transform;
+};
+
+//
+// Global scene information
+//
+SLANG_PUBLIC struct Scene_Info
+{
+    SLANG_PUBLIC uint point_light_count;
+    SLANG_PUBLIC uint directional_light_count;
+    SLANG_PUBLIC uint rect_light_count;
 };
 
 //

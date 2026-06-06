@@ -61,16 +61,10 @@ private:
     struct GPU_Scene_Resources {
         std::vector<Vk_Image> images_2d;
         Vk_Buffer instance_info_buffer;
-
+        Vk_Buffer scene_info_buffer;
         Vk_Buffer point_lights;
-        uint32_t point_light_count = 0;
-
         Vk_Buffer directional_lights;
-        uint32_t directional_light_count = 0;
-
-        Vk_Buffer diffuse_rectangular_lights;
-        uint32_t diffuse_rectangular_light_count = 0;
-
+        Vk_Buffer rect_lights;
         Vk_Buffer lambertian_material_buffer;
     } gpu_scene;
 

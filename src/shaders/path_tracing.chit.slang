@@ -15,10 +15,7 @@ RaytracingAccelerationStructure accel;
 [[vk::binding(2, KERNEL_SET_0)]]
 cbuffer Constants {
     float3x4 camera_to_world;
-    int point_light_count;
-    int directional_light_count;
-    int diffuse_rectangular_light_count;
-    float2 pad0;
+    float4 pad0;
 };
 
 struct PushConstants {
@@ -133,7 +130,7 @@ void main(inout Path_Payload payload, in Attribs attribs)
 
     Shading_Context sc = init_shading_context(attribs.barycentrics);
 
-    float3 L = estimate_direct_lighting(materials, sc, accel, rng_state, point_light_count, directional_light_count, diffuse_rectangular_light_count);
+    float3 L = estimate_direct_lighting(materials, sc, accel, rng_state);
 
     int area_light_index = instance_infos[InstanceID()].area_light_index;
     if (area_light_index != -1) {

@@ -181,11 +181,8 @@ void Renderer::shutdown() {
 
     descriptor_heap.destroy();
     gpu_scene.point_lights.destroy();
-    gpu_scene.point_light_count = 0;
     gpu_scene.directional_lights.destroy();
-    gpu_scene.directional_light_count = 0;
-    gpu_scene.diffuse_rectangular_lights.destroy();
-    gpu_scene.diffuse_rectangular_light_count = 0;
+    gpu_scene.rect_lights.destroy();
     gpu_scene.lambertian_material_buffer.destroy();
 
     for (GPU_Mesh& mesh : gpu_meshes) {
@@ -198,6 +195,7 @@ void Renderer::shutdown() {
         image.destroy();
 
     gpu_scene.instance_info_buffer.destroy();
+    gpu_scene.scene_info_buffer.destroy();
 
     apply_tone_mapping.destroy();
     copy_to_swapchain.destroy();
@@ -413,7 +411,6 @@ void Renderer::load_project(const std::string& input_file) {
             gpu_scene.point_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 lights.data(), "point_light_buffer");
-            gpu_scene.point_light_count = (uint32_t)lights.size();
         }
         if (!scene.lights.directional_lights.empty()) {
             found_supported_lights = true;
@@ -424,7 +421,6 @@ void Renderer::load_project(const std::string& input_file) {
             gpu_scene.directional_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 lights.data(), "directional_light_buffer");
-            gpu_scene.directional_light_count = (uint32_t)lights.size();
         }
         if (!scene.lights.diffuse_rectangular_lights.empty()) {
             found_supported_lights = true;
@@ -432,10 +428,9 @@ void Renderer::load_project(const std::string& input_file) {
             for (auto [i, data] : enumerate(scene.lights.diffuse_rectangular_lights)) {
                 lights[i].init(data);
             }
-            gpu_scene.diffuse_rectangular_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
+            gpu_scene.rect_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
-                lights.data(), "diffuse_rectangular_light_buffer");
-            gpu_scene.diffuse_rectangular_light_count = (uint32_t)lights.size();
+                lights.data(), "rect_light_buffer");
         }
         if (scene.lights.has_environment_light) {
             printf("Scene contains environment light. Environment lights are not suported yet.\n");
@@ -451,7 +446,6 @@ void Renderer::load_project(const std::string& input_file) {
             gpu_scene.directional_lights = vk_create_buffer(sizeof(GPU_Types::Directional_Light),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                 &gpu_light, "directional_light_buffer");
-            gpu_scene.directional_light_count = 1;
             printf("No supported lights found. Added default directional light\n");
         }
 
@@ -461,12 +455,34 @@ void Renderer::load_project(const std::string& input_file) {
         descriptor_heap.write_buffer_descriptor(gpu_scene.directional_lights.address_range(), 
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.directional_lights);
 
-        descriptor_heap.write_buffer_descriptor(gpu_scene.diffuse_rectangular_lights.address_range(),
+        descriptor_heap.write_buffer_descriptor(gpu_scene.rect_lights.address_range(),
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.diffuse_rectangular_lights);
     }
 
+    // Scene info
+    {
+        GPU_Types::Scene_Info scene_info{};
+        scene_info.point_light_count = (uint32_t)scene.lights.point_lights.size();
+        scene_info.directional_light_count = (uint32_t)scene.lights.directional_lights.size();
+        scene_info.rect_light_count = (uint32_t)scene.lights.diffuse_rectangular_lights.size();
+
+        // Count default light if not lights are specified
+        if (scene_info.point_light_count + scene_info.directional_light_count + scene_info.rect_light_count == 0) {
+            scene_info.directional_light_count = 1;
+        }
+
+        gpu_scene.scene_info_buffer = vk_create_buffer(sizeof(GPU_Types::Scene_Info),
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            &scene_info, "scene_info_buffer");
+
+        descriptors.scene_info_buffer = descriptor_heap.allocate_buffer_descriptor();
+        descriptor_heap.write_buffer_descriptor(gpu_scene.scene_info_buffer.address_range(),
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.scene_info_buffer);
+    }
+
     std::vector<VkDescriptorSetAndBindingMappingEXT> global_heap_mappings;
-    
+
+    // Base resources
     global_heap_mappings.push_back(map_binding_to_heap_offset(
         BASE_SET_INDEX, 0, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT,
         descriptors.images_2d, descriptors.image_descriptor_size
@@ -488,9 +504,17 @@ void Renderer::load_project(const std::string& input_file) {
         descriptors.vertex_buffers, descriptors.buffer_descriptor_size
     ));
     global_heap_mappings.push_back(map_binding_to_heap_offset(
+        BASE_SET_INDEX, 5, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        descriptors.scene_info_buffer, descriptors.buffer_descriptor_size
+    ));
+
+    // Materials
+    global_heap_mappings.push_back(map_binding_to_heap_offset(
         MATERIAL_SET_INDEX, LAMBERTIAN_MATERIAL_BINDING, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT,
         descriptors.lambertian_materials
     ));
+
+    // Lights
     global_heap_mappings.push_back(map_binding_to_heap_offset(
         LIGHT_SET_INDEX, POINT_LIGHT_BINDING, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
         descriptors.point_lights
@@ -511,14 +535,7 @@ void Renderer::load_project(const std::string& input_file) {
     });
 
     direct_lighting.create(descriptor_heap, descriptors, global_heap_mappings, scene, gpu_meshes);
-    direct_lighting.update_point_lights(gpu_scene.point_light_count);
-    direct_lighting.update_directional_lights(gpu_scene.directional_light_count);
-    direct_lighting.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_light_count);
-
     path_tracing.create(descriptor_heap, descriptors, global_heap_mappings, scene, gpu_meshes);
-    path_tracing.update_point_lights(gpu_scene.point_light_count);
-    path_tracing.update_directional_lights(gpu_scene.directional_light_count);
-    path_tracing.update_diffuse_rectangular_lights(gpu_scene.diffuse_rectangular_light_count);
 
     project_loaded = true;
 }

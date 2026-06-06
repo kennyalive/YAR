@@ -10,10 +10,7 @@
 
 struct Rt_Uniform_Buffer {
     Matrix3x4   camera_to_world;
-    uint32_t    point_light_count;
-    uint32_t    directional_light_count;
-    uint32_t    diffuse_rectangular_light_count;
-    Vector2     pad0;
+    Vector4     pad0;
 };
 
 // TODO: temp structure. Use separate buffer per attribute.
@@ -66,21 +63,6 @@ void Path_Tracing::destroy() {
 void Path_Tracing::update_camera_transform(const Matrix3x4& camera_to_world_transform)
 {
     uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->camera_to_world = camera_to_world_transform;
-}
-
-void Path_Tracing::update_point_lights(uint32_t light_count)
-{
-    uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->point_light_count = light_count;
-}
-
-void Path_Tracing::update_directional_lights(uint32_t light_count)
-{
-    uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->directional_light_count = light_count;
-}
-
-void Path_Tracing::update_diffuse_rectangular_lights(uint32_t light_count)
-{
-    uniform_buffer.get_mapped_data<Rt_Uniform_Buffer>()->diffuse_rectangular_light_count = light_count;
 }
 
 void Path_Tracing::create_pipeline(const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const std::vector<GPU_Mesh>& gpu_meshes)

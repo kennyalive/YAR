@@ -8,7 +8,9 @@ public struct Mesh_Vertex {
     public float u, v;
 };
 
+//
 // General scene data
+//
 [[vk::binding(0, BASE_SET_INDEX)]]
 public Texture2D images_2d[];
 
@@ -24,7 +26,17 @@ public StructuredBuffer<uint> index_buffers[];
 [[vk::binding(4, BASE_SET_INDEX)]]
 public StructuredBuffer<Mesh_Vertex> vertex_buffers[];
 
+[[vk::binding(5, BASE_SET_INDEX)]]
+public StructuredBuffer<Scene_Info> scene_info_buffer;
+
+public Scene_Info get_scene_info()
+{
+    return scene_info_buffer[0];
+}
+
+//
 // Material data
+//
 public static const int Material_Lambertian = 2;
 static const int Material_None = -1;
 
@@ -32,7 +44,9 @@ public struct Materials {
     public RWStructuredBuffer<Lambertian_Material> lambertian_materials;
 }
 
+//
 // Lighting data
+//
 static const int Light_None = -1;
 static const int Light_Point = 0;
 static const int Light_Directional = 1;
