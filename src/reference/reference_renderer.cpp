@@ -583,14 +583,20 @@ Image render_scene(const Scene_Context& scene_ctx, double* variance_estimate, fl
     return image;
 }
 
-void init_scene_context(const Scene& scene, const Renderer_Configuration& config, Scene_Context& scene_ctx)
+void init_scene_context(Scene_Context& scene_ctx,
+    const Scene& scene,
+    const Reference_Renderer_Config& config,
+    const Scene_Overrides& overrides)
 {
     scene_ctx.input_filename = scene.path;
     scene_ctx.checkpoint_directory = config.checkpoint_directory;
     scene_ctx.thread_count = config.thread_count;
     scene_ctx.render_region = scene.render_region;
-    scene_ctx.raytracer_config = scene.raytracer_config;
-    scene_ctx.camera = Camera(scene.view_points[0], Vector2(scene.film_resolution), scene.camera_fov_y, scene.z_is_up);
+
+    scene_ctx.raytracer_config = overrides.raytracer_config ? *overrides.raytracer_config : scene.raytracer_config;
+
+    const Matrix3x4& camera_pose = overrides.camera_pose ? *overrides.camera_pose : scene.view_points[0];
+    scene_ctx.camera = Camera(camera_pose, Vector2(scene.film_resolution), scene.camera_fov_y, scene.z_is_up);
 
     // Textures should be initialized before kdtrees,
     // kdtrees might store texture references for transparency testing

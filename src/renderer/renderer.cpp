@@ -173,6 +173,7 @@ void Renderer::initialize(GLFWwindow* window, int gpu_index) {
 }
 
 void Renderer::shutdown() {
+    wait_for_reference_renderer();
     VK_CHECK(vkDeviceWaitIdle(vk.device));
 
     ImGui_ImplVulkan_Shutdown();
@@ -255,6 +256,7 @@ void Renderer::restore_resolution_dependent_resources() {
 }
 
 void Renderer::load_project(const std::string& input_file) {
+    wait_for_reference_renderer();
     scene = load_scene(input_file);
 
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
@@ -543,7 +545,9 @@ void Renderer::load_project(const std::string& input_file) {
 static double last_frame_time;
 
 void Renderer::run_frame() {
-    ui.run_imgui();
+    ui.reference_renderer_running = reference_renderer_running.load();
+
+    const UI_Actions ui_actions = ui.run_imgui();
 
     if (last_frame_time == 0.0) { // initialize
         last_frame_time = glfwGetTime();
@@ -579,9 +583,8 @@ void Renderer::run_frame() {
     if (ui.reset_accumulation) {
         accumulation_index = 0;
     }
-    if (ui.ui_result.reference_render_requested) {
+    if (ui_actions.reference_render_requested) {
         start_reference_renderer();
-        ui.ui_result.reference_render_requested = false;
     }
 
     draw_frame();
@@ -619,7 +622,6 @@ void Renderer::draw_frame() {
     frame_params.viewport_size = { vk.surface_size.width, vk.surface_size.height };
     frame_params.tan_fovy_over_2 = std::tan(radians(scene.camera_fov_y / 2.f));
     frame_params.z_is_up = uint32_t(scene.z_is_up);
-    
 
     VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
     push_data_info.data.address = &frame_params;
@@ -629,8 +631,6 @@ void Renderer::draw_frame() {
     if (project_loaded) {
         draw_raytraced_image();
     }
-
-    
 
     tone_mapping();
 
@@ -701,26 +701,44 @@ void Renderer::copy_output_image_to_swapchain()
 
 void Renderer::start_reference_renderer()
 {
-    Renderer_Configuration renderer_config;
+    ASSERT(!reference_renderer_running.load());
+
+    Reference_Renderer_Config reference_renderer_config;
     int thread_count = ui.ref_params.thread_count;
     if (!thread_count) {
         thread_count = std::max(1u, std::thread::hardware_concurrency());
     }
-    renderer_config.thread_count = thread_count;
+    reference_renderer_config.thread_count = thread_count;
 
+    Raytracer_Config raytracer_config = scene.raytracer_config;
     int k = (int)std::ceil(std::sqrt(ui.ref_params.spp));
-    scene.raytracer_config.x_pixel_sample_count = k;
-    scene.raytracer_config.y_pixel_sample_count = k;
+    raytracer_config.x_pixel_sample_count = k;
+    raytracer_config.y_pixel_sample_count = k;
 
+    Scene_Overrides overrides;
+    overrides.raytracer_config = raytracer_config;
+    overrides.camera_pose = flying_camera.get_camera_pose();
+
+    // Launch rendering thread
+    ASSERT(!reference_renderer_running.load());
+    reference_renderer_running.store(true);
+    reference_renderer_thread = std::jthread([this, reference_renderer_config, overrides]() {
+        do_run_reference_renderer(reference_renderer_config, overrides);
+    });
+}
+
+void Renderer::do_run_reference_renderer(const Reference_Renderer_Config& reference_renderer_config, const Scene_Overrides& overrides)
+{
+    // Init scene context
     Scene_Context scene_ctx;
-    init_scene_context(scene, renderer_config, scene_ctx);
+    init_scene_context(scene_ctx, scene, reference_renderer_config, overrides);
 
-    scene_ctx.camera = Camera(flying_camera.get_camera_pose(), Vector2(scene.film_resolution), scene.camera_fov_y, scene.z_is_up);
-
+    // Render
     double variance_estimate = 0.0;
     float render_time = 0.f;
     Image image = render_scene(scene_ctx, &variance_estimate, &render_time);
 
+    // Save results
     EXR_Write_Params write_params;
     const std::string image_filename = "image.exr";
     if (!write_openexr_image(image_filename, image, write_params)) {
@@ -728,5 +746,14 @@ void Renderer::start_reference_renderer()
     }
     else {
         printf("Saved output image to %s\n\n", image_filename.c_str());
+    }
+    reference_renderer_running.store(false);
+}
+
+void Renderer::wait_for_reference_renderer()
+{
+    if (reference_renderer_thread.joinable()) {
+        reference_renderer_thread.join();
+        reference_renderer_running.store(false);
     }
 }

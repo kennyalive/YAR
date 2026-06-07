@@ -18,6 +18,8 @@
 #include "lib/scene.h"
 
 struct GLFWwindow;
+struct Reference_Renderer_Config;
+struct Scene_Overrides;
 
 class Renderer {
 public:
@@ -39,7 +41,10 @@ private:
     void tone_mapping();
     void draw_imgui();
     void copy_output_image_to_swapchain();
+
     void start_reference_renderer();
+    void do_run_reference_renderer(const Reference_Renderer_Config& reference_renderer_config, const Scene_Overrides& overrides);
+    void wait_for_reference_renderer();
 
 private:
     uint32_t frame_index = 0;
@@ -86,4 +91,7 @@ private:
     bool project_loaded = false;
     Scene scene;
     UI ui;
+
+    std::atomic_bool reference_renderer_running = false;
+    std::jthread reference_renderer_thread;
 };

@@ -5,23 +5,23 @@
 
 struct Vk_Timer;
 
+struct UI_Actions {
+    bool reference_render_requested = false;
+};
+
 struct UI {
-    void run_imgui();
+    UI_Actions run_imgui();
 
-    struct UI_Result {
-        bool reference_render_requested;
-    };
-
-    UI_Result ui_result;
     bool reset_accumulation = false;
 
     bool show_ui = true;
     bool vsync = true;
     int rendering_algorithm = 1;
 
+    // Externally provide state displayed or used by the UI.
+    bool reference_renderer_running = false;
     bool* spp4 = nullptr;
     const Vk_Timer* frame_time_scope = nullptr;
-
     Vector3 camera_position;
 
     struct Reference_Renderer_Params {

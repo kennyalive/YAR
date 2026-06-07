@@ -14,8 +14,8 @@ static void show_time_scope(const Vk_Timer* timer) {
     }
 }
 
-void UI::run_imgui() {
-    ui_result = UI_Result{};
+UI_Actions UI::run_imgui() {
+    UI_Actions actions;
     reset_accumulation = false;
 
     ImGuiIO& io = ImGui::GetIO();
@@ -57,9 +57,11 @@ void UI::run_imgui() {
             ImGui::Separator();
             ImGui::InputScalar("thread count", ImGuiDataType_U32, &ref_params.thread_count);
             ImGui::InputScalar("spp", ImGuiDataType_U32, &ref_params.spp);
+            ImGui::BeginDisabled(reference_renderer_running);
             if (ImGui::Button("Render reference image")) {
-                ui_result.reference_render_requested = true;
+                actions.reference_render_requested = true;
             }
+            ImGui::EndDisabled();
 
             if (ImGui::BeginPopupContextWindow()) {
                 if (ImGui::MenuItem("Custom",       NULL, corner == -1)) corner = -1;
@@ -73,4 +75,5 @@ void UI::run_imgui() {
         }
         ImGui::End();
     }
+    return actions;
 }

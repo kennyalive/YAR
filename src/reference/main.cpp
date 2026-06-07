@@ -399,7 +399,7 @@ static void process_input_file(const std::string& input_file, const Command_Line
     //
     // Render scene.
     //
-    Renderer_Configuration config;
+    Reference_Renderer_Config config;
     config.thread_count = thread_count;
     config.checkpoint_directory = options.checkpoint_directory;
     config.rebuild_kdtree_cache = options.force_rebuild_kdtree_cache;
@@ -407,7 +407,7 @@ static void process_input_file(const std::string& input_file, const Command_Line
     config.pbrt_compatibility = options.pbrt_compatibility;
 
     Scene_Context scene_ctx;
-    init_scene_context(scene, config, scene_ctx);
+    init_scene_context(scene_ctx, scene, config);
     float load_time = elapsed_seconds(t_start);
     printf("%-*s %.3f seconds\n\n", time_category_field_width, "Total loading time", load_time);
 
