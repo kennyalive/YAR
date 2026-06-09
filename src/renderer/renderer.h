@@ -6,12 +6,12 @@
 #include "kernels/direct_lighting.h"
 #include "kernels/path_tracing.h"
 
-#include "ui/ui.h"
-
 #include "descriptor_heap.h"
 #include "descriptors.h"
 #include "geometry.h"
 #include "vk.h"
+
+#include "ui.h"
 
 #include "lib/flying_camera.h"
 #include "lib/matrix.h"
