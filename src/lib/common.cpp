@@ -5,7 +5,7 @@
 #include "meow-hash/meow_hash_x64_aesni.h"
 
 // Default data folder path. Can be changed with -data-dir command line option.
-std::string g_data_dir = "./../data";
+static std::string  g_data_dir = "./../data";
 
 void error(const std::string& message) {
     printf("\nError: %s\n", message.c_str());
@@ -57,7 +57,13 @@ bool fs_rename(const fs::path& old_path, const fs::path& new_path) {
     return !ec;
 }
 
-fs::path get_data_directory() {
+void set_data_directory(const std::string& path)
+{
+    g_data_dir = path;
+}
+
+fs::path get_data_directory()
+{
     return g_data_dir;
 }
 

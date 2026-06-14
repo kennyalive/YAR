@@ -5,55 +5,66 @@
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
 
-static std::string input_file;
-static int gpu_index = -1;
+struct Command_Line_Params
+{
+    bool requested_help_info = false;
+    std::string data_dir;
+    int gpu_index = -1;
+    std::string input_file;
+};
 
-static int window_width = 960;
-static int window_height = 720;
+struct WindowState
+{
+    GLFWwindow* window = nullptr;
+    Renderer* renderer = nullptr;
+    int width = 960;
+    int height= 720;
+    bool active = false;
+    bool vsync = false;
+};
 
-static GLFWwindow* window;
-
-static bool parse_command_line(int argc, char** argv) {
+static Command_Line_Params parse_command_line(int argc, char** argv)
+{
+    Command_Line_Params params;
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--gpu") == 0) {
-            if (i == argc - 1) {
-                printf("--gpu value is missing\n");
+        const bool last = (i == argc - 1);
+        if (strcmp(argv[i], "-gpu") == 0) {
+            if (last) {
+                printf("-gpu parameter does not specify integer gpu index\n");
             }
             else {
-                gpu_index = std::stoi(argv[i + 1]);
+                params.gpu_index = std::stoi(argv[i + 1]);
                 i++;
             }
         }
-        else if (strcmp(argv[i], "--data-dir") == 0) {
-            if (i == argc-1) {
-                printf("-data-dir value is missing\n");
+        else if (strcmp(argv[i], "-data-dir") == 0) {
+            if (last) {
+                printf("-data-dir parameter does not specify location of program's data folder\n");
             }
             else {
-                extern std::string g_data_dir;
-                g_data_dir = argv[i+1];
+                set_data_directory(argv[i+1]);
                 i++;
             }
         }
         else if (strcmp(argv[i], "-help") == 0) {
-            extern std::string g_data_dir;
-            printf("%-25s Path to the data directory. Default: %s\n", "-data-dir", g_data_dir.c_str());
-            printf("%-25s Enables Vulkan validation layers.\n", "-validation-layers");
-            printf("%-25s Allows to assign debug names to Vulkan objects.\n", "-debug-names");
-            printf("%-25s Shows this information.\n", "-help");
-            return false;
+            printf("%-25s Path to the data directory. Default: %s\n", "-data-dir", get_data_directory().string().c_str());
+            printf("%-25s Shows help (this information).\n", "-help");
+            params.requested_help_info = true;
         }
         else {
-            input_file = argv[i];
+            params.input_file = argv[i];
         }
     }
-    return true;
+    return params;
 }
 
-static void glfw_error_callback(int error, const char* description) {
+static void glfw_error_callback(int error, const char* description)
+{
     fprintf(stderr, "GLFW error: %s\n", description);
 }
 
-static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
     if (action == GLFW_PRESS) {
         if (key == GLFW_KEY_ESCAPE) {
             glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -64,9 +75,10 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
             VK_CHECK(vkDeviceWaitIdle(vk.device));
             GLFWmonitor* monitor = glfwGetWindowMonitor(window);
             if (monitor == nullptr) {
+                WindowState* window_state = (WindowState*)glfwGetWindowUserPointer(window);
                 glfwGetWindowPos(window, &last_window_xpos, &last_window_ypos);
-                last_window_width = window_width;
-                last_window_height = window_height;
+                last_window_width = window_state->width;
+                last_window_height = window_state->height;
 
                 monitor = glfwGetPrimaryMonitor();
                 const GLFWvidmode* mode = glfwGetVideoMode(monitor);
@@ -75,74 +87,84 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
                 glfwSetWindowMonitor(window, nullptr, last_window_xpos, last_window_ypos, last_window_width, last_window_height, 0);
             }
         } else if (key == GLFW_KEY_F10) {
-            Renderer* renderer = (Renderer*)glfwGetWindowUserPointer(window);
-            renderer->toggle_ui();
+            WindowState* window_state = (WindowState*)glfwGetWindowUserPointer(window);
+            window_state->renderer->toggle_ui();
         }
     }
 }
 
-int run_realtime_renderer(int gpu_index) {
-    glfwSetErrorCallback(glfw_error_callback);
-    if (!glfwInit())
-        error("glfwInit failed");
+static void check_if_swapchain_needs_something(WindowState& window_state)
+{
+    int width, height;
+    glfwGetWindowSize(window_state.window, &width, &height);
+    Renderer& renderer = *window_state.renderer;
 
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    window = glfwCreateWindow(window_width, window_height, "YAR", nullptr, nullptr);
-    ASSERT(window != nullptr);
-    glfwSetKeyCallback(window, glfw_key_callback);
-
-    Renderer renderer{};
-    renderer.initialize(window, gpu_index);
-    glfwSetWindowUserPointer(window, &renderer);
-
-    if (!input_file.empty())
-        renderer.load_project(input_file);
-
-    bool prev_vsync = renderer.vsync_enabled();
-    bool window_active = true;
-
-    while (!glfwWindowShouldClose(window)) {
-        if (window_active)
-            renderer.run_frame();
-
-        glfwPollEvents();
-
-        int width, height;
-        glfwGetWindowSize(window, &width, &height);
-
-        bool recreate_swapchain = false;
-        if (prev_vsync != renderer.vsync_enabled()) {
-            prev_vsync = renderer.vsync_enabled();
-            recreate_swapchain = true;
-        } else if (width != window_width || height != window_height) {
-            window_width = width;
-            window_height = height;
-            recreate_swapchain = true;
-        }
-
-        window_active = (width != 0 && height != 0);
-        if (!window_active)
-            continue; 
-
-        if (recreate_swapchain) {
-            VK_CHECK(vkDeviceWaitIdle(vk.device));
-            renderer.release_resolution_dependent_resources();
-            vk_destroy_swapchain();
-            vk_create_swapchain(renderer.vsync_enabled());
-            renderer.restore_resolution_dependent_resources();
-            recreate_swapchain = false;
-        }
+    bool recreate_swapchain = false;
+    if (window_state.vsync != renderer.vsync_enabled()) {
+        window_state.vsync = renderer.vsync_enabled();
+        recreate_swapchain = true;
+    } else if (window_state.width != width || window_state.height != height) {
+        window_state.width = width;
+        window_state.height = height;
+        recreate_swapchain = true;
     }
 
+    window_state.active = (width != 0 && height != 0);
+    if (!window_state.active) {
+        return; 
+    }
+
+    if (recreate_swapchain) {
+        VK_CHECK(vkDeviceWaitIdle(vk.device));
+        renderer.release_resolution_dependent_resources();
+        vk_destroy_swapchain();
+        vk_create_swapchain(renderer.vsync_enabled());
+        renderer.restore_resolution_dependent_resources();
+    }
+}
+
+static int run_realtime_renderer(const Command_Line_Params& params)
+{
+    glfwSetErrorCallback(glfw_error_callback);
+    if (!glfwInit()) {
+        error("glfwInit failed");
+    }
+    WindowState window_state;
+
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    window_state.window = glfwCreateWindow(window_state.width, window_state.height, "YAR", nullptr, nullptr);
+    ASSERT(window_state.window != nullptr);
+    glfwSetKeyCallback(window_state.window, glfw_key_callback);
+
+    Renderer renderer{};
+    renderer.initialize(window_state.window, params.gpu_index);
+
+    window_state.renderer = &renderer;
+    window_state.active = true;
+    window_state.vsync = renderer.vsync_enabled();
+    glfwSetWindowUserPointer(window_state.window, &window_state);
+
+    if (!params.input_file.empty()) {
+        renderer.load_project(params.input_file);
+    }
+    while (!glfwWindowShouldClose(window_state.window)) {
+        if (window_state.active) {
+            renderer.run_frame();
+        }
+        glfwPollEvents();
+        check_if_swapchain_needs_something(window_state);
+    }
     renderer.shutdown();
     glfwTerminate();
     return 0;
 }
 
-int main(int argc, char** argv) {
-    if (!parse_command_line(argc, argv))
+int main(int argc, char** argv)
+{
+    const Command_Line_Params command_line_params = parse_command_line(argc, argv);
+    if (command_line_params.requested_help_info) {
         return 0;
-
-    run_realtime_renderer(gpu_index);
+    }
+    run_realtime_renderer(command_line_params);
     return 0;
 }
