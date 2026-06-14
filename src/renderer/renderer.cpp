@@ -87,6 +87,7 @@ void Renderer::initialize(GLFWwindow* window, int gpu_index) {
     pnexer.next(robustness2_features);
 
     Vk_Init_Params vk_init_params;
+    vk_init_params.error_reporter = &error;
     vk_init_params.physical_device_index = gpu_index;
     vk_init_params.vsync = ui.vsync;
     vk_init_params.instance_extensions = std::span{ instance_extensions };
