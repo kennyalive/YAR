@@ -2,9 +2,8 @@
 #include "lib/common.h"
 #include "renderer.h"
 
-#include "geometry.h"
-#include "vk.h"
 #include "shaders/shared.slang"
+#include "vk.h"
 
 #include "lib/matrix.h"
 #include "lib/scene_loader.h"

@@ -3,7 +3,6 @@
 #include "renderer.h"
 
 #include "glfw/glfw3.h"
-#include "imgui/imgui.h"
 
 struct Command_Line_Params
 {
