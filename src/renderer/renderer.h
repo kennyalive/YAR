@@ -25,9 +25,8 @@ class Renderer {
 public:
     void initialize(GLFWwindow* glfw_window, int gpu_index);
     void shutdown();
+    void recreate_swapchain();
 
-    void release_resolution_dependent_resources();
-    void restore_resolution_dependent_resources();
     bool vsync_enabled() const { return ui.vsync; }
     void toggle_ui() { ui.show_ui = !ui.show_ui; }
 
@@ -35,7 +34,10 @@ public:
     void run_frame();
 
 private:
+    void release_resolution_dependent_resources();
+    void restore_resolution_dependent_resources();
     void create_default_textures();
+
     void draw_frame();
     void draw_raytraced_image();
     void tone_mapping();

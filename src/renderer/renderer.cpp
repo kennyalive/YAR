@@ -212,6 +212,15 @@ void Renderer::shutdown() {
     vk_shutdown();
 }
 
+void Renderer::recreate_swapchain()
+{
+    VK_CHECK(vkDeviceWaitIdle(vk.device));
+    release_resolution_dependent_resources();
+    vk_destroy_swapchain();
+    vk_create_swapchain(vsync_enabled());
+    restore_resolution_dependent_resources();
+}
+
 void Renderer::release_resolution_dependent_resources() {
     output_image.destroy();
     tonemapped_image.destroy();

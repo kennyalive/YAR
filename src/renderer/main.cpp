@@ -113,13 +113,8 @@ static void check_if_swapchain_needs_something(WindowState& window_state)
     if (!window_state.active) {
         return; 
     }
-
     if (recreate_swapchain) {
-        VK_CHECK(vkDeviceWaitIdle(vk.device));
-        renderer.release_resolution_dependent_resources();
-        vk_destroy_swapchain();
-        vk_create_swapchain(renderer.vsync_enabled());
-        renderer.restore_resolution_dependent_resources();
+        renderer.recreate_swapchain();
     }
 }
 
