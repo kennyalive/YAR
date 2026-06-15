@@ -9,6 +9,7 @@
 #include "descriptor_heap.h"
 #include "descriptors.h"
 #include "geometry.h"
+#include "gpu_scene.h"
 #include "vk.h"
 
 #include "ui.h"
@@ -64,16 +65,7 @@ private:
 
     Descriptor_Heap descriptor_heap;
     Descriptors descriptors;
-
-    struct GPU_Scene_Resources {
-        std::vector<Vk_Image> images_2d;
-        Vk_Buffer instance_info_buffer;
-        Vk_Buffer scene_info_buffer;
-        Vk_Buffer point_lights;
-        Vk_Buffer directional_lights;
-        Vk_Buffer rect_lights;
-        Vk_Buffer lambertian_material_buffer;
-    } gpu_scene;
+    GPU_Scene gpu_scene;
 
     Apply_Tone_Mapping apply_tone_mapping;
     Copy_To_Swapchain copy_to_swapchain;

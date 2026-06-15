@@ -24,6 +24,7 @@
       <Filter>kernels</Filter>
     </ClCompile>
     <ClCompile Include="..\src\renderer\ui.cpp" />
+    <ClCompile Include="..\src\renderer\gpu_scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\std.h" />
@@ -49,6 +50,7 @@
       <Filter>kernels</Filter>
     </ClInclude>
     <ClInclude Include="..\src\renderer\ui.h" />
+    <ClInclude Include="..\src\renderer\gpu_scene.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">

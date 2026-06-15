@@ -101,6 +101,7 @@
     <ClCompile Include="..\src\renderer\acceleration_structure.cpp" />
     <ClCompile Include="..\src\renderer\descriptors.cpp" />
     <ClCompile Include="..\src\renderer\descriptor_heap.cpp" />
+    <ClCompile Include="..\src\renderer\gpu_scene.cpp" />
     <ClCompile Include="..\src\renderer\kernels\copy_to_swapchain.cpp" />
     <ClCompile Include="..\src\renderer\kernels\apply_tone_mapping.cpp" />
     <ClCompile Include="..\src\renderer\kernels\path_tracing.cpp" />
@@ -126,6 +127,7 @@
     <ClInclude Include="..\src\renderer\descriptors.h" />
     <ClInclude Include="..\src\renderer\descriptor_heap.h" />
     <ClInclude Include="..\src\renderer\geometry.h" />
+    <ClInclude Include="..\src\renderer\gpu_scene.h" />
     <ClInclude Include="..\src\renderer\kernels\copy_to_swapchain.h" />
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h" />
     <ClInclude Include="..\src\renderer\kernels\apply_tone_mapping.h" />
