@@ -316,6 +316,32 @@ void vk_initialize(GLFWwindow* window, const Vk_Init_Params& init_params)
         VK_CHECK(vkCreateQueryPool(vk.device, &create_info, nullptr, &vk.timestamp_query_pools[0]));
         VK_CHECK(vkCreateQueryPool(vk.device, &create_info, nullptr, &vk.timestamp_query_pools[1]));
     }
+
+    // Properties
+    {
+        auto is_enabled_extension = [&init_params](const char* ext_name) {
+            for (auto enabled_ext : init_params.device_extensions) {
+                if (strcmp(enabled_ext, ext_name) == 0) {
+                    return true;
+                }
+            }
+            return false;
+        };
+        vk.descriptor_heap_properties = VkPhysicalDeviceDescriptorHeapPropertiesEXT{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_PROPERTIES_EXT
+        };
+        vk.ray_tracing_pipeline_properties = VkPhysicalDeviceRayTracingPipelinePropertiesKHR{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR
+        };
+        VkPhysicalDeviceProperties2 physical_device_properties{
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2
+        };
+        physical_device_properties.pNext = &vk.descriptor_heap_properties;
+        if (is_enabled_extension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
+            vk.descriptor_heap_properties.pNext = &vk.ray_tracing_pipeline_properties;
+        }
+        vkGetPhysicalDeviceProperties2(vk.physical_device, &physical_device_properties);
+    }
 }
 
 void vk_shutdown()

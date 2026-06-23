@@ -98,17 +98,8 @@ void Renderer::initialize(GLFWwindow* window, int gpu_index) {
 
     // Device properties.
     {
-        descriptor_heap_properties = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_HEAP_PROPERTIES_EXT };
-
-        direct_lighting.properties = VkPhysicalDeviceRayTracingPipelinePropertiesKHR{
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
-        direct_lighting.properties.pNext = &descriptor_heap_properties;
-
         VkPhysicalDeviceProperties2 physical_device_properties { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
-        physical_device_properties.pNext = &direct_lighting.properties;
         vkGetPhysicalDeviceProperties2(vk.physical_device, &physical_device_properties);
-
-        path_tracing.properties = direct_lighting.properties;
 
         printf("Device: %s\n", physical_device_properties.properties.deviceName);
         printf("Vulkan API version: %d.%d.%d\n",
@@ -119,16 +110,16 @@ void Renderer::initialize(GLFWwindow* window, int gpu_index) {
 
         printf("\n");
         printf("VkPhysicalDeviceRayTracingPipelinePropertiesKHR:\n");
-        printf("  shaderGroupHandleSize = %u\n", direct_lighting.properties.shaderGroupHandleSize);
-        printf("  maxRayRecursionDepth = %u\n", direct_lighting.properties.maxRayRecursionDepth);
-        printf("  maxShaderGroupStride = %u\n", direct_lighting.properties.maxShaderGroupStride);
-        printf("  shaderGroupBaseAlignment = %u\n", direct_lighting.properties.shaderGroupBaseAlignment);
-        printf("  maxRayDispatchInvocationCount = %u\n", direct_lighting.properties.maxRayDispatchInvocationCount);
-        printf("  shaderGroupHandleAlignment = %u\n", direct_lighting.properties.shaderGroupHandleAlignment);
-        printf("  maxRayHitAttributeSize = %u\n", direct_lighting.properties.maxRayHitAttributeSize);
+        printf("  shaderGroupHandleSize = %u\n", vk.ray_tracing_pipeline_properties.shaderGroupHandleSize);
+        printf("  maxRayRecursionDepth = %u\n", vk.ray_tracing_pipeline_properties.maxRayRecursionDepth);
+        printf("  maxShaderGroupStride = %u\n", vk.ray_tracing_pipeline_properties.maxShaderGroupStride);
+        printf("  shaderGroupBaseAlignment = %u\n", vk.ray_tracing_pipeline_properties.shaderGroupBaseAlignment);
+        printf("  maxRayDispatchInvocationCount = %u\n", vk.ray_tracing_pipeline_properties.maxRayDispatchInvocationCount);
+        printf("  shaderGroupHandleAlignment = %u\n", vk.ray_tracing_pipeline_properties.shaderGroupHandleAlignment);
+        printf("  maxRayHitAttributeSize = %u\n", vk.ray_tracing_pipeline_properties.maxRayHitAttributeSize);
     }
 
-    descriptor_heap.create(descriptor_heap_properties);
+    descriptor_heap.create();
     descriptors.initialize(descriptor_heap);
 
     apply_tone_mapping.create(descriptors);
@@ -249,7 +240,7 @@ void Renderer::restore_resolution_dependent_resources() {
 
     // swapchain images
     for (size_t i = 0; i < vk.swapchain_info.images.size(); i++) {
-        const uint32_t heap_offset = descriptors.swapchain_images + uint32_t(i * descriptor_heap.properties.imageDescriptorSize);
+        const uint32_t heap_offset = descriptors.swapchain_images + uint32_t(i * vk.descriptor_heap_properties.imageDescriptorSize);
         descriptor_heap.write_image_descriptor(vk.swapchain_info.images[i], vk.surface_format.format,
             VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, heap_offset);
     }
@@ -321,7 +312,7 @@ void Renderer::load_project(const std::string& input_file) {
         // Image descriptors
         descriptors.images_2d = descriptor_heap.allocate_image_descriptor((uint32_t)gpu_scene.images_2d.size());
         for (auto [i, image] : enumerate(gpu_scene.images_2d)) {
-            const uint32_t heap_offset = descriptors.images_2d + uint32_t(i * descriptor_heap.properties.imageDescriptorSize);
+            const uint32_t heap_offset = descriptors.images_2d + uint32_t(i * vk.descriptor_heap_properties.imageDescriptorSize);
             descriptor_heap.write_image_descriptor(image.handle, image.format, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, heap_offset);
         }
 
@@ -338,7 +329,7 @@ void Renderer::load_project(const std::string& input_file) {
             VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.instance_infos);
 
         for (size_t i = 0; i < gpu_meshes.size(); i++) {
-            const uint32_t element_offset = uint32_t(i * descriptor_heap.properties.bufferDescriptorSize);
+            const uint32_t element_offset = uint32_t(i * vk.descriptor_heap_properties.bufferDescriptorSize);
 
             descriptor_heap.write_buffer_descriptor(gpu_meshes[i].index_buffer.address_range(),
                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.index_buffers + element_offset);

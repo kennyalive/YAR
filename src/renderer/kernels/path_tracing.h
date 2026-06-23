@@ -7,16 +7,21 @@ struct Descriptor_Heap;
 struct Descriptors;
 
 struct Path_Tracing {
-    VkPhysicalDeviceRayTracingPipelinePropertiesKHR properties;
     Vk_Intersection_Accelerator accelerator;
     uint32_t accelerator_heap_offset = 0;
     Vk_Buffer shader_binding_table;
-    VkPipeline pipeline;
+    VkPipeline pipeline = VK_NULL_HANDLE;
 
-    void create(Descriptor_Heap& descriptor_heap, const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes);
+    void create(Descriptor_Heap& descriptor_heap, const Descriptors& descriptors,
+        const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings,
+        const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes
+    );
     void destroy();
     void dispatch();
 
 private:
-    void create_pipeline(const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const std::vector<GPU_Mesh>& gpu_meshes);
+    void create_pipeline(const Descriptors& descriptors,
+        const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings,
+        const std::vector<GPU_Mesh>& gpu_meshes
+    );
 };

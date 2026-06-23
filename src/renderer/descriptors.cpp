@@ -16,7 +16,7 @@ void Descriptors::initialize(Descriptor_Heap& descriptor_heap)
     directional_lights = descriptor_heap.allocate_buffer_descriptor();
     rect_lights = descriptor_heap.allocate_buffer_descriptor();
 
-    image_descriptor_size = (uint32_t)descriptor_heap.properties.imageDescriptorSize;
-    buffer_descriptor_size = (uint32_t)descriptor_heap.properties.bufferDescriptorSize;
-    sampler_descriptor_size = (uint32_t)descriptor_heap.properties.samplerDescriptorSize;
+    image_descriptor_size = (uint32_t)vk.descriptor_heap_properties.imageDescriptorSize;
+    buffer_descriptor_size = (uint32_t)vk.descriptor_heap_properties.bufferDescriptorSize;
+    sampler_descriptor_size = (uint32_t)vk.descriptor_heap_properties.samplerDescriptorSize;
 }

@@ -25,8 +25,8 @@ void Direct_Lighting::create(Descriptor_Heap& descriptor_heap, const Descriptors
 
     // Shader binding table.
     {
-        const uint32_t handle_size = properties.shaderGroupHandleSize;
-        const uint32_t base_alignment = properties.shaderGroupBaseAlignment;
+        const uint32_t handle_size = vk.ray_tracing_pipeline_properties.shaderGroupHandleSize;
+        const uint32_t base_alignment = vk.ray_tracing_pipeline_properties.shaderGroupBaseAlignment;
 
         uint32_t raygen_offset = 0;
         uint32_t miss_offset = round_up(raygen_offset + 1 * handle_size, base_alignment);
@@ -163,8 +163,8 @@ void Direct_Lighting::dispatch()
 {
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 
-    const uint32_t handle_size = properties.shaderGroupHandleSize;
-    const uint32_t base_alignment = properties.shaderGroupBaseAlignment;
+    const uint32_t handle_size = vk.ray_tracing_pipeline_properties.shaderGroupHandleSize;
+    const uint32_t base_alignment = vk.ray_tracing_pipeline_properties.shaderGroupBaseAlignment;
 
     const uint32_t raygen_offset = 0;
     const uint32_t miss_offset = round_up(raygen_offset + 1 * handle_size, base_alignment);

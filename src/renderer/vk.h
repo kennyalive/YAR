@@ -1,6 +1,6 @@
 #pragma once
 
-constexpr int VK_VERSION = 3;
+constexpr int VK_VERSION = -3;
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -191,6 +191,10 @@ struct Vk_Instance {
     uint8_t*                        staging_buffer_ptr; // pointer to mapped staging buffer
 
     VkDescriptorPool                imgui_descriptor_pool;
+
+    // Cached properties
+    VkPhysicalDeviceDescriptorHeapPropertiesEXT         descriptor_heap_properties{};
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR     ray_tracing_pipeline_properties{};
 };
 
 extern Vk_Instance vk;

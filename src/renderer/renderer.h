@@ -56,8 +56,6 @@ private:
 
     Flying_Camera flying_camera;
 
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT descriptor_heap_properties;
-
     Vk_Image output_image;
     Vk_Image tonemapped_image;
 

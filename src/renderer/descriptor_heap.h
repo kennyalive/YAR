@@ -3,8 +3,6 @@
 #include "vk.h"
 
 struct Descriptor_Heap {
-    VkPhysicalDeviceDescriptorHeapPropertiesEXT properties;
-
     Vk_Buffer resource_heap_buffer;
     uint32_t current_resource_heap_offset = 0;
     uint32_t resource_reserved_region_offset = 0;
@@ -13,7 +11,7 @@ struct Descriptor_Heap {
     uint32_t current_sampler_heap_offset = 0;
     uint32_t sampler_reserved_region_offset = 0;
 
-    void create(const VkPhysicalDeviceDescriptorHeapPropertiesEXT& descriptor_heap_properties);
+    void create();
     void destroy();
     void bind(VkCommandBuffer command_buffer) const;
 
