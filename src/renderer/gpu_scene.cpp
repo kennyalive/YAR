@@ -6,8 +6,57 @@
 
 #include "lib/scene.h"
 
+// TODO: temp structure. Use separate buffer per attribute.
+struct GPU_Vertex {
+    Vector3 position;
+    Vector3 normal;
+    Vector2 uv;
+};
+
 void GPU_Scene::load(const Scene& scene)
 {
+    // Meshes
+    meshes.resize(scene.geometries.triangle_meshes.size());
+    for (int i = 0; i < (int)scene.geometries.triangle_meshes.size(); i++) {
+        const Triangle_Mesh& triangle_mesh = scene.geometries.triangle_meshes[i];
+        GPU_Mesh& gpu_mesh = meshes[i];
+
+        gpu_mesh.vertex_count = (uint32_t)triangle_mesh.vertices.size();
+        gpu_mesh.index_count = (uint32_t)triangle_mesh.indices.size();
+
+        // TODO: Create separate buffers per attribute instead of single bufffer:
+        // better cache coherency when working only with subset of vertex attributes,
+        // also it will match Triangle_Mesh data layout, so no conversion will be needed.
+        std::vector<GPU_Vertex> gpu_vertices(gpu_mesh.vertex_count);
+        for (size_t k = 0; k < gpu_mesh.vertex_count; k++) {
+            gpu_vertices[k].position = triangle_mesh.vertices[k];
+            if (!triangle_mesh.normals.empty())
+                gpu_vertices[k].normal = triangle_mesh.normals[k];
+            if (!triangle_mesh.uvs.empty())
+                gpu_vertices[k].uv = triangle_mesh.uvs[k];
+        }
+
+        const VkDeviceSize vertex_buffer_size = gpu_vertices.size() * sizeof(GPU_Vertex);
+        VkBufferUsageFlags vertex_usage_flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+
+        gpu_mesh.vertex_buffer = vk_create_buffer(vertex_buffer_size, vertex_usage_flags, gpu_vertices.data(), "vertex_buffer");
+
+        const VkDeviceSize index_buffer_size = triangle_mesh.indices.size() * sizeof(triangle_mesh.indices[0]);
+        VkBufferUsageFlags index_usage_flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+
+        gpu_mesh.index_buffer = vk_create_buffer(index_buffer_size, index_usage_flags, triangle_mesh.indices.data(), "index_buffer");
+
+        // TODO: this is wrong! render objects list should not be indexed by geometry index. 
+        // Will be fixed when gpu renderer will support Render_Objects (i.e. instancing).
+        int area_light_index = i - int(scene.geometries.triangle_meshes.size() - scene.lights.diffuse_rectangular_lights.size());
+        if (area_light_index >= 0)
+            gpu_mesh.area_light_index = area_light_index;
+        else
+            gpu_mesh.material = scene.objects[i].material;
+    }
+
     // Instance buffer.
     {
         std::vector<GPU_Types::Instance_Info> instance_infos(scene.objects.size());
@@ -144,6 +193,13 @@ void GPU_Scene::destroy()
     for (Vk_Image& image : images_2d) {
         image.destroy();
     }
+    images_2d.clear();
+
+    for (GPU_Mesh& mesh : meshes) {
+        mesh.vertex_buffer.destroy();
+        mesh.index_buffer.destroy();
+    }
+    meshes.clear();
 
     instance_info_buffer.destroy();
     scene_info_buffer.destroy();

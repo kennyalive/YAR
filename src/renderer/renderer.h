@@ -8,7 +8,6 @@
 
 #include "descriptor_heap.h"
 #include "descriptors.h"
-#include "geometry.h"
 #include "gpu_scene.h"
 #include "vk.h"
 
@@ -58,8 +57,6 @@ private:
 
     Vk_Image output_image;
     Vk_Image tonemapped_image;
-
-    std::vector<GPU_Mesh> gpu_meshes;
 
     Descriptor_Heap descriptor_heap;
     Descriptors descriptors;

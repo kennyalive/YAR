@@ -126,7 +126,6 @@
     <ClInclude Include="..\src\renderer\acceleration_structure.h" />
     <ClInclude Include="..\src\renderer\descriptors.h" />
     <ClInclude Include="..\src\renderer\descriptor_heap.h" />
-    <ClInclude Include="..\src\renderer\geometry.h" />
     <ClInclude Include="..\src\renderer\gpu_scene.h" />
     <ClInclude Include="..\src\renderer\kernels\copy_to_swapchain.h" />
     <ClInclude Include="..\src\renderer\kernels\patch_materials.h" />

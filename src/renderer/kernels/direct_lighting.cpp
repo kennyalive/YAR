@@ -4,24 +4,17 @@
 
 #include "renderer/descriptors.h"
 #include "renderer/descriptor_heap.h"
-#include "renderer/geometry.h"
 #include "shaders/shared.slang"
 #include "lib/scene.h"
 
-// TODO: temp structure. Use separate buffer per attribute.
-struct GPU_Vertex {
-    Vector3 position;
-    Vector3 normal;
-    Vector2 uv;
-};
-
-void Direct_Lighting::create(Descriptor_Heap& descriptor_heap, const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes) {
+void Direct_Lighting::create(Descriptor_Heap& descriptor_heap, const Descriptors& descriptors,
+    const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings,
+    const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes)
+{
     accelerator = create_intersection_accelerator(scene.objects, gpu_meshes);
     accelerator_heap_offset = descriptor_heap.allocate_buffer_descriptor();
-
     descriptor_heap.write_acceleration_structure_descriptor(accelerator.top_level_accel.device_address, accelerator_heap_offset);
-
-    create_pipeline(descriptors, global_heap_mappings, gpu_meshes);
+    create_pipeline(descriptors, global_heap_mappings);
 
     // Shader binding table.
     {
@@ -43,14 +36,15 @@ void Direct_Lighting::create(Descriptor_Heap& descriptor_heap, const Descriptors
     }
 }
 
-void Direct_Lighting::destroy() {
+void Direct_Lighting::destroy()
+{
     shader_binding_table.destroy();
     accelerator.destroy();
-
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
 
-void Direct_Lighting::create_pipeline(const Descriptors& descriptors, const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings, const std::vector<GPU_Mesh>& gpu_meshes)
+void Direct_Lighting::create_pipeline(const Descriptors& descriptors,
+    const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings)
 {
     // pipeline
     {

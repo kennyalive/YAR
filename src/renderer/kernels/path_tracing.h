@@ -21,7 +21,6 @@ struct Path_Tracing {
 
 private:
     void create_pipeline(const Descriptors& descriptors,
-        const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings,
-        const std::vector<GPU_Mesh>& gpu_meshes
+        const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings
     );
 };

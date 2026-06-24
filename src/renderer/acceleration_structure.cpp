@@ -2,7 +2,7 @@
 #include "lib/common.h"
 
 #include "acceleration_structure.h"
-#include "geometry.h"
+#include "gpu_scene.h"
 #include "vk.h"
 
 #include "lib/scene_object.h"
