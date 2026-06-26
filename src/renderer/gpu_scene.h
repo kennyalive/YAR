@@ -5,7 +5,8 @@
 
 struct Scene;
 
-struct GPU_Mesh {
+struct GPU_Mesh 
+{
     Vk_Buffer vertex_buffer;
     Vk_Buffer index_buffer;
     uint32_t vertex_count = 0;

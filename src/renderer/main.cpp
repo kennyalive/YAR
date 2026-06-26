@@ -12,7 +12,7 @@ struct Command_Line_Params
     std::string input_file;
 };
 
-struct WindowState
+struct Window_State
 {
     GLFWwindow* window = nullptr;
     Renderer* renderer = nullptr;
@@ -74,7 +74,7 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
             VK_CHECK(vkDeviceWaitIdle(vk.device));
             GLFWmonitor* monitor = glfwGetWindowMonitor(window);
             if (monitor == nullptr) {
-                WindowState* window_state = (WindowState*)glfwGetWindowUserPointer(window);
+                Window_State* window_state = (Window_State*)glfwGetWindowUserPointer(window);
                 glfwGetWindowPos(window, &last_window_xpos, &last_window_ypos);
                 last_window_width = window_state->width;
                 last_window_height = window_state->height;
@@ -86,13 +86,13 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
                 glfwSetWindowMonitor(window, nullptr, last_window_xpos, last_window_ypos, last_window_width, last_window_height, 0);
             }
         } else if (key == GLFW_KEY_F10) {
-            WindowState* window_state = (WindowState*)glfwGetWindowUserPointer(window);
+            Window_State* window_state = (Window_State*)glfwGetWindowUserPointer(window);
             window_state->renderer->toggle_ui();
         }
     }
 }
 
-static void check_if_swapchain_needs_something(WindowState& window_state)
+static void check_if_swapchain_needs_something(Window_State& window_state)
 {
     int width, height;
     glfwGetWindowSize(window_state.window, &width, &height);
@@ -123,7 +123,7 @@ static int run_realtime_renderer(const Command_Line_Params& params)
     if (!glfwInit()) {
         error("glfwInit failed");
     }
-    WindowState window_state;
+    Window_State window_state;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     window_state.window = glfwCreateWindow(window_state.width, window_state.height, "YAR", nullptr, nullptr);
