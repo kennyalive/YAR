@@ -1,14 +1,9 @@
 #pragma once
 
-#include "kernels/apply_tone_mapping.h"
-#include "kernels/copy_to_swapchain.h"
-#include "kernels/patch_materials.h"
-#include "kernels/direct_lighting.h"
-#include "kernels/path_tracing.h"
-
 #include "descriptor_heap.h"
 #include "descriptors.h"
 #include "gpu_scene.h"
+#include "kernels.h"
 #include "vk.h"
 
 #include "ui.h"
@@ -69,12 +64,7 @@ private:
 
     Descriptor_Heap descriptor_heap;
     Global_Descriptors global_descriptors;
-    
-    Apply_Tone_Mapping apply_tone_mapping;
-    Copy_To_Swapchain copy_to_swapchain;
-    Patch_Materials patch_materials;
-    Direct_Lighting direct_lighting;
-    Path_Tracing path_tracing;
+    Kernels kernels;
 
     Vk_Time_Keeper time_keeper;
     struct {

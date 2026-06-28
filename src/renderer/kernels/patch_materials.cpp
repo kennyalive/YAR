@@ -4,7 +4,7 @@
 
 #include "renderer/descriptors.h"
 
-void Patch_Materials::create(Scene_Descriptors& scene_descriptors)
+void Patch_Materials::create(const Scene_Descriptors& scene_descriptors)
 {
     const VkDescriptorSetAndBindingMappingEXT mapping = map_binding_to_heap_offset(
         0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT,

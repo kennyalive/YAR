@@ -133,9 +133,8 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
 
     descriptor_heap.create();
     global_descriptors.initialize(descriptor_heap);
+    kernels.create_global_kernels(global_descriptors);
 
-    apply_tone_mapping.create(global_descriptors);
-    copy_to_swapchain.create(global_descriptors);
     restore_resolution_dependent_resources();
     default_textures.create();
 
@@ -184,21 +183,15 @@ void YAR::shutdown() {
     ImGui::DestroyContext();
 
     descriptor_heap.destroy();
+    kernels.destroy_global_kernels();
 
-    apply_tone_mapping.destroy();
-    copy_to_swapchain.destroy();
     release_resolution_dependent_resources();
 
     if (gpu_scene.loaded) {
-        patch_materials.destroy();
-        direct_lighting.destroy();
-        path_tracing.destroy();
-
+        kernels.destroy_scene_kernels();
         gpu_scene.destroy();
     }
-
     default_textures.destroy();
-
     vk_shutdown();
 }
 
@@ -260,19 +253,13 @@ void YAR::load_project(const std::string& input_file) {
 
     scene = load_scene(input_file);
     gpu_scene.load(scene, descriptor_heap);
-
+    kernels.create_scene_kernels(global_descriptors, descriptor_heap, gpu_scene, scene);
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
 
-    patch_materials.create(gpu_scene.descriptors);
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
         descriptor_heap.bind(command_buffer);
-        patch_materials.dispatch(command_buffer);
-        });
-
-    const std::vector<VkDescriptorSetAndBindingMappingEXT> scene_descriptor_mappings = gpu_scene.get_scene_descriptor_mappings();
-
-    direct_lighting.create(descriptor_heap, global_descriptors, scene_descriptor_mappings, scene, gpu_scene.meshes);
-    path_tracing.create(descriptor_heap, global_descriptors, scene_descriptor_mappings, scene, gpu_scene.meshes);
+        kernels.patch_materials.dispatch(command_buffer);
+    });
 }
 
 static double last_frame_time;
@@ -379,17 +366,17 @@ void YAR::draw_frame() {
 void YAR::draw_raytraced_image() {
     VK_TIME_SCOPE(gpu_timers.draw);
     if (ui.rendering_algorithm == 0) {
-        direct_lighting.dispatch();
+        kernels.direct_lighting.dispatch();
     }
     else if (ui.rendering_algorithm == 1) {
-        path_tracing.dispatch();
+        kernels.path_tracing.dispatch();
     }
 }
 
 void YAR::tone_mapping()
 {
     VK_TIME_SCOPE(gpu_timers.tone_map);
-    apply_tone_mapping.dispatch();
+    kernels.apply_tone_mapping.dispatch();
 }
 
 void YAR::draw_imgui()
@@ -418,7 +405,7 @@ void YAR::draw_imgui()
 void YAR::copy_output_image_to_swapchain()
 {
     VK_TIME_SCOPE(gpu_timers.compute_copy);
-    copy_to_swapchain.dispatch();
+    kernels.copy_to_swapchain.dispatch();
 }
 
 void YAR::start_reference_renderer()
