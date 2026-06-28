@@ -7,14 +7,14 @@
 #include "shaders/shared.slang"
 #include "lib/scene.h"
 
-void Path_Tracing::create(Descriptor_Heap& descriptor_heap, const Descriptors& descriptors,
-    const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings,
+void Path_Tracing::create(Descriptor_Heap& descriptor_heap, const Global_Descriptors& global_descriptors,
+    const std::vector<VkDescriptorSetAndBindingMappingEXT>& scene_descriptor_mappings,
     const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes)
 {
     accelerator = create_intersection_accelerator(scene.objects, gpu_meshes);
     accelerator_heap_offset = descriptor_heap.allocate_buffer_descriptor();
     descriptor_heap.write_acceleration_structure_descriptor(accelerator.top_level_accel.device_address, accelerator_heap_offset);
-    create_pipeline(descriptors, global_heap_mappings);
+    create_pipeline(global_descriptors, scene_descriptor_mappings);
 
     // Shader binding table.
     {
@@ -43,8 +43,8 @@ void Path_Tracing::destroy()
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
 
-void Path_Tracing::create_pipeline(const Descriptors& descriptors,
-    const std::vector<VkDescriptorSetAndBindingMappingEXT>& global_heap_mappings)
+void Path_Tracing::create_pipeline(const Global_Descriptors& global_descriptors,
+    const std::vector<VkDescriptorSetAndBindingMappingEXT>& scene_descriptor_mappings)
 {
     // pipeline
     {
@@ -76,7 +76,7 @@ void Path_Tracing::create_pipeline(const Descriptors& descriptors,
 
         const VkDescriptorSetAndBindingMappingEXT raygen_output_image_mapping = map_binding_to_heap_offset(
             KERNEL_SET_0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
-            descriptors.output_image
+            global_descriptors.output_image
         );
         const VkDescriptorSetAndBindingMappingEXT raygen_accel_mapping = map_binding_to_heap_offset(
             KERNEL_SET_0, 1, VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT,
@@ -87,7 +87,7 @@ void Path_Tracing::create_pipeline(const Descriptors& descriptors,
             raygen_accel_mapping
         };
 
-        std::vector<VkDescriptorSetAndBindingMappingEXT> mappings = global_heap_mappings;
+        std::vector<VkDescriptorSetAndBindingMappingEXT> mappings = scene_descriptor_mappings;
         mappings.insert(mappings.begin(), raygen_mappings, raygen_mappings + std::size(raygen_mappings));
 
         VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info{ VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT };

@@ -2,9 +2,11 @@
 #include "lib/common.h"
 #include "gpu_scene.h"
 
-#include "shaders/shared.slang"
-
+#include "descriptor_heap.h"
+#include "descriptors.h"
 #include "lib/scene.h"
+
+#include "shaders/shared.slang"
 
 // TODO: temp structure. Use separate buffer per attribute.
 struct GPU_Vertex {
@@ -13,7 +15,7 @@ struct GPU_Vertex {
     Vector2 uv;
 };
 
-void GPU_Scene::load(const Scene& scene)
+void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap)
 {
     // Meshes
     meshes.resize(scene.geometries.triangle_meshes.size());
@@ -181,10 +183,15 @@ void GPU_Scene::load(const Scene& scene)
             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
             &scene_info, "scene_info_buffer");
     }
+
+    descriptors.initialize(descriptor_heap);
+    write_descriptors(descriptor_heap);
+    loaded = true;
 }
 
 void GPU_Scene::destroy()
 {
+    loaded = false;
     point_lights.destroy();
     directional_lights.destroy();
     rect_lights.destroy();
@@ -203,4 +210,104 @@ void GPU_Scene::destroy()
 
     instance_info_buffer.destroy();
     scene_info_buffer.destroy();
+}
+
+void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap)
+{
+    // Material descriptors
+    descriptor_heap.write_buffer_descriptor(lambertian_material_buffer.address_range(),
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.lambertian_materials);
+
+    // Image descriptors
+    descriptors.images_2d = descriptor_heap.allocate_image_descriptor((uint32_t)images_2d.size() + Predefined_Texture_Count);
+    for (auto [i, image] : enumerate(images_2d)) {
+        const uint32_t heap_offset = descriptors.images_2d + uint32_t((i + Predefined_Texture_Count) * vk.descriptor_heap_properties.imageDescriptorSize);
+        descriptor_heap.write_image_descriptor(image.handle, image.format, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, heap_offset);
+    }
+
+    // Sampler descriptors
+    VkSamplerCreateInfo sampler_create_info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+    descriptor_heap.write_sampler_descriptor(sampler_create_info, descriptors.image_sampler);
+
+    // Geometry descriptors
+    descriptors.instance_infos = descriptor_heap.allocate_buffer_descriptor();
+    descriptors.index_buffers = descriptor_heap.allocate_buffer_descriptor((uint32_t)meshes.size());
+    descriptors.vertex_buffers = descriptor_heap.allocate_buffer_descriptor((uint32_t)meshes.size());
+
+    descriptor_heap.write_buffer_descriptor(instance_info_buffer.address_range(),
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.instance_infos);
+
+    for (size_t i = 0; i < meshes.size(); i++) {
+        const uint32_t element_offset = uint32_t(i * vk.descriptor_heap_properties.bufferDescriptorSize);
+
+        descriptor_heap.write_buffer_descriptor(meshes[i].index_buffer.address_range(),
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.index_buffers + element_offset);
+
+        descriptor_heap.write_buffer_descriptor(meshes[i].vertex_buffer.address_range(),
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.vertex_buffers + element_offset);
+    }
+
+    // Light descriptors
+    descriptor_heap.write_buffer_descriptor(point_lights.address_range(),
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.point_lights);
+
+    descriptor_heap.write_buffer_descriptor(directional_lights.address_range(),
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.directional_lights);
+
+    descriptor_heap.write_buffer_descriptor(rect_lights.address_range(),
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.rect_lights);
+
+    // Scene info descriptors
+    descriptors.scene_info_buffer = descriptor_heap.allocate_buffer_descriptor();
+    descriptor_heap.write_buffer_descriptor(scene_info_buffer.address_range(),
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.scene_info_buffer);
+}
+
+std::vector<VkDescriptorSetAndBindingMappingEXT> GPU_Scene::get_scene_descriptor_mappings() const
+{
+    std::vector<VkDescriptorSetAndBindingMappingEXT> mappings;
+    // Base resources
+    mappings.push_back(map_binding_to_heap_offset(
+        SCENE_SET, SCENE_BINDING_IMAGES, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT,
+        descriptors.images_2d, vk_image_descriptor_size()
+    ));
+    mappings.push_back(map_binding_to_heap_offset(
+        SCENE_SET, SCENE_BINDING_SAMPLER, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT,
+        descriptors.image_sampler
+    ));
+    mappings.push_back(map_binding_to_heap_offset(
+        SCENE_SET, SCENE_BINDING_INSTANCE_INFO, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        descriptors.instance_infos
+    ));
+    mappings.push_back(map_binding_to_heap_offset(
+        SCENE_SET, 3, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        descriptors.index_buffers, vk_buffer_descriptor_size()
+    ));
+    mappings.push_back(map_binding_to_heap_offset(
+        SCENE_SET, 4, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        descriptors.vertex_buffers, vk_buffer_descriptor_size()
+    ));
+    mappings.push_back(map_binding_to_heap_offset(
+        SCENE_SET, 5, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        descriptors.scene_info_buffer, vk_buffer_descriptor_size()
+    ));
+    // Materials
+    mappings.push_back(map_binding_to_heap_offset(
+        SCENE_MATERIAL_SET, SCENE_MATERIAL_BINDING_LAMBERTIAN, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT,
+        descriptors.lambertian_materials
+    ));
+    // Lights
+    mappings.push_back(map_binding_to_heap_offset(
+        SCENE_LIGHT_SET, SCENE_LIGHT_BINDING_POINT, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        descriptors.point_lights
+    ));
+    mappings.push_back(map_binding_to_heap_offset(
+        SCENE_LIGHT_SET, SCENE_LIGHT_BINDING_DIRECTIONAL, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        descriptors.directional_lights
+    ));
+    mappings.push_back(map_binding_to_heap_offset(
+        SCENE_LIGHT_SET, SCENE_LIGHT_BINDING_RECT, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        descriptors.rect_lights
+    ));
+    return mappings;
 }

@@ -21,25 +21,24 @@
 #endif
 
 // Bindings configuration.
-SLANG_PUBLIC static const int BASE_SET_INDEX = 0;
-static const int BASE_SET_BINDING_TEXTURES = 0;
-static const int BASE_SET_BINDING_SAMPLER = 1;
-SLANG_PUBLIC static const int BASE_SET_BINDING_INSTANCE_INFO = 2;
+SLANG_PUBLIC static const int SCENE_SET = 0;
+SLANG_PUBLIC static const int SCENE_BINDING_IMAGES = 0;
+SLANG_PUBLIC static const int SCENE_BINDING_SAMPLER = 1;
+SLANG_PUBLIC static const int SCENE_BINDING_INSTANCE_INFO = 2;
 
-static const int MATERIAL_SET_INDEX = 1;
-static const int LAMBERTIAN_MATERIAL_BINDING = 0;
+SLANG_PUBLIC static const int SCENE_MATERIAL_SET = 1;
+SLANG_PUBLIC static const int SCENE_MATERIAL_BINDING_LAMBERTIAN = 0;
 
-SLANG_PUBLIC static const int LIGHT_SET_INDEX = 2;
-SLANG_PUBLIC static const int POINT_LIGHT_BINDING = 0;
-SLANG_PUBLIC static const int DIRECTIONAL_LIGHT_BINDING = 1;
-SLANG_PUBLIC static const int RECT_LIGHT_BINDING = 2;
+SLANG_PUBLIC static const int SCENE_LIGHT_SET = 2;
+SLANG_PUBLIC static const int SCENE_LIGHT_BINDING_POINT = 0;
+SLANG_PUBLIC static const int SCENE_LIGHT_BINDING_DIRECTIONAL = 1;
+SLANG_PUBLIC static const int SCENE_LIGHT_BINDING_RECT = 2;
 
 SLANG_PUBLIC static const int KERNEL_SET_0 = 3;
 
 // Default texture indices.
 SLANG_PUBLIC static const int Black_2D_Texture_Index = 0;
-static const int White_2D_Texture_Index = 1;
-SLANG_PUBLIC static const int Predefined_Texture_Count = 2;
+SLANG_PUBLIC static const int Predefined_Texture_Count = 1;
 
 //===========================================================
 // Shared structures.

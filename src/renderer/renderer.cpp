@@ -17,6 +17,18 @@
 
 const VkFormat output_image_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 
+void Default_Textures::create()
+{
+    uint8_t black[4] = { 0, 0, 0, 255 };
+    black_texture = vk_create_texture(1, 1, VK_FORMAT_R8G8B8A8_UNORM, false, black, 4, "black_texture_1x1");
+}
+
+void Default_Textures::destroy()
+{
+    black_texture.destroy();
+    *this = Default_Textures{};
+}
+
 void Renderer::initialize(GLFWwindow* window, int gpu_index) {
     std::array instance_extensions = {
         VK_KHR_SURFACE_EXTENSION_NAME,
@@ -120,12 +132,12 @@ void Renderer::initialize(GLFWwindow* window, int gpu_index) {
     }
 
     descriptor_heap.create();
-    descriptors.initialize(descriptor_heap);
+    global_descriptors.initialize(descriptor_heap);
 
-    apply_tone_mapping.create(descriptors);
-    copy_to_swapchain.create(descriptors);
+    apply_tone_mapping.create(global_descriptors);
+    copy_to_swapchain.create(global_descriptors);
     restore_resolution_dependent_resources();
-    create_default_textures();
+    default_textures.create();
 
     // ImGui setup.
     {
@@ -172,17 +184,20 @@ void Renderer::shutdown() {
     ImGui::DestroyContext();
 
     descriptor_heap.destroy();
-    gpu_scene.destroy();
 
     apply_tone_mapping.destroy();
     copy_to_swapchain.destroy();
     release_resolution_dependent_resources();
 
-    if (project_loaded) {
+    if (gpu_scene.loaded) {
         patch_materials.destroy();
         direct_lighting.destroy();
         path_tracing.destroy();
+
+        gpu_scene.destroy();
     }
+
+    default_textures.destroy();
 
     vk_shutdown();
 }
@@ -214,7 +229,7 @@ void Renderer::restore_resolution_dependent_resources() {
         });
 
         descriptor_heap.write_image_descriptor(output_image.handle, output_image.format,
-            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, descriptors.output_image);
+            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, global_descriptors.output_image);
     }
 
     // tone mapped image
@@ -229,12 +244,12 @@ void Renderer::restore_resolution_dependent_resources() {
             });
 
         descriptor_heap.write_image_descriptor(tonemapped_image.handle, tonemapped_image.format,
-            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, descriptors.tonemapped_image);
+            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, global_descriptors.tonemapped_image);
     }
 
     // swapchain images
     for (size_t i = 0; i < vk.swapchain_info.images.size(); i++) {
-        const uint32_t heap_offset = descriptors.swapchain_images + uint32_t(i * vk.descriptor_heap_properties.imageDescriptorSize);
+        const uint32_t heap_offset = global_descriptors.swapchain_images + uint32_t(i * vk.descriptor_heap_properties.imageDescriptorSize);
         descriptor_heap.write_image_descriptor(vk.swapchain_info.images[i], vk.surface_format.format,
             VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, heap_offset);
     }
@@ -242,119 +257,22 @@ void Renderer::restore_resolution_dependent_resources() {
 
 void Renderer::load_project(const std::string& input_file) {
     wait_for_reference_renderer();
+
     scene = load_scene(input_file);
-    gpu_scene.load(scene);
+    gpu_scene.load(scene, descriptor_heap);
+
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
 
-    // Descriptors
-    {
-        // Material descriptors
-        descriptor_heap.write_buffer_descriptor(gpu_scene.lambertian_material_buffer.address_range(),
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.lambertian_materials);
-
-        // Image descriptors
-        descriptors.images_2d = descriptor_heap.allocate_image_descriptor((uint32_t)gpu_scene.images_2d.size());
-        for (auto [i, image] : enumerate(gpu_scene.images_2d)) {
-            const uint32_t heap_offset = descriptors.images_2d + uint32_t(i * vk.descriptor_heap_properties.imageDescriptorSize);
-            descriptor_heap.write_image_descriptor(image.handle, image.format, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, heap_offset);
-        }
-
-        // Sampler descriptors
-        VkSamplerCreateInfo sampler_create_info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-        descriptor_heap.write_sampler_descriptor(sampler_create_info, descriptors.image_sampler);
-
-        // Geometry descriptors
-        descriptors.instance_infos = descriptor_heap.allocate_buffer_descriptor();
-        descriptors.index_buffers = descriptor_heap.allocate_buffer_descriptor((uint32_t)gpu_scene.meshes.size());
-        descriptors.vertex_buffers = descriptor_heap.allocate_buffer_descriptor((uint32_t)gpu_scene.meshes.size());
-
-        descriptor_heap.write_buffer_descriptor(gpu_scene.instance_info_buffer.address_range(),
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.instance_infos);
-
-        for (size_t i = 0; i < gpu_scene.meshes.size(); i++) {
-            const uint32_t element_offset = uint32_t(i * vk.descriptor_heap_properties.bufferDescriptorSize);
-
-            descriptor_heap.write_buffer_descriptor(gpu_scene.meshes[i].index_buffer.address_range(),
-                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.index_buffers + element_offset);
-
-            descriptor_heap.write_buffer_descriptor(gpu_scene.meshes[i].vertex_buffer.address_range(),
-                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.vertex_buffers + element_offset);
-        }
-
-        // Light descriptors
-        descriptor_heap.write_buffer_descriptor(gpu_scene.point_lights.address_range(),
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.point_lights);
-
-        descriptor_heap.write_buffer_descriptor(gpu_scene.directional_lights.address_range(),
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.directional_lights);
-
-        descriptor_heap.write_buffer_descriptor(gpu_scene.rect_lights.address_range(),
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.rect_lights);
-
-        // Scene info descriptors
-        descriptors.scene_info_buffer = descriptor_heap.allocate_buffer_descriptor();
-        descriptor_heap.write_buffer_descriptor(gpu_scene.scene_info_buffer.address_range(),
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.scene_info_buffer);
-    }
-
-    std::vector<VkDescriptorSetAndBindingMappingEXT> global_heap_mappings;
-
-    // Base resources
-    global_heap_mappings.push_back(map_binding_to_heap_offset(
-        BASE_SET_INDEX, 0, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT,
-        descriptors.images_2d, descriptors.image_descriptor_size
-    ));
-    global_heap_mappings.push_back(map_binding_to_heap_offset(
-        BASE_SET_INDEX, 1, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT,
-        descriptors.image_sampler
-    ));
-    global_heap_mappings.push_back(map_binding_to_heap_offset(
-        BASE_SET_INDEX, BASE_SET_BINDING_INSTANCE_INFO, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
-        descriptors.instance_infos
-    ));
-    global_heap_mappings.push_back(map_binding_to_heap_offset(
-        BASE_SET_INDEX, 3, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
-        descriptors.index_buffers, descriptors.buffer_descriptor_size
-    ));
-    global_heap_mappings.push_back(map_binding_to_heap_offset(
-        BASE_SET_INDEX, 4, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
-        descriptors.vertex_buffers, descriptors.buffer_descriptor_size
-    ));
-    global_heap_mappings.push_back(map_binding_to_heap_offset(
-        BASE_SET_INDEX, 5, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
-        descriptors.scene_info_buffer, descriptors.buffer_descriptor_size
-    ));
-
-    // Materials
-    global_heap_mappings.push_back(map_binding_to_heap_offset(
-        MATERIAL_SET_INDEX, LAMBERTIAN_MATERIAL_BINDING, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT,
-        descriptors.lambertian_materials
-    ));
-
-    // Lights
-    global_heap_mappings.push_back(map_binding_to_heap_offset(
-        LIGHT_SET_INDEX, POINT_LIGHT_BINDING, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
-        descriptors.point_lights
-    ));
-    global_heap_mappings.push_back(map_binding_to_heap_offset(
-        LIGHT_SET_INDEX, DIRECTIONAL_LIGHT_BINDING, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
-        descriptors.directional_lights
-    ));
-    global_heap_mappings.push_back(map_binding_to_heap_offset(
-        LIGHT_SET_INDEX, RECT_LIGHT_BINDING, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
-        descriptors.rect_lights
-    ));
-
-    patch_materials.create(descriptors);
+    patch_materials.create(gpu_scene.descriptors);
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
         descriptor_heap.bind(command_buffer);
         patch_materials.dispatch(command_buffer);
-    });
+        });
 
-    direct_lighting.create(descriptor_heap, descriptors, global_heap_mappings, scene, gpu_scene.meshes);
-    path_tracing.create(descriptor_heap, descriptors, global_heap_mappings, scene, gpu_scene.meshes);
+    const std::vector<VkDescriptorSetAndBindingMappingEXT> scene_descriptor_mappings = gpu_scene.get_scene_descriptor_mappings();
 
-    project_loaded = true;
+    direct_lighting.create(descriptor_heap, global_descriptors, scene_descriptor_mappings, scene, gpu_scene.meshes);
+    path_tracing.create(descriptor_heap, global_descriptors, scene_descriptor_mappings, scene, gpu_scene.meshes);
 }
 
 static double last_frame_time;
@@ -407,17 +325,6 @@ void Renderer::run_frame() {
     accumulation_index++;
 }
 
-void Renderer::create_default_textures() {
-    ASSERT(gpu_scene.images_2d.empty());
-    gpu_scene.images_2d.resize(Predefined_Texture_Count);
-
-    uint8_t black[4] = {0, 0, 0, 255};
-    gpu_scene.images_2d[Black_2D_Texture_Index] = vk_create_texture(1, 1, VK_FORMAT_R8G8B8A8_UNORM, false, black, 4, "black_texture_1x1");
-
-    uint8_t white[4] = {255, 255, 255, 255};
-    gpu_scene.images_2d[White_2D_Texture_Index] = vk_create_texture(1, 1, VK_FORMAT_R8G8B8A8_UNORM, false, white, 4, "white_texture_1x1");
-}
-
 void Renderer::draw_frame() {
     vk_begin_frame();
     time_keeper.retrieve_query_results(); // get timestamp values from the previous frame
@@ -443,7 +350,7 @@ void Renderer::draw_frame() {
     push_data_info.data.size = sizeof(frame_params);
     vkCmdPushDataEXT(vk.command_buffer, &push_data_info);
 
-    if (project_loaded) {
+    if (gpu_scene.loaded) {
         draw_raytraced_image();
     }
 

@@ -4,18 +4,18 @@
 
 #include "../descriptors.h"
 
-void Apply_Tone_Mapping::create(Descriptors& descriptors)
+void Apply_Tone_Mapping::create(Global_Descriptors& global_descriptors)
 {
-    const VkDescriptorSetAndBindingMappingEXT output_imagemapping = map_binding_to_heap_offset(
-        0, 0, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_IMAGE_BIT_EXT,
-        descriptors.output_image
+    const VkDescriptorSetAndBindingMappingEXT output_image_mapping = map_binding_to_heap_offset(
+        0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
+        global_descriptors.output_image
     );
     const VkDescriptorSetAndBindingMappingEXT tonemapped_image_mapping = map_binding_to_heap_offset(
         0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
-        descriptors.tonemapped_image
+        global_descriptors.tonemapped_image
     );
     const VkDescriptorSetAndBindingMappingEXT mappings[2] = {
-            output_imagemapping,
+            output_image_mapping,
             tonemapped_image_mapping,
     };
     Vk_Shader_Module shader(get_spirv_file("apply_tone_mapping"));

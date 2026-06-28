@@ -11,22 +11,22 @@ public struct Mesh_Vertex {
 //
 // General scene data
 //
-[[vk::binding(0, BASE_SET_INDEX)]]
+[[vk::binding(SCENE_BINDING_IMAGES, SCENE_SET)]]
 public Texture2D images_2d[];
 
-[[vk::binding(1, BASE_SET_INDEX)]]
+[[vk::binding(SCENE_BINDING_SAMPLER, SCENE_SET)]]
 public SamplerState image_sampler;
 
-[[vk::binding(BASE_SET_BINDING_INSTANCE_INFO, BASE_SET_INDEX)]]
+[[vk::binding(SCENE_BINDING_INSTANCE_INFO, SCENE_SET)]]
 public StructuredBuffer<Instance_Info> instance_infos;
 
-[[vk::binding(3, BASE_SET_INDEX)]]
+[[vk::binding(3, SCENE_SET)]]
 public StructuredBuffer<uint> index_buffers[];
 
-[[vk::binding(4, BASE_SET_INDEX)]]
+[[vk::binding(4, SCENE_SET)]]
 public StructuredBuffer<Mesh_Vertex> vertex_buffers[];
 
-[[vk::binding(5, BASE_SET_INDEX)]]
+[[vk::binding(5, SCENE_SET)]]
 public StructuredBuffer<Scene_Info> scene_info_buffer;
 
 public Scene_Info get_scene_info()
@@ -52,11 +52,11 @@ static const int Light_Point = 0;
 static const int Light_Directional = 1;
 static const int Light_Rect = 2;
 
-[[vk::binding(POINT_LIGHT_BINDING, LIGHT_SET_INDEX)]]
+[[vk::binding(SCENE_LIGHT_BINDING_POINT, SCENE_LIGHT_SET)]]
 public StructuredBuffer<Point_Light> point_lights;
 
-[[vk::binding(DIRECTIONAL_LIGHT_BINDING, LIGHT_SET_INDEX)]]
+[[vk::binding(SCENE_LIGHT_BINDING_DIRECTIONAL, SCENE_LIGHT_SET)]]
 public StructuredBuffer<Directional_Light> directional_lights;
 
-[[vk::binding(RECT_LIGHT_BINDING, LIGHT_SET_INDEX)]]
+[[vk::binding(SCENE_LIGHT_BINDING_RECT, SCENE_LIGHT_SET)]]
 public StructuredBuffer<Rect_Light> rect_lights;

@@ -138,6 +138,10 @@ void vk_cmd_image_barrier_for_subresource(VkCommandBuffer command_buffer, VkImag
     VkPipelineStageFlags2 src_stage_mask, VkAccessFlags2 src_access_mask, VkImageLayout old_layout,
     VkPipelineStageFlags2 dst_stage_mask, VkAccessFlags2 dst_access_mask, VkImageLayout new_layout);
 
+// Descriptor queries
+uint32_t vk_image_descriptor_size();
+uint32_t vk_buffer_descriptor_size();
+uint32_t vk_sampler_descriptor_size();
 
 uint32_t vk_allocate_timestamp_queries(uint32_t count);
 

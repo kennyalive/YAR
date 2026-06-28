@@ -1106,6 +1106,21 @@ void vk_cmd_image_barrier_for_subresource(
     vkCmdPipelineBarrier2(command_buffer, &dep_info);
 }
 
+uint32_t vk_image_descriptor_size()
+{
+    return (uint32_t)vk.descriptor_heap_properties.imageDescriptorSize;
+}
+
+uint32_t vk_buffer_descriptor_size()
+{
+    return (uint32_t)vk.descriptor_heap_properties.bufferDescriptorSize;
+}
+
+uint32_t vk_sampler_descriptor_size()
+{
+    return (uint32_t)vk.descriptor_heap_properties.samplerDescriptorSize;
+}
+
 uint32_t vk_allocate_timestamp_queries(uint32_t count)
 {
     assert(count > 0);

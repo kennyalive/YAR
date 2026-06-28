@@ -4,11 +4,11 @@
 
 #include "renderer/descriptors.h"
 
-void Patch_Materials::create(Descriptors& descriptors)
+void Patch_Materials::create(Scene_Descriptors& scene_descriptors)
 {
     const VkDescriptorSetAndBindingMappingEXT mapping = map_binding_to_heap_offset(
         0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT,
-        descriptors.lambertian_materials
+        scene_descriptors.lambertian_materials
     );
     Vk_Shader_Module shader(get_spirv_file("patch_materials"));
     pipeline = vk_create_compute_pipeline(shader.handle, std::span(&mapping, 1), "patch_materials_pipeline");

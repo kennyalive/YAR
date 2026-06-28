@@ -7,12 +7,15 @@
 #include "raytracer_config.h"
 #include "scene_object.h"
 
-enum class Scene_Type {
+enum class Scene_Type
+{
+    none, // not initialize scene
     pbrt,
     obj,
 };
 
-struct Texture_Descriptor {
+struct Texture_Descriptor
+{
     std::string file_name;
     bool decode_srgb = false;
     float scale = 1.f;
@@ -23,8 +26,9 @@ struct Texture_Descriptor {
     bool operator==(const Texture_Descriptor&) const = default;
 };
 
-struct Scene {
-    Scene_Type type;
+struct Scene
+{
+    Scene_Type type = Scene_Type::none;
     std::string path;
 
     // Optional filename of the output image.

@@ -2,12 +2,12 @@
 
 #include "../vk.h"
 
-struct Descriptors;
+struct Global_Descriptors;
 
 struct Copy_To_Swapchain {
     VkPipeline pipeline;
 
-    void create(const Descriptors& descriptors);
+    void create(const Global_Descriptors& descriptors);
     void destroy();
     void dispatch();
 };

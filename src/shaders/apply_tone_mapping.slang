@@ -5,7 +5,7 @@ Frame_Params frame_params;
 
 [[vk::image_format("rgba16f")]]
 [[vk::binding(0, 0)]]
-Texture2D<float4> output_image;
+RWTexture2D<float4> output_image;
 
 [[vk::image_format("rgba16f")]]
 [[vk::binding(1, 0)]]

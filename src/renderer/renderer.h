@@ -21,7 +21,16 @@ struct GLFWwindow;
 struct Reference_Renderer_Config;
 struct Scene_Overrides;
 
-class Renderer {
+struct Default_Textures
+{
+    Vk_Image black_texture;
+
+    void create();
+    void destroy();
+};
+
+class Renderer
+{
 public:
     void initialize(GLFWwindow* glfw_window, int gpu_index);
     void shutdown();
@@ -36,7 +45,6 @@ public:
 private:
     void release_resolution_dependent_resources();
     void restore_resolution_dependent_resources();
-    void create_default_textures();
 
     void draw_frame();
     void draw_raytraced_image();
@@ -57,11 +65,11 @@ private:
 
     Vk_Image output_image;
     Vk_Image tonemapped_image;
+    Default_Textures default_textures;
 
     Descriptor_Heap descriptor_heap;
-    Descriptors descriptors;
-    GPU_Scene gpu_scene;
-
+    Global_Descriptors global_descriptors;
+    
     Apply_Tone_Mapping apply_tone_mapping;
     Copy_To_Swapchain copy_to_swapchain;
     Patch_Materials patch_materials;
@@ -77,10 +85,10 @@ private:
         Vk_Timer* compute_copy;
     } gpu_timers;
 
-    bool project_loaded = false;
-    Scene scene;
-    UI ui;
-
     std::atomic_bool reference_renderer_running = false;
     std::jthread reference_renderer_thread;
+
+    Scene scene;
+    GPU_Scene gpu_scene;
+    UI ui;
 };

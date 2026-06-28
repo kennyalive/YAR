@@ -4,7 +4,7 @@
 
 #include "renderer/descriptors.h"
 
-void Copy_To_Swapchain::create(const Descriptors& descriptors)
+void Copy_To_Swapchain::create(const Global_Descriptors& descriptors)
 {
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = map_binding_to_heap_offset(
@@ -13,7 +13,7 @@ void Copy_To_Swapchain::create(const Descriptors& descriptors)
     );
     mappings[1] = map_binding_to_heap_offset(
         0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
-        descriptors.swapchain_images, descriptors.image_descriptor_size
+        descriptors.swapchain_images, vk_image_descriptor_size()
     );
     Vk_Shader_Module shader(get_spirv_file("copy_to_swapchain"));
     pipeline = vk_create_compute_pipeline(shader.handle, mappings, "copy_to_swapchain_pipeline");
