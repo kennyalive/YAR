@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderer/vk.h"
+#include "gpu/vk.h"
 
 struct Scene_Descriptors;
 

@@ -2,7 +2,7 @@
 #include "lib/common.h"
 #include "patch_materials.h"
 
-#include "renderer/descriptors.h"
+#include "gpu/descriptors.h"
 
 void Patch_Materials::create(const Scene_Descriptors& scene_descriptors)
 {

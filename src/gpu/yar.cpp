@@ -7,8 +7,8 @@
 
 #include "lib/matrix.h"
 #include "lib/scene_loader.h"
-#include "reference/reference_renderer.h"
-#include "reference/scene_context.h"
+#include "ref/reference_renderer.h"
+#include "ref/scene_context.h"
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"

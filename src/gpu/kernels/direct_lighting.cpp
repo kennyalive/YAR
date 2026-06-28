@@ -2,8 +2,8 @@
 #include "lib/common.h"
 #include "direct_lighting.h"
 
-#include "renderer/descriptors.h"
-#include "renderer/descriptor_heap.h"
+#include "gpu/descriptors.h"
+#include "gpu/descriptor_heap.h"
 #include "shaders/shared.slang"
 #include "lib/scene.h"
 

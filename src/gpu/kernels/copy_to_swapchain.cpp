@@ -2,7 +2,7 @@
 #include "lib/common.h"
 #include "copy_to_swapchain.h"
 
-#include "renderer/descriptors.h"
+#include "gpu/descriptors.h"
 
 void Copy_To_Swapchain::create(const Global_Descriptors& descriptors)
 {

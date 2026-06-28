@@ -1,7 +1,7 @@
 #include "std.h"
 #include "ui.h"
 
-#include "renderer/vk.h"
+#include "gpu/vk.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_vulkan.h"

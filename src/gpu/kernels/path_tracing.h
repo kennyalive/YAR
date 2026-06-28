@@ -1,12 +1,12 @@
 #pragma once
 
-#include "renderer/acceleration_structure.h"
+#include "gpu/acceleration_structure.h"
 
 struct Scene;
 struct Descriptor_Heap;
 struct Global_Descriptors;
 
-struct Direct_Lighting {
+struct Path_Tracing {
     Vk_Intersection_Accelerator accelerator;
     uint32_t accelerator_heap_offset = 0;
     Vk_Buffer shader_binding_table;

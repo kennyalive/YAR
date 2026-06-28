@@ -2,56 +2,56 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="..\src\std.cpp" />
-    <ClCompile Include="..\src\renderer\main.cpp" />
-    <ClCompile Include="..\src\renderer\vk.cpp" />
-    <ClCompile Include="..\src\renderer\kernels\copy_to_swapchain.cpp">
+    <ClCompile Include="..\src\gpu\main.cpp" />
+    <ClCompile Include="..\src\gpu\vk.cpp" />
+    <ClCompile Include="..\src\gpu\kernels\copy_to_swapchain.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\renderer\kernels\patch_materials.cpp">
+    <ClCompile Include="..\src\gpu\kernels\patch_materials.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\renderer\kernels\direct_lighting.cpp">
+    <ClCompile Include="..\src\gpu\kernels\direct_lighting.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\renderer\acceleration_structure.cpp" />
-    <ClCompile Include="..\src\renderer\yar.cpp" />
-    <ClCompile Include="..\src\renderer\kernels\apply_tone_mapping.cpp">
+    <ClCompile Include="..\src\gpu\acceleration_structure.cpp" />
+    <ClCompile Include="..\src\gpu\yar.cpp" />
+    <ClCompile Include="..\src\gpu\kernels\apply_tone_mapping.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\renderer\descriptor_heap.cpp" />
-    <ClCompile Include="..\src\renderer\descriptors.cpp" />
-    <ClCompile Include="..\src\renderer\kernels\path_tracing.cpp">
+    <ClCompile Include="..\src\gpu\descriptor_heap.cpp" />
+    <ClCompile Include="..\src\gpu\descriptors.cpp" />
+    <ClCompile Include="..\src\gpu\kernels\path_tracing.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\renderer\ui.cpp" />
-    <ClCompile Include="..\src\renderer\gpu_scene.cpp" />
-    <ClCompile Include="..\src\renderer\kernels.cpp" />
+    <ClCompile Include="..\src\gpu\ui.cpp" />
+    <ClCompile Include="..\src\gpu\gpu_scene.cpp" />
+    <ClCompile Include="..\src\gpu\kernels.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\std.h" />
-    <ClInclude Include="..\src\renderer\vk.h" />
-    <ClInclude Include="..\src\renderer\kernels\copy_to_swapchain.h">
+    <ClInclude Include="..\src\gpu\vk.h" />
+    <ClInclude Include="..\src\gpu\kernels\copy_to_swapchain.h">
       <Filter>kernels</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\renderer\kernels\patch_materials.h">
+    <ClInclude Include="..\src\gpu\kernels\patch_materials.h">
       <Filter>kernels</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\renderer\kernels\direct_lighting.h">
+    <ClInclude Include="..\src\gpu\kernels\direct_lighting.h">
       <Filter>kernels</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\renderer\acceleration_structure.h" />
-    <ClInclude Include="..\src\renderer\yar.h" />
-    <ClInclude Include="..\src\renderer\kernels\apply_tone_mapping.h">
+    <ClInclude Include="..\src\gpu\acceleration_structure.h" />
+    <ClInclude Include="..\src\gpu\yar.h" />
+    <ClInclude Include="..\src\gpu\kernels\apply_tone_mapping.h">
       <Filter>kernels</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\renderer\descriptor_heap.h" />
-    <ClInclude Include="..\src\renderer\descriptors.h" />
-    <ClInclude Include="..\src\renderer\kernels\path_tracing.h">
+    <ClInclude Include="..\src\gpu\descriptor_heap.h" />
+    <ClInclude Include="..\src\gpu\descriptors.h" />
+    <ClInclude Include="..\src\gpu\kernels\path_tracing.h">
       <Filter>kernels</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\renderer\ui.h" />
-    <ClInclude Include="..\src\renderer\gpu_scene.h" />
-    <ClInclude Include="..\src\renderer\kernels.h" />
+    <ClInclude Include="..\src\gpu\ui.h" />
+    <ClInclude Include="..\src\gpu\gpu_scene.h" />
+    <ClInclude Include="..\src\gpu\kernels.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
