@@ -1,6 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
-#include "renderer.h"
+#include "yar.h"
 
 #include "shaders/shared.slang"
 #include "vk.h"
@@ -29,7 +29,7 @@ void Default_Textures::destroy()
     *this = Default_Textures{};
 }
 
-void Renderer::initialize(GLFWwindow* window, int gpu_index) {
+void YAR::initialize(GLFWwindow* window, int gpu_index) {
     std::array instance_extensions = {
         VK_KHR_SURFACE_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_WIN32_KHR
@@ -175,7 +175,7 @@ void Renderer::initialize(GLFWwindow* window, int gpu_index) {
     ui.spp4 = &spp4;
 }
 
-void Renderer::shutdown() {
+void YAR::shutdown() {
     wait_for_reference_renderer();
     VK_CHECK(vkDeviceWaitIdle(vk.device));
 
@@ -202,7 +202,7 @@ void Renderer::shutdown() {
     vk_shutdown();
 }
 
-void Renderer::recreate_swapchain()
+void YAR::recreate_swapchain()
 {
     VK_CHECK(vkDeviceWaitIdle(vk.device));
     release_resolution_dependent_resources();
@@ -211,12 +211,12 @@ void Renderer::recreate_swapchain()
     restore_resolution_dependent_resources();
 }
 
-void Renderer::release_resolution_dependent_resources() {
+void YAR::release_resolution_dependent_resources() {
     output_image.destroy();
     tonemapped_image.destroy();
 }
 
-void Renderer::restore_resolution_dependent_resources() {
+void YAR::restore_resolution_dependent_resources() {
     // output image
     {
         output_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, output_image_format,
@@ -255,7 +255,7 @@ void Renderer::restore_resolution_dependent_resources() {
     }
 }
 
-void Renderer::load_project(const std::string& input_file) {
+void YAR::load_project(const std::string& input_file) {
     wait_for_reference_renderer();
 
     scene = load_scene(input_file);
@@ -277,7 +277,7 @@ void Renderer::load_project(const std::string& input_file) {
 
 static double last_frame_time;
 
-void Renderer::run_frame() {
+void YAR::run_frame() {
     ui.reference_renderer_running = reference_renderer_running.load();
 
     const UI_Actions ui_actions = ui.run_imgui();
@@ -325,7 +325,7 @@ void Renderer::run_frame() {
     accumulation_index++;
 }
 
-void Renderer::draw_frame() {
+void YAR::draw_frame() {
     vk_begin_frame();
     time_keeper.retrieve_query_results(); // get timestamp values from the previous frame
     gpu_timers.frame->start();
@@ -376,7 +376,7 @@ void Renderer::draw_frame() {
     vk_end_frame();
 }
 
-void Renderer::draw_raytraced_image() {
+void YAR::draw_raytraced_image() {
     VK_TIME_SCOPE(gpu_timers.draw);
     if (ui.rendering_algorithm == 0) {
         direct_lighting.dispatch();
@@ -386,13 +386,13 @@ void Renderer::draw_raytraced_image() {
     }
 }
 
-void Renderer::tone_mapping()
+void YAR::tone_mapping()
 {
     VK_TIME_SCOPE(gpu_timers.tone_map);
     apply_tone_mapping.dispatch();
 }
 
-void Renderer::draw_imgui()
+void YAR::draw_imgui()
 {
     VK_TIME_SCOPE(gpu_timers.ui);
 
@@ -415,13 +415,13 @@ void Renderer::draw_imgui()
     vkCmdEndRendering(vk.command_buffer);
 }
 
-void Renderer::copy_output_image_to_swapchain()
+void YAR::copy_output_image_to_swapchain()
 {
     VK_TIME_SCOPE(gpu_timers.compute_copy);
     copy_to_swapchain.dispatch();
 }
 
-void Renderer::start_reference_renderer()
+void YAR::start_reference_renderer()
 {
     ASSERT(!reference_renderer_running.load());
 
@@ -449,7 +449,7 @@ void Renderer::start_reference_renderer()
     });
 }
 
-void Renderer::do_run_reference_renderer(const Reference_Renderer_Config& reference_renderer_config, const Scene_Overrides& overrides)
+void YAR::do_run_reference_renderer(const Reference_Renderer_Config& reference_renderer_config, const Scene_Overrides& overrides)
 {
     // Init scene context
     Scene_Context scene_ctx;
@@ -472,7 +472,7 @@ void Renderer::do_run_reference_renderer(const Reference_Renderer_Config& refere
     reference_renderer_running.store(false);
 }
 
-void Renderer::wait_for_reference_renderer()
+void YAR::wait_for_reference_renderer()
 {
     if (reference_renderer_thread.joinable()) {
         reference_renderer_thread.join();

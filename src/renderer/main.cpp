@@ -1,6 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
-#include "renderer.h"
+#include "yar.h"
 
 #include "glfw/glfw3.h"
 
@@ -15,7 +15,7 @@ struct Command_Line_Params
 struct Window_State
 {
     GLFWwindow* window = nullptr;
-    Renderer* renderer = nullptr;
+    YAR* yar = nullptr;
     int width = 960;
     int height= 720;
     bool active = false;
@@ -87,7 +87,7 @@ static void glfw_key_callback(GLFWwindow* window, int key, int scancode, int act
             }
         } else if (key == GLFW_KEY_F10) {
             Window_State* window_state = (Window_State*)glfwGetWindowUserPointer(window);
-            window_state->renderer->toggle_ui();
+            window_state->yar->toggle_ui();
         }
     }
 }
@@ -96,11 +96,11 @@ static void check_if_swapchain_needs_something(Window_State& window_state)
 {
     int width, height;
     glfwGetWindowSize(window_state.window, &width, &height);
-    Renderer& renderer = *window_state.renderer;
+    YAR& yar = *window_state.yar;
 
     bool recreate_swapchain = false;
-    if (window_state.vsync != renderer.vsync_enabled()) {
-        window_state.vsync = renderer.vsync_enabled();
+    if (window_state.vsync != yar.vsync_enabled()) {
+        window_state.vsync = yar.vsync_enabled();
         recreate_swapchain = true;
     } else if (window_state.width != width || window_state.height != height) {
         window_state.width = width;
@@ -113,7 +113,7 @@ static void check_if_swapchain_needs_something(Window_State& window_state)
         return; 
     }
     if (recreate_swapchain) {
-        renderer.recreate_swapchain();
+        yar.recreate_swapchain();
     }
 }
 
@@ -130,25 +130,25 @@ static int run_realtime_renderer(const Command_Line_Params& params)
     ASSERT(window_state.window != nullptr);
     glfwSetKeyCallback(window_state.window, glfw_key_callback);
 
-    Renderer renderer{};
-    renderer.initialize(window_state.window, params.gpu_index);
+    YAR yar{};
+    yar.initialize(window_state.window, params.gpu_index);
 
-    window_state.renderer = &renderer;
+    window_state.yar = &yar;
     window_state.active = true;
-    window_state.vsync = renderer.vsync_enabled();
+    window_state.vsync = yar.vsync_enabled();
     glfwSetWindowUserPointer(window_state.window, &window_state);
 
     if (!params.input_file.empty()) {
-        renderer.load_project(params.input_file);
+        yar.load_project(params.input_file);
     }
     while (!glfwWindowShouldClose(window_state.window)) {
         if (window_state.active) {
-            renderer.run_frame();
+            yar.run_frame();
         }
         glfwPollEvents();
         check_if_swapchain_needs_something(window_state);
     }
-    renderer.shutdown();
+    yar.shutdown();
     glfwTerminate();
     return 0;
 }

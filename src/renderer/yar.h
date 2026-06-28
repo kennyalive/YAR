@@ -29,7 +29,7 @@ struct Default_Textures
     void destroy();
 };
 
-class Renderer
+class YAR
 {
 public:
     void initialize(GLFWwindow* glfw_window, int gpu_index);
