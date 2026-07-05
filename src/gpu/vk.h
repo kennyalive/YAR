@@ -1,6 +1,6 @@
 #pragma once
 
-constexpr int VK_VERSION = -3;
+constexpr int VK_VERSION = 4;
 
 #ifdef _WIN32
 #define NOMINMAX
