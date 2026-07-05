@@ -134,6 +134,8 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     descriptor_heap.create();
     global_descriptors.initialize(descriptor_heap);
     kernels.create_global_kernels(global_descriptors);
+    path_tracing_renderer.initialize(descriptor_heap, time_keeper);
+    direct_lighting_renderer.initialize(descriptor_heap, time_keeper);
 
     restore_resolution_dependent_resources();
     default_textures.create();
@@ -162,15 +164,10 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
         ImGui_ImplVulkan_CreateFontsTexture();
     }
 
-    gpu_timers.frame = time_keeper.allocate_timer("frame");
-    gpu_timers.draw = time_keeper.allocate_timer("draw");
-    gpu_timers.tone_map = time_keeper.allocate_timer("tone_map");
-    gpu_timers.ui = time_keeper.allocate_timer("ui");
-    gpu_timers.compute_copy = time_keeper.allocate_timer("compute copy");
-    gpu_timers.frame->nested_timers = {gpu_timers.draw, gpu_timers.tone_map, gpu_timers.ui, gpu_timers.compute_copy};
+    timer_frame = time_keeper.allocate_timer("frame");
+    timer_ui = time_keeper.allocate_timer("ui");
     time_keeper.initialize_timers();
-
-    ui.frame_time_scope = gpu_timers.frame;
+    ui.frame_time_scope = timer_frame;
     ui.spp4 = &spp4;
 }
 
@@ -186,6 +183,9 @@ void YAR::shutdown() {
     kernels.destroy_global_kernels();
 
     release_resolution_dependent_resources();
+
+    path_tracing_renderer.destroy();
+    direct_lighting_renderer.destroy();
 
     if (gpu_scene.loaded) {
         kernels.destroy_scene_kernels();
@@ -204,41 +204,16 @@ void YAR::recreate_swapchain()
     restore_resolution_dependent_resources();
 }
 
-void YAR::release_resolution_dependent_resources() {
-    output_image.destroy();
-    tonemapped_image.destroy();
+void YAR::release_resolution_dependent_resources()
+{
+    path_tracing_renderer.destroy_resolution_dependent_resources();
+    direct_lighting_renderer.destroy_resolution_dependent_resources();
 }
 
-void YAR::restore_resolution_dependent_resources() {
-    // output image
-    {
-        output_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, output_image_format,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "output_image");
-
-        vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
-            vk_cmd_image_barrier(command_buffer, output_image.handle,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
-        });
-
-        descriptor_heap.write_image_descriptor(output_image.handle, output_image.format,
-            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, global_descriptors.output_image);
-    }
-
-    // tone mapped image
-    {
-        tonemapped_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, output_image_format,
-            VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "tonemapped_image");
-
-        vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
-            vk_cmd_image_barrier(command_buffer, tonemapped_image.handle,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
-                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
-            });
-
-        descriptor_heap.write_image_descriptor(tonemapped_image.handle, tonemapped_image.format,
-            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, global_descriptors.tonemapped_image);
-    }
+void YAR::restore_resolution_dependent_resources()
+{
+    path_tracing_renderer.create_resolution_dependent_resources(descriptor_heap, global_descriptors.swapchain_images);
+    direct_lighting_renderer.create_resolution_dependent_resources(descriptor_heap, global_descriptors.swapchain_images);
 
     // swapchain images
     for (size_t i = 0; i < vk.swapchain_info.images.size(); i++) {
@@ -254,6 +229,8 @@ void YAR::load_project(const std::string& input_file) {
     scene = load_scene(input_file);
     gpu_scene.load(scene, descriptor_heap);
     kernels.create_scene_kernels(global_descriptors, descriptor_heap, gpu_scene, scene);
+    path_tracing_renderer.create_scene_kernels(descriptor_heap, gpu_scene, scene);
+    direct_lighting_renderer.create_scene_kernels(descriptor_heap, gpu_scene, scene);
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
 
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
@@ -266,6 +243,23 @@ static double last_frame_time;
 
 void YAR::run_frame() {
     ui.reference_renderer_running = reference_renderer_running.load();
+
+    if (ui.rendering_algorithm == 0) {
+        timer_frame->nested_timers = {
+            direct_lighting_renderer.timer_draw,
+            direct_lighting_renderer.timer_tonemap,
+            direct_lighting_renderer.timer_compute_copy,
+            timer_ui
+        };
+    }
+    else if (ui.rendering_algorithm == 1) {
+        timer_frame->nested_timers = {
+            path_tracing_renderer.timer_draw,
+            path_tracing_renderer.timer_tonemap,
+            path_tracing_renderer.timer_compute_copy,
+            timer_ui
+        };
+    }
 
     const UI_Actions ui_actions = ui.run_imgui();
 
@@ -315,7 +309,7 @@ void YAR::run_frame() {
 void YAR::draw_frame() {
     vk_begin_frame();
     time_keeper.retrieve_query_results(); // get timestamp values from the previous frame
-    gpu_timers.frame->start();
+    timer_frame->start();
     descriptor_heap.bind(vk.command_buffer);
 
     // Set per-frame parameters
@@ -337,17 +331,12 @@ void YAR::draw_frame() {
     push_data_info.data.size = sizeof(frame_params);
     vkCmdPushDataEXT(vk.command_buffer, &push_data_info);
 
-    if (gpu_scene.loaded) {
-        draw_raytraced_image();
+    if (ui.rendering_algorithm == 0) {
+        direct_lighting_renderer.render(gpu_scene);
     }
-
-    tone_mapping();
-
-    vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
-
-    copy_output_image_to_swapchain();
+    else if (ui.rendering_algorithm == 1) {
+        path_tracing_renderer.render(gpu_scene);
+    }
 
     vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],
         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL,
@@ -359,29 +348,13 @@ void YAR::draw_frame() {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-    gpu_timers.frame->stop();
+    timer_frame->stop();
     vk_end_frame();
-}
-
-void YAR::draw_raytraced_image() {
-    VK_TIME_SCOPE(gpu_timers.draw);
-    if (ui.rendering_algorithm == 0) {
-        kernels.direct_lighting.dispatch();
-    }
-    else if (ui.rendering_algorithm == 1) {
-        kernels.path_tracing.dispatch();
-    }
-}
-
-void YAR::tone_mapping()
-{
-    VK_TIME_SCOPE(gpu_timers.tone_map);
-    kernels.apply_tone_mapping.dispatch();
 }
 
 void YAR::draw_imgui()
 {
-    VK_TIME_SCOPE(gpu_timers.ui);
+    VK_TIME_SCOPE(timer_ui);
 
     ImGui::Render();
 
@@ -400,12 +373,6 @@ void YAR::draw_imgui()
     vkCmdBeginRendering(vk.command_buffer, &rendering_info);
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vk.command_buffer);
     vkCmdEndRendering(vk.command_buffer);
-}
-
-void YAR::copy_output_image_to_swapchain()
-{
-    VK_TIME_SCOPE(gpu_timers.compute_copy);
-    kernels.copy_to_swapchain.dispatch();
 }
 
 void YAR::start_reference_renderer()

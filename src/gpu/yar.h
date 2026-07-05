@@ -5,8 +5,10 @@
 #include "gpu_scene.h"
 #include "kernels.h"
 #include "vk.h"
-
 #include "ui.h"
+
+#include "renderers/direct_lighting_renderer.h"
+#include "renderers/path_tracing_renderer.h"
 
 #include "lib/flying_camera.h"
 #include "lib/matrix.h"
@@ -42,10 +44,7 @@ private:
     void restore_resolution_dependent_resources();
 
     void draw_frame();
-    void draw_raytraced_image();
-    void tone_mapping();
     void draw_imgui();
-    void copy_output_image_to_swapchain();
 
     void start_reference_renderer();
     void do_run_reference_renderer(const Reference_Renderer_Config& reference_renderer_config, const Scene_Overrides& overrides);
@@ -57,23 +56,14 @@ private:
     bool spp4 = false;
 
     Flying_Camera flying_camera;
-
-    Vk_Image output_image;
-    Vk_Image tonemapped_image;
     Default_Textures default_textures;
-
     Descriptor_Heap descriptor_heap;
     Global_Descriptors global_descriptors;
     Kernels kernels;
 
     Vk_Time_Keeper time_keeper;
-    struct {
-        Vk_Timer* frame;
-        Vk_Timer* draw;
-        Vk_Timer* tone_map;
-        Vk_Timer* ui;
-        Vk_Timer* compute_copy;
-    } gpu_timers;
+    Vk_Timer* timer_frame = nullptr;
+    Vk_Timer* timer_ui = nullptr;
 
     std::atomic_bool reference_renderer_running = false;
     std::jthread reference_renderer_thread;
@@ -81,4 +71,7 @@ private:
     Scene scene;
     GPU_Scene gpu_scene;
     UI ui;
+
+    Path_Tracing_Renderer path_tracing_renderer;
+    Direct_Lighting_Renderer direct_lighting_renderer;
 };

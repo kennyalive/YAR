@@ -2,17 +2,13 @@
 #include "lib/common.h"
 #include "apply_tone_mapping.h"
 
-#include "../descriptors.h"
-
-void Apply_Tone_Mapping::create(Global_Descriptors& global_descriptors)
+void Apply_Tone_Mapping::create(uint32_t output_image_heap_offset, uint32_t tonemapped_image_heap_offset)
 {
     const VkDescriptorSetAndBindingMappingEXT output_image_mapping = map_binding_to_heap_offset(
-        0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
-        global_descriptors.output_image
+        0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT, output_image_heap_offset
     );
     const VkDescriptorSetAndBindingMappingEXT tonemapped_image_mapping = map_binding_to_heap_offset(
-        0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
-        global_descriptors.tonemapped_image
+        0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT, tonemapped_image_heap_offset
     );
     const VkDescriptorSetAndBindingMappingEXT mappings[2] = {
             output_image_mapping,

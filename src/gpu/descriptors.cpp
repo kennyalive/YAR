@@ -8,8 +8,6 @@ constexpr uint32_t max_swapchain_images = 8;
 
 void Global_Descriptors::initialize(Descriptor_Heap& descriptor_heap)
 {
-    output_image = descriptor_heap.allocate_image_descriptor();
-    tonemapped_image = descriptor_heap.allocate_image_descriptor();
     swapchain_images = descriptor_heap.allocate_image_descriptor(max_swapchain_images);
 }
 

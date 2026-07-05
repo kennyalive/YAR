@@ -2,18 +2,15 @@
 #include "lib/common.h"
 #include "copy_to_swapchain.h"
 
-#include "gpu/descriptors.h"
-
-void Copy_To_Swapchain::create(const Global_Descriptors& descriptors)
+void Copy_To_Swapchain::create(uint32_t tonemapped_image_heap_offset, uint32_t swapchain_images_heap_offset)
 {
     VkDescriptorSetAndBindingMappingEXT mappings[2];
     mappings[0] = map_binding_to_heap_offset(
-        0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
-        descriptors.tonemapped_image
+        0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT, tonemapped_image_heap_offset
     );
     mappings[1] = map_binding_to_heap_offset(
         0, 1, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
-        descriptors.swapchain_images, vk_image_descriptor_size()
+        swapchain_images_heap_offset, vk_image_descriptor_size()
     );
     Vk_Shader_Module shader(get_spirv_file("copy_to_swapchain"));
     pipeline = vk_create_compute_pipeline(shader.handle, mappings, "copy_to_swapchain_pipeline");

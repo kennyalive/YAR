@@ -4,8 +4,6 @@ struct Descriptor_Heap;
 
 struct Global_Descriptors
 {
-    uint32_t output_image = 0;
-    uint32_t tonemapped_image = 0;
     uint32_t swapchain_images = 0;
 
     void initialize(Descriptor_Heap& descriptor_heap);

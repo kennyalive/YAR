@@ -108,6 +108,8 @@
     <ClCompile Include="..\src\gpu\kernels\path_tracing.cpp" />
     <ClCompile Include="..\src\gpu\main.cpp" />
     <ClCompile Include="..\src\gpu\kernels\patch_materials.cpp" />
+    <ClCompile Include="..\src\gpu\renderers\direct_lighting_renderer.cpp" />
+    <ClCompile Include="..\src\gpu\renderers\path_tracing_renderer.cpp" />
     <ClCompile Include="..\src\gpu\yar.cpp">
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">VK_USE_PLATFORM_WIN32_KHR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -133,6 +135,8 @@
     <ClInclude Include="..\src\gpu\kernels\patch_materials.h" />
     <ClInclude Include="..\src\gpu\kernels\apply_tone_mapping.h" />
     <ClInclude Include="..\src\gpu\kernels\path_tracing.h" />
+    <ClInclude Include="..\src\gpu\renderers\direct_lighting_renderer.h" />
+    <ClInclude Include="..\src\gpu\renderers\path_tracing_renderer.h" />
     <ClInclude Include="..\src\gpu\yar.h" />
     <ClInclude Include="..\src\gpu\kernels\direct_lighting.h" />
     <ClInclude Include="..\src\gpu\ui.h" />
