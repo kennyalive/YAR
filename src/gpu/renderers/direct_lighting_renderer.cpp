@@ -25,10 +25,13 @@ void Direct_Lighting_Renderer::destroy()
     }
 }
 
-void Direct_Lighting_Renderer::create_scene_kernels(Descriptor_Heap& descriptor_heap, const GPU_Scene& gpu_scene, const Scene& scene)
+void Direct_Lighting_Renderer::create_scene_kernels(
+    Descriptor_Heap& descriptor_heap,
+    const GPU_Scene& gpu_scene,
+    const Scene& scene,
+    const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
-    const std::vector<VkDescriptorSetAndBindingMappingEXT> scene_descriptor_mappings = gpu_scene.get_scene_descriptor_mappings();
-    direct_lighting.create(descriptor_heap, output_image_heap_offset, scene_descriptor_mappings, scene, gpu_scene.meshes);
+    direct_lighting.create(descriptor_heap, output_image_heap_offset, descriptor_mappings, scene, gpu_scene.meshes);
 }
 
 void Direct_Lighting_Renderer::create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap, uint32_t swapchain_images_heap_offset)

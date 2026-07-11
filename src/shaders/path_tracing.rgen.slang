@@ -16,10 +16,10 @@ struct KernelParams {
     RaytracingAccelerationStructure accel;
 }
 
-[[vk::binding(0, 1)]]
+[[vk::binding(0, SCENE_MATERIAL_SET)]]
 ParameterBlock<Materials> materials;
 
-[[vk::binding(0, KERNEL_SET_0)]]
+[[vk::binding(0, KERNEL_SET)]]
 ParameterBlock<KernelParams> params;
 
 static const float tmin = 1e-3f;

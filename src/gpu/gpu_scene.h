@@ -5,6 +5,7 @@
 #include "lib/material.h"
 
 struct Descriptor_Heap;
+struct Global_Descriptors;
 struct Scene;
 
 struct GPU_Mesh 
@@ -22,7 +23,7 @@ struct GPU_Scene
     bool loaded = false;
     Scene_Descriptors descriptors;
 
-    std::vector<Vk_Image> images_2d;
+    std::vector<Vk_Image> images;
     std::vector<GPU_Mesh> meshes;
     Vk_Buffer instance_info_buffer;
     Vk_Buffer scene_info_buffer;
@@ -31,10 +32,10 @@ struct GPU_Scene
     Vk_Buffer rect_lights;
     Vk_Buffer lambertian_material_buffer;
 
-    void load(const Scene& scene, Descriptor_Heap& descriptor_heap);
+    void load(const Scene& scene, Descriptor_Heap& descriptor_heap, Global_Descriptors& global_descriptors);
     void destroy();
     std::vector<VkDescriptorSetAndBindingMappingEXT> get_scene_descriptor_mappings() const;
 
 private:
-    void write_descriptors(Descriptor_Heap& descriptor_heap);
+    void write_descriptors(Descriptor_Heap& descriptor_heap, Global_Descriptors& global_descriptors);
 };

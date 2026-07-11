@@ -21,20 +21,25 @@
 #endif
 
 // Bindings configuration.
-SLANG_PUBLIC static const int SCENE_SET = 0;
-SLANG_PUBLIC static const int SCENE_BINDING_IMAGES = 0;
-SLANG_PUBLIC static const int SCENE_BINDING_SAMPLER = 1;
-SLANG_PUBLIC static const int SCENE_BINDING_INSTANCE_INFO = 2;
+SLANG_PUBLIC static const int GLOBAL_SET = 0;
+SLANG_PUBLIC static const int GLOBAL_BINDING_IMAGES = 0;
+SLANG_PUBLIC static const int GLOBAL_BINDING_SAMPLER = 1;
 
-SLANG_PUBLIC static const int SCENE_MATERIAL_SET = 1;
+SLANG_PUBLIC static const int SCENE_BASE_SET = 1;
+SLANG_PUBLIC static const int SCENE_BASE_BINDING_INSTANCE_INFO = 2;
+SLANG_PUBLIC static const int SCENE_BASE_BINDING_INDEX_BUFFERS = 3;
+SLANG_PUBLIC static const int SCENE_BASE_BINDING_VERTEX_BUFFERS = 4;
+SLANG_PUBLIC static const int SCENE_BASE_BINDING_SCENE_INFO = 5;
+
+SLANG_PUBLIC static const int SCENE_MATERIAL_SET = 2;
 SLANG_PUBLIC static const int SCENE_MATERIAL_BINDING_LAMBERTIAN = 0;
 
-SLANG_PUBLIC static const int SCENE_LIGHT_SET = 2;
+SLANG_PUBLIC static const int SCENE_LIGHT_SET = 3;
 SLANG_PUBLIC static const int SCENE_LIGHT_BINDING_POINT = 0;
 SLANG_PUBLIC static const int SCENE_LIGHT_BINDING_DIRECTIONAL = 1;
 SLANG_PUBLIC static const int SCENE_LIGHT_BINDING_RECT = 2;
 
-SLANG_PUBLIC static const int KERNEL_SET_0 = 3;
+SLANG_PUBLIC static const int KERNEL_SET = 4;
 
 // Default texture indices.
 SLANG_PUBLIC static const int Black_2D_Texture_Index = 0;
@@ -192,6 +197,16 @@ SLANG_PUBLIC struct Rect_Light {
     }
 #endif
 };
+
+//
+// Kernel specific parameters
+// TODO: unused for now
+//
+//SLANG_PUBLIC struct Apply_Tonemap_Params
+//{
+//    SLANG_PUBLIC uint output_image_index;
+//    SLANG_PUBLIC uint tonemap_index;
+//};
 
 #ifdef __cplusplus
 } // namespace GPU_Types

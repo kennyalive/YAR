@@ -25,10 +25,13 @@ void Path_Tracing_Renderer::destroy()
     }
 }
 
-void Path_Tracing_Renderer::create_scene_kernels(Descriptor_Heap& descriptor_heap, const GPU_Scene& gpu_scene, const Scene& scene)
+void Path_Tracing_Renderer::create_scene_kernels(
+    Descriptor_Heap& descriptor_heap,
+    const GPU_Scene& gpu_scene,
+    const Scene& scene,
+    const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
-    const std::vector<VkDescriptorSetAndBindingMappingEXT> scene_descriptor_mappings = gpu_scene.get_scene_descriptor_mappings();
-    path_tracing.create(descriptor_heap, output_image_heap_offset, scene_descriptor_mappings, scene, gpu_scene.meshes);
+    path_tracing.create(descriptor_heap, output_image_heap_offset, descriptor_mappings, scene, gpu_scene.meshes);
 }
 
 void Path_Tracing_Renderer::create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap, uint32_t swapchain_images_heap_offset)

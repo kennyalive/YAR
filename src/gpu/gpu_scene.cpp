@@ -15,7 +15,7 @@ struct GPU_Vertex {
     Vector2 uv;
 };
 
-void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap)
+void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, Global_Descriptors& global_descriptors)
 {
     // Meshes
     meshes.resize(scene.geometries.triangle_meshes.size());
@@ -79,10 +79,10 @@ void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap)
 
     // Materials.
     {
-        images_2d.reserve(images_2d.size() + scene.texture_descriptors.size());
+        images.reserve(images.size() + scene.texture_descriptors.size());
         for (const Texture_Descriptor& texture_desc : scene.texture_descriptors) {
             Vk_Image image = vk_load_texture(scene.get_resource_absolute_path(texture_desc.file_name));
-            images_2d.push_back(image);
+            images.push_back(image);
         }
 
         std::vector<GPU_Types::Lambertian_Material> gpu_lambertian_materials(scene.materials.diffuse.size());
@@ -185,7 +185,7 @@ void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap)
     }
 
     descriptors.initialize(descriptor_heap);
-    write_descriptors(descriptor_heap);
+    write_descriptors(descriptor_heap, global_descriptors);
     loaded = true;
 }
 
@@ -197,10 +197,10 @@ void GPU_Scene::destroy()
     rect_lights.destroy();
     lambertian_material_buffer.destroy();
 
-    for (Vk_Image& image : images_2d) {
+    for (Vk_Image& image : images) {
         image.destroy();
     }
-    images_2d.clear();
+    images.clear();
 
     for (GPU_Mesh& mesh : meshes) {
         mesh.vertex_buffer.destroy();
@@ -212,22 +212,22 @@ void GPU_Scene::destroy()
     scene_info_buffer.destroy();
 }
 
-void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap)
+void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap, Global_Descriptors& global_descriptors)
 {
     // Material descriptors
     descriptor_heap.write_buffer_descriptor(lambertian_material_buffer.address_range(),
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.lambertian_materials);
 
     // Image descriptors
-    descriptors.images_2d = descriptor_heap.allocate_image_descriptor((uint32_t)images_2d.size() + Predefined_Texture_Count);
-    for (auto [i, image] : enumerate(images_2d)) {
-        const uint32_t heap_offset = descriptors.images_2d + uint32_t((i + Predefined_Texture_Count) * vk.descriptor_heap_properties.imageDescriptorSize);
+    global_descriptors.images = descriptor_heap.allocate_image_descriptor((uint32_t)images.size() + Predefined_Texture_Count);
+    for (auto [i, image] : enumerate(images)) {
+        const uint32_t heap_offset = global_descriptors.images + uint32_t((i + Predefined_Texture_Count) * vk.descriptor_heap_properties.imageDescriptorSize);
         descriptor_heap.write_image_descriptor(image.handle, image.format, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, heap_offset);
     }
 
     // Sampler descriptors
     VkSamplerCreateInfo sampler_create_info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-    descriptor_heap.write_sampler_descriptor(sampler_create_info, descriptors.image_sampler);
+    descriptor_heap.write_sampler_descriptor(sampler_create_info, global_descriptors.image_sampler);
 
     // Geometry descriptors
     descriptors.instance_infos = descriptor_heap.allocate_buffer_descriptor();
@@ -268,27 +268,19 @@ std::vector<VkDescriptorSetAndBindingMappingEXT> GPU_Scene::get_scene_descriptor
     std::vector<VkDescriptorSetAndBindingMappingEXT> mappings;
     // Base resources
     mappings.push_back(map_binding_to_heap_offset(
-        SCENE_SET, SCENE_BINDING_IMAGES, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT,
-        descriptors.images_2d, vk_image_descriptor_size()
-    ));
-    mappings.push_back(map_binding_to_heap_offset(
-        SCENE_SET, SCENE_BINDING_SAMPLER, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT,
-        descriptors.image_sampler
-    ));
-    mappings.push_back(map_binding_to_heap_offset(
-        SCENE_SET, SCENE_BINDING_INSTANCE_INFO, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        SCENE_BASE_SET, SCENE_BASE_BINDING_INSTANCE_INFO, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
         descriptors.instance_infos
     ));
     mappings.push_back(map_binding_to_heap_offset(
-        SCENE_SET, 3, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        SCENE_BASE_SET, SCENE_BASE_BINDING_INDEX_BUFFERS, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
         descriptors.index_buffers, vk_buffer_descriptor_size()
     ));
     mappings.push_back(map_binding_to_heap_offset(
-        SCENE_SET, 4, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        SCENE_BASE_SET, SCENE_BASE_BINDING_VERTEX_BUFFERS, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
         descriptors.vertex_buffers, vk_buffer_descriptor_size()
     ));
     mappings.push_back(map_binding_to_heap_offset(
-        SCENE_SET, 5, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
+        SCENE_BASE_SET, SCENE_BASE_BINDING_SCENE_INFO, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
         descriptors.scene_info_buffer, vk_buffer_descriptor_size()
     ));
     // Materials

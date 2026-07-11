@@ -4,16 +4,15 @@ struct Descriptor_Heap;
 
 struct Global_Descriptors
 {
+    uint32_t images = 0;
     uint32_t swapchain_images = 0;
+    uint32_t image_sampler = 0;
 
     void initialize(Descriptor_Heap& descriptor_heap);
 };
 
 struct Scene_Descriptors
 {
-    uint32_t images_2d = 0;
-    uint32_t image_sampler = 0;
-
     uint32_t instance_infos = 0;
     uint32_t index_buffers = 0;
     uint32_t vertex_buffers = 0;

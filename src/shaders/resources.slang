@@ -9,24 +9,27 @@ public struct Mesh_Vertex {
 };
 
 //
-// General scene data
+// Global renderer data
 //
-[[vk::binding(SCENE_BINDING_IMAGES, SCENE_SET)]]
-public Texture2D images_2d[];
+[[vk::binding(GLOBAL_BINDING_IMAGES, GLOBAL_SET)]]
+public Texture2D images[];
 
-[[vk::binding(SCENE_BINDING_SAMPLER, SCENE_SET)]]
+[[vk::binding(GLOBAL_BINDING_SAMPLER, GLOBAL_SET)]]
 public SamplerState image_sampler;
 
-[[vk::binding(SCENE_BINDING_INSTANCE_INFO, SCENE_SET)]]
+//
+// General scene data
+//
+[[vk::binding(SCENE_BASE_BINDING_INSTANCE_INFO, SCENE_BASE_SET)]]
 public StructuredBuffer<Instance_Info> instance_infos;
 
-[[vk::binding(3, SCENE_SET)]]
+[[vk::binding(SCENE_BASE_BINDING_INDEX_BUFFERS, SCENE_BASE_SET)]]
 public StructuredBuffer<uint> index_buffers[];
 
-[[vk::binding(4, SCENE_SET)]]
+[[vk::binding(SCENE_BASE_BINDING_VERTEX_BUFFERS, SCENE_BASE_SET)]]
 public StructuredBuffer<Mesh_Vertex> vertex_buffers[];
 
-[[vk::binding(5, SCENE_SET)]]
+[[vk::binding(SCENE_BASE_BINDING_SCENE_INFO, SCENE_BASE_SET)]]
 public StructuredBuffer<Scene_Info> scene_info_buffer;
 
 public Scene_Info get_scene_info()

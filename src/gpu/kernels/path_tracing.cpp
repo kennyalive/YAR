@@ -74,10 +74,10 @@ void Path_Tracing::create_pipeline(uint32_t output_image_heap_offset,
         stage_infos[3].pName = "main";
 
         const VkDescriptorSetAndBindingMappingEXT raygen_output_image_mapping = map_binding_to_heap_offset(
-            KERNEL_SET_0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT, output_image_heap_offset
+            KERNEL_SET, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT, output_image_heap_offset
         );
         const VkDescriptorSetAndBindingMappingEXT raygen_accel_mapping = map_binding_to_heap_offset(
-            KERNEL_SET_0, 1, VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT,
+            KERNEL_SET, 1, VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT,
             accelerator_heap_offset
         );
         VkDescriptorSetAndBindingMappingEXT raygen_mappings[2] = {

@@ -18,7 +18,7 @@ struct GLFWwindow;
 struct Reference_Renderer_Config;
 struct Scene_Overrides;
 
-struct Default_Textures
+struct Global_Textures
 {
     Vk_Image black_texture;
 
@@ -56,7 +56,7 @@ private:
     bool spp4 = false;
 
     Flying_Camera flying_camera;
-    Default_Textures default_textures;
+    Global_Textures global_textures;
     Descriptor_Heap descriptor_heap;
     Global_Descriptors global_descriptors;
     Kernels kernels;

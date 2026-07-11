@@ -9,10 +9,10 @@ import shading_context;
 [[vk::push_constant]]
 Frame_Params frame_params;
 
-[[vk::binding(0, 1)]]
+[[vk::binding(0, SCENE_MATERIAL_SET)]]
 ParameterBlock<Materials> materials;
 
-[[vk::binding(1, KERNEL_SET_0)]]
+[[vk::binding(1, KERNEL_SET)]]
 RaytracingAccelerationStructure accel;
 
 Vertex fetch_vertex(int index)

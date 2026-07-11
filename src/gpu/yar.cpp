@@ -15,18 +15,16 @@
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_glfw.h"
 
-const VkFormat output_image_format = VK_FORMAT_R16G16B16A16_SFLOAT;
-
-void Default_Textures::create()
+void Global_Textures::create()
 {
     uint8_t black[4] = { 0, 0, 0, 255 };
     black_texture = vk_create_texture(1, 1, VK_FORMAT_R8G8B8A8_UNORM, false, black, 4, "black_texture_1x1");
 }
 
-void Default_Textures::destroy()
+void Global_Textures::destroy()
 {
     black_texture.destroy();
-    *this = Default_Textures{};
+    *this = Global_Textures{};
 }
 
 void YAR::initialize(GLFWwindow* window, int gpu_index) {
@@ -138,7 +136,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     direct_lighting_renderer.initialize(descriptor_heap, time_keeper);
 
     restore_resolution_dependent_resources();
-    default_textures.create();
+    global_textures.create();
 
     // ImGui setup.
     {
@@ -191,7 +189,7 @@ void YAR::shutdown() {
         kernels.destroy_scene_kernels();
         gpu_scene.destroy();
     }
-    default_textures.destroy();
+    global_textures.destroy();
     vk_shutdown();
 }
 
@@ -227,10 +225,22 @@ void YAR::load_project(const std::string& input_file) {
     wait_for_reference_renderer();
 
     scene = load_scene(input_file);
-    gpu_scene.load(scene, descriptor_heap);
+    gpu_scene.load(scene, descriptor_heap, global_descriptors);
     kernels.create_scene_kernels(global_descriptors, descriptor_heap, gpu_scene, scene);
-    path_tracing_renderer.create_scene_kernels(descriptor_heap, gpu_scene, scene);
-    direct_lighting_renderer.create_scene_kernels(descriptor_heap, gpu_scene, scene);
+
+    std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = gpu_scene.get_scene_descriptor_mappings();
+
+    descriptor_mappings.push_back(map_binding_to_heap_offset(
+        GLOBAL_SET, GLOBAL_BINDING_IMAGES, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT,
+        global_descriptors.images, vk_image_descriptor_size()
+    ));
+    descriptor_mappings.push_back(map_binding_to_heap_offset(
+        GLOBAL_SET, GLOBAL_BINDING_SAMPLER, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT,
+        global_descriptors.image_sampler
+    ));
+
+    path_tracing_renderer.create_scene_kernels(descriptor_heap, gpu_scene, scene, descriptor_mappings);
+    direct_lighting_renderer.create_scene_kernels(descriptor_heap, gpu_scene, scene, descriptor_mappings);
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
 
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
