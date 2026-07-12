@@ -12,9 +12,10 @@ Frame_Params frame_params;
 struct KernelParams {
     [[vk::image_format("rgba16f")]]
     RWTexture2D<float4> output_image;
-
-    RaytracingAccelerationStructure accel;
 }
+
+[[vk::binding(SCENE_BASE_BINDING_ACCELERATOR, SCENE_BASE_SET)]]
+RaytracingAccelerationStructure accel;
 
 [[vk::binding(0, SCENE_MATERIAL_SET)]]
 ParameterBlock<Materials> materials;
@@ -63,7 +64,7 @@ void main()
         ray_desc.TMax = tmax;
 
         Path_Payload payload;
-        TraceRay(params.accel, RAY_FLAG_FORCE_OPAQUE, 0xffu, 0, 0, 0, ray_desc, payload);
+        TraceRay(accel, RAY_FLAG_FORCE_OPAQUE, 0xffu, 0, 0, 0, ray_desc, payload);
 
         if (!payload.hit) {
             break;

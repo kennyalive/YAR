@@ -8,9 +8,10 @@ Frame_Params frame_params;
 struct KernelParams {
     [[vk::image_format("rgba16f")]]
     RWTexture2D<float4> output_image;
-
-    RaytracingAccelerationStructure accel;
 }
+
+[[vk::binding(SCENE_BASE_BINDING_ACCELERATOR, SCENE_BASE_SET)]]
+RaytracingAccelerationStructure accel;
 
 [[vk::binding(0, KERNEL_SET)]]
 ParameterBlock<KernelParams> params;
@@ -29,7 +30,7 @@ float3 trace_ray(float2 sample_pos, Frame_Params frame_params)
     ray_desc.TMax = tmax;
 
     Ray_Payload payload;
-    TraceRay(params.accel, RAY_FLAG_FORCE_OPAQUE, 0xffu, 0, 0, 0, ray_desc, payload);
+    TraceRay(accel, RAY_FLAG_FORCE_OPAQUE, 0xffu, 0, 0, 0, ray_desc, payload);
     return payload.color;
 }
 

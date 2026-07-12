@@ -239,8 +239,8 @@ void YAR::load_project(const std::string& input_file) {
         global_descriptors.image_sampler
     ));
 
-    path_tracing_renderer.create_scene_kernels(descriptor_heap, gpu_scene, scene, descriptor_mappings);
-    direct_lighting_renderer.create_scene_kernels(descriptor_heap, gpu_scene, scene, descriptor_mappings);
+    path_tracing_renderer.create_scene_kernels(descriptor_mappings);
+    direct_lighting_renderer.create_scene_kernels(descriptor_mappings);
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
 
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {

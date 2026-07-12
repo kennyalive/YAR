@@ -17,6 +17,7 @@ struct Scene_Descriptors
     uint32_t index_buffers = 0;
     uint32_t vertex_buffers = 0;
     uint32_t scene_info_buffer = 0;
+    uint32_t accelerator = 0;
 
     uint32_t lambertian_materials = 0;
     uint32_t point_lights = 0;

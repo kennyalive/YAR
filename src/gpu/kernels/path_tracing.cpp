@@ -6,13 +6,11 @@
 #include "shaders/shared.slang"
 #include "lib/scene.h"
 
-void Path_Tracing::create(Descriptor_Heap& descriptor_heap, uint32_t output_image_heap_offset,
-    const std::vector<VkDescriptorSetAndBindingMappingEXT>& scene_descriptor_mappings,
-    const Scene& scene, const std::vector<GPU_Mesh>& gpu_meshes)
+void Path_Tracing::create(
+    uint32_t output_image_heap_offset,
+    const std::vector<VkDescriptorSetAndBindingMappingEXT>& scene_descriptor_mappings
+)
 {
-    accelerator = create_intersection_accelerator(scene.objects, gpu_meshes);
-    accelerator_heap_offset = descriptor_heap.allocate_buffer_descriptor();
-    descriptor_heap.write_acceleration_structure_descriptor(accelerator.top_level_accel.device_address, accelerator_heap_offset);
     create_pipeline(output_image_heap_offset, scene_descriptor_mappings);
 
     // Shader binding table.
@@ -38,12 +36,13 @@ void Path_Tracing::create(Descriptor_Heap& descriptor_heap, uint32_t output_imag
 void Path_Tracing::destroy()
 {
     shader_binding_table.destroy();
-    accelerator.destroy();
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
 
-void Path_Tracing::create_pipeline(uint32_t output_image_heap_offset,
-    const std::vector<VkDescriptorSetAndBindingMappingEXT>& scene_descriptor_mappings)
+void Path_Tracing::create_pipeline(
+    uint32_t output_image_heap_offset,
+    const std::vector<VkDescriptorSetAndBindingMappingEXT>& scene_descriptor_mappings
+)
 {
     // pipeline
     {
@@ -76,13 +75,8 @@ void Path_Tracing::create_pipeline(uint32_t output_image_heap_offset,
         const VkDescriptorSetAndBindingMappingEXT raygen_output_image_mapping = map_binding_to_heap_offset(
             KERNEL_SET, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT, output_image_heap_offset
         );
-        const VkDescriptorSetAndBindingMappingEXT raygen_accel_mapping = map_binding_to_heap_offset(
-            KERNEL_SET, 1, VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT,
-            accelerator_heap_offset
-        );
-        VkDescriptorSetAndBindingMappingEXT raygen_mappings[2] = {
-            raygen_output_image_mapping,
-            raygen_accel_mapping
+        VkDescriptorSetAndBindingMappingEXT raygen_mappings[1] = {
+            raygen_output_image_mapping
         };
 
         std::vector<VkDescriptorSetAndBindingMappingEXT> mappings = scene_descriptor_mappings;

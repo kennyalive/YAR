@@ -184,6 +184,11 @@ void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, Globa
             &scene_info, "scene_info_buffer");
     }
 
+    // Acceleration structures
+    {
+        intersection_accelerator = create_intersection_accelerator(scene.objects, meshes);
+    }
+
     descriptors.initialize(descriptor_heap);
     write_descriptors(descriptor_heap, global_descriptors);
     loaded = true;
@@ -201,6 +206,8 @@ void GPU_Scene::destroy()
         image.destroy();
     }
     images.clear();
+
+    intersection_accelerator.destroy();
 
     for (GPU_Mesh& mesh : meshes) {
         mesh.vertex_buffer.destroy();
@@ -261,6 +268,13 @@ void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap, Global_Descr
     descriptors.scene_info_buffer = descriptor_heap.allocate_buffer_descriptor();
     descriptor_heap.write_buffer_descriptor(scene_info_buffer.address_range(),
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.scene_info_buffer);
+
+    // Intersection accelerator
+    descriptors.accelerator = descriptor_heap.allocate_buffer_descriptor();
+    descriptor_heap.write_acceleration_structure_descriptor(
+        intersection_accelerator.top_level_accel.device_address,
+        descriptors.accelerator
+    );
 }
 
 std::vector<VkDescriptorSetAndBindingMappingEXT> GPU_Scene::get_scene_descriptor_mappings() const
@@ -283,6 +297,11 @@ std::vector<VkDescriptorSetAndBindingMappingEXT> GPU_Scene::get_scene_descriptor
         SCENE_BASE_SET, SCENE_BASE_BINDING_SCENE_INFO, VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT,
         descriptors.scene_info_buffer, vk_buffer_descriptor_size()
     ));
+    mappings.push_back(map_binding_to_heap_offset(
+        SCENE_BASE_SET, SCENE_BASE_BINDING_ACCELERATOR, VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT,
+        descriptors.accelerator
+    ));
+
     // Materials
     mappings.push_back(map_binding_to_heap_offset(
         SCENE_MATERIAL_SET, SCENE_MATERIAL_BINDING_LAMBERTIAN, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT,

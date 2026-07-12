@@ -28,12 +28,7 @@ struct Path_Tracing_Renderer
     void initialize(Descriptor_Heap& descriptor_heap, Vk_Time_Keeper& time_keeper);
     void destroy();
 
-    void create_scene_kernels(
-        Descriptor_Heap& descriptor_heap,
-        const GPU_Scene& gpu_scene,
-        const Scene& scene,
-        const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings
-    );
+    void create_scene_kernels(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
     void create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap, uint32_t swapchain_images_heap_offset);
     void destroy_resolution_dependent_resources();
 

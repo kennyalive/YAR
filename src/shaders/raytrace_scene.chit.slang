@@ -12,7 +12,7 @@ Frame_Params frame_params;
 [[vk::binding(0, SCENE_MATERIAL_SET)]]
 ParameterBlock<Materials> materials;
 
-[[vk::binding(1, KERNEL_SET)]]
+[[vk::binding(SCENE_BASE_BINDING_ACCELERATOR, SCENE_BASE_SET)]]
 RaytracingAccelerationStructure accel;
 
 Vertex fetch_vertex(int index)

@@ -1,8 +1,9 @@
 #pragma once
 
+#include "acceleration_structure.h"
 #include "descriptors.h"
-#include "vk.h"
 #include "lib/material.h"
+#include "vk.h"
 
 struct Descriptor_Heap;
 struct Global_Descriptors;
@@ -25,6 +26,7 @@ struct GPU_Scene
 
     std::vector<Vk_Image> images;
     std::vector<GPU_Mesh> meshes;
+    Vk_Intersection_Accelerator intersection_accelerator;
     Vk_Buffer instance_info_buffer;
     Vk_Buffer scene_info_buffer;
     Vk_Buffer point_lights;
