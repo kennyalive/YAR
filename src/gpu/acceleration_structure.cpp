@@ -14,7 +14,7 @@ struct GPU_Vertex {
     Vector2 uv;
 };
 
-static BLAS_Info create_BLAS(const GPU_Mesh& mesh)
+static BLAS_Info create_BLAS(const GPU_Mesh& mesh, VkDeviceAddress mesh_vertex_data_address, VkDeviceAddress index_vertex_data_address)
 {
     VkAccelerationStructureGeometryKHR geometry { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
     geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
@@ -22,11 +22,11 @@ static BLAS_Info create_BLAS(const GPU_Mesh& mesh)
     auto& trianglesData = geometry.geometry.triangles;
     trianglesData = VkAccelerationStructureGeometryTrianglesDataKHR{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR };
     trianglesData.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-    trianglesData.vertexData.deviceAddress = mesh.vertex_buffer.device_address;
+    trianglesData.vertexData.deviceAddress = mesh_vertex_data_address + mesh.first_vertex_offset;
     trianglesData.vertexStride = sizeof(GPU_Vertex);
     trianglesData.maxVertex = mesh.vertex_count - 1;
     trianglesData.indexType = VK_INDEX_TYPE_UINT32;
-    trianglesData.indexData.deviceAddress = mesh.index_buffer.device_address;
+    trianglesData.indexData.deviceAddress = index_vertex_data_address + mesh.first_index_offset;
 
     VkAccelerationStructureBuildGeometryInfoKHR build_info{ VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR };
     build_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
@@ -127,7 +127,9 @@ static TLAS_Info create_TLAS(uint32_t instance_count, VkDeviceAddress instances_
 
 Vk_Intersection_Accelerator create_intersection_accelerator(
     const std::vector<Scene_Object>& scene_objects,
-    const std::vector<GPU_Mesh>& gpu_meshes)
+    const std::vector<GPU_Mesh>& gpu_meshes,
+    VkDeviceAddress mesh_vertex_data_address,
+    VkDeviceAddress index_vertex_data_address)
 {
     Timestamp t;
     Vk_Intersection_Accelerator accelerator;
@@ -135,7 +137,7 @@ Vk_Intersection_Accelerator create_intersection_accelerator(
     // Create BLASes.
     accelerator.bottom_level_accels.resize(gpu_meshes.size());
     for (int i = 0; i < (int)gpu_meshes.size(); i++) {
-        accelerator.bottom_level_accels[i] = create_BLAS(gpu_meshes[i]);
+        accelerator.bottom_level_accels[i] = create_BLAS(gpu_meshes[i], mesh_vertex_data_address, index_vertex_data_address);
     }
     // Create instance buffer.
     {

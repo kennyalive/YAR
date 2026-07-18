@@ -1,6 +1,6 @@
 #pragma once
 
-constexpr int VK_VERSION = 4;
+constexpr int VK_VERSION = -4;
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -199,6 +199,7 @@ struct Vk_Instance {
     VkDescriptorPool                imgui_descriptor_pool;
 
     // Cached properties
+    VkPhysicalDeviceLimits                              device_limits{};
     VkPhysicalDeviceDescriptorHeapPropertiesEXT         descriptor_heap_properties{};
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR     ray_tracing_pipeline_properties{};
 };

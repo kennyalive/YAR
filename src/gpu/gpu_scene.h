@@ -11,8 +11,8 @@ struct Scene;
 
 struct GPU_Mesh 
 {
-    Vk_Buffer vertex_buffer;
-    Vk_Buffer index_buffer;
+    uint64_t first_vertex_offset = -1;
+    uint64_t first_index_offset = -1;
     uint32_t vertex_count = 0;
     uint32_t index_count = 0;
     Material_Handle material;
@@ -26,7 +26,9 @@ struct GPU_Scene
 
     std::vector<Vk_Image> images;
     std::vector<GPU_Mesh> meshes;
-    Vk_Intersection_Accelerator intersection_accelerator;
+    Vk_Intersection_Accelerator accelerator;
+    Vk_Buffer mesh_vertex_data;
+    Vk_Buffer mesh_index_data;
     Vk_Buffer instance_info_buffer;
     Vk_Buffer scene_info_buffer;
     Vk_Buffer point_lights;

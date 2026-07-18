@@ -18,45 +18,97 @@ struct GPU_Vertex {
 void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, Global_Descriptors& global_descriptors)
 {
     // Meshes
-    meshes.resize(scene.geometries.triangle_meshes.size());
-    for (int i = 0; i < (int)scene.geometries.triangle_meshes.size(); i++) {
-        const Triangle_Mesh& triangle_mesh = scene.geometries.triangle_meshes[i];
-        GPU_Mesh& gpu_mesh = meshes[i];
-
-        gpu_mesh.vertex_count = (uint32_t)triangle_mesh.vertices.size();
-        gpu_mesh.index_count = (uint32_t)triangle_mesh.indices.size();
-
-        // TODO: Create separate buffers per attribute instead of single bufffer:
-        // better cache coherency when working only with subset of vertex attributes,
-        // also it will match Triangle_Mesh data layout, so no conversion will be needed.
-        std::vector<GPU_Vertex> gpu_vertices(gpu_mesh.vertex_count);
-        for (size_t k = 0; k < gpu_mesh.vertex_count; k++) {
-            gpu_vertices[k].position = triangle_mesh.vertices[k];
-            if (!triangle_mesh.normals.empty())
-                gpu_vertices[k].normal = triangle_mesh.normals[k];
-            if (!triangle_mesh.uvs.empty())
-                gpu_vertices[k].uv = triangle_mesh.uvs[k];
+    {
+        uint64_t vertex_data_size = 0;
+        uint64_t index_data_size = 0;
+        uint64_t max_mesh_vertex_count = 0;
+        uint64_t max_mesh_index_count = 0;
+        for (const Triangle_Mesh& mesh : scene.geometries.triangle_meshes) {
+            const uint64_t vertex_count = (uint64_t)mesh.vertices.size();
+            const uint64_t index_count = (uint64_t)mesh.indices.size();
+            max_mesh_vertex_count = std::max(max_mesh_vertex_count, vertex_count);
+            max_mesh_index_count = std::max(max_mesh_index_count, index_count);
+            vertex_data_size = round_up(vertex_data_size + vertex_count * sizeof(GPU_Vertex), vk.device_limits.minStorageBufferOffsetAlignment);
+            index_data_size = round_up(index_data_size + index_count * sizeof(uint32_t), vk.device_limits.minStorageBufferOffsetAlignment);
         }
 
-        const VkDeviceSize vertex_buffer_size = gpu_vertices.size() * sizeof(GPU_Vertex);
-        VkBufferUsageFlags vertex_usage_flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+        const VkBufferUsageFlags vertex_usage_flags =
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+        mesh_vertex_data = vk_create_buffer(vertex_data_size, vertex_usage_flags, nullptr, "mesh_vertex_data");
 
-        gpu_mesh.vertex_buffer = vk_create_buffer(vertex_buffer_size, vertex_usage_flags, gpu_vertices.data(), "vertex_buffer");
+        const VkBufferUsageFlags index_usage_flags =
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+        mesh_index_data = vk_create_buffer(index_data_size, index_usage_flags, nullptr, "mesh_index_data");
 
-        const VkDeviceSize index_buffer_size = triangle_mesh.indices.size() * sizeof(triangle_mesh.indices[0]);
-        VkBufferUsageFlags index_usage_flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
-            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+        Vk_Buffer vertex_scratch_buffer = vk_create_mapped_buffer(max_mesh_vertex_count * sizeof(GPU_Vertex),
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "vertex_scratch");
+        Vk_Buffer index_scratch_buffer = vk_create_mapped_buffer(max_mesh_index_count * sizeof(uint32_t),
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "index_scratch");
 
-        gpu_mesh.index_buffer = vk_create_buffer(index_buffer_size, index_usage_flags, triangle_mesh.indices.data(), "index_buffer");
+        uint64_t vertex_offset = 0;
+        uint64_t index_offset = 0;
+        meshes.resize(scene.geometries.triangle_meshes.size());
+        for (int i = 0; i < (int)scene.geometries.triangle_meshes.size(); i++) {
+            const Triangle_Mesh& mesh = scene.geometries.triangle_meshes[i];
 
-        // TODO: this is wrong! render objects list should not be indexed by geometry index. 
-        // Will be fixed when gpu renderer will support Render_Objects (i.e. instancing).
-        int area_light_index = i - int(scene.geometries.triangle_meshes.size() - scene.lights.diffuse_rectangular_lights.size());
-        if (area_light_index >= 0)
-            gpu_mesh.area_light_index = area_light_index;
-        else
-            gpu_mesh.material = scene.objects[i].material;
+            // Initialize GPU_Mesh
+            GPU_Mesh& gpu_mesh = meshes[i];
+            gpu_mesh.first_vertex_offset = vertex_offset;
+            gpu_mesh.vertex_count = (uint32_t)mesh.vertices.size();
+            gpu_mesh.first_index_offset = index_offset;
+            gpu_mesh.index_count = (uint32_t)mesh.indices.size();
+            // TODO: this is wrong! render objects list should not be indexed by geometry index. 
+            // Will be fixed when gpu renderer will support Render_Objects (i.e. instancing).
+            int area_light_index = i - int(scene.geometries.triangle_meshes.size() - scene.lights.diffuse_rectangular_lights.size());
+            if (area_light_index >= 0)
+                gpu_mesh.area_light_index = area_light_index;
+            else
+                gpu_mesh.material = scene.objects[i].material;
+
+            // Copy vertices to subregion of global vertex/index buffer
+            GPU_Vertex* p_vertex = vertex_scratch_buffer.get_mapped_data<GPU_Vertex>();
+            for (size_t k = 0; k < gpu_mesh.vertex_count; k++, p_vertex++) {
+                GPU_Vertex vertex{};
+                vertex.position = mesh.vertices[k];
+                if (!mesh.normals.empty()) {
+                    vertex.normal = mesh.normals[k];
+                }
+                if (!mesh.uvs.empty()) {
+                    vertex.uv = mesh.uvs[k];
+                }
+                *p_vertex = vertex;
+            }
+            memcpy(index_scratch_buffer.mapped_ptr, mesh.indices.data(), mesh.indices.size() * sizeof(uint32_t));
+
+            const uint64_t vertex_data_size = gpu_mesh.vertex_count * sizeof(GPU_Vertex);
+            const uint64_t index_data_size = gpu_mesh.index_count * sizeof(uint32_t);
+            vk_execute(vk.command_pools[0], vk.queue,
+                [this, &vertex_scratch_buffer, &index_scratch_buffer,
+                vertex_offset, index_offset, vertex_data_size, index_data_size]
+                (VkCommandBuffer command_buffer)
+            {
+                VkBufferCopy region{};
+                region.srcOffset = 0;
+
+                region.dstOffset = vertex_offset;
+                region.size = vertex_data_size;
+                vkCmdCopyBuffer(command_buffer, vertex_scratch_buffer.handle, mesh_vertex_data.handle, 1, &region);
+
+                region.dstOffset = index_offset;
+                region.size = index_data_size;
+                vkCmdCopyBuffer(command_buffer, index_scratch_buffer.handle, mesh_index_data.handle, 1, &region);
+            });
+            vertex_offset = round_up(vertex_offset + vertex_data_size, vk.device_limits.minStorageBufferOffsetAlignment);
+            index_offset = round_up(index_offset + index_data_size, vk.device_limits.minStorageBufferOffsetAlignment);
+        }
+        vertex_scratch_buffer.destroy();
+        index_scratch_buffer.destroy();
     }
 
     // Instance buffer.
@@ -186,7 +238,7 @@ void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, Globa
 
     // Acceleration structures
     {
-        intersection_accelerator = create_intersection_accelerator(scene.objects, meshes);
+        accelerator = create_intersection_accelerator(scene.objects, meshes, mesh_vertex_data.device_address, mesh_index_data.device_address);
     }
 
     descriptors.initialize(descriptor_heap);
@@ -207,14 +259,10 @@ void GPU_Scene::destroy()
     }
     images.clear();
 
-    intersection_accelerator.destroy();
-
-    for (GPU_Mesh& mesh : meshes) {
-        mesh.vertex_buffer.destroy();
-        mesh.index_buffer.destroy();
-    }
+    accelerator.destroy();
+    mesh_vertex_data.destroy();
+    mesh_index_data.destroy();
     meshes.clear();
-
     instance_info_buffer.destroy();
     scene_info_buffer.destroy();
 }
@@ -245,13 +293,21 @@ void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap, Global_Descr
         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.instance_infos);
 
     for (size_t i = 0; i < meshes.size(); i++) {
-        const uint32_t element_offset = uint32_t(i * vk.descriptor_heap_properties.bufferDescriptorSize);
+        const uint32_t descriptor_offset = uint32_t(i * vk.descriptor_heap_properties.bufferDescriptorSize);
 
-        descriptor_heap.write_buffer_descriptor(meshes[i].index_buffer.address_range(),
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.index_buffers + element_offset);
+        const VkDeviceAddressRangeEXT vertex_range{
+            mesh_vertex_data.device_address + meshes[i].first_vertex_offset,
+            meshes[i].vertex_count * sizeof(GPU_Vertex)
+        };
+        descriptor_heap.write_buffer_descriptor(vertex_range, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            descriptors.vertex_buffers + descriptor_offset);
 
-        descriptor_heap.write_buffer_descriptor(meshes[i].vertex_buffer.address_range(),
-            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptors.vertex_buffers + element_offset);
+        const VkDeviceAddressRangeEXT index_range{
+            mesh_index_data.device_address + meshes[i].first_index_offset,
+            meshes[i].index_count * sizeof(uint32_t)
+        };
+        descriptor_heap.write_buffer_descriptor(index_range, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            descriptors.index_buffers + descriptor_offset);
     }
 
     // Light descriptors
@@ -272,7 +328,7 @@ void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap, Global_Descr
     // Intersection accelerator
     descriptors.accelerator = descriptor_heap.allocate_buffer_descriptor();
     descriptor_heap.write_acceleration_structure_descriptor(
-        intersection_accelerator.top_level_accel.device_address,
+        accelerator.top_level_accel.device_address,
         descriptors.accelerator
     );
 }

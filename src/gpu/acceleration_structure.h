@@ -25,4 +25,9 @@ struct Vk_Intersection_Accelerator {
     void destroy();
 };
 
-Vk_Intersection_Accelerator create_intersection_accelerator(const std::vector<Scene_Object>& scene_objects, const std::vector<GPU_Mesh>& gpu_meshes); 
+Vk_Intersection_Accelerator create_intersection_accelerator(
+    const std::vector<Scene_Object>& scene_objects,
+    const std::vector<GPU_Mesh>& gpu_meshes,
+    VkDeviceAddress mesh_vertex_data_address,
+    VkDeviceAddress index_vertex_data_address
+);

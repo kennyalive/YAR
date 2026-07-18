@@ -341,6 +341,7 @@ void vk_initialize(GLFWwindow* window, const Vk_Init_Params& init_params)
             vk.descriptor_heap_properties.pNext = &vk.ray_tracing_pipeline_properties;
         }
         vkGetPhysicalDeviceProperties2(vk.physical_device, &physical_device_properties);
+        vk.device_limits = physical_device_properties.properties.limits;
     }
 }
 
