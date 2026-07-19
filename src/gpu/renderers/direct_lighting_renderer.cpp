@@ -2,15 +2,16 @@
 #include "lib/common.h"
 #include "direct_lighting_renderer.h"
 #include "../descriptor_heap.h"
+#include "../descriptor_offsets.h"
 #include "../gpu_scene.h"
 
 constexpr VkFormat output_image_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 
-void Direct_Lighting_Renderer::initialize(Descriptor_Heap& descriptor_heap, Vk_Time_Keeper& time_keeper)
+void Direct_Lighting_Renderer::initialize(const Descriptor_Offsets& descriptor_offsets, Vk_Time_Keeper& time_keeper)
 {
-    output_image_heap_offset = descriptor_heap.allocate_image_descriptor();
-    tonemapped_image_heap_offset = descriptor_heap.allocate_image_descriptor();
-    apply_tone_mapping.create(output_image_heap_offset, tonemapped_image_heap_offset);
+    const uint32_t output_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_output);
+    const uint32_t tonemap_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_tonemap);
+    apply_tone_mapping.create(output_image_offset, tonemap_image_offset);
 
     timer_draw = time_keeper.allocate_timer("direct_draw");
     timer_tonemap = time_keeper.allocate_timer("direct_tone_map");
@@ -25,12 +26,14 @@ void Direct_Lighting_Renderer::destroy()
     }
 }
 
-void Direct_Lighting_Renderer::create_scene_kernels(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
+void Direct_Lighting_Renderer::create_scene_kernels(const Descriptor_Offsets& descriptor_offsets, const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
-    direct_lighting.create(output_image_heap_offset, descriptor_mappings);
+    const uint32_t output_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_output);
+    direct_lighting.create(output_image_offset, descriptor_mappings);
 }
 
-void Direct_Lighting_Renderer::create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap, uint32_t swapchain_images_heap_offset)
+void Direct_Lighting_Renderer::create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap,
+    uint32_t output_image_heap_offset, uint32_t tonemap_image_heap_offset, uint32_t swapchain_images_heap_offset)
 {
     // output image
     {
@@ -46,7 +49,6 @@ void Direct_Lighting_Renderer::create_resolution_dependent_resources(Descriptor_
         descriptor_heap.write_image_descriptor(output_image.handle, output_image.format,
             VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, output_image_heap_offset);
     }
-
     // tone mapped image
     {
         tonemapped_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, output_image_format,
@@ -59,10 +61,9 @@ void Direct_Lighting_Renderer::create_resolution_dependent_resources(Descriptor_
             });
 
         descriptor_heap.write_image_descriptor(tonemapped_image.handle, tonemapped_image.format,
-            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, tonemapped_image_heap_offset);
+            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, tonemap_image_heap_offset);
     }
-
-    copy_to_swapchain.create(tonemapped_image_heap_offset, swapchain_images_heap_offset);
+    copy_to_swapchain.create(tonemap_image_heap_offset, swapchain_images_heap_offset);
 }
 
 void Direct_Lighting_Renderer::destroy_resolution_dependent_resources()

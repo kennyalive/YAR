@@ -130,10 +130,10 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     }
 
     descriptor_heap.create();
-    global_descriptors.initialize(descriptor_heap);
-    kernels.create_global_kernels(global_descriptors);
-    path_tracing_renderer.initialize(descriptor_heap, time_keeper);
-    direct_lighting_renderer.initialize(descriptor_heap, time_keeper);
+    descriptor_offsets.initialize(descriptor_heap);
+    kernels.create_global_kernels(descriptor_offsets);
+    path_tracing_renderer.initialize(descriptor_offsets, time_keeper);
+    direct_lighting_renderer.initialize(descriptor_offsets, time_keeper);
 
     restore_resolution_dependent_resources();
     global_textures.create();
@@ -210,37 +210,49 @@ void YAR::release_resolution_dependent_resources()
 
 void YAR::restore_resolution_dependent_resources()
 {
-    path_tracing_renderer.create_resolution_dependent_resources(descriptor_heap, global_descriptors.swapchain_images);
-    direct_lighting_renderer.create_resolution_dependent_resources(descriptor_heap, global_descriptors.swapchain_images);
-
-    // swapchain images
+    const uint32_t swapchain_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::swapchain_first_image);
+    if (vk.swapchain_info.images.size() > max_swapchain_image_descriptors) {
+        error("Too many swapchain images (%u), max_swapchain_image_descriptors = %u\n",
+            (uint32_t)vk.swapchain_info.images.size(), max_swapchain_image_descriptors);
+    }
     for (size_t i = 0; i < vk.swapchain_info.images.size(); i++) {
-        const uint32_t heap_offset = global_descriptors.swapchain_images + uint32_t(i * vk.descriptor_heap_properties.imageDescriptorSize);
+        const uint32_t heap_offset = swapchain_image_offset + uint32_t(i * vk.descriptor_heap_properties.imageDescriptorSize);
         descriptor_heap.write_image_descriptor(vk.swapchain_info.images[i], vk.surface_format.format,
             VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, heap_offset);
     }
+
+    path_tracing_renderer.create_resolution_dependent_resources(descriptor_heap,
+        descriptor_offsets.get_image_descriptor_offset(Image_Index::path_tracer_output),
+        descriptor_offsets.get_image_descriptor_offset(Image_Index::path_tracer_tonemap),
+        swapchain_image_offset
+    );
+    direct_lighting_renderer.create_resolution_dependent_resources(descriptor_heap,
+        descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_output),
+        descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_tonemap),
+        swapchain_image_offset
+    );
 }
 
 void YAR::load_project(const std::string& input_file) {
     wait_for_reference_renderer();
 
     scene = load_scene(input_file);
-    gpu_scene.load(scene, descriptor_heap, global_descriptors);
-    kernels.create_scene_kernels(global_descriptors, descriptor_heap, gpu_scene, scene);
+    gpu_scene.load(scene, descriptor_heap, descriptor_offsets);
+    kernels.create_scene_kernels(descriptor_offsets, descriptor_heap, gpu_scene, scene);
 
-    std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = gpu_scene.get_scene_descriptor_mappings();
+    std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_offsets.get_descriptor_mappings();
 
     descriptor_mappings.push_back(map_binding_to_heap_offset(
         GLOBAL_SET, GLOBAL_BINDING_IMAGES, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT,
-        global_descriptors.images, vk_image_descriptor_size()
+        descriptor_offsets.images, vk_image_descriptor_size()
     ));
     descriptor_mappings.push_back(map_binding_to_heap_offset(
         GLOBAL_SET, GLOBAL_BINDING_SAMPLER, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT,
-        global_descriptors.image_sampler
+        descriptor_offsets.image_sampler
     ));
 
-    path_tracing_renderer.create_scene_kernels(descriptor_mappings);
-    direct_lighting_renderer.create_scene_kernels(descriptor_mappings);
+    path_tracing_renderer.create_scene_kernels(descriptor_offsets, descriptor_mappings);
+    direct_lighting_renderer.create_scene_kernels(descriptor_offsets, descriptor_mappings);
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
 
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {

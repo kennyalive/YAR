@@ -4,10 +4,12 @@
 
 #include "lib/math.h"
 
+constexpr uint32_t resource_heap_size = 1024 * 1024;
+constexpr uint32_t sampler_heap_size = 32 * 1024;
+
 void Descriptor_Heap::create()
 {
     const auto& properties = vk.descriptor_heap_properties;
-    const uint32_t resource_heap_size = 1024 * 1024;
     ASSERT(resource_heap_size <= properties.maxResourceHeapSize);
     resource_heap_buffer = vk_create_mapped_buffer_with_alignment(
         resource_heap_size,
@@ -24,7 +26,6 @@ void Descriptor_Heap::create()
         resource_reserved_region_alignment
     );
 
-    const uint32_t sampler_heap_size = 32 * 1024;
     ASSERT(sampler_heap_size <= properties.maxSamplerHeapSize);
     sampler_heap_buffer = vk_create_mapped_buffer_with_alignment(
         sampler_heap_size,
@@ -64,11 +65,11 @@ void Descriptor_Heap::bind(VkCommandBuffer command_buffer) const
     vkCmdBindSamplerHeapEXT(command_buffer, &sampler_heap_info);
 }
 
-uint32_t Descriptor_Heap::allocate_buffer_descriptor(uint32_t count)
+uint32_t Descriptor_Heap::allocate_buffer_descriptor()
 {
     const auto& properties = vk.descriptor_heap_properties;
     const uint32_t descriptor_offset = round_up(current_resource_heap_offset, (uint32_t)properties.bufferDescriptorAlignment);
-    current_resource_heap_offset = descriptor_offset + (uint32_t)properties.bufferDescriptorSize * count;
+    current_resource_heap_offset = descriptor_offset + (uint32_t)properties.bufferDescriptorSize;
     ASSERT(current_resource_heap_offset <= resource_reserved_region_offset);
     return descriptor_offset;
 }

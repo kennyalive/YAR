@@ -15,7 +15,7 @@ struct Descriptor_Heap {
     void destroy();
     void bind(VkCommandBuffer command_buffer) const;
 
-    uint32_t allocate_buffer_descriptor(uint32_t count = 1);
+    uint32_t allocate_buffer_descriptor();
     uint32_t allocate_image_descriptor(uint32_t count = 1);
     uint32_t allocate_sampler_descriptor();
 

@@ -2,12 +2,12 @@
 
 #include "gpu/vk.h"
 
-struct Scene_Descriptors;
+struct Descriptor_Offsets;
 
 struct Patch_Materials {
     VkPipeline pipeline;
 
-    void create(const Scene_Descriptors& scene_descriptors);
+    void create(const Descriptor_Offsets& descriptor_offsets);
     void destroy();
     void dispatch(VkCommandBuffer command_buffer);
 };

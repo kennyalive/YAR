@@ -7,9 +7,9 @@ ParameterBlock<Materials> materials;
 void patch_black(inout int texture_index)
 {
     if (texture_index == -1)
-        texture_index = Black_2D_Texture_Index;
+        texture_index = None_Texture_Index;
     else
-        texture_index += Predefined_Texture_Count;
+        texture_index += First_Project_Image;
 }
 
 [numthreads(1, 1, 1)]

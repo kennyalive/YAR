@@ -44,8 +44,8 @@ SLANG_PUBLIC static const int SCENE_LIGHT_BINDING_RECT = 2;
 SLANG_PUBLIC static const int KERNEL_SET = 4;
 
 // Default texture indices.
-SLANG_PUBLIC static const int Black_2D_Texture_Index = 0;
-SLANG_PUBLIC static const int Predefined_Texture_Count = 1;
+SLANG_PUBLIC static const int None_Texture_Index = 0;
+SLANG_PUBLIC static const int First_Project_Image = 100;
 
 //===========================================================
 // Shared structures.

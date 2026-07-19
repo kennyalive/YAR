@@ -19,7 +19,7 @@
       <Filter>kernels</Filter>
     </ClCompile>
     <ClCompile Include="..\src\gpu\descriptor_heap.cpp" />
-    <ClCompile Include="..\src\gpu\descriptors.cpp" />
+    <ClCompile Include="..\src\gpu\descriptor_offsets.cpp" />
     <ClCompile Include="..\src\gpu\kernels\path_tracing.cpp">
       <Filter>kernels</Filter>
     </ClCompile>
@@ -51,7 +51,7 @@
       <Filter>kernels</Filter>
     </ClInclude>
     <ClInclude Include="..\src\gpu\descriptor_heap.h" />
-    <ClInclude Include="..\src\gpu\descriptors.h" />
+    <ClInclude Include="..\src\gpu\descriptor_offsets.h" />
     <ClInclude Include="..\src\gpu\kernels\path_tracing.h">
       <Filter>kernels</Filter>
     </ClInclude>

@@ -6,6 +6,7 @@
 #include "../vk.h"
 
 struct Descriptor_Heap;
+struct Descriptor_Offsets;
 struct GPU_Scene;
 struct Scene;
 
@@ -16,20 +17,18 @@ struct Path_Tracing_Renderer
     Path_Tracing path_tracing;
 
     Vk_Image output_image;
-    uint32_t output_image_heap_offset = -1;
-
     Vk_Image tonemapped_image;
-    uint32_t tonemapped_image_heap_offset = -1;
 
     Vk_Timer* timer_draw = nullptr;
     Vk_Timer* timer_tonemap = nullptr;
     Vk_Timer* timer_compute_copy = nullptr;
 
-    void initialize(Descriptor_Heap& descriptor_heap, Vk_Time_Keeper& time_keeper);
+    void initialize(const Descriptor_Offsets& descriptor_offsets, Vk_Time_Keeper& time_keeper);
     void destroy();
 
-    void create_scene_kernels(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
-    void create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap, uint32_t swapchain_images_heap_offset);
+    void create_scene_kernels(const Descriptor_Offsets& descriptor_offsets, const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
+    void create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap,
+        uint32_t output_image_heap_offset, uint32_t tonemap_image_heap_offset, uint32_t swapchain_images_heap_offset);
     void destroy_resolution_dependent_resources();
 
     void render(const GPU_Scene& gpu_scene);
