@@ -27,6 +27,7 @@ struct GPU_Scene
     std::vector<Vk_Image> images;
     std::vector<GPU_Mesh> meshes;
     Vk_Intersection_Accelerator accelerator;
+    Vk_Buffer mesh_info_buffer;
     Vk_Buffer mesh_vertex_data;
     Vk_Buffer mesh_index_data;
     Vk_Buffer instance_info_buffer;

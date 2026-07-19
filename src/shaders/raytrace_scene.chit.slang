@@ -18,10 +18,11 @@ RaytracingAccelerationStructure accel;
 Vertex fetch_vertex(int index)
 {
     // TODO: here we assume that geometry.type is Triangle_Mesh. Will be invalid in the presence of other geom types.
-    int geometry_buffer_index = instance_infos[InstanceID()].geometry.index;
+    int geometry_index = instance_infos[InstanceID()].geometry.index;
 
-    uint vertex_index = index_buffers[geometry_buffer_index][index];
-    Mesh_Vertex bv = vertex_buffers[geometry_buffer_index][vertex_index];
+    Mesh_Info mesh_info = mesh_infos[geometry_index];
+    uint vertex_index = mesh_index_data[mesh_info.first_index + index];
+    Mesh_Vertex bv = mesh_vertex_data[mesh_info.first_vertex + vertex_index];
 
     Vertex v;
     v.p = float3(bv.x, bv.y, bv.z);

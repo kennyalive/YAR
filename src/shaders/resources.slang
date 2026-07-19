@@ -23,11 +23,14 @@ public SamplerState image_sampler;
 [[vk::binding(SCENE_BASE_BINDING_INSTANCE_INFO, SCENE_BASE_SET)]]
 public StructuredBuffer<Instance_Info> instance_infos;
 
-[[vk::binding(SCENE_BASE_BINDING_INDEX_BUFFERS, SCENE_BASE_SET)]]
-public StructuredBuffer<uint> index_buffers[];
+[[vk::binding(SCENE_BASE_BINDING_MESH_INFO, SCENE_BASE_SET)]]
+public StructuredBuffer<Mesh_Info> mesh_infos;
 
-[[vk::binding(SCENE_BASE_BINDING_VERTEX_BUFFERS, SCENE_BASE_SET)]]
-public StructuredBuffer<Mesh_Vertex> vertex_buffers[];
+[[vk::binding(SCENE_BASE_BINDING_MESH_VERTEX_DATA, SCENE_BASE_SET)]]
+public StructuredBuffer<Mesh_Vertex> mesh_vertex_data;
+
+[[vk::binding(SCENE_BASE_BINDING_MESH_INDEX_DATA, SCENE_BASE_SET)]]
+public StructuredBuffer<uint> mesh_index_data;
 
 [[vk::binding(SCENE_BASE_BINDING_SCENE_INFO, SCENE_BASE_SET)]]
 public StructuredBuffer<Scene_Info> scene_info_buffer;

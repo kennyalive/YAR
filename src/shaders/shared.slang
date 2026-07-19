@@ -26,9 +26,10 @@ SLANG_PUBLIC static const int GLOBAL_BINDING_IMAGES = 0;
 SLANG_PUBLIC static const int GLOBAL_BINDING_SAMPLER = 1;
 
 SLANG_PUBLIC static const int SCENE_BASE_SET = 1;
-SLANG_PUBLIC static const int SCENE_BASE_BINDING_INSTANCE_INFO = 2;
-SLANG_PUBLIC static const int SCENE_BASE_BINDING_INDEX_BUFFERS = 3;
-SLANG_PUBLIC static const int SCENE_BASE_BINDING_VERTEX_BUFFERS = 4;
+SLANG_PUBLIC static const int SCENE_BASE_BINDING_INSTANCE_INFO = 0;
+SLANG_PUBLIC static const int SCENE_BASE_BINDING_MESH_INFO = 1;
+SLANG_PUBLIC static const int SCENE_BASE_BINDING_MESH_VERTEX_DATA = 2;
+SLANG_PUBLIC static const int SCENE_BASE_BINDING_MESH_INDEX_DATA = 3;
 SLANG_PUBLIC static const int SCENE_BASE_BINDING_SCENE_INFO = 5;
 SLANG_PUBLIC static const int SCENE_BASE_BINDING_ACCELERATOR = 6;
 
@@ -127,6 +128,15 @@ SLANG_PUBLIC struct Scene_Info
     SLANG_PUBLIC uint point_light_count;
     SLANG_PUBLIC uint directional_light_count;
     SLANG_PUBLIC uint rect_light_count;
+};
+
+//
+// Geometry
+//
+SLANG_PUBLIC struct Mesh_Info
+{
+    SLANG_PUBLIC uint first_vertex;
+    SLANG_PUBLIC uint first_index;
 };
 
 //

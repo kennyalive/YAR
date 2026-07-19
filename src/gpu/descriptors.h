@@ -14,11 +14,11 @@ struct Global_Descriptors
 struct Scene_Descriptors
 {
     uint32_t instance_infos = 0;
-    uint32_t index_buffers = 0;
-    uint32_t vertex_buffers = 0;
+    uint32_t mesh_infos = 0;
+    uint32_t mesh_vertex_data = 0;
+    uint32_t mesh_index_data = 0;
     uint32_t scene_info_buffer = 0;
     uint32_t accelerator = 0;
-
     uint32_t lambertian_materials = 0;
     uint32_t point_lights = 0;
     uint32_t directional_lights = 0;
