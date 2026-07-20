@@ -15,7 +15,7 @@ void Apply_Tone_Mapping::destroy()
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
 
-void Apply_Tone_Mapping::dispatch(uint32_t output_image_index, uint32_t tonemap_index)
+void Apply_Tone_Mapping::dispatch(uint32_t output_image_index, uint32_t tonemap_index) const
 {
     const uint32_t group_size_x = 32; // according to shader
     const uint32_t group_size_y = 32;

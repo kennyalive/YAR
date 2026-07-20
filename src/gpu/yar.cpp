@@ -132,10 +132,8 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     descriptor_heap.create();
     descriptor_offsets.initialize(descriptor_heap);
     kernels.create_global_kernels(descriptor_offsets);
-
-    std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_offsets.get_descriptor_mappings();
-    path_tracing_renderer.initialize(descriptor_mappings, time_keeper);
-    direct_lighting_renderer.initialize(descriptor_mappings, time_keeper);
+    path_tracing_renderer.initialize(time_keeper);
+    direct_lighting_renderer.initialize(time_keeper);
 
     restore_resolution_dependent_resources();
     global_textures.create();
@@ -348,10 +346,10 @@ void YAR::draw_frame() {
     vkCmdPushDataEXT(vk.command_buffer, &push_data_info);
 
     if (ui.rendering_algorithm == 0) {
-        direct_lighting_renderer.render(gpu_scene);
+        direct_lighting_renderer.render(gpu_scene, kernels);
     }
     else if (ui.rendering_algorithm == 1) {
-        path_tracing_renderer.render(gpu_scene);
+        path_tracing_renderer.render(gpu_scene, kernels);
     }
 
     vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],

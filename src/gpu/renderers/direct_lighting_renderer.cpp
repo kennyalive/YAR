@@ -4,14 +4,12 @@
 #include "../descriptor_heap.h"
 #include "../descriptor_offsets.h"
 #include "../gpu_scene.h"
+#include "../kernels.h"
 
 constexpr VkFormat output_image_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 
-void Direct_Lighting_Renderer::initialize(
-    const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings,
-    Vk_Time_Keeper& time_keeper)
+void Direct_Lighting_Renderer::initialize(Vk_Time_Keeper& time_keeper)
 {
-    apply_tone_mapping.create(descriptor_mappings);
     timer_draw = time_keeper.allocate_timer("direct_draw");
     timer_tonemap = time_keeper.allocate_timer("direct_tone_map");
     timer_compute_copy = time_keeper.allocate_timer("direct_compute_copy");
@@ -19,7 +17,6 @@ void Direct_Lighting_Renderer::initialize(
 
 void Direct_Lighting_Renderer::destroy()
 {
-    apply_tone_mapping.destroy();
     if (direct_lighting.pipeline != VK_NULL_HANDLE) {
         direct_lighting.destroy();
     }
@@ -72,7 +69,7 @@ void Direct_Lighting_Renderer::destroy_resolution_dependent_resources()
     copy_to_swapchain.destroy();
 }
 
-void Direct_Lighting_Renderer::render(const GPU_Scene& gpu_scene)
+void Direct_Lighting_Renderer::render(const GPU_Scene& gpu_scene, const Kernels& kernels)
 {
     if (gpu_scene.loaded) {
         VK_TIME_SCOPE(timer_draw);
@@ -81,7 +78,7 @@ void Direct_Lighting_Renderer::render(const GPU_Scene& gpu_scene)
 
     {
         VK_TIME_SCOPE(timer_tonemap);
-        apply_tone_mapping.dispatch((uint32_t)Image_Index::direct_lighting_output, (uint32_t)Image_Index::direct_lighting_tonemap);
+        kernels.apply_tone_mapping.dispatch((uint32_t)Image_Index::direct_lighting_output, (uint32_t)Image_Index::direct_lighting_tonemap);
     }
 
     vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],
