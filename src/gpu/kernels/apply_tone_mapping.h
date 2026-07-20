@@ -5,7 +5,7 @@
 struct Apply_Tone_Mapping {
     VkPipeline pipeline;
 
-    void create(uint32_t output_image_heap_offset, uint32_t tonemapped_image_heap_offset);
+    void create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
     void destroy();
-    void dispatch();
+    void dispatch(uint32_t output_image_index, uint32_t tonemap_index);
 };

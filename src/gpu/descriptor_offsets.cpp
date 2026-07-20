@@ -42,7 +42,21 @@ std::vector<VkDescriptorSetAndBindingMappingEXT> Descriptor_Offsets::get_descrip
     const VkSpirvResourceTypeFlagBitsEXT resource_type_accelerator = VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT;
 
     std::vector<VkDescriptorSetAndBindingMappingEXT> mappings;
-    // Base resources
+
+    // Images
+    mappings.push_back(map_binding_to_heap_offset(
+        GLOBAL_SET, GLOBAL_BINDING_SAMPLED_IMAGES, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT,
+        images, vk_image_descriptor_size()
+    ));
+    mappings.push_back(map_binding_to_heap_offset(
+        GLOBAL_SET, GLOBAL_BINDING_STORAGE_IMAGES_RGBA_F16, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
+        images, vk_image_descriptor_size()
+    ));
+    mappings.push_back(map_binding_to_heap_offset(
+        GLOBAL_SET, GLOBAL_BINDING_SAMPLER, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT, image_sampler
+    ));
+
+    // Scene base resources
     mappings.push_back(map_binding_to_heap_offset(
         SCENE_BASE_SET, SCENE_BASE_BINDING_INSTANCE_INFO, resource_type_read_only_storage, instance_infos
     ));

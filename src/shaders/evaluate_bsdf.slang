@@ -11,7 +11,7 @@ public float3 evaluate_bsdf(Materials materials, Material_Handle mtl_handle, flo
         float3 albedo;
         if (mtl.albedo_texture_index > 0) {
             float2 uv_scaled = uv * float2(mtl.u_scale, mtl.v_scale);
-            albedo = images[mtl.albedo_texture_index].SampleLevel(image_sampler, uv_scaled, 0).xyz;
+            albedo = sampled_images[mtl.albedo_texture_index].SampleLevel(image_sampler, uv_scaled, 0).xyz;
         }
         else {
             albedo = float3(mtl.r, mtl.g, mtl.b);

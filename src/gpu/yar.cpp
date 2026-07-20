@@ -132,8 +132,10 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     descriptor_heap.create();
     descriptor_offsets.initialize(descriptor_heap);
     kernels.create_global_kernels(descriptor_offsets);
-    path_tracing_renderer.initialize(descriptor_offsets, time_keeper);
-    direct_lighting_renderer.initialize(descriptor_offsets, time_keeper);
+
+    std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_offsets.get_descriptor_mappings();
+    path_tracing_renderer.initialize(descriptor_mappings, time_keeper);
+    direct_lighting_renderer.initialize(descriptor_mappings, time_keeper);
 
     restore_resolution_dependent_resources();
     global_textures.create();
@@ -240,16 +242,7 @@ void YAR::load_project(const std::string& input_file) {
     gpu_scene.load(scene, descriptor_heap, descriptor_offsets);
     kernels.create_scene_kernels(descriptor_offsets, descriptor_heap, gpu_scene, scene);
 
-    std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_offsets.get_descriptor_mappings();
-
-    descriptor_mappings.push_back(map_binding_to_heap_offset(
-        GLOBAL_SET, GLOBAL_BINDING_IMAGES, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT,
-        descriptor_offsets.images, vk_image_descriptor_size()
-    ));
-    descriptor_mappings.push_back(map_binding_to_heap_offset(
-        GLOBAL_SET, GLOBAL_BINDING_SAMPLER, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT,
-        descriptor_offsets.image_sampler
-    ));
+    const std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_offsets.get_descriptor_mappings();
 
     path_tracing_renderer.create_scene_kernels(descriptor_offsets, descriptor_mappings);
     direct_lighting_renderer.create_scene_kernels(descriptor_offsets, descriptor_mappings);
@@ -335,7 +328,7 @@ void YAR::draw_frame() {
     descriptor_heap.bind(vk.command_buffer);
 
     // Set per-frame parameters
-    static_assert(sizeof(GPU_Types::Frame_Params) <= 256); // Vulkan guarantees 256 min limit
+    static_assert(sizeof(GPU_Types::Frame_Params) == 128); // Vulkan guarantees 256 min limit
     GPU_Types::Frame_Params frame_params{};
     frame_params.frame_index = frame_index;
     frame_params.accumulation_index = accumulation_index;
@@ -349,6 +342,7 @@ void YAR::draw_frame() {
     frame_params.z_is_up = uint32_t(scene.z_is_up);
 
     VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
+    push_data_info.offset = 0;
     push_data_info.data.address = &frame_params;
     push_data_info.data.size = sizeof(frame_params);
     vkCmdPushDataEXT(vk.command_buffer, &push_data_info);

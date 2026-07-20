@@ -22,8 +22,9 @@
 
 // Bindings configuration.
 SLANG_PUBLIC static const int GLOBAL_SET = 0;
-SLANG_PUBLIC static const int GLOBAL_BINDING_IMAGES = 0;
-SLANG_PUBLIC static const int GLOBAL_BINDING_SAMPLER = 1;
+SLANG_PUBLIC static const int GLOBAL_BINDING_SAMPLED_IMAGES = 0;
+SLANG_PUBLIC static const int GLOBAL_BINDING_STORAGE_IMAGES_RGBA_F16 = 1;
+SLANG_PUBLIC static const int GLOBAL_BINDING_SAMPLER = 2;
 
 SLANG_PUBLIC static const int SCENE_BASE_SET = 1;
 SLANG_PUBLIC static const int SCENE_BASE_BINDING_INSTANCE_INFO = 0;
@@ -118,6 +119,10 @@ SLANG_PUBLIC struct Frame_Params
     SLANG_PUBLIC uint2 viewport_size;
     SLANG_PUBLIC float tan_fovy_over_2;
     SLANG_PUBLIC uint z_is_up;
+
+    // Ensure frame params occupy [0..128) range.
+    // Shader custom range is [128..256).
+    uint reserved[12]; 
 };
 
 //
@@ -211,13 +216,12 @@ SLANG_PUBLIC struct Rect_Light {
 
 //
 // Kernel specific parameters
-// TODO: unused for now
 //
-//SLANG_PUBLIC struct Apply_Tonemap_Params
-//{
-//    SLANG_PUBLIC uint output_image_index;
-//    SLANG_PUBLIC uint tonemap_index;
-//};
+SLANG_PUBLIC struct Apply_Tonemap_Params
+{
+    SLANG_PUBLIC uint output_image_index;
+    SLANG_PUBLIC uint tonemap_index;
+};
 
 #ifdef __cplusplus
 } // namespace GPU_Types

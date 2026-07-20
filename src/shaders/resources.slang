@@ -9,10 +9,15 @@ public struct Mesh_Vertex {
 };
 
 //
-// Global renderer data
+// Global image array.
+// All image arrays alias the same descriptor array
 //
-[[vk::binding(GLOBAL_BINDING_IMAGES, GLOBAL_SET)]]
-public Texture2D images[];
+[[vk::binding(GLOBAL_BINDING_SAMPLED_IMAGES, GLOBAL_SET)]]
+public Texture2D<float4> sampled_images[];
+
+[[vk::image_format("rgba16f")]]
+[[vk::binding(GLOBAL_BINDING_STORAGE_IMAGES_RGBA_F16, GLOBAL_SET)]]
+public RWTexture2D<float4> storage_images_rgba_f16[];
 
 [[vk::binding(GLOBAL_BINDING_SAMPLER, GLOBAL_SET)]]
 public SamplerState image_sampler;

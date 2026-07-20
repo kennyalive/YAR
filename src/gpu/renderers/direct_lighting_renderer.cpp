@@ -7,12 +7,11 @@
 
 constexpr VkFormat output_image_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 
-void Direct_Lighting_Renderer::initialize(const Descriptor_Offsets& descriptor_offsets, Vk_Time_Keeper& time_keeper)
+void Direct_Lighting_Renderer::initialize(
+    const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings,
+    Vk_Time_Keeper& time_keeper)
 {
-    const uint32_t output_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_output);
-    const uint32_t tonemap_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_tonemap);
-    apply_tone_mapping.create(output_image_offset, tonemap_image_offset);
-
+    apply_tone_mapping.create(descriptor_mappings);
     timer_draw = time_keeper.allocate_timer("direct_draw");
     timer_tonemap = time_keeper.allocate_timer("direct_tone_map");
     timer_compute_copy = time_keeper.allocate_timer("direct_compute_copy");
@@ -82,7 +81,7 @@ void Direct_Lighting_Renderer::render(const GPU_Scene& gpu_scene)
 
     {
         VK_TIME_SCOPE(timer_tonemap);
-        apply_tone_mapping.dispatch();
+        apply_tone_mapping.dispatch((uint32_t)Image_Index::direct_lighting_output, (uint32_t)Image_Index::direct_lighting_tonemap);
     }
 
     vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],

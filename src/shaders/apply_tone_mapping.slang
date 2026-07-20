@@ -1,23 +1,13 @@
 import shared;
+import resources;
 
+struct Push_Data
+{
+    Frame_Params frame;
+    Apply_Tonemap_Params local;
+}
 [[vk::push_constant]]
-Frame_Params frame_params;
-
-[[vk::image_format("rgba16f")]]
-[[vk::binding(0, 0)]]
-RWTexture2D<float4> output_image;
-
-[[vk::image_format("rgba16f")]]
-[[vk::binding(1, 0)]]
-RWTexture2D<float4> tonemapped_image;
-
-// TODO: unused for now
-//[[vk::binding(2, 0)]]
-//StructuredBuffer<Apply_Tonemap_Params> params;
-//Apply_Tonemap_Params load_params()
-//{
-//    return params[0];
-//}
+Push_Data data;
 
 float get_luminance(float3 color)
 {
@@ -34,12 +24,13 @@ float tonemap_reinhard(float luminance)
 [numthreads(32, 32, 1)]
 void main(uint2 id: SV_DispatchThreadID)
 {
-    if (id.x < frame_params.viewport_size.x && id.y < frame_params.viewport_size.y) {
-        float4 color = output_image[id];
+    if (id.x < data.frame.viewport_size.x && id.y < data.frame.viewport_size.y) {
+        Apply_Tonemap_Params params = data.local;
+        float4 color = storage_images_rgba_f16[params.output_image_index][id];
         float luminance_hdr = get_luminance(color.rgb);
         float luminance_ldr = tonemap_reinhard(luminance_hdr);
         float scale = luminance_ldr / luminance_hdr;
         color.rgb *= scale;
-        tonemapped_image[id] = color;
+        storage_images_rgba_f16[params.tonemap_index][id] = color;
     }
 }
