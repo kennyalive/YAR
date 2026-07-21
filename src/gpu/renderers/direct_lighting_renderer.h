@@ -24,7 +24,7 @@ struct Direct_Lighting_Renderer
     void initialize(Vk_Time_Keeper& time_keeper);
     void destroy();
 
-    void create_scene_kernels(const Descriptor_Offsets& descriptor_offsets, const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
+    void create_kernels(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
     void create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap,
         uint32_t output_image_heap_offset, uint32_t tonemap_image_heap_offset, uint32_t swapchain_images_heap_offset);
     void destroy_resolution_dependent_resources();

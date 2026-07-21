@@ -9,9 +9,6 @@ import shading_context;
 [[vk::push_constant]]
 Frame_Params frame_params;
 
-[[vk::binding(SCENE_BASE_BINDING_ACCELERATOR, SCENE_BASE_SET)]]
-RaytracingAccelerationStructure accel;
-
 Vertex fetch_vertex(int index)
 {
     // TODO: here we assume that geometry.type is Triangle_Mesh. Will be invalid in the presence of other geom types.

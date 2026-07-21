@@ -223,6 +223,16 @@ SLANG_PUBLIC struct Apply_Tonemap_Params
     SLANG_PUBLIC uint tonemap_index;
 };
 
+SLANG_PUBLIC struct Path_Tracing_Params
+{
+    SLANG_PUBLIC uint output_image_index;
+};
+
+SLANG_PUBLIC struct Direct_Lighting_Params
+{
+    SLANG_PUBLIC uint output_image_index;
+};
+
 #ifdef __cplusplus
 } // namespace GPU_Types
 #endif

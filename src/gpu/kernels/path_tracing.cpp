@@ -6,12 +6,9 @@
 #include "shaders/shared.slang"
 #include "lib/scene.h"
 
-void Path_Tracing::create(
-    uint32_t output_image_heap_offset,
-    const std::vector<VkDescriptorSetAndBindingMappingEXT>& scene_descriptor_mappings
-)
+void Path_Tracing::create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
-    create_pipeline(output_image_heap_offset, scene_descriptor_mappings);
+    create_pipeline(descriptor_mappings);
 
     // Shader binding table.
     {
@@ -39,10 +36,7 @@ void Path_Tracing::destroy()
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
 
-void Path_Tracing::create_pipeline(
-    uint32_t output_image_heap_offset,
-    const std::vector<VkDescriptorSetAndBindingMappingEXT>& scene_descriptor_mappings
-)
+void Path_Tracing::create_pipeline(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
     // pipeline
     {
@@ -72,19 +66,9 @@ void Path_Tracing::create_pipeline(
         stage_infos[3].module = shadow_ray_chit_shader.handle;
         stage_infos[3].pName = "main";
 
-        const VkDescriptorSetAndBindingMappingEXT raygen_output_image_mapping = map_binding_to_heap_offset(
-            KERNEL_SET, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT, output_image_heap_offset
-        );
-        VkDescriptorSetAndBindingMappingEXT raygen_mappings[1] = {
-            raygen_output_image_mapping
-        };
-
-        std::vector<VkDescriptorSetAndBindingMappingEXT> mappings = scene_descriptor_mappings;
-        mappings.insert(mappings.begin(), raygen_mappings, raygen_mappings + std::size(raygen_mappings));
-
         VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info{ VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT };
-        mapping_info.mappingCount = (uint32_t)mappings.size();
-        mapping_info.pMappings = mappings.data();
+        mapping_info.mappingCount = (uint32_t)descriptor_mappings.size();
+        mapping_info.pMappings = descriptor_mappings.data();
         stage_infos[0].pNext = &mapping_info;
         stage_infos[2].pNext = &mapping_info;
 
@@ -146,8 +130,17 @@ void Path_Tracing::create_pipeline(
 
 }
 
-void Path_Tracing::dispatch()
+void Path_Tracing::dispatch(uint32_t output_image_index)
 {
+    GPU_Types::Path_Tracing_Params params{};
+    params.output_image_index = output_image_index;
+
+    VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
+    push_data_info.offset = sizeof(GPU_Types::Frame_Params);
+    push_data_info.data.address = &params;
+    push_data_info.data.size = sizeof(params);
+    vkCmdPushDataEXT(vk.command_buffer, &push_data_info);
+
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 
     const uint32_t handle_size = vk.ray_tracing_pipeline_properties.shaderGroupHandleSize;

@@ -2,20 +2,15 @@
 
 #include "gpu/vk.h"
 
-struct Direct_Lighting {
+struct Direct_Lighting
+{
     Vk_Buffer shader_binding_table;
     VkPipeline pipeline = VK_NULL_HANDLE;
 
-    void create(
-        uint32_t output_image_heap_offset,
-        const std::vector<VkDescriptorSetAndBindingMappingEXT>& scene_descriptor_mappings
-    );
+    void create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
     void destroy();
-    void dispatch();
+    void dispatch(uint32_t output_image_index);
 
 private:
-    void create_pipeline(
-        uint32_t output_image_heap_offset,
-        const std::vector<VkDescriptorSetAndBindingMappingEXT>& scene_descriptor_mappings
-    );
+    void create_pipeline(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
 };

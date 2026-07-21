@@ -40,6 +40,9 @@ public StructuredBuffer<uint> mesh_index_data;
 [[vk::binding(SCENE_BASE_BINDING_SCENE_INFO, SCENE_BASE_SET)]]
 public StructuredBuffer<Scene_Info> scene_info_buffer;
 
+[[vk::binding(SCENE_BASE_BINDING_ACCELERATOR, SCENE_BASE_SET)]]
+public RaytracingAccelerationStructure accel;
+
 public Scene_Info get_scene_info()
 {
     return scene_info_buffer[0];

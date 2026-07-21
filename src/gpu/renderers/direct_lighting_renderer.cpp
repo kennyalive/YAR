@@ -22,10 +22,9 @@ void Direct_Lighting_Renderer::destroy()
     }
 }
 
-void Direct_Lighting_Renderer::create_scene_kernels(const Descriptor_Offsets& descriptor_offsets, const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
+void Direct_Lighting_Renderer::create_kernels(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
-    const uint32_t output_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_output);
-    direct_lighting.create(output_image_offset, descriptor_mappings);
+    direct_lighting.create(descriptor_mappings);
 }
 
 void Direct_Lighting_Renderer::create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap,
@@ -73,7 +72,7 @@ void Direct_Lighting_Renderer::render(const GPU_Scene& gpu_scene, const Kernels&
 {
     if (gpu_scene.loaded) {
         VK_TIME_SCOPE(timer_draw);
-        direct_lighting.dispatch();
+        direct_lighting.dispatch((uint32_t)Image_Index::direct_lighting_output);
     }
 
     {

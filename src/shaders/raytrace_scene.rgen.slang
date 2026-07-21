@@ -1,20 +1,15 @@
 import shared;
+import resources;
 import generate_ray;
 import raytrace_types;
 
-[[vk::push_constant]]
-Frame_Params frame_params;
-
-struct KernelParams {
-    [[vk::image_format("rgba16f")]]
-    RWTexture2D<float4> output_image;
+struct Push_Data
+{
+    Frame_Params frame;
+    Direct_Lighting_Params local;
 }
-
-[[vk::binding(SCENE_BASE_BINDING_ACCELERATOR, SCENE_BASE_SET)]]
-RaytracingAccelerationStructure accel;
-
-[[vk::binding(0, KERNEL_SET)]]
-ParameterBlock<KernelParams> params;
+[[vk::push_constant]]
+Push_Data data;
 
 static const float tmin = 1e-3f;
 static const float tmax = 1e+3f;
@@ -40,15 +35,15 @@ void main()
     float2 sample_origin = float2(DispatchRaysIndex().xy);
 
     float3 color;
-    if (frame_params.spp4 != 0) {
-        color = trace_ray(sample_origin + float2(0.125, 0.375), frame_params);
-        color += trace_ray(sample_origin + float2(0.375, 0.875), frame_params);
-        color += trace_ray(sample_origin + float2(0.625, 0.125), frame_params);
-        color += trace_ray(sample_origin + float2(0.875, 0.625), frame_params);
+    if (data.frame.spp4 != 0) {
+        color = trace_ray(sample_origin + float2(0.125, 0.375), data.frame);
+        color += trace_ray(sample_origin + float2(0.375, 0.875), data.frame);
+        color += trace_ray(sample_origin + float2(0.625, 0.125), data.frame);
+        color += trace_ray(sample_origin + float2(0.875, 0.625), data.frame);
         color *= 0.25;
     }
     else {
-        color = trace_ray(sample_origin + float2(0.5, 0.5), frame_params);
+        color = trace_ray(sample_origin + float2(0.5, 0.5), data.frame);
     }
-    params.output_image[DispatchRaysIndex().xy] = float4(color, 1);
+    storage_images_rgba_f16[data.local.output_image_index][DispatchRaysIndex().xy] = float4(color, 1);
 }

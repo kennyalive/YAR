@@ -6,19 +6,13 @@ import generate_ray;
 import raytrace_types;
 import evaluate_bsdf;
 
-[[vk::push_constant]]
-Frame_Params frame_params;
-
-struct KernelParams {
-    [[vk::image_format("rgba16f")]]
-    RWTexture2D<float4> output_image;
+struct Push_Data
+{
+    Frame_Params frame;
+    Path_Tracing_Params local;
 }
-
-[[vk::binding(SCENE_BASE_BINDING_ACCELERATOR, SCENE_BASE_SET)]]
-RaytracingAccelerationStructure accel;
-
-[[vk::binding(0, KERNEL_SET)]]
-ParameterBlock<KernelParams> params;
+[[vk::push_constant]]
+Push_Data data;
 
 static const float tmin = 1e-3f;
 static const float tmax = 1e+3f;
@@ -40,7 +34,7 @@ float3 sample_hemisphere_cosine(float2 u)
 void main()
 {
     const uint pixel_index = get_current_pixel_index();
-    uint rng_state = init_rng(pixel_index, frame_params.frame_index);
+    uint rng_state = init_rng(pixel_index, data.frame.frame_index);
 
     const uint2 sample_pixel = DispatchRaysIndex().xy;
     const float2 sample_offset = rand_float2(rng_state);
@@ -48,7 +42,7 @@ void main()
 
     float3 path_coeff = float3(1);
 
-    Ray ray = generate_ray(frame_params.camera_to_world, sample_pos, frame_params.tan_fovy_over_2, frame_params.z_is_up);
+    Ray ray = generate_ray(data.frame.camera_to_world, sample_pos, data.frame.tan_fovy_over_2, data.frame.z_is_up);
     float3 L = float3(0);
 
     for (int i = 0; i < bounce_count; i++) {
@@ -86,10 +80,10 @@ void main()
         path_coeff *= bsdf * abs(dot(payload.normal, wi)) / diffuse_bsdf_pdf;
     }
 
-    float3 current_L = params.output_image[DispatchRaysIndex().xy].rgb;
-    float k = float(frame_params.accumulation_index + 1);
+    float3 current_L = storage_images_rgba_f16[data.local.output_image_index][DispatchRaysIndex().xy].rgb;
+    float k = float(data.frame.accumulation_index + 1);
     float3 new_L = current_L * (k - 1) / k + L / k;
-    params.output_image[DispatchRaysIndex().xy] = float4(new_L, 1);
+    storage_images_rgba_f16[data.local.output_image_index][DispatchRaysIndex().xy] = float4(new_L, 1);
 
     //params.output_image[DispatchRaysIndex().xy] = float4(L, 1);
 }

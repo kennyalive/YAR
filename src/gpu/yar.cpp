@@ -135,6 +135,10 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     path_tracing_renderer.initialize(time_keeper);
     direct_lighting_renderer.initialize(time_keeper);
 
+    const std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_offsets.get_descriptor_mappings();
+    path_tracing_renderer.create_kernels(descriptor_mappings);
+    direct_lighting_renderer.create_kernels(descriptor_mappings);
+
     restore_resolution_dependent_resources();
     global_textures.create();
 
@@ -237,11 +241,6 @@ void YAR::load_project(const std::string& input_file) {
 
     scene = load_scene(input_file);
     gpu_scene.load(scene, descriptor_heap, descriptor_offsets);
-
-    const std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_offsets.get_descriptor_mappings();
-
-    path_tracing_renderer.create_scene_kernels(descriptor_offsets, descriptor_mappings);
-    direct_lighting_renderer.create_scene_kernels(descriptor_offsets, descriptor_mappings);
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
 
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
