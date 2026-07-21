@@ -7,9 +7,8 @@
 void Kernels::create_kernels(const Descriptor_Offsets& descriptor_offsets)
 {
     std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_offsets.get_descriptor_mappings();
-    patch_materials.create(descriptor_offsets);
+    patch_materials.create(descriptor_mappings);
     apply_tone_mapping.create(descriptor_mappings);
-
 }
 
 void Kernels::destroy_kernels()

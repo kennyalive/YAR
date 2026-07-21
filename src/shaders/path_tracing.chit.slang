@@ -9,9 +9,6 @@ import shading_context;
 [[vk::push_constant]]
 Frame_Params frame_params;
 
-[[vk::binding(0, SCENE_MATERIAL_SET)]]
-ParameterBlock<Materials> materials;
-
 [[vk::binding(SCENE_BASE_BINDING_ACCELERATOR, SCENE_BASE_SET)]]
 RaytracingAccelerationStructure accel;
 
@@ -118,7 +115,7 @@ void main(inout Path_Payload payload, in Attribs attribs)
 
     Shading_Context sc = init_shading_context(attribs.barycentrics);
 
-    float3 L = estimate_direct_lighting(materials, sc, accel, rng_state);
+    float3 L = estimate_direct_lighting(sc, accel, rng_state);
 
     int area_light_index = instance_infos[InstanceID()].area_light_index;
     if (area_light_index != -1) {

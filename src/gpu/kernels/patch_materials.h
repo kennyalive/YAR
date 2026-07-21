@@ -2,12 +2,10 @@
 
 #include "gpu/vk.h"
 
-struct Descriptor_Offsets;
-
 struct Patch_Materials {
     VkPipeline pipeline;
 
-    void create(const Descriptor_Offsets& descriptor_offsets);
+    void create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
     void destroy();
     void dispatch(VkCommandBuffer command_buffer);
 };

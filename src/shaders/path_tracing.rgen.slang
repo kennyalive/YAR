@@ -17,9 +17,6 @@ struct KernelParams {
 [[vk::binding(SCENE_BASE_BINDING_ACCELERATOR, SCENE_BASE_SET)]]
 RaytracingAccelerationStructure accel;
 
-[[vk::binding(0, SCENE_MATERIAL_SET)]]
-ParameterBlock<Materials> materials;
-
 [[vk::binding(0, KERNEL_SET)]]
 ParameterBlock<KernelParams> params;
 
@@ -85,7 +82,7 @@ void main()
 
         float diffuse_bsdf_pdf = dot(normal, wi) / Pi;
 
-        float3 bsdf = evaluate_bsdf(materials, payload.mtl_handle, payload.uv, wi, wo);
+        float3 bsdf = evaluate_bsdf(payload.mtl_handle, payload.uv, wi, wo);
         path_coeff *= bsdf * abs(dot(payload.normal, wi)) / diffuse_bsdf_pdf;
     }
 

@@ -23,7 +23,7 @@ bool trace_shadow_ray(RaytracingAccelerationStructure accel, float3 position, fl
     return shadow_ray_payload.shadow_factor != 0.0;
 }
 
-public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, RaytracingAccelerationStructure accel, inout uint rng_state)
+public float3 estimate_direct_lighting(Shading_Context sc, RaytracingAccelerationStructure accel, inout uint rng_state)
 {
     Material_Handle mtl_handle = instance_infos[InstanceID()].material;
     float3 P = offset_ray(sc.P, sc.Ng);
@@ -48,7 +48,7 @@ public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, 
         if (!trace_shadow_ray(accel, P, light_dir, light_dist - Shadow_Epsilon))
             continue;
 
-        float3 bsdf = evaluate_bsdf(materials, mtl_handle, sc.UV, light_dir, sc.Wo);
+        float3 bsdf = evaluate_bsdf(mtl_handle, sc.UV, light_dir, sc.Wo);
         float3 irradiance = point_lights[i].intensity * (n_dot_l / (light_dist * light_dist));
         L += irradiance * bsdf;
     }
@@ -64,7 +64,7 @@ public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, 
         if (!trace_shadow_ray(accel, P, light_dir, 1e5 /* compute tmax? */))
             continue;
 
-        float3 bsdf = evaluate_bsdf(materials, mtl_handle, sc.UV, light_dir, sc.Wo);
+        float3 bsdf = evaluate_bsdf(mtl_handle, sc.UV, light_dir, sc.Wo);
         L += bsdf * directional_lights[i].irradiance * n_dot_l;
     }
 
@@ -101,7 +101,7 @@ public float3 estimate_direct_lighting(Materials materials, Shading_Context sc, 
             if (!trace_shadow_ray(accel, P, light_dir, light_dist - Shadow_Epsilon))
                 continue;
 
-            float3 bsdf = evaluate_bsdf(materials, mtl_handle, sc.UV, light_dir, sc.Wo);
+            float3 bsdf = evaluate_bsdf(mtl_handle, sc.UV, light_dir, sc.Wo);
             L2 += bsdf * light.area * light.emitted_radiance * (n_dot_l * light_n_dot_l / (light_dist * light_dist));
         }
         L2 /= float(light.shadow_ray_count);

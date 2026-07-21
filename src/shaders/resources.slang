@@ -51,9 +51,8 @@ public Scene_Info get_scene_info()
 public static const int Material_Lambertian = 2;
 static const int Material_None = -1;
 
-public struct Materials {
-    public RWStructuredBuffer<Lambertian_Material> lambertian_materials;
-}
+[[vk::binding(SCENE_MATERIAL_BINDING_LAMBERTIAN, SCENE_MATERIAL_SET)]]
+public RWStructuredBuffer<Lambertian_Material> lambertian_materials;
 
 //
 // Lighting data

@@ -2,16 +2,10 @@
 #include "lib/common.h"
 #include "patch_materials.h"
 
-#include "gpu/descriptor_offsets.h"
-
-void Patch_Materials::create(const Descriptor_Offsets& descriptor_offsets)
+void Patch_Materials::create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
-    const VkDescriptorSetAndBindingMappingEXT mapping = map_binding_to_heap_offset(
-        0, 0, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT,
-        descriptor_offsets.lambertian_materials
-    );
     Vk_Shader_Module shader(get_spirv_file("patch_materials"));
-    pipeline = vk_create_compute_pipeline(shader.handle, std::span(&mapping, 1), "patch_materials_pipeline");
+    pipeline = vk_create_compute_pipeline(shader.handle, descriptor_mappings, "patch_materials_pipeline");
 }
 
 void Patch_Materials::destroy()
