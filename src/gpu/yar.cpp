@@ -131,7 +131,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
 
     descriptor_heap.create();
     descriptor_offsets.initialize(descriptor_heap);
-    kernels.create_global_kernels(descriptor_offsets);
+    kernels.create_kernels(descriptor_offsets);
     path_tracing_renderer.initialize(time_keeper);
     direct_lighting_renderer.initialize(time_keeper);
 
@@ -178,7 +178,7 @@ void YAR::shutdown() {
     ImGui::DestroyContext();
 
     descriptor_heap.destroy();
-    kernels.destroy_global_kernels();
+    kernels.destroy_kernels();
 
     release_resolution_dependent_resources();
 
@@ -186,7 +186,6 @@ void YAR::shutdown() {
     direct_lighting_renderer.destroy();
 
     if (gpu_scene.loaded) {
-        kernels.destroy_scene_kernels();
         gpu_scene.destroy();
     }
     global_textures.destroy();
@@ -238,7 +237,6 @@ void YAR::load_project(const std::string& input_file) {
 
     scene = load_scene(input_file);
     gpu_scene.load(scene, descriptor_heap, descriptor_offsets);
-    kernels.create_scene_kernels(descriptor_offsets, descriptor_heap, gpu_scene, scene);
 
     const std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_offsets.get_descriptor_mappings();
 
