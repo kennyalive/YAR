@@ -5,7 +5,7 @@
 struct Copy_To_Swapchain {
     VkPipeline pipeline;
 
-    void create(uint32_t tonemapped_image_heap_offset, uint32_t swapchain_images_heap_offset);
+    void create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
     void destroy();
-    void dispatch();
+    void dispatch(uint32_t tonemap_index) const;
 };

@@ -19,6 +19,10 @@ public Texture2D<float4> sampled_images[];
 [[vk::binding(GLOBAL_BINDING_STORAGE_IMAGES_RGBA_F16, GLOBAL_SET)]]
 public RWTexture2D<float4> storage_images_rgba_f16[];
 
+[[vk::image_format("rgba8")]]
+[[vk::binding(GLOBAL_BINDING_STORAGE_IMAGES_RGBA8, GLOBAL_SET)]]
+public RWTexture2D<float4> storage_images_rgba8[];
+
 [[vk::binding(GLOBAL_BINDING_SAMPLER, GLOBAL_SET)]]
 public SamplerState image_sampler;
 

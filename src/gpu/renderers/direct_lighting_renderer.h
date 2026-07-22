@@ -1,17 +1,14 @@
 #pragma once
 
-#include "../kernels/copy_to_swapchain.h"
 #include "../kernels/direct_lighting.h"
 #include "../vk.h"
 
 struct Descriptor_Heap;
-struct Descriptor_Offsets;
 struct GPU_Scene;
 struct Kernels;
 
 struct Direct_Lighting_Renderer
 {
-    Copy_To_Swapchain copy_to_swapchain;
     Direct_Lighting direct_lighting;
 
     Vk_Image output_image;
@@ -26,7 +23,7 @@ struct Direct_Lighting_Renderer
 
     void create_kernels(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
     void create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap,
-        uint32_t output_image_heap_offset, uint32_t tonemap_image_heap_offset, uint32_t swapchain_images_heap_offset);
+        uint32_t output_image_heap_offset, uint32_t tonemap_image_heap_offset);
     void destroy_resolution_dependent_resources();
 
     void render(const GPU_Scene& gpu_scene, const Kernels& kernels);

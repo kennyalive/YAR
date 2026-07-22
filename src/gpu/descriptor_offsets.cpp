@@ -53,6 +53,10 @@ std::vector<VkDescriptorSetAndBindingMappingEXT> Descriptor_Offsets::get_descrip
         images, vk_image_descriptor_size()
     ));
     mappings.push_back(map_binding_to_heap_offset(
+        GLOBAL_SET, GLOBAL_BINDING_STORAGE_IMAGES_RGBA8, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
+        images, vk_image_descriptor_size()
+    ));
+    mappings.push_back(map_binding_to_heap_offset(
         GLOBAL_SET, GLOBAL_BINDING_SAMPLER, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT, image_sampler
     ));
 

@@ -30,7 +30,7 @@ void Apply_Tone_Mapping::dispatch(uint32_t output_image_index, uint32_t tonemap_
     VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
     push_data_info.offset = sizeof(GPU_Types::Frame_Params);
     push_data_info.data.address = &params;
-    push_data_info.data.size = sizeof(GPU_Types::Apply_Tonemap_Params);
+    push_data_info.data.size = sizeof(params);
     vkCmdPushDataEXT(vk.command_buffer, &push_data_info);
 
     vkCmdBindPipeline(vk.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);

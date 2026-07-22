@@ -28,7 +28,7 @@ void Path_Tracing_Renderer::create_kernels(const std::vector<VkDescriptorSetAndB
 }
 
 void Path_Tracing_Renderer::create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap,
-    uint32_t output_image_heap_offset, uint32_t tonemap_image_heap_offset, uint32_t swapchain_images_heap_offset)
+    uint32_t output_image_heap_offset, uint32_t tonemap_image_heap_offset)
 {
     // output image
     {
@@ -58,14 +58,12 @@ void Path_Tracing_Renderer::create_resolution_dependent_resources(Descriptor_Hea
         descriptor_heap.write_image_descriptor(tonemapped_image.handle, tonemapped_image.format,
             VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, tonemap_image_heap_offset);
     }
-    copy_to_swapchain.create(tonemap_image_heap_offset, swapchain_images_heap_offset);
 }
 
 void Path_Tracing_Renderer::destroy_resolution_dependent_resources()
 {
     output_image.destroy();
     tonemapped_image.destroy();
-    copy_to_swapchain.destroy();
 }
 
 void Path_Tracing_Renderer::render(const GPU_Scene& gpu_scene, const Kernels& kernels)
@@ -86,6 +84,6 @@ void Path_Tracing_Renderer::render(const GPU_Scene& gpu_scene, const Kernels& ke
 
     {
         VK_TIME_SCOPE(timer_compute_copy);
-        copy_to_swapchain.dispatch();
+        kernels.copy_to_swapchain.dispatch((uint32_t)Image_Index::path_tracer_tonemap);
     }
 }

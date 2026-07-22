@@ -46,10 +46,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     };
     // use non-srgb formats for swapchain images, so we can render to swapchain from compute,
     // also it means we should do srgb encoding manually.
-    std::array surface_formats = {
-        VK_FORMAT_R8G8B8A8_UNORM,
-        VK_FORMAT_B8G8R8A8_UNORM
-    };
+    std::array surface_formats = { VK_FORMAT_R8G8B8A8_UNORM };
 
     // Specify required features.
     VkPhysicalDeviceFeatures2 features2{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
@@ -226,13 +223,11 @@ void YAR::restore_resolution_dependent_resources()
 
     path_tracing_renderer.create_resolution_dependent_resources(descriptor_heap,
         descriptor_offsets.get_image_descriptor_offset(Image_Index::path_tracer_output),
-        descriptor_offsets.get_image_descriptor_offset(Image_Index::path_tracer_tonemap),
-        swapchain_image_offset
+        descriptor_offsets.get_image_descriptor_offset(Image_Index::path_tracer_tonemap)
     );
     direct_lighting_renderer.create_resolution_dependent_resources(descriptor_heap,
         descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_output),
-        descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_tonemap),
-        swapchain_image_offset
+        descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_tonemap)
     );
 }
 
