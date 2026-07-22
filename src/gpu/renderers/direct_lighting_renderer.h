@@ -4,6 +4,7 @@
 #include "../vk.h"
 
 struct Descriptor_Heap;
+struct Descriptor_Offsets;
 struct GPU_Scene;
 struct Kernels;
 
@@ -18,13 +19,13 @@ struct Direct_Lighting_Renderer
     Vk_Timer* timer_tonemap = nullptr;
     Vk_Timer* timer_compute_copy = nullptr;
 
-    void initialize(Vk_Time_Keeper& time_keeper);
+    void initialize(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings, Vk_Time_Keeper& time_keeper);
     void destroy();
 
-    void create_kernels(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings);
-    void create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap,
-        uint32_t output_image_heap_offset, uint32_t tonemap_image_heap_offset);
+    void create_resolution_dependent_resources();
     void destroy_resolution_dependent_resources();
+
+    void write_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Offsets& descriptor_offsets);
 
     void render(const GPU_Scene& gpu_scene, const Kernels& kernels);
 };

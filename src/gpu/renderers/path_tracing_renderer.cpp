@@ -8,8 +8,9 @@
 
 constexpr VkFormat output_image_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 
-void Path_Tracing_Renderer::initialize(Vk_Time_Keeper& time_keeper)
+void Path_Tracing_Renderer::initialize(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings, Vk_Time_Keeper& time_keeper)
 {
+    path_tracing.create(descriptor_mappings);
     timer_draw = time_keeper.allocate_timer("path_draw");
     timer_tonemap = time_keeper.allocate_timer("path_tone_map");
     timer_compute_copy = time_keeper.allocate_timer("path_compute_copy");
@@ -22,13 +23,7 @@ void Path_Tracing_Renderer::destroy()
     }
 }
 
-void Path_Tracing_Renderer::create_kernels(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
-{
-    path_tracing.create(descriptor_mappings);
-}
-
-void Path_Tracing_Renderer::create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap,
-    uint32_t output_image_heap_offset, uint32_t tonemap_image_heap_offset)
+void Path_Tracing_Renderer::create_resolution_dependent_resources()
 {
     // output image
     {
@@ -40,9 +35,6 @@ void Path_Tracing_Renderer::create_resolution_dependent_resources(Descriptor_Hea
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
             });
-
-        descriptor_heap.write_image_descriptor(output_image.handle, output_image.format,
-            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, output_image_heap_offset);
     }
     // tone mapped image
     {
@@ -54,9 +46,6 @@ void Path_Tracing_Renderer::create_resolution_dependent_resources(Descriptor_Hea
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
             });
-
-        descriptor_heap.write_image_descriptor(tonemapped_image.handle, tonemapped_image.format,
-            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, tonemap_image_heap_offset);
     }
 }
 
@@ -64,6 +53,19 @@ void Path_Tracing_Renderer::destroy_resolution_dependent_resources()
 {
     output_image.destroy();
     tonemapped_image.destroy();
+}
+
+void Path_Tracing_Renderer::write_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Offsets& descriptor_offsets)
+{
+    const uint32_t output_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::path_tracer_output);
+    descriptor_heap.write_image_descriptor(output_image.handle, output_image.format,
+        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, output_image_offset
+    );
+
+    const uint32_t tonemap_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::path_tracer_tonemap);
+    descriptor_heap.write_image_descriptor(tonemapped_image.handle, tonemapped_image.format,
+        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, tonemap_image_offset
+    );
 }
 
 void Path_Tracing_Renderer::render(const GPU_Scene& gpu_scene, const Kernels& kernels)

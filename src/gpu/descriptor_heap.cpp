@@ -93,7 +93,7 @@ uint32_t Descriptor_Heap::allocate_sampler_descriptor()
 }
 
 void Descriptor_Heap::write_image_descriptor(VkImage image, VkFormat image_format,
-    VkDescriptorType descriptor_type, uint32_t heap_offset)
+    VkDescriptorType descriptor_type, uint32_t heap_offset) const
 {
     const auto& properties = vk.descriptor_heap_properties;
     VkImageViewCreateInfo image_view_ci{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };

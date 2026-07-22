@@ -8,8 +8,9 @@
 
 constexpr VkFormat output_image_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 
-void Direct_Lighting_Renderer::initialize(Vk_Time_Keeper& time_keeper)
+void Direct_Lighting_Renderer::initialize(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings, Vk_Time_Keeper& time_keeper)
 {
+    direct_lighting.create(descriptor_mappings);
     timer_draw = time_keeper.allocate_timer("direct_draw");
     timer_tonemap = time_keeper.allocate_timer("direct_tone_map");
     timer_compute_copy = time_keeper.allocate_timer("direct_compute_copy");
@@ -22,13 +23,7 @@ void Direct_Lighting_Renderer::destroy()
     }
 }
 
-void Direct_Lighting_Renderer::create_kernels(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
-{
-    direct_lighting.create(descriptor_mappings);
-}
-
-void Direct_Lighting_Renderer::create_resolution_dependent_resources(Descriptor_Heap& descriptor_heap,
-    uint32_t output_image_heap_offset, uint32_t tonemap_image_heap_offset)
+void Direct_Lighting_Renderer::create_resolution_dependent_resources()
 {
     // output image
     {
@@ -40,9 +35,6 @@ void Direct_Lighting_Renderer::create_resolution_dependent_resources(Descriptor_
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
             });
-
-        descriptor_heap.write_image_descriptor(output_image.handle, output_image.format,
-            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, output_image_heap_offset);
     }
     // tone mapped image
     {
@@ -54,10 +46,20 @@ void Direct_Lighting_Renderer::create_resolution_dependent_resources(Descriptor_
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, VK_IMAGE_LAYOUT_GENERAL);
             });
-
-        descriptor_heap.write_image_descriptor(tonemapped_image.handle, tonemapped_image.format,
-            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, tonemap_image_heap_offset);
     }
+}
+
+void Direct_Lighting_Renderer::write_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Offsets& descriptor_offsets)
+{
+    const uint32_t output_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_output);
+    descriptor_heap.write_image_descriptor(output_image.handle, output_image.format,
+        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, output_image_offset
+    );
+
+    const uint32_t tonemap_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::direct_lighting_tonemap);
+    descriptor_heap.write_image_descriptor(tonemapped_image.handle, tonemapped_image.format,
+        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, tonemap_image_offset
+    );
 }
 
 void Direct_Lighting_Renderer::destroy_resolution_dependent_resources()
