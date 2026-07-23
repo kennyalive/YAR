@@ -231,6 +231,17 @@ void YAR::write_swapchain_descriptors()
 
 }
 
+void YAR::recreate_descriptor_heap()
+{
+    descriptor_heap.destroy();
+    descriptor_heap.create();
+
+    write_swapchain_descriptors();
+    path_tracing_renderer.write_descriptors(descriptor_heap, descriptor_offsets);
+    direct_lighting_renderer.write_descriptors(descriptor_heap, descriptor_offsets);
+    gpu_scene.write_descriptors(descriptor_heap, descriptor_offsets);
+}
+
 void YAR::load_project(const std::string& input_file) {
     wait_for_reference_renderer();
 

@@ -43,6 +43,7 @@ private:
     void release_resolution_dependent_resources();
     void restore_resolution_dependent_resources();
     void write_swapchain_descriptors();
+    void recreate_descriptor_heap();
 
     void draw_frame();
     void draw_imgui();

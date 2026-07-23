@@ -36,7 +36,5 @@ struct GPU_Scene
 
     void load(const Scene& scene, Descriptor_Heap& descriptor_heap, const Descriptor_Offsets& descriptor_offsets);
     void destroy();
-
-private:
     void write_descriptors(Descriptor_Heap& descriptor_heap, const Descriptor_Offsets& descriptor_offsets);
 };
