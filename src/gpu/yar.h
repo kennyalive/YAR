@@ -42,6 +42,7 @@ public:
 private:
     void release_resolution_dependent_resources();
     void restore_resolution_dependent_resources();
+    void write_swapchain_descriptors();
 
     void draw_frame();
     void draw_imgui();

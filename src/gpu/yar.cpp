@@ -208,6 +208,16 @@ void YAR::release_resolution_dependent_resources()
 
 void YAR::restore_resolution_dependent_resources()
 {
+    path_tracing_renderer.create_resolution_dependent_resources();
+    direct_lighting_renderer.create_resolution_dependent_resources();
+
+    write_swapchain_descriptors();
+    path_tracing_renderer.write_descriptors(descriptor_heap, descriptor_offsets);
+    direct_lighting_renderer.write_descriptors(descriptor_heap, descriptor_offsets);
+}
+
+void YAR::write_swapchain_descriptors()
+{
     const uint32_t swapchain_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::swapchain_first_image);
     if (vk.swapchain_info.images.size() > max_swapchain_image_descriptors) {
         error("Too many swapchain images (%u), max_swapchain_image_descriptors = %u\n",
@@ -219,10 +229,6 @@ void YAR::restore_resolution_dependent_resources()
             VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, heap_offset);
     }
 
-    path_tracing_renderer.create_resolution_dependent_resources();
-    path_tracing_renderer.write_descriptors(descriptor_heap, descriptor_offsets);
-    direct_lighting_renderer.create_resolution_dependent_resources();
-    direct_lighting_renderer.write_descriptors(descriptor_heap, descriptor_offsets);
 }
 
 void YAR::load_project(const std::string& input_file) {
