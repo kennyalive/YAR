@@ -3,7 +3,7 @@
 #include "gpu_scene.h"
 
 #include "descriptor_heap.h"
-#include "descriptor_offsets.h"
+#include "descriptor_heap_layout.h"
 #include "lib/scene.h"
 
 #include "shaders/shared.slang"
@@ -15,7 +15,7 @@ struct GPU_Vertex {
     Vector2 uv;
 };
 
-void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, const Descriptor_Offsets& descriptor_offsets)
+void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout)
 {
     // Meshes
     {
@@ -50,15 +50,15 @@ void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, const
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "index_scratch");
 
         const uint32_t mesh_count = (uint32_t)scene.geometries.triangle_meshes.size();
-        std::vector<GPU_Types::Mesh_Info> mesh_infos(mesh_count);
+        std::vector<GPU_Types::Mesh_Info> mesh_info_data(mesh_count);
         meshes.resize(mesh_count);
 
         uint32_t current_vertex = 0;
         uint32_t current_index = 0;
 
         for (uint32_t i = 0; i < mesh_count; i++) {
-            mesh_infos[i].first_vertex = current_vertex;
-            mesh_infos[i].first_index = current_index;
+            mesh_info_data[i].first_vertex = current_vertex;
+            mesh_info_data[i].first_index = current_index;
 
             // Initialize GPU_Mesh
             const Triangle_Mesh& mesh = scene.geometries.triangle_meshes[i];
@@ -114,26 +114,26 @@ void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, const
         vertex_scratch_buffer.destroy();
         index_scratch_buffer.destroy();
 
-        mesh_info_buffer = vk_create_buffer(mesh_count * sizeof(GPU_Types::Mesh_Info),
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mesh_infos.data(), "mesh_infos");
+        mesh_infos = vk_create_buffer(mesh_count * sizeof(GPU_Types::Mesh_Info),
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, mesh_info_data.data(), "mesh_infos");
     }
 
     // Instance buffer.
     {
-        std::vector<GPU_Types::Instance_Info> instance_infos(scene.objects.size());
+        std::vector<GPU_Types::Instance_Info> instance_info_data(scene.objects.size());
         for (auto [i, scene_object] : enumerate(scene.objects)) {
-            instance_infos[i].material.init(scene_object.material);
-            instance_infos[i].geometry.init(scene_object.geometry);
+            instance_info_data[i].material.init(scene_object.material);
+            instance_info_data[i].geometry.init(scene_object.geometry);
             // TODO: this should be Light_Handle not just light_index, since we could have multiple types of area lights. 
-            instance_infos[i].area_light_index = scene_object.area_light.index;
-            instance_infos[i].pad0 = 0.f;
-            instance_infos[i].pad1 = 0.f;
-            instance_infos[i].pad2 = 0.f;
-            instance_infos[i].object_to_world_transform = scene_object.object_to_world_transform;
+            instance_info_data[i].area_light_index = scene_object.area_light.index;
+            instance_info_data[i].pad0 = 0.f;
+            instance_info_data[i].pad1 = 0.f;
+            instance_info_data[i].pad2 = 0.f;
+            instance_info_data[i].object_to_world_transform = scene_object.object_to_world_transform;
         }
         VkDeviceSize size = scene.objects.size() * sizeof(GPU_Types::Instance_Info);
-        instance_info_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            instance_infos.data(), "instance_info_buffer");
+        instance_infos = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            instance_info_data.data(), "instance_info_buffer");
     }
 
     // Materials.
@@ -170,7 +170,7 @@ void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, const
 
         if (!gpu_lambertian_materials.empty()) {
             VkDeviceSize size = gpu_lambertian_materials.size() * sizeof(GPU_Types::Lambertian_Material);
-            lambertian_material_buffer = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+            lambertian_materials = vk_create_buffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                 gpu_lambertian_materials.data(), "lambertian_material_buffer");
         }
     }
@@ -228,55 +228,80 @@ void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, const
 
     // Scene info
     {
-        GPU_Types::Scene_Info scene_info{};
-        scene_info.point_light_count = (uint32_t)scene.lights.point_lights.size();
-        scene_info.directional_light_count = (uint32_t)scene.lights.directional_lights.size();
-        scene_info.rect_light_count = (uint32_t)scene.lights.diffuse_rectangular_lights.size();
+        GPU_Types::Scene_Info scene_info_data{};
+        scene_info_data.point_light_count = (uint32_t)scene.lights.point_lights.size();
+        scene_info_data.directional_light_count = (uint32_t)scene.lights.directional_lights.size();
+        scene_info_data.rect_light_count = (uint32_t)scene.lights.diffuse_rectangular_lights.size();
 
         // Count default light if not lights are specified
-        if (scene_info.point_light_count + scene_info.directional_light_count + scene_info.rect_light_count == 0) {
-            scene_info.directional_light_count = 1;
+        if (scene_info_data.point_light_count + scene_info_data.directional_light_count + scene_info_data.rect_light_count == 0) {
+            scene_info_data.directional_light_count = 1;
         }
-
-        scene_info_buffer = vk_create_buffer(sizeof(GPU_Types::Scene_Info),
+        scene_info = vk_create_buffer(sizeof(GPU_Types::Scene_Info),
             VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-            &scene_info, "scene_info_buffer");
+            &scene_info_data, "scene_info_buffer");
     }
 
     // Acceleration structures
     {
         accelerator = create_intersection_accelerator(scene.objects, meshes, mesh_vertex_data.device_address, mesh_index_data.device_address);
     }
-    write_descriptors(descriptor_heap, descriptor_offsets);
+    write_descriptors(descriptor_heap, layout);
     loaded = true;
 }
 
 void GPU_Scene::destroy()
 {
     loaded = false;
+    scene_info.destroy();
+    instance_infos.destroy();
+    mesh_infos.destroy();
+    mesh_vertex_data.destroy();
+    mesh_index_data.destroy();
+    lambertian_materials.destroy();
     point_lights.destroy();
     directional_lights.destroy();
     rect_lights.destroy();
-    lambertian_material_buffer.destroy();
+
+    accelerator.destroy();
+    meshes.clear();
 
     for (Vk_Image& image : images) {
         image.destroy();
     }
     images.clear();
-
-    accelerator.destroy();
-    mesh_info_buffer.destroy();
-    mesh_vertex_data.destroy();
-    mesh_index_data.destroy();
-    meshes.clear();
-    instance_info_buffer.destroy();
-    scene_info_buffer.destroy();
 }
 
-void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap, const Descriptor_Offsets& descriptor_offsets)
+void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout)
 {
+    auto write_buffer_descriptor = [&descriptor_heap](const Vk_Buffer& buffer, uint32_t descriptor_heap_offset)
+    {
+        descriptor_heap.write_buffer_descriptor(buffer.address_range(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_heap_offset);
+    };
+    // Scene
+    write_buffer_descriptor(scene_info, layout.scene_info);
+    write_buffer_descriptor(instance_infos, layout.instance_infos);
+    write_buffer_descriptor(mesh_infos, layout.mesh_infos);
+    write_buffer_descriptor(mesh_vertex_data, layout.mesh_vertex_data);
+    write_buffer_descriptor(mesh_index_data, layout.mesh_index_data);
+
+    // Materials
+    write_buffer_descriptor(lambertian_materials, layout.lambertian_materials);
+
+    // Light descriptors
+    write_buffer_descriptor(point_lights, layout.point_lights);
+    write_buffer_descriptor(directional_lights, layout.directional_lights);
+    write_buffer_descriptor(rect_lights, layout.rect_lights);
+
+    // Intersection accelerator
+    descriptor_heap.write_acceleration_structure_descriptor(accelerator.top_level_accel.device_address, layout.accelerator);
+
+    // Sampler descriptors
+    VkSamplerCreateInfo sampler_create_info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+    descriptor_heap.write_sampler_descriptor(sampler_create_info, layout.image_sampler);
+
     // Image descriptors
-    const uint32_t project_images_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::first_project_image);
+    const uint32_t project_images_offset = layout.get_image_descriptor_offset(Image_Descriptor_Index::first_project_image);
     const uint32_t project_image_descriptors_size = uint32_t(images.size() * vk_image_descriptor_size());
     if (project_images_offset + project_image_descriptors_size > descriptor_heap.resource_reserved_region_offset) {
         error("Not enough descriptor heap space for image descriptors. Free space: %u bytes, image descriptors: %u bytes",
@@ -285,49 +310,8 @@ void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap, const Descri
         );
     }
     for (auto [i, image] : enumerate(images)) {
-        const uint32_t image_index = static_cast<uint32_t>(Image_Index::first_project_image) + (uint32_t)i;
-        const uint32_t heap_offset = descriptor_offsets.images + uint32_t(image_index * vk.descriptor_heap_properties.imageDescriptorSize);
+        const uint32_t image_index = static_cast<uint32_t>(Image_Descriptor_Index::first_project_image) + (uint32_t)i;
+        const uint32_t heap_offset = layout.images + uint32_t(image_index * vk.descriptor_heap_properties.imageDescriptorSize);
         descriptor_heap.write_image_descriptor(image.handle, image.format, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, heap_offset);
     }
-
-    // Sampler descriptors
-    VkSamplerCreateInfo sampler_create_info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-    descriptor_heap.write_sampler_descriptor(sampler_create_info, descriptor_offsets.image_sampler);
-
-    // Geometry descriptors
-    descriptor_heap.write_buffer_descriptor(instance_info_buffer.address_range(),
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_offsets.instance_infos);
-
-    descriptor_heap.write_buffer_descriptor(mesh_info_buffer.address_range(),
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_offsets.mesh_infos);
-
-    descriptor_heap.write_buffer_descriptor(mesh_vertex_data.address_range(),
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_offsets.mesh_vertex_data);
-
-    descriptor_heap.write_buffer_descriptor(mesh_index_data.address_range(),
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_offsets.mesh_index_data);
-
-    // Material descriptors
-    descriptor_heap.write_buffer_descriptor(lambertian_material_buffer.address_range(),
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_offsets.lambertian_materials);
-
-    // Light descriptors
-    descriptor_heap.write_buffer_descriptor(point_lights.address_range(),
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_offsets.point_lights);
-
-    descriptor_heap.write_buffer_descriptor(directional_lights.address_range(),
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_offsets.directional_lights);
-
-    descriptor_heap.write_buffer_descriptor(rect_lights.address_range(),
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_offsets.rect_lights);
-
-    // Scene info descriptors
-    descriptor_heap.write_buffer_descriptor(scene_info_buffer.address_range(),
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_offsets.scene_info_buffer);
-
-    // Intersection accelerator
-    descriptor_heap.write_acceleration_structure_descriptor(
-        accelerator.top_level_accel.device_address,
-        descriptor_offsets.accelerator
-    );
 }

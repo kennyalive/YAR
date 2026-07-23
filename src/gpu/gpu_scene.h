@@ -4,7 +4,7 @@
 #include "lib/material.h"
 
 struct Descriptor_Heap;
-struct Descriptor_Offsets;
+struct Descriptor_Heap_Layout;
 struct Scene;
 
 struct GPU_Mesh 
@@ -24,17 +24,18 @@ struct GPU_Scene
     std::vector<Vk_Image> images;
     std::vector<GPU_Mesh> meshes;
     Vk_Intersection_Accelerator accelerator;
-    Vk_Buffer mesh_info_buffer;
+
+    Vk_Buffer scene_info;
+    Vk_Buffer instance_infos;
+    Vk_Buffer mesh_infos;
     Vk_Buffer mesh_vertex_data;
     Vk_Buffer mesh_index_data;
-    Vk_Buffer instance_info_buffer;
-    Vk_Buffer scene_info_buffer;
+    Vk_Buffer lambertian_materials;
     Vk_Buffer point_lights;
     Vk_Buffer directional_lights;
     Vk_Buffer rect_lights;
-    Vk_Buffer lambertian_material_buffer;
 
-    void load(const Scene& scene, Descriptor_Heap& descriptor_heap, const Descriptor_Offsets& descriptor_offsets);
+    void load(const Scene& scene, Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout);
     void destroy();
-    void write_descriptors(Descriptor_Heap& descriptor_heap, const Descriptor_Offsets& descriptor_offsets);
+    void write_descriptors(Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout);
 };

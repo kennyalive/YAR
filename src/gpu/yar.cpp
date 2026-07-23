@@ -126,11 +126,12 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
         printf("  maxRayHitAttributeSize = %u\n", vk.ray_tracing_pipeline_properties.maxRayHitAttributeSize);
     }
 
+    descriptor_heap_layout.initialize();
     descriptor_heap.create();
-    descriptor_offsets.initialize(descriptor_heap);
-    const std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_offsets.get_descriptor_mappings();
 
-    kernels.create_kernels(descriptor_offsets);
+    const std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_heap_layout.get_descriptor_mappings();
+
+    kernels.create_kernels(descriptor_heap_layout);
     path_tracing_renderer.initialize(descriptor_mappings, time_keeper);
     direct_lighting_renderer.initialize(descriptor_mappings, time_keeper);
 
@@ -212,13 +213,13 @@ void YAR::restore_resolution_dependent_resources()
     direct_lighting_renderer.create_resolution_dependent_resources();
 
     write_swapchain_descriptors();
-    path_tracing_renderer.write_descriptors(descriptor_heap, descriptor_offsets);
-    direct_lighting_renderer.write_descriptors(descriptor_heap, descriptor_offsets);
+    path_tracing_renderer.write_descriptors(descriptor_heap, descriptor_heap_layout);
+    direct_lighting_renderer.write_descriptors(descriptor_heap, descriptor_heap_layout);
 }
 
 void YAR::write_swapchain_descriptors()
 {
-    const uint32_t swapchain_image_offset = descriptor_offsets.get_image_descriptor_offset(Image_Index::swapchain_first_image);
+    const uint32_t swapchain_image_offset = descriptor_heap_layout.get_image_descriptor_offset(Image_Descriptor_Index::swapchain_first_image);
     if (vk.swapchain_info.images.size() > max_swapchain_image_descriptors) {
         error("Too many swapchain images (%u), max_swapchain_image_descriptors = %u\n",
             (uint32_t)vk.swapchain_info.images.size(), max_swapchain_image_descriptors);
@@ -237,16 +238,16 @@ void YAR::recreate_descriptor_heap()
     descriptor_heap.create();
 
     write_swapchain_descriptors();
-    path_tracing_renderer.write_descriptors(descriptor_heap, descriptor_offsets);
-    direct_lighting_renderer.write_descriptors(descriptor_heap, descriptor_offsets);
-    gpu_scene.write_descriptors(descriptor_heap, descriptor_offsets);
+    path_tracing_renderer.write_descriptors(descriptor_heap, descriptor_heap_layout);
+    direct_lighting_renderer.write_descriptors(descriptor_heap, descriptor_heap_layout);
+    gpu_scene.write_descriptors(descriptor_heap, descriptor_heap_layout);
 }
 
 void YAR::load_project(const std::string& input_file) {
     wait_for_reference_renderer();
 
     scene = load_scene(input_file);
-    gpu_scene.load(scene, descriptor_heap, descriptor_offsets);
+    gpu_scene.load(scene, descriptor_heap, descriptor_heap_layout);
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
 
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {

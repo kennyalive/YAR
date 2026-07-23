@@ -65,33 +65,6 @@ void Descriptor_Heap::bind(VkCommandBuffer command_buffer) const
     vkCmdBindSamplerHeapEXT(command_buffer, &sampler_heap_info);
 }
 
-uint32_t Descriptor_Heap::allocate_buffer_descriptor()
-{
-    const auto& properties = vk.descriptor_heap_properties;
-    const uint32_t descriptor_offset = round_up(current_resource_heap_offset, (uint32_t)properties.bufferDescriptorAlignment);
-    current_resource_heap_offset = descriptor_offset + (uint32_t)properties.bufferDescriptorSize;
-    ASSERT(current_resource_heap_offset <= resource_reserved_region_offset);
-    return descriptor_offset;
-}
-
-uint32_t Descriptor_Heap::allocate_image_descriptor(uint32_t count)
-{
-    const auto& properties = vk.descriptor_heap_properties;
-    const uint32_t descriptor_offset = round_up(current_resource_heap_offset, (uint32_t)properties.imageDescriptorAlignment);
-    current_resource_heap_offset = descriptor_offset + (uint32_t)properties.imageDescriptorSize * count;
-    ASSERT(current_resource_heap_offset <= resource_reserved_region_offset);
-    return descriptor_offset;
-}
-
-uint32_t Descriptor_Heap::allocate_sampler_descriptor()
-{
-    const auto& properties = vk.descriptor_heap_properties;
-    const uint32_t descriptor_offset = round_up(current_sampler_heap_offset, (uint32_t)properties.samplerDescriptorAlignment);
-    current_sampler_heap_offset = descriptor_offset + (uint32_t)properties.samplerDescriptorSize;
-    ASSERT(current_sampler_heap_offset <= sampler_reserved_region_offset);
-    return descriptor_offset;
-}
-
 void Descriptor_Heap::write_image_descriptor(VkImage image, VkFormat image_format,
     VkDescriptorType descriptor_type, uint32_t heap_offset) const
 {

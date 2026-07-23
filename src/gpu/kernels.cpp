@@ -2,11 +2,11 @@
 #include "lib/common.h"
 #include "kernels.h"
 
-#include "descriptor_offsets.h"
+#include "descriptor_heap_layout.h"
 
-void Kernels::create_kernels(const Descriptor_Offsets& descriptor_offsets)
+void Kernels::create_kernels(const Descriptor_Heap_Layout& layout)
 {
-    std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_offsets.get_descriptor_mappings();
+    std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = layout.get_descriptor_mappings();
     patch_materials.create(descriptor_mappings);
     apply_tone_mapping.create(descriptor_mappings);
     copy_to_swapchain.create(descriptor_mappings);

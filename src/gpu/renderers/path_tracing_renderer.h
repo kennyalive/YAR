@@ -4,7 +4,7 @@
 #include "../vk.h"
 
 struct Descriptor_Heap;
-struct Descriptor_Offsets;
+struct Descriptor_Heap_Layout;
 struct GPU_Scene;
 struct Kernels;
 
@@ -13,7 +13,7 @@ struct Path_Tracing_Renderer
     Path_Tracing path_tracing;
 
     Vk_Image output_image;
-    Vk_Image tonemapped_image;
+    Vk_Image tonemap;
 
     Vk_Timer* timer_draw = nullptr;
     Vk_Timer* timer_tonemap = nullptr;
@@ -24,8 +24,7 @@ struct Path_Tracing_Renderer
 
     void create_resolution_dependent_resources();
     void destroy_resolution_dependent_resources();
-
-    void write_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Offsets& descriptor_offsets);
+    void write_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout);
 
     void render(const GPU_Scene& gpu_scene, const Kernels& kernels);
 };

@@ -2,11 +2,9 @@
 
 #include "vk.h"
 
-struct Descriptor_Heap;
-
 constexpr uint32_t max_swapchain_image_descriptors = 4;
 
-enum class Image_Index : uint32_t
+enum class Image_Descriptor_Index : uint32_t
 {
     none,
     black,
@@ -21,27 +19,33 @@ enum class Image_Index : uint32_t
     first_project_image = 100
 };
 
-struct Descriptor_Offsets
+struct Descriptor_Heap_Layout
 {
-    uint32_t scene_info_buffer = 0;
+    // Scene
+    uint32_t scene_info = 0;
     uint32_t instance_infos = 0;
     uint32_t mesh_infos = 0;
     uint32_t mesh_vertex_data = 0;
     uint32_t mesh_index_data = 0;
     uint32_t accelerator = 0;
+
+    // Materials
     uint32_t lambertian_materials = 0;
+
+    // Lights
     uint32_t point_lights = 0;
     uint32_t directional_lights = 0;
     uint32_t rect_lights = 0;
 
-    // Images is the only array of descriptors, so it is in the end.
-    // This allows to have predefined offsets for all descriptors.
+    // Array of image descriptors. It is the only array in entire heap layout.
+    // Having single only single array at the end of the heap makes descriptor
+    // offsets independent of the loaded project.
     uint32_t images = 0;
 
     // Sampler heap
     uint32_t image_sampler = 0;
 
-    void initialize(Descriptor_Heap& descriptor_heap);
-    uint32_t get_image_descriptor_offset(Image_Index image_type) const;
+    void initialize();
+    uint32_t get_image_descriptor_offset(Image_Descriptor_Index index) const;
     std::vector<VkDescriptorSetAndBindingMappingEXT> get_descriptor_mappings() const;
 };

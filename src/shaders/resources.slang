@@ -29,6 +29,9 @@ public SamplerState image_sampler;
 //
 // General scene data
 //
+[[vk::binding(SCENE_BASE_BINDING_SCENE_INFO, SCENE_BASE_SET)]]
+public StructuredBuffer<Scene_Info> scene_info_buffer;
+
 [[vk::binding(SCENE_BASE_BINDING_INSTANCE_INFO, SCENE_BASE_SET)]]
 public StructuredBuffer<Instance_Info> instance_infos;
 
@@ -40,9 +43,6 @@ public StructuredBuffer<Mesh_Vertex> mesh_vertex_data;
 
 [[vk::binding(SCENE_BASE_BINDING_MESH_INDEX_DATA, SCENE_BASE_SET)]]
 public StructuredBuffer<uint> mesh_index_data;
-
-[[vk::binding(SCENE_BASE_BINDING_SCENE_INFO, SCENE_BASE_SET)]]
-public StructuredBuffer<Scene_Info> scene_info_buffer;
 
 [[vk::binding(SCENE_BASE_BINDING_ACCELERATOR, SCENE_BASE_SET)]]
 public RaytracingAccelerationStructure accel;

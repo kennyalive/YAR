@@ -1,7 +1,7 @@
 #pragma once
 
 #include "descriptor_heap.h"
-#include "descriptor_offsets.h"
+#include "descriptor_heap_layout.h"
 #include "gpu_scene.h"
 #include "kernels.h"
 #include "vk.h"
@@ -59,8 +59,8 @@ private:
 
     Flying_Camera flying_camera;
     Global_Textures global_textures;
+    Descriptor_Heap_Layout descriptor_heap_layout;
     Descriptor_Heap descriptor_heap;
-    Descriptor_Offsets descriptor_offsets;
     Kernels kernels;
 
     Vk_Time_Keeper time_keeper;

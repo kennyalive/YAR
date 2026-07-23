@@ -1,7 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "copy_to_swapchain.h"
-#include "../descriptor_offsets.h"
+#include "../descriptor_heap_layout.h"
 
 #include "shaders/shared.slang"
 
@@ -26,7 +26,7 @@ void Copy_To_Swapchain::dispatch(uint32_t tonemap_index) const
 
     GPU_Types::Copy_To_Swapchain_Params params{};
     params.tonemap_index = tonemap_index;
-    params.swapchain_first_image_index = (uint32_t)Image_Index::swapchain_first_image;
+    params.swapchain_first_image_index = uint32_t(Image_Descriptor_Index::swapchain_first_image);
 
     VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
     push_data_info.offset = sizeof(GPU_Types::Frame_Params);
