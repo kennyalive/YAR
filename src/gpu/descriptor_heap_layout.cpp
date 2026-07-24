@@ -65,6 +65,14 @@ uint32_t Descriptor_Heap_Layout::get_image_descriptor_offset(Image_Descriptor_In
     return images + uint32_t(index) * vk_image_descriptor_size();
 }
 
+uint32_t Descriptor_Heap_Layout::get_total_descriptor_data_size(uint32_t project_image_count) const
+{
+    // Project images is the last descriptor region.
+    // Its size depends depends on the number of project images.
+    const uint32_t first_project_image_offset = get_image_descriptor_offset(Image_Descriptor_Index::first_project_image);
+    return first_project_image_offset + project_image_count * vk_image_descriptor_size();
+}
+
 std::vector<VkDescriptorSetAndBindingMappingEXT> Descriptor_Heap_Layout::get_descriptor_mappings() const
 {
     const VkSpirvResourceTypeFlagBitsEXT resource_type_read_only_storage = VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT;

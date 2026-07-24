@@ -4,39 +4,36 @@
 
 #include "lib/math.h"
 
-constexpr uint32_t resource_heap_size = 1024 * 1024;
-constexpr uint32_t sampler_heap_size = 32 * 1024;
+constexpr uint32_t resource_descriptor_data_granularity = 64 * 1024;
+constexpr uint32_t max_sampler_descriptor_data_size = 8 * 1024;
 
-void Descriptor_Heap::create()
+void Descriptor_Heap::create(uint32_t descriptor_data_size)
 {
-    const auto& properties = vk.descriptor_heap_properties;
-    ASSERT(resource_heap_size <= properties.maxResourceHeapSize);
+    const auto& props = vk.descriptor_heap_properties;
+    const uint32_t resource_reserved_region_alignment = (uint32_t)std::max(
+        props.bufferDescriptorAlignment,
+        props.imageDescriptorAlignment
+    );
+    ASSERT(resource_descriptor_data_granularity >= resource_reserved_region_alignment);
+
+    resource_reserved_region_offset = round_up(descriptor_data_size, resource_descriptor_data_granularity);
+    const uint32_t resource_heap_size = resource_reserved_region_offset + uint32_t(props.minResourceHeapReservedRange);
+    ASSERT(resource_heap_size <= props.maxResourceHeapSize);
     resource_heap_buffer = vk_create_mapped_buffer_with_alignment(
         resource_heap_size,
         VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT,
-        (uint32_t)properties.resourceHeapAlignment,
+        uint32_t(props.resourceHeapAlignment),
         "resource_heap"
     );
-    const uint32_t resource_reserved_region_alignment = (uint32_t)std::max(
-        properties.bufferDescriptorAlignment,
-        properties.imageDescriptorAlignment
-    );
-    resource_reserved_region_offset = round_up(
-        resource_heap_size - (uint32_t)properties.minResourceHeapReservedRange - (resource_reserved_region_alignment - 1),
-        resource_reserved_region_alignment
-    );
 
-    ASSERT(sampler_heap_size <= properties.maxSamplerHeapSize);
+    sampler_reserved_region_offset = round_up(max_sampler_descriptor_data_size, uint32_t(props.samplerDescriptorAlignment));
+    const uint32_t sampler_heap_size = sampler_reserved_region_offset + uint32_t(props.minSamplerHeapReservedRange);
+    ASSERT(sampler_heap_size <= props.maxSamplerHeapSize);
     sampler_heap_buffer = vk_create_mapped_buffer_with_alignment(
         sampler_heap_size,
         VK_BUFFER_USAGE_DESCRIPTOR_HEAP_BIT_EXT,
-        (uint32_t)properties.samplerHeapAlignment,
+        (uint32_t)props.samplerHeapAlignment,
         "sampler_heap"
-    );
-    const uint32_t sampler_reserved_region_alignment = (uint32_t)properties.samplerDescriptorAlignment;
-    sampler_reserved_region_offset = round_up(
-        sampler_heap_size - (uint32_t)properties.minSamplerHeapReservedRange - (sampler_reserved_region_alignment - 1),
-        sampler_reserved_region_alignment
     );
 }
 

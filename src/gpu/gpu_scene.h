@@ -35,7 +35,7 @@ struct GPU_Scene
     Vk_Buffer directional_lights;
     Vk_Buffer rect_lights;
 
-    void load(const Scene& scene, Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout);
+    void load(const Scene& scene);
     void destroy();
     void write_descriptors(Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout);
 };

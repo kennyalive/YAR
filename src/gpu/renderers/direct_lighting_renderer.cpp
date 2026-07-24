@@ -49,7 +49,7 @@ void Direct_Lighting_Renderer::create_resolution_dependent_resources()
     }
 }
 
-void Direct_Lighting_Renderer::write_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout)
+void Direct_Lighting_Renderer::write_resolution_dependent_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout)
 {
     const uint32_t output_image_offset = layout.get_image_descriptor_offset(Image_Descriptor_Index::direct_lighting_output);
     descriptor_heap.write_image_descriptor(output_image.handle, output_image.format,

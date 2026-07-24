@@ -24,7 +24,7 @@ struct Direct_Lighting_Renderer
 
     void create_resolution_dependent_resources();
     void destroy_resolution_dependent_resources();
-    void write_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout);
+    void write_resolution_dependent_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout);
 
     void render(const GPU_Scene& gpu_scene, const Kernels& kernels);
 };

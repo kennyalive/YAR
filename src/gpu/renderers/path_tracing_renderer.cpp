@@ -55,7 +55,7 @@ void Path_Tracing_Renderer::destroy_resolution_dependent_resources()
     tonemap.destroy();
 }
 
-void Path_Tracing_Renderer::write_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout)
+void Path_Tracing_Renderer::write_resolution_dependent_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout)
 {
     const uint32_t output_image_offset = layout.get_image_descriptor_offset(Image_Descriptor_Index::path_tracer_output);
     descriptor_heap.write_image_descriptor(output_image.handle, output_image.format,

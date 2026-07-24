@@ -15,30 +15,36 @@ constexpr float One_Minus_Epsilon = 0x1.fffffep-1;
 
 constexpr float Infinity = std::numeric_limits<float>::infinity();
 
-inline bool is_finite(float f) {
+inline bool is_finite(float f)
+{
     return f > -Infinity && f < Infinity;
 }
 
-inline constexpr float radians(float degrees) {
+inline constexpr float radians(float degrees)
+{
     constexpr float deg_2_rad = Pi / 180.f;
     return degrees * deg_2_rad;
 }
 
-inline constexpr float degrees(float radians) {
+inline constexpr float degrees(float radians)
+{
     constexpr float rad_2_deg = 180.f / Pi;
     return radians * rad_2_deg;
 }
 
-inline bool is_power_of_2(uint32_t k) {
+inline bool is_power_of_2(uint32_t k)
+{
     return k != 0 && (k & (k - 1)) == 0;
 }
 
-inline uint32_t log2_int(uint32_t k) {
+inline uint32_t log2_int(uint32_t k)
+{
     ASSERT(k > 0);
     return most_significant_bit_index(k);
 }
 
-inline uint32_t round_up_to_power_of_2(uint32_t k) {
+inline uint32_t round_up_to_power_of_2(uint32_t k)
+{
     ASSERT(k > 0);
     k--;
     k |= k >> 1;
@@ -51,7 +57,9 @@ inline uint32_t round_up_to_power_of_2(uint32_t k) {
 }
 
 template <typename T>
-inline T round_up(T k, T alignment) {
+inline T round_up(T k, T alignment)
+{
+    ASSERT(is_power_of_2(alignment));
     return (k + alignment - 1) & ~(alignment - 1);
 }
 

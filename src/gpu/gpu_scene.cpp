@@ -15,7 +15,7 @@ struct GPU_Vertex {
     Vector2 uv;
 };
 
-void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout)
+void GPU_Scene::load(const Scene& scene)
 {
     // Meshes
     {
@@ -246,7 +246,6 @@ void GPU_Scene::load(const Scene& scene, Descriptor_Heap& descriptor_heap, const
     {
         accelerator = create_intersection_accelerator(scene.objects, meshes, mesh_vertex_data.device_address, mesh_index_data.device_address);
     }
-    write_descriptors(descriptor_heap, layout);
     loaded = true;
 }
 
@@ -301,17 +300,9 @@ void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap, const Descri
     descriptor_heap.write_sampler_descriptor(sampler_create_info, layout.image_sampler);
 
     // Image descriptors
-    const uint32_t project_images_offset = layout.get_image_descriptor_offset(Image_Descriptor_Index::first_project_image);
-    const uint32_t project_image_descriptors_size = uint32_t(images.size() * vk_image_descriptor_size());
-    if (project_images_offset + project_image_descriptors_size > descriptor_heap.resource_reserved_region_offset) {
-        error("Not enough descriptor heap space for image descriptors. Free space: %u bytes, image descriptors: %u bytes",
-            descriptor_heap.resource_reserved_region_offset - project_images_offset,
-            project_image_descriptors_size
-        );
-    }
     for (auto [i, image] : enumerate(images)) {
-        const uint32_t image_index = static_cast<uint32_t>(Image_Descriptor_Index::first_project_image) + (uint32_t)i;
-        const uint32_t heap_offset = layout.images + uint32_t(image_index * vk.descriptor_heap_properties.imageDescriptorSize);
+        const uint32_t image_index = uint32_t(Image_Descriptor_Index::first_project_image) + uint32_t(i);
+        const uint32_t heap_offset = layout.images + uint32_t(image_index * vk_image_descriptor_size());
         descriptor_heap.write_image_descriptor(image.handle, image.format, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, heap_offset);
     }
 }

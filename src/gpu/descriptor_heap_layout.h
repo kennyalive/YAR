@@ -47,5 +47,6 @@ struct Descriptor_Heap_Layout
 
     void initialize();
     uint32_t get_image_descriptor_offset(Image_Descriptor_Index index) const;
+    uint32_t get_total_descriptor_data_size(uint32_t project_image_count) const;
     std::vector<VkDescriptorSetAndBindingMappingEXT> get_descriptor_mappings() const;
 };

@@ -127,7 +127,8 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     }
 
     descriptor_heap_layout.initialize();
-    descriptor_heap.create();
+    const uint32_t descriptors_size = descriptor_heap_layout.get_total_descriptor_data_size(0);
+    descriptor_heap.create(descriptors_size);
 
     const std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_heap_layout.get_descriptor_mappings();
 
@@ -211,49 +212,45 @@ void YAR::restore_resolution_dependent_resources()
 {
     path_tracing_renderer.create_resolution_dependent_resources();
     direct_lighting_renderer.create_resolution_dependent_resources();
-
-    write_swapchain_descriptors();
-    path_tracing_renderer.write_descriptors(descriptor_heap, descriptor_heap_layout);
-    direct_lighting_renderer.write_descriptors(descriptor_heap, descriptor_heap_layout);
+    write_resolution_dependent_descriptors();
 }
 
-void YAR::write_swapchain_descriptors()
+void YAR::write_resolution_dependent_descriptors()
 {
-    const uint32_t swapchain_image_offset = descriptor_heap_layout.get_image_descriptor_offset(Image_Descriptor_Index::swapchain_first_image);
+    uint32_t swapchain_image_offset = descriptor_heap_layout.get_image_descriptor_offset(Image_Descriptor_Index::swapchain_first_image);
     if (vk.swapchain_info.images.size() > max_swapchain_image_descriptors) {
         error("Too many swapchain images (%u), max_swapchain_image_descriptors = %u\n",
             (uint32_t)vk.swapchain_info.images.size(), max_swapchain_image_descriptors);
     }
     for (size_t i = 0; i < vk.swapchain_info.images.size(); i++) {
-        const uint32_t heap_offset = swapchain_image_offset + uint32_t(i * vk.descriptor_heap_properties.imageDescriptorSize);
         descriptor_heap.write_image_descriptor(vk.swapchain_info.images[i], vk.surface_format.format,
-            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, heap_offset);
+            VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, swapchain_image_offset);
+        swapchain_image_offset += vk_image_descriptor_size();
     }
-
-}
-
-void YAR::recreate_descriptor_heap()
-{
-    descriptor_heap.destroy();
-    descriptor_heap.create();
-
-    write_swapchain_descriptors();
-    path_tracing_renderer.write_descriptors(descriptor_heap, descriptor_heap_layout);
-    direct_lighting_renderer.write_descriptors(descriptor_heap, descriptor_heap_layout);
-    gpu_scene.write_descriptors(descriptor_heap, descriptor_heap_layout);
+    path_tracing_renderer.write_resolution_dependent_descriptors(descriptor_heap, descriptor_heap_layout);
+    direct_lighting_renderer.write_resolution_dependent_descriptors(descriptor_heap, descriptor_heap_layout);
 }
 
 void YAR::load_project(const std::string& input_file) {
     wait_for_reference_renderer();
 
     scene = load_scene(input_file);
-    gpu_scene.load(scene, descriptor_heap, descriptor_heap_layout);
-    flying_camera.initialize(scene.view_points[0], scene.z_is_up);
+    gpu_scene.load(scene);
+
+    const uint32_t descriptor_data_size = descriptor_heap_layout.get_total_descriptor_data_size(uint32_t(gpu_scene.images.size()));
+    if (descriptor_data_size > descriptor_heap.resource_reserved_region_offset) {
+        descriptor_heap.destroy();
+        descriptor_heap.create(descriptor_data_size);
+        write_resolution_dependent_descriptors();
+    }
+    gpu_scene.write_descriptors(descriptor_heap, descriptor_heap_layout);
 
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
         descriptor_heap.bind(command_buffer);
         kernels.patch_materials.dispatch(command_buffer);
     });
+
+    flying_camera.initialize(scene.view_points[0], scene.z_is_up);
 }
 
 static double last_frame_time;
