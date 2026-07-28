@@ -115,11 +115,10 @@ void Path_Tracing::create_pipeline(const std::vector<VkDescriptorSetAndBindingMa
         }
 
         VkPipelineCreateFlags2CreateInfo flags_create_info = { VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO };
-        flags_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT;
+        flags_create_info.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_HEAP_BIT_EXT | VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR;
 
         VkRayTracingPipelineCreateInfoKHR create_info{ VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR };
         create_info.pNext = &flags_create_info;
-        create_info.flags = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR;
         create_info.stageCount = (uint32_t)std::size(stage_infos);
         create_info.pStages = stage_infos;
         create_info.groupCount = (uint32_t)std::size(shader_groups);
