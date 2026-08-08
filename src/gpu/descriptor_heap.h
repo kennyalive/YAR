@@ -15,7 +15,13 @@ struct Descriptor_Heap
     void bind(VkCommandBuffer command_buffer) const;
 
     void write_image_descriptor(VkImage image, VkFormat image_format, VkDescriptorType descriptor_type, uint32_t heap_offset) const;
+    void write_null_image_descriptor(VkDescriptorType descriptor_type, uint32_t heap_offset) const;
+
+    // Use VkDeviceAddressRangeEXT{} to write null buffer descriptor
     void write_buffer_descriptor(VkDeviceAddressRangeEXT address_range, VkDescriptorType descriptor_type, uint32_t heap_offset);
+
+    // Use zero device address to write null acceleration structure descriptor
     void write_acceleration_structure_descriptor(VkDeviceAddress device_address, uint32_t heap_offset);
+
     void write_sampler_descriptor(const VkSamplerCreateInfo& sampler_ci, uint32_t heap_offset);
 };

@@ -33,26 +33,36 @@ static uint32_t next_sampler_descriptor_offset(uint32_t& current_offset)
 void Descriptor_Heap_Layout::initialize()
 {
     uint32_t resource_heap_offset = 0;
-    uint32_t* buffer_descriptor_offsets[] = {
+
+    // Initialize storage buffer descriptors offsets
+    uint32_t* p_offsets[] = {
         &scene_info,
         &instance_infos,
         &mesh_infos,
         &mesh_vertex_data,
         &mesh_index_data,
-        &accelerator,
         &lambertian_materials,
         &point_lights,
         &directional_lights,
         &rect_lights
     };
-    for (uint32_t* p_buffer_descriptor_offset : buffer_descriptor_offsets) {
-        *p_buffer_descriptor_offset = next_buffer_descriptor_offset(resource_heap_offset);
+    storage_buffer_descriptor_offsets.reserve(std::size(p_offsets));
+    for (uint32_t* p_offset : p_offsets) {
+        // Write into offset variable (e.g. instance_infos)
+        *p_offset = next_buffer_descriptor_offset(resource_heap_offset);
+        // Add offset to the array of all storage descriptor
+        storage_buffer_descriptor_offsets.push_back(*p_offset);
     }
+
+    // Accelerator descriptor has size of a buffer descriptor but uses a different descriptor type.
+    // The descriptor clear code depends on the descriptor type, so don't put accelerator into
+    // storage_buffer_descriptor_offsets.
+    accelerator = next_buffer_descriptor_offset(resource_heap_offset);
 
     // At launch we don't know the number of images (and it changes per project),
     // but the offset of the image descriptor array is always the same, so request
     // a single descriptor to get the offset. Since we don't know the number of images
-    // this should be the last allocation of resource heap offset.
+    // this should be the last resource heap allocation.
     images = next_image_descriptor_offset(resource_heap_offset, 1);
 
     // Sampler heap

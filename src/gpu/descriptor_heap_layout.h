@@ -27,6 +27,7 @@ struct Descriptor_Heap_Layout
     uint32_t mesh_infos = 0;
     uint32_t mesh_vertex_data = 0;
     uint32_t mesh_index_data = 0;
+
     uint32_t accelerator = 0;
 
     // Materials
@@ -44,6 +45,10 @@ struct Descriptor_Heap_Layout
 
     // Sampler heap
     uint32_t image_sampler = 0;
+
+    // All of the above offsets that are buffer descriptor offsets.
+    // This is useful during cleanup, when we want to zero all buffer descriptors.
+    std::vector<uint32_t> storage_buffer_descriptor_offsets;
 
     void initialize();
     uint32_t get_image_descriptor_offset(Image_Descriptor_Index index) const;

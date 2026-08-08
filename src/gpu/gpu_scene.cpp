@@ -295,14 +295,29 @@ void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap, const Descri
     // Intersection accelerator
     descriptor_heap.write_acceleration_structure_descriptor(accelerator.top_level_accel.device_address, layout.accelerator);
 
-    // Sampler descriptors
-    VkSamplerCreateInfo sampler_create_info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-    descriptor_heap.write_sampler_descriptor(sampler_create_info, layout.image_sampler);
-
     // Image descriptors
     for (auto [i, image] : enumerate(images)) {
         const uint32_t image_index = uint32_t(Image_Descriptor_Index::first_project_image) + uint32_t(i);
         const uint32_t heap_offset = layout.images + uint32_t(image_index * vk_image_descriptor_size());
         descriptor_heap.write_image_descriptor(image.handle, image.format, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, heap_offset);
+    }
+}
+
+void GPU_Scene::clear_descriptors(Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout)
+{
+    auto clear_buffer_descriptor = [&descriptor_heap](uint32_t descriptor_heap_offset)
+    {
+        descriptor_heap.write_buffer_descriptor(VkDeviceAddressRangeEXT{}, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, descriptor_heap_offset);
+    };
+    for (uint32_t offset : layout.storage_buffer_descriptor_offsets) {
+        clear_buffer_descriptor(offset);
+    }
+    descriptor_heap.write_acceleration_structure_descriptor(0, layout.accelerator);
+
+    // Clear only project image descriptors (don't touch images before Image_Descriptor_Index::first_project_image)
+    uint32_t image_descriptor_offset = layout.images + uint32_t(Image_Descriptor_Index::first_project_image) * vk_image_descriptor_size();
+    for (size_t i = 0; i < images.size(); i++) {
+        descriptor_heap.write_null_image_descriptor(VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, image_descriptor_offset);
+        image_descriptor_offset += vk_image_descriptor_size();
     }
 }

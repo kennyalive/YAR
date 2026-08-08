@@ -127,8 +127,8 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     }
 
     descriptor_heap_layout.initialize();
-    const uint32_t descriptors_size = descriptor_heap_layout.get_total_descriptor_data_size(0);
-    descriptor_heap.create(descriptors_size);
+    const uint32_t descriptor_data_size = descriptor_heap_layout.get_total_descriptor_data_size(0);
+    descriptor_heap.create(descriptor_data_size);
 
     const std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_heap_layout.get_descriptor_mappings();
 
@@ -137,6 +137,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     direct_lighting_renderer.initialize(descriptor_mappings, time_keeper);
 
     restore_resolution_dependent_resources();
+    write_sampler_descriptors();
     global_textures.create();
 
     // ImGui setup.
@@ -231,9 +232,15 @@ void YAR::write_resolution_dependent_descriptors()
     direct_lighting_renderer.write_resolution_dependent_descriptors(descriptor_heap, descriptor_heap_layout);
 }
 
-void YAR::load_project(const std::string& input_file) {
-    wait_for_reference_renderer();
+void YAR::write_sampler_descriptors()
+{
+    VkSamplerCreateInfo sampler_create_info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+    descriptor_heap.write_sampler_descriptor(sampler_create_info, descriptor_heap_layout.image_sampler);
+}
 
+void YAR::load_project(const std::string& input_file)
+{
+    ASSERT(scene.type == Scene_Type::none);
     scene = load_scene(input_file);
     gpu_scene.load(scene);
 
@@ -242,6 +249,7 @@ void YAR::load_project(const std::string& input_file) {
         descriptor_heap.destroy();
         descriptor_heap.create(descriptor_data_size);
         write_resolution_dependent_descriptors();
+        write_sampler_descriptors();
     }
     gpu_scene.write_descriptors(descriptor_heap, descriptor_heap_layout);
 
@@ -253,9 +261,23 @@ void YAR::load_project(const std::string& input_file) {
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
 }
 
+void YAR::unload_project()
+{
+    ASSERT(scene.type != Scene_Type::none);
+
+    wait_for_reference_renderer();
+    VK_CHECK(vkDeviceWaitIdle(vk.device));
+
+    gpu_scene.clear_descriptors(descriptor_heap, descriptor_heap_layout);
+    gpu_scene.destroy();
+    scene = Scene{};
+    flying_camera = Flying_Camera{};
+}
+
 static double last_frame_time;
 
-void YAR::run_frame() {
+void YAR::run_frame()
+{
     ui.reference_renderer_running = reference_renderer_running.load();
 
     if (ui.rendering_algorithm == 0) {

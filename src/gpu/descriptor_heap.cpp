@@ -65,6 +65,7 @@ void Descriptor_Heap::bind(VkCommandBuffer command_buffer) const
 void Descriptor_Heap::write_image_descriptor(VkImage image, VkFormat image_format,
     VkDescriptorType descriptor_type, uint32_t heap_offset) const
 {
+    ASSERT(image != VK_NULL_HANDLE);
     const auto& properties = vk.descriptor_heap_properties;
     VkImageViewCreateInfo image_view_ci{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
     image_view_ci.image = image;
@@ -79,6 +80,21 @@ void Descriptor_Heap::write_image_descriptor(VkImage image, VkFormat image_forma
     VkResourceDescriptorInfoEXT descriptor_info{ VK_STRUCTURE_TYPE_RESOURCE_DESCRIPTOR_INFO_EXT };
     descriptor_info.type = descriptor_type;
     descriptor_info.data.pImage = &image_descriptor_info;
+
+    uint8_t* descriptor_data = static_cast<uint8_t*>(resource_heap_buffer.mapped_ptr);
+    VkHostAddressRangeEXT host_range = {};
+    host_range.address = descriptor_data + heap_offset;
+    host_range.size = properties.imageDescriptorSize;
+
+    VK_CHECK(vkWriteResourceDescriptorsEXT(vk.device, 1, &descriptor_info, &host_range));
+}
+
+void Descriptor_Heap::write_null_image_descriptor(VkDescriptorType descriptor_type, uint32_t heap_offset) const
+{
+    const auto& properties = vk.descriptor_heap_properties;
+    VkResourceDescriptorInfoEXT descriptor_info{ VK_STRUCTURE_TYPE_RESOURCE_DESCRIPTOR_INFO_EXT };
+    descriptor_info.type = descriptor_type;
+    descriptor_info.data.pImage = nullptr;
 
     uint8_t* descriptor_data = static_cast<uint8_t*>(resource_heap_buffer.mapped_ptr);
     VkHostAddressRangeEXT host_range = {};
