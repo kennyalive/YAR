@@ -240,6 +240,8 @@ void YAR::write_sampler_descriptors()
 void YAR::load_project(const std::string& input_file)
 {
     ASSERT(scene.type == Scene_Type::none);
+    VK_CHECK(vkDeviceWaitIdle(vk.device));
+
     scene = load_scene(input_file);
     gpu_scene.load(scene);
 
@@ -258,6 +260,7 @@ void YAR::load_project(const std::string& input_file)
     });
 
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
+    ui.project_file = input_file;
 }
 
 void YAR::unload_project()
@@ -271,6 +274,7 @@ void YAR::unload_project()
     gpu_scene.destroy();
     scene = Scene{};
     flying_camera = Flying_Camera{};
+    accumulation_index = 0;
 }
 
 static double last_frame_time;
@@ -334,6 +338,12 @@ void YAR::run_frame()
     }
     if (ui_actions.reference_render_requested) {
         start_reference_renderer();
+    }
+    if (ui_actions.load_project) {
+        if (scene.type != Scene_Type::none) {
+            unload_project();
+        }
+        load_project(ui.project_file);
     }
 
     draw_frame();

@@ -7,6 +7,7 @@ struct Vk_Timer;
 
 struct UI_Actions {
     bool reference_render_requested = false;
+    bool load_project = false;
 };
 
 struct UI {
@@ -19,6 +20,7 @@ struct UI {
     int rendering_algorithm = 1;
 
     // Externally provide state displayed or used by the UI.
+    std::string project_file;
     bool reference_renderer_running = false;
     bool* spp4 = nullptr;
     const Vk_Timer* frame_time_scope = nullptr;
