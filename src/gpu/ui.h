@@ -8,6 +8,7 @@ struct Vk_Timer;
 struct UI_Actions {
     bool reference_render_requested = false;
     bool load_project = false;
+    bool unload_project = false;
 };
 
 struct UI {

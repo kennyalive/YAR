@@ -21,6 +21,7 @@ struct Direct_Lighting_Renderer
 
     void initialize(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings, Vk_Time_Keeper& time_keeper);
     void destroy();
+    void on_project_load();
 
     void create_resolution_dependent_resources();
     void destroy_resolution_dependent_resources();

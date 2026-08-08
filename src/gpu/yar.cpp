@@ -261,6 +261,10 @@ void YAR::load_project(const std::string& input_file)
 
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
     ui.project_file = input_file;
+
+    path_tracing_renderer.on_project_load();
+    direct_lighting_renderer.on_project_load();
+    accumulation_index = 0;
 }
 
 void YAR::unload_project()
@@ -274,7 +278,6 @@ void YAR::unload_project()
     gpu_scene.destroy();
     scene = Scene{};
     flying_camera = Flying_Camera{};
-    accumulation_index = 0;
 }
 
 static double last_frame_time;
@@ -345,6 +348,11 @@ void YAR::run_frame()
         }
         load_project(ui.project_file);
     }
+    if (ui_actions.unload_project) {
+        if (scene.type != Scene_Type::none) {
+            unload_project();
+        }
+    }
 
     draw_frame();
     frame_index++;
@@ -377,11 +385,17 @@ void YAR::draw_frame() {
     push_data_info.data.size = sizeof(frame_params);
     vkCmdPushDataEXT(vk.command_buffer, &push_data_info);
 
-    if (ui.rendering_algorithm == 0) {
-        direct_lighting_renderer.render(gpu_scene, kernels);
-    }
-    else if (ui.rendering_algorithm == 1) {
-        path_tracing_renderer.render(gpu_scene, kernels);
+    vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
+
+    if (gpu_scene.loaded) {
+        if (ui.rendering_algorithm == 0) {
+            direct_lighting_renderer.render(gpu_scene, kernels);
+        }
+        else if (ui.rendering_algorithm == 1) {
+            path_tracing_renderer.render(gpu_scene, kernels);
+        }
     }
 
     vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],
@@ -407,7 +421,14 @@ void YAR::draw_imgui()
     VkRenderingAttachmentInfo color_attachment{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
     color_attachment.imageView = vk.swapchain_info.image_views[vk.swapchain_image_index];
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    if (scene.type == Scene_Type::none) {
+        // Clear background if not project is loaded
+        color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        color_attachment.clearValue.color.float32[3] = 1.0; // (0, 0, 0, 1)
+    }
+    else {
+        color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    }
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
     VkRenderingInfo rendering_info{ VK_STRUCTURE_TYPE_RENDERING_INFO };

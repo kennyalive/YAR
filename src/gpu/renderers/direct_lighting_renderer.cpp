@@ -23,12 +23,23 @@ void Direct_Lighting_Renderer::destroy()
     }
 }
 
+void Direct_Lighting_Renderer::on_project_load()
+{
+    vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
+        VkClearColorValue clear_color{};
+        clear_color.float32[3] = 1.f;
+        VkImageSubresourceRange range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+        vkCmdClearColorImage(command_buffer, output_image.handle, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
+        vkCmdClearColorImage(command_buffer, tonemap.handle, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
+    });
+}
+
 void Direct_Lighting_Renderer::create_resolution_dependent_resources()
 {
     // output image
     {
         output_image = vk_create_image(vk.surface_size.width, vk.surface_size.height, output_image_format,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "output_image");
+            VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, "output_image");
 
         vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
             vk_cmd_image_barrier(command_buffer, output_image.handle,
@@ -39,7 +50,7 @@ void Direct_Lighting_Renderer::create_resolution_dependent_resources()
     // tone mapped image
     {
         tonemap = vk_create_image(vk.surface_size.width, vk.surface_size.height, output_image_format,
-            VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, "tonemapped_image");
+            VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, "tonemapped_image");
 
         vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
             vk_cmd_image_barrier(command_buffer, tonemap.handle,
@@ -71,7 +82,7 @@ void Direct_Lighting_Renderer::render(const GPU_Scene& gpu_scene, const Kernels&
     const uint32_t output_index = uint32_t(Image_Descriptor_Index::direct_lighting_output);
     const uint32_t tonemap_index = uint32_t(Image_Descriptor_Index::direct_lighting_tonemap);
 
-    if (gpu_scene.loaded) {
+    {
         VK_TIME_SCOPE(timer_draw);
         direct_lighting.dispatch(output_index);
     }
@@ -79,9 +90,6 @@ void Direct_Lighting_Renderer::render(const GPU_Scene& gpu_scene, const Kernels&
         VK_TIME_SCOPE(timer_tonemap);
         kernels.apply_tone_mapping.dispatch(output_index, tonemap_index);
     }
-    vk_cmd_image_barrier(vk.command_buffer, vk.swapchain_info.images[vk.swapchain_image_index],
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL);
     {
         VK_TIME_SCOPE(timer_compute_copy);
         kernels.copy_to_swapchain.dispatch(tonemap_index);

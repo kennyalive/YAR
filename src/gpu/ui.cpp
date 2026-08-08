@@ -68,6 +68,9 @@ UI_Actions UI::run_imgui() {
             if (ImGui::Button("Load")) {
                 actions.load_project = true;
             }
+            if (ImGui::Button("Unload")) {
+                actions.unload_project = true;
+            }
 
             if (ImGui::BeginPopupContextWindow()) {
                 if (ImGui::MenuItem("Custom",       NULL, corner == -1)) corner = -1;
