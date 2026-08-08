@@ -155,13 +155,12 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
         init_info.MinImageCount = 2;
         init_info.ImageCount = (uint32_t)vk.swapchain_info.images.size();
         init_info.UseDynamicRendering = true;
-        init_info.PipelineRenderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
-        init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-        init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &vk.surface_format.format;
+        init_info.PipelineInfoMain.PipelineRenderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
+        init_info.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+        init_info.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &vk.surface_format.format;
 
         ImGui_ImplVulkan_Init(&init_info);
         ImGui::StyleColorsDark();
-        ImGui_ImplVulkan_CreateFontsTexture();
     }
 
     timer_frame = time_keeper.allocate_timer("frame");

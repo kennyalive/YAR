@@ -3,6 +3,7 @@
 
 #include "stb/stb_image.h"
 #include "glfw/glfw3.h"
+#include "imgui/imgui_impl_vulkan.h"
 
 #include "vulkan/vk_enum_string_helper.h"
 const char* vk_result_to_string(VkResult result) { return string_VkResult(result); }
@@ -266,15 +267,15 @@ void vk_initialize(GLFWwindow* window, const Vk_Init_Params& init_params)
 
     // Imgui descriptor pool.
     {
-        const VkDescriptorPoolSize pool_size_info = {
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            1
+        const VkDescriptorPoolSize pool_size_info[2] = {
+            {VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, IMGUI_IMPL_VULKAN_MINIMUM_SAMPLED_IMAGE_POOL_SIZE},
+            {VK_DESCRIPTOR_TYPE_SAMPLER, IMGUI_IMPL_VULKAN_MINIMUM_SAMPLER_POOL_SIZE},
         };
         VkDescriptorPoolCreateInfo desc{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
         desc.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        desc.maxSets = 1;
-        desc.poolSizeCount = 1;
-        desc.pPoolSizes = &pool_size_info;
+        desc.maxSets = IMGUI_IMPL_VULKAN_MINIMUM_SAMPLED_IMAGE_POOL_SIZE + IMGUI_IMPL_VULKAN_MINIMUM_SAMPLER_POOL_SIZE;
+        desc.poolSizeCount = 2;
+        desc.pPoolSizes = pool_size_info;
         VK_CHECK(vkCreateDescriptorPool(vk.device, &desc, nullptr, &vk.imgui_descriptor_pool));
         vk_set_debug_name(vk.imgui_descriptor_pool, "imgui_descriptor_pool");
     }

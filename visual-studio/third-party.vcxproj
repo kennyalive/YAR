@@ -112,6 +112,7 @@
     <ClCompile Include="..\third-party\imgui\imgui_draw.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="..\third-party\imgui\imgui_stdlib.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\third-party\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\third-party\pbrt-parser\impl\3rdParty\rply_reader.c" />
