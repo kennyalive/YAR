@@ -5,19 +5,21 @@
 
 struct Vk_Timer;
 
-struct UI_Actions {
+struct UI_Actions
+{
     bool reference_render_requested = false;
     bool load_project = false;
     bool unload_project = false;
 };
 
-struct UI {
+struct UI
+{
     UI_Actions run_imgui();
-
-    bool reset_accumulation = false;
 
     bool show_ui = true;
     bool vsync = true;
+
+    bool renderer_changed = false;
     int rendering_algorithm = 1;
 
     // Externally provide state displayed or used by the UI.

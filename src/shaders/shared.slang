@@ -111,9 +111,9 @@ SLANG_PUBLIC struct Instance_Info {
 SLANG_PUBLIC struct Frame_Params
 {
     SLANG_PUBLIC uint frame_index;
-    SLANG_PUBLIC uint accumulation_index;
     SLANG_PUBLIC uint swapchain_image_index;
     SLANG_PUBLIC uint spp4;
+    SLANG_PUBLIC uint pad;
 
     SLANG_PUBLIC Matrix3x4 camera_to_world;
 
@@ -233,6 +233,7 @@ SLANG_PUBLIC struct Copy_To_Swapchain_Params
 SLANG_PUBLIC struct Path_Tracing_Params
 {
     SLANG_PUBLIC uint output_image_index;
+    SLANG_PUBLIC uint accumulation_index;
 };
 
 SLANG_PUBLIC struct Direct_Lighting_Params

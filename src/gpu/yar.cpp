@@ -262,9 +262,12 @@ void YAR::load_project(const std::string& input_file)
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
     ui.project_file = input_file;
 
-    path_tracing_renderer.on_project_load();
-    direct_lighting_renderer.on_project_load();
-    accumulation_index = 0;
+    if (ui.rendering_algorithm == 0) {
+        direct_lighting_renderer.activate();
+    }
+    else if (ui.rendering_algorithm == 1) {
+        path_tracing_renderer.activate();
+    }
 }
 
 void YAR::unload_project()
@@ -332,12 +335,17 @@ void YAR::run_frame()
     }
 
     if (flying_camera.update(dt)) {
-        accumulation_index = 0;
+        path_tracing_renderer.on_camera_changed();
     }
     ui.camera_position = flying_camera.get_camera_pose().get_column(3);
 
-    if (ui.reset_accumulation) {
-        accumulation_index = 0;
+    if (ui.renderer_changed) {
+        if (ui.rendering_algorithm == 0) {
+            direct_lighting_renderer.activate();
+        }
+        else if (ui.rendering_algorithm == 1) {
+            path_tracing_renderer.activate();
+        }
     }
     if (ui_actions.reference_render_requested) {
         start_reference_renderer();
@@ -353,10 +361,8 @@ void YAR::run_frame()
             unload_project();
         }
     }
-
     draw_frame();
     frame_index++;
-    accumulation_index++;
 }
 
 void YAR::draw_frame() {
@@ -369,7 +375,6 @@ void YAR::draw_frame() {
     static_assert(sizeof(GPU_Types::Frame_Params) == 128); // Vulkan guarantees 256 min limit
     GPU_Types::Frame_Params frame_params{};
     frame_params.frame_index = frame_index;
-    frame_params.accumulation_index = accumulation_index;
     frame_params.swapchain_image_index = vk.swapchain_image_index;
     frame_params.spp4 = uint32_t(spp4);
 

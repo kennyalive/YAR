@@ -19,9 +19,12 @@ struct Path_Tracing_Renderer
     Vk_Timer* timer_tonemap = nullptr;
     Vk_Timer* timer_compute_copy = nullptr;
 
+    uint32_t accumulation_index = 0;
+
     void initialize(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings, Vk_Time_Keeper& time_keeper);
     void destroy();
-    void on_project_load();
+    void activate();
+    void on_camera_changed();
 
     void create_resolution_dependent_resources();
     void destroy_resolution_dependent_resources();

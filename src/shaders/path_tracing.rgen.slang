@@ -81,7 +81,7 @@ void main()
     }
 
     float3 current_L = storage_images_rgba_f16[data.local.output_image_index][DispatchRaysIndex().xy].rgb;
-    float k = float(data.frame.accumulation_index + 1);
+    float k = float(data.local.accumulation_index + 1);
     float3 new_L = current_L * (k - 1) / k + L / k;
     storage_images_rgba_f16[data.local.output_image_index][DispatchRaysIndex().xy] = float4(new_L, 1);
 

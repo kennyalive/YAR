@@ -129,10 +129,11 @@ void Path_Tracing::create_pipeline(const std::vector<VkDescriptorSetAndBindingMa
 
 }
 
-void Path_Tracing::dispatch(uint32_t output_image_index)
+void Path_Tracing::dispatch(uint32_t output_image_index, uint32_t accumulation_index)
 {
     GPU_Types::Path_Tracing_Params params{};
     params.output_image_index = output_image_index;
+    params.accumulation_index = accumulation_index;
 
     VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
     push_data_info.offset = sizeof(GPU_Types::Frame_Params);

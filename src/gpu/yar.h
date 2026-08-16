@@ -56,26 +56,26 @@ private:
 
 private:
     uint32_t frame_index = 0;
-    uint32_t accumulation_index = 0;
     bool spp4 = false;
 
-    Flying_Camera flying_camera;
-    Global_Textures global_textures;
     Descriptor_Heap_Layout descriptor_heap_layout;
     Descriptor_Heap descriptor_heap;
     Kernels kernels;
+    Global_Textures global_textures;
+
+    Scene scene;
+    GPU_Scene gpu_scene;
+
+    UI ui;
+    Flying_Camera flying_camera;
 
     Vk_Time_Keeper time_keeper;
     Vk_Timer* timer_frame = nullptr;
     Vk_Timer* timer_ui = nullptr;
 
-    std::atomic_bool reference_renderer_running = false;
-    std::jthread reference_renderer_thread;
-
-    Scene scene;
-    GPU_Scene gpu_scene;
-    UI ui;
-
     Path_Tracing_Renderer path_tracing_renderer;
     Direct_Lighting_Renderer direct_lighting_renderer;
+
+    std::atomic_bool reference_renderer_running = false;
+    std::jthread reference_renderer_thread;
 };

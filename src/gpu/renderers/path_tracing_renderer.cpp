@@ -23,15 +23,21 @@ void Path_Tracing_Renderer::destroy()
     }
 }
 
-void Path_Tracing_Renderer::on_project_load()
+void Path_Tracing_Renderer::activate()
 {
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
         VkClearColorValue clear_color{};
         clear_color.float32[3] = 1.f;
-        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        VkImageSubresourceRange range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
         vkCmdClearColorImage(command_buffer, output_image.handle, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
         vkCmdClearColorImage(command_buffer, tonemap.handle, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
     });
+    accumulation_index = 0;
+}
+
+void Path_Tracing_Renderer::on_camera_changed()
+{
+    accumulation_index = 0;
 }
 
 void Path_Tracing_Renderer::create_resolution_dependent_resources()
@@ -84,7 +90,7 @@ void Path_Tracing_Renderer::render(const GPU_Scene& gpu_scene, const Kernels& ke
 
     {
         VK_TIME_SCOPE(timer_draw);
-        path_tracing.dispatch((uint32_t)Image_Descriptor_Index::path_tracer_output);
+        path_tracing.dispatch((uint32_t)Image_Descriptor_Index::path_tracer_output, accumulation_index);
     }
     {
         VK_TIME_SCOPE(timer_tonemap);
@@ -94,4 +100,5 @@ void Path_Tracing_Renderer::render(const GPU_Scene& gpu_scene, const Kernels& ke
         VK_TIME_SCOPE(timer_compute_copy);
         kernels.copy_to_swapchain.dispatch(tonemap_index);
     }
+    accumulation_index++;
 }

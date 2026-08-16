@@ -17,7 +17,7 @@ static void show_time_scope(const Vk_Timer* timer) {
 
 UI_Actions UI::run_imgui() {
     UI_Actions actions;
-    reset_accumulation = false;
+    renderer_changed = false;
 
     ImGuiIO& io = ImGui::GetIO();
 
@@ -50,8 +50,8 @@ UI_Actions UI::run_imgui() {
             ImGui::Checkbox("Vertical sync", &vsync);
             ImGui::Checkbox("4 rays per pixel", spp4);
 
-            reset_accumulation |= ImGui::RadioButton("direct lighting", &rendering_algorithm, 0);
-            reset_accumulation |= ImGui::RadioButton("path tracing", &rendering_algorithm, 1);
+            renderer_changed |= ImGui::RadioButton("direct lighting", &rendering_algorithm, 0);
+            renderer_changed |= ImGui::RadioButton("path tracing", &rendering_algorithm, 1);
 
             ImGui::Text("Camera position: %.2f %.2f %.2f", camera_position.x, camera_position.y, camera_position.z);
 

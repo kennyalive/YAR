@@ -23,7 +23,7 @@ void Direct_Lighting_Renderer::destroy()
     }
 }
 
-void Direct_Lighting_Renderer::on_project_load()
+void Direct_Lighting_Renderer::activate()
 {
     vk_execute(vk.command_pools[0], vk.queue, [this](VkCommandBuffer command_buffer) {
         VkClearColorValue clear_color{};
