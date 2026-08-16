@@ -211,7 +211,10 @@ void YAR::release_resolution_dependent_resources()
 void YAR::restore_resolution_dependent_resources()
 {
     path_tracing_renderer.create_resolution_dependent_resources();
+    path_tracing_renderer.activate();
+
     direct_lighting_renderer.create_resolution_dependent_resources();
+
     write_resolution_dependent_descriptors();
 }
 
