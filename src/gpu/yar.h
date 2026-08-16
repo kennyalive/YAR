@@ -18,14 +18,6 @@ struct GLFWwindow;
 struct Reference_Renderer_Config;
 struct Scene_Overrides;
 
-struct Global_Textures
-{
-    Vk_Image black_texture;
-
-    void create();
-    void destroy();
-};
-
 class YAR
 {
 public:
@@ -61,7 +53,7 @@ private:
     Descriptor_Heap_Layout descriptor_heap_layout;
     Descriptor_Heap descriptor_heap;
     Kernels kernels;
-    Global_Textures global_textures;
+    Vk_Image black_texture;
 
     Scene scene;
     GPU_Scene gpu_scene;

@@ -15,18 +15,6 @@
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_glfw.h"
 
-void Global_Textures::create()
-{
-    uint8_t black[4] = { 0, 0, 0, 255 };
-    black_texture = vk_create_texture(1, 1, VK_FORMAT_R8G8B8A8_UNORM, false, black, 4, "black_texture_1x1");
-}
-
-void Global_Textures::destroy()
-{
-    black_texture.destroy();
-    *this = Global_Textures{};
-}
-
 void YAR::initialize(GLFWwindow* window, int gpu_index) {
     std::array instance_extensions = {
         VK_KHR_SURFACE_EXTENSION_NAME,
@@ -138,7 +126,9 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
 
     restore_resolution_dependent_resources();
     write_sampler_descriptors();
-    global_textures.create();
+
+    uint8_t black[4] = { 0, 0, 0, 255 };
+    black_texture = vk_create_texture(1, 1, VK_FORMAT_R8G8B8A8_UNORM, false, black, 4, "black_texture_1x1");
 
     // ImGui setup.
     {
@@ -189,7 +179,7 @@ void YAR::shutdown() {
     if (gpu_scene.loaded) {
         gpu_scene.destroy();
     }
-    global_textures.destroy();
+    black_texture.destroy();
     vk_shutdown();
 }
 
