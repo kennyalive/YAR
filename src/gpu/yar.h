@@ -47,9 +47,6 @@ private:
     void wait_for_reference_renderer();
 
 private:
-    uint32_t frame_index = 0;
-    bool spp4 = false;
-
     Descriptor_Heap_Layout descriptor_heap_layout;
     Descriptor_Heap descriptor_heap;
     Kernels kernels;
@@ -64,6 +61,8 @@ private:
     Vk_Time_Keeper time_keeper;
     Vk_Timer* timer_frame = nullptr;
     Vk_Timer* timer_ui = nullptr;
+
+    uint32_t frame_index = 0;
 
     Path_Tracing_Renderer path_tracing_renderer;
     Direct_Lighting_Renderer direct_lighting_renderer;

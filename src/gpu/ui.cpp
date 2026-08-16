@@ -48,7 +48,6 @@ UI_Actions UI::run_imgui() {
             ImGui::Separator();
             ImGui::Spacing();
             ImGui::Checkbox("Vertical sync", &vsync);
-            ImGui::Checkbox("4 rays per pixel", spp4);
 
             renderer_changed |= ImGui::RadioButton("direct lighting", &rendering_algorithm, 0);
             renderer_changed |= ImGui::RadioButton("path tracing", &rendering_algorithm, 1);

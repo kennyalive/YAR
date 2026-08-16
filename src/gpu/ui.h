@@ -25,7 +25,6 @@ struct UI
     // Externally provide state displayed or used by the UI.
     std::string project_file;
     bool reference_renderer_running = false;
-    bool* spp4 = nullptr;
     const Vk_Timer* frame_time_scope = nullptr;
     Vector3 camera_position;
 

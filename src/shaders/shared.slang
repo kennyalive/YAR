@@ -112,8 +112,7 @@ SLANG_PUBLIC struct Frame_Params
 {
     SLANG_PUBLIC uint frame_index;
     SLANG_PUBLIC uint swapchain_image_index;
-    SLANG_PUBLIC uint spp4;
-    SLANG_PUBLIC uint pad;
+    SLANG_PUBLIC uint2 pad;
 
     SLANG_PUBLIC Matrix3x4 camera_to_world;
 

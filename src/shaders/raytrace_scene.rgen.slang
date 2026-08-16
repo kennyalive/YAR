@@ -33,17 +33,6 @@ float3 trace_ray(float2 sample_pos, Frame_Params frame_params)
 void main()
 {
     float2 sample_origin = float2(DispatchRaysIndex().xy);
-
-    float3 color;
-    if (data.frame.spp4 != 0) {
-        color = trace_ray(sample_origin + float2(0.125, 0.375), data.frame);
-        color += trace_ray(sample_origin + float2(0.375, 0.875), data.frame);
-        color += trace_ray(sample_origin + float2(0.625, 0.125), data.frame);
-        color += trace_ray(sample_origin + float2(0.875, 0.625), data.frame);
-        color *= 0.25;
-    }
-    else {
-        color = trace_ray(sample_origin + float2(0.5, 0.5), data.frame);
-    }
+    float3 color = trace_ray(sample_origin + float2(0.5, 0.5), data.frame);
     storage_images_rgba_f16[data.local.output_image_index][DispatchRaysIndex().xy] = float4(color, 1);
 }

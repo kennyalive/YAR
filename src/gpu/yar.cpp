@@ -157,7 +157,6 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     timer_ui = time_keeper.allocate_timer("ui");
     time_keeper.initialize_timers();
     ui.frame_time_scope = timer_frame;
-    ui.spp4 = &spp4;
 }
 
 void YAR::shutdown() {
@@ -369,10 +368,7 @@ void YAR::draw_frame() {
     GPU_Types::Frame_Params frame_params{};
     frame_params.frame_index = frame_index;
     frame_params.swapchain_image_index = vk.swapchain_image_index;
-    frame_params.spp4 = uint32_t(spp4);
-
     frame_params.camera_to_world = flying_camera.get_camera_pose();
-
     frame_params.viewport_size = { vk.surface_size.width, vk.surface_size.height };
     frame_params.tan_fovy_over_2 = std::tan(radians(scene.camera_fov_y / 2.f));
     frame_params.z_is_up = uint32_t(scene.z_is_up);
