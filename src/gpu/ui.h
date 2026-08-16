@@ -23,6 +23,7 @@ struct UI
     int rendering_algorithm = 1;
 
     // Externally provide state displayed or used by the UI.
+    bool scene_loaded = false;
     std::string project_file;
     bool reference_renderer_running = false;
     const Vk_Timer* frame_time_scope = nullptr;

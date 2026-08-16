@@ -252,6 +252,7 @@ void YAR::load_project(const std::string& input_file)
     });
 
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
+    ui.scene_loaded = true;
     ui.project_file = input_file;
 
     if (ui.rendering_algorithm == 0) {
@@ -273,6 +274,7 @@ void YAR::unload_project()
     gpu_scene.destroy();
     scene = Scene{};
     flying_camera = Flying_Camera{};
+    ui.scene_loaded = false;
 }
 
 static double last_frame_time;
@@ -438,6 +440,7 @@ void YAR::draw_imgui()
 
 void YAR::start_reference_renderer()
 {
+    ASSERT(scene.type != Scene_Type::none);
     ASSERT(!reference_renderer_running.load());
 
     Reference_Renderer_Config reference_renderer_config;

@@ -57,7 +57,7 @@ UI_Actions UI::run_imgui() {
             ImGui::Separator();
             ImGui::InputScalar("thread count", ImGuiDataType_U32, &ref_params.thread_count);
             ImGui::InputScalar("spp", ImGuiDataType_U32, &ref_params.spp);
-            ImGui::BeginDisabled(reference_renderer_running);
+            ImGui::BeginDisabled(reference_renderer_running || !scene_loaded);
             if (ImGui::Button("Render reference image")) {
                 actions.reference_render_requested = true;
             }
