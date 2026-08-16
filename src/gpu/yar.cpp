@@ -385,10 +385,10 @@ void YAR::draw_frame() {
 
     if (gpu_scene.loaded) {
         if (ui.rendering_algorithm == 0) {
-            direct_lighting_renderer.render(gpu_scene, kernels);
+            direct_lighting_renderer.render(kernels);
         }
         else if (ui.rendering_algorithm == 1) {
-            path_tracing_renderer.render(gpu_scene, kernels);
+            path_tracing_renderer.render(kernels);
         }
     }
 

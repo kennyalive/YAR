@@ -5,7 +5,6 @@
 
 struct Descriptor_Heap;
 struct Descriptor_Heap_Layout;
-struct GPU_Scene;
 struct Kernels;
 
 struct Path_Tracing_Renderer
@@ -30,5 +29,5 @@ struct Path_Tracing_Renderer
     void destroy_resolution_dependent_resources();
     void write_resolution_dependent_descriptors(const Descriptor_Heap& descriptor_heap, const Descriptor_Heap_Layout& layout);
 
-    void render(const GPU_Scene& gpu_scene, const Kernels& kernels);
+    void render(const Kernels& kernels);
 };

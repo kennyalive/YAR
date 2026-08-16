@@ -83,7 +83,7 @@ void Path_Tracing_Renderer::write_resolution_dependent_descriptors(const Descrip
         VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, tonemap_offset);
 }
 
-void Path_Tracing_Renderer::render(const GPU_Scene& gpu_scene, const Kernels& kernels)
+void Path_Tracing_Renderer::render(const Kernels& kernels)
 {
     const uint32_t output_index = uint32_t(Image_Descriptor_Index::path_tracer_output);
     const uint32_t tonemap_index = uint32_t(Image_Descriptor_Index::path_tracer_tonemap);

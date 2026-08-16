@@ -77,7 +77,7 @@ void Direct_Lighting_Renderer::destroy_resolution_dependent_resources()
     tonemap.destroy();
 }
 
-void Direct_Lighting_Renderer::render(const GPU_Scene& gpu_scene, const Kernels& kernels)
+void Direct_Lighting_Renderer::render(const Kernels& kernels)
 {
     const uint32_t output_index = uint32_t(Image_Descriptor_Index::direct_lighting_output);
     const uint32_t tonemap_index = uint32_t(Image_Descriptor_Index::direct_lighting_tonemap);
