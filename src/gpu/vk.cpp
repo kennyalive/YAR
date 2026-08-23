@@ -1032,7 +1032,7 @@ void vk_end_frame()
     vk.frame_index = 1 - vk.frame_index;
 }
 
-void vk_execute(VkCommandPool command_pool, VkQueue queue, std::function<void(VkCommandBuffer)> recorder)
+void vk_execute(VkCommandPool command_pool, VkQueue queue, Function_Ref<void(VkCommandBuffer)> recorder)
 {
     VkCommandBufferAllocateInfo alloc_info { VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
     alloc_info.commandPool          = command_pool;

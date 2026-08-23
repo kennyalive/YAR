@@ -12,10 +12,40 @@ constexpr int VK_VERSION = -4;
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
 #include "vma/vk_mem_alloc.h"
 
-#include <functional>
 #include <span>
 #include <string>
 #include <vector>
+
+//
+// MINILIB
+//
+template <typename T> struct Remove_Ref_Impl { using Type = T; };
+template <typename T> struct Remove_Ref_Impl<T&> { using Type = T; };
+template <typename T> struct Remove_Ref_Impl<T&&> { using Type = T; };
+template <typename T> using Remove_Ref = typename Remove_Ref_Impl<T>::Type;
+
+template <typename> struct Function_Ref;
+template <typename R, typename... Args>
+struct Function_Ref<R(Args...)>
+{
+    void* object;
+    R(*invoke)(void*, Args...);
+    R operator()(Args... args) const { return invoke(object, static_cast<Args&&>(args)...); }
+
+    template <typename F>
+    Function_Ref(F&& f)
+        : object(const_cast<void*>(static_cast<const void*>(&f)))
+        , invoke([](void* object, Args... args) -> R {
+             return (*static_cast<Remove_Ref<F>*>(object))(static_cast<Args&&>(args)...);
+          })
+    {}
+    Function_Ref(Function_Ref& other) = default;
+    Function_Ref(const Function_Ref& other) = default;
+    Function_Ref(Function_Ref&& other) = default;
+};
+//
+// MINILIB END
+//
 
 const char* vk_result_to_string(VkResult result);
 #define VK_CHECK_RESULT(result) if (result < 0 && vk.error) vk.error(std::string("Error: ") + vk_result_to_string(result));
@@ -126,7 +156,7 @@ VkPipeline vk_create_compute_pipeline(
 void vk_begin_frame();
 void vk_end_frame();
 
-void vk_execute(VkCommandPool command_pool, VkQueue queue, std::function<void(VkCommandBuffer)> recorder);
+void vk_execute(VkCommandPool command_pool, VkQueue queue, Function_Ref<void(VkCommandBuffer)> recorder);
 
 // Barrier for all subresources of non-depth image.
 void vk_cmd_image_barrier(VkCommandBuffer command_buffer, VkImage image,
