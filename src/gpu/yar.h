@@ -58,6 +58,7 @@ private:
 
     UI ui;
     Flying_Camera flying_camera;
+    double last_frame_time = 0.0;
 
     Vk_Time_Keeper time_keeper;
     Vk_Timer* timer_frame = nullptr;

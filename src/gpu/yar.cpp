@@ -284,8 +284,6 @@ void YAR::unload_project()
     ui.scene_loaded = false;
 }
 
-static double last_frame_time;
-
 void YAR::run_frame()
 {
     ui.reference_renderer_running = reference_renderer_running.load();
