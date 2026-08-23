@@ -219,6 +219,10 @@ void YAR::write_resolution_dependent_descriptors()
             VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, swapchain_image_offset);
         swapchain_image_offset += vk_image_descriptor_size();
     }
+    for (size_t i = vk.swapchain_info.images.size(); i < max_swapchain_image_descriptors; i++) {
+        descriptor_heap.write_null_image_descriptor(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, swapchain_image_offset);
+        swapchain_image_offset += vk_image_descriptor_size();
+    }
     path_tracing_renderer.write_resolution_dependent_descriptors(descriptor_heap, descriptor_heap_layout);
     direct_lighting_renderer.write_resolution_dependent_descriptors(descriptor_heap, descriptor_heap_layout);
 }
