@@ -34,10 +34,11 @@ public:
     void run_frame();
 
 private:
-    void release_resolution_dependent_resources();
-    void restore_resolution_dependent_resources();
+    void create_resolution_dependent_resources();
+    void destroy_resolution_dependent_resources();
+
     void write_resolution_dependent_descriptors();
-    void write_sampler_descriptors();
+    void write_common_descriptors();
 
     void draw_frame();
     void draw_imgui();
@@ -50,7 +51,7 @@ private:
     Descriptor_Heap_Layout descriptor_heap_layout;
     Descriptor_Heap descriptor_heap;
     Kernels kernels;
-    Vk_Image black_texture;
+    Vk_Image none_texture;
 
     Scene scene;
     GPU_Scene gpu_scene;

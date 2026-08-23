@@ -7,7 +7,6 @@ constexpr uint32_t max_swapchain_image_descriptors = 4;
 enum class Image_Descriptor_Index : uint32_t
 {
     none,
-    black,
     swapchain_first_image,
     swapchain_last_image = swapchain_first_image + max_swapchain_image_descriptors - 1,
     path_tracer_output,

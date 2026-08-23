@@ -114,6 +114,9 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
         printf("  maxRayHitAttributeSize = %u\n", vk.ray_tracing_pipeline_properties.maxRayHitAttributeSize);
     }
 
+    uint8_t red[4] = { 255, 0, 0, 255 };
+    none_texture = vk_create_texture(1, 1, VK_FORMAT_R8G8B8A8_UNORM, false, red, 4, "none_texture_1x1");
+
     descriptor_heap_layout.initialize();
     const uint32_t descriptor_data_size = descriptor_heap_layout.get_total_descriptor_data_size(0);
     descriptor_heap.create(descriptor_data_size);
@@ -124,11 +127,8 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     path_tracing_renderer.initialize(descriptor_mappings, time_keeper);
     direct_lighting_renderer.initialize(descriptor_mappings, time_keeper);
 
-    restore_resolution_dependent_resources();
-    write_sampler_descriptors();
-
-    uint8_t black[4] = { 0, 0, 0, 255 };
-    black_texture = vk_create_texture(1, 1, VK_FORMAT_R8G8B8A8_UNORM, false, black, 4, "black_texture_1x1");
+    write_common_descriptors();
+    create_resolution_dependent_resources();
 
     // ImGui setup.
     {
@@ -170,7 +170,7 @@ void YAR::shutdown() {
     descriptor_heap.destroy();
     kernels.destroy_kernels();
 
-    release_resolution_dependent_resources();
+    destroy_resolution_dependent_resources();
 
     path_tracing_renderer.destroy();
     direct_lighting_renderer.destroy();
@@ -178,26 +178,20 @@ void YAR::shutdown() {
     if (gpu_scene.loaded) {
         gpu_scene.destroy();
     }
-    black_texture.destroy();
+    none_texture.destroy();
     vk_shutdown();
 }
 
 void YAR::recreate_swapchain()
 {
     VK_CHECK(vkDeviceWaitIdle(vk.device));
-    release_resolution_dependent_resources();
+    destroy_resolution_dependent_resources();
     vk_destroy_swapchain();
     vk_create_swapchain(vsync_enabled());
-    restore_resolution_dependent_resources();
+    create_resolution_dependent_resources();
 }
 
-void YAR::release_resolution_dependent_resources()
-{
-    path_tracing_renderer.destroy_resolution_dependent_resources();
-    direct_lighting_renderer.destroy_resolution_dependent_resources();
-}
-
-void YAR::restore_resolution_dependent_resources()
+void YAR::create_resolution_dependent_resources()
 {
     path_tracing_renderer.create_resolution_dependent_resources();
     path_tracing_renderer.activate();
@@ -205,6 +199,12 @@ void YAR::restore_resolution_dependent_resources()
     direct_lighting_renderer.create_resolution_dependent_resources();
 
     write_resolution_dependent_descriptors();
+}
+
+void YAR::destroy_resolution_dependent_resources()
+{
+    path_tracing_renderer.destroy_resolution_dependent_resources();
+    direct_lighting_renderer.destroy_resolution_dependent_resources();
 }
 
 void YAR::write_resolution_dependent_descriptors()
@@ -223,8 +223,11 @@ void YAR::write_resolution_dependent_descriptors()
     direct_lighting_renderer.write_resolution_dependent_descriptors(descriptor_heap, descriptor_heap_layout);
 }
 
-void YAR::write_sampler_descriptors()
+void YAR::write_common_descriptors()
 {
+    uint32_t none_image_offset = descriptor_heap_layout.get_image_descriptor_offset(Image_Descriptor_Index::none);
+    descriptor_heap.write_image_descriptor(none_texture.handle, none_texture.format, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, none_image_offset);
+
     VkSamplerCreateInfo sampler_create_info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
     descriptor_heap.write_sampler_descriptor(sampler_create_info, descriptor_heap_layout.image_sampler);
 }
@@ -241,8 +244,8 @@ void YAR::load_project(const std::string& input_file)
     if (descriptor_data_size > descriptor_heap.resource_reserved_region_offset) {
         descriptor_heap.destroy();
         descriptor_heap.create(descriptor_data_size);
+        write_common_descriptors();
         write_resolution_dependent_descriptors();
-        write_sampler_descriptors();
     }
     gpu_scene.write_descriptors(descriptor_heap, descriptor_heap_layout);
 
