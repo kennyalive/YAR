@@ -34,6 +34,10 @@ public:
     void run_frame();
 
 private:
+    void start_reference_renderer();
+    void do_run_reference_renderer(const Reference_Renderer_Config& reference_renderer_config, const Scene_Overrides& overrides);
+    void wait_for_reference_renderer();
+
     void create_resolution_dependent_resources();
     void destroy_resolution_dependent_resources();
 
@@ -43,11 +47,10 @@ private:
     void draw_frame();
     void draw_imgui();
 
-    void start_reference_renderer();
-    void do_run_reference_renderer(const Reference_Renderer_Config& reference_renderer_config, const Scene_Overrides& overrides);
-    void wait_for_reference_renderer();
-
 private:
+    std::atomic_bool reference_renderer_running = false;
+    std::jthread reference_renderer_thread;
+
     Descriptor_Heap_Layout descriptor_heap_layout;
     Descriptor_Heap descriptor_heap;
     Kernels kernels;
@@ -56,19 +59,15 @@ private:
     Scene scene;
     GPU_Scene gpu_scene;
 
-    UI ui;
-    Flying_Camera flying_camera;
-    double last_frame_time = 0.0;
-
     Vk_Time_Keeper time_keeper;
     Vk_Timer* timer_frame = nullptr;
     Vk_Timer* timer_ui = nullptr;
 
+    UI ui;
+    Flying_Camera flying_camera;
+    double last_frame_time = 0.0;
     uint32_t frame_index = 0;
 
     Path_Tracing_Renderer path_tracing_renderer;
     Direct_Lighting_Renderer direct_lighting_renderer;
-
-    std::atomic_bool reference_renderer_running = false;
-    std::jthread reference_renderer_thread;
 };
