@@ -22,7 +22,7 @@ template<typename> constexpr bool vk_dependent_false_v = false;
 //
 Vk_Instance vk;
 
-static void create_instance(const std::span<const char*>& instance_extensions)
+static void create_instance(Span<const char* const> instance_extensions)
 {
     uint32_t count = 0;
     VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
@@ -47,8 +47,8 @@ static void create_instance(const std::span<const char*>& instance_extensions)
 
     VkInstanceCreateInfo instance_create_info{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
     instance_create_info.pApplicationInfo = &app_info;
-    instance_create_info.enabledExtensionCount = uint32_t(instance_extensions.size());
-    instance_create_info.ppEnabledExtensionNames = instance_extensions.data();
+    instance_create_info.enabledExtensionCount = uint32_t(instance_extensions.size);
+    instance_create_info.ppEnabledExtensionNames = instance_extensions.data;
 
     VK_CHECK(vkCreateInstance(&instance_create_info, nullptr, &vk.instance));
 }
@@ -154,8 +154,8 @@ static void create_device(const Vk_Init_Params& params, GLFWwindow* window)
         device_create_info.pNext = params.device_create_info_pnext;
         device_create_info.queueCreateInfoCount = 1;
         device_create_info.pQueueCreateInfos = &queue_create_info;
-        device_create_info.enabledExtensionCount = (uint32_t)params.device_extensions.size();
-        device_create_info.ppEnabledExtensionNames = params.device_extensions.data();
+        device_create_info.enabledExtensionCount = (uint32_t)params.device_extensions.size;
+        device_create_info.ppEnabledExtensionNames = params.device_extensions.data;
 
         VK_CHECK(vkCreateDevice(vk.physical_device, &device_create_info, nullptr, &vk.device));
     }
@@ -955,11 +955,11 @@ VkPipeline vk_create_graphics_pipeline(const Vk_Graphics_Pipeline_State& state,
 }
 
 VkPipeline vk_create_compute_pipeline(VkShaderModule compute_shader,
-    std::span<const VkDescriptorSetAndBindingMappingEXT> binding_mappings, const char* name)
+    Span<const VkDescriptorSetAndBindingMappingEXT> binding_mappings, const char* name)
 {
     VkShaderDescriptorSetAndBindingMappingInfoEXT mapping_info{ VK_STRUCTURE_TYPE_SHADER_DESCRIPTOR_SET_AND_BINDING_MAPPING_INFO_EXT };
-    mapping_info.mappingCount = (uint32_t)binding_mappings.size();
-    mapping_info.pMappings = binding_mappings.data();
+    mapping_info.mappingCount = (uint32_t)binding_mappings.size;
+    mapping_info.pMappings = binding_mappings.data;
 
     VkPipelineShaderStageCreateInfo compute_stage{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
     compute_stage.pNext = &mapping_info;
