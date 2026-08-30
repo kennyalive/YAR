@@ -12,10 +12,10 @@ void load_pbrt_scene(const YAR_Project& project, Scene& scene);
 void load_obj_scene(const YAR_Project& project, Scene& scene);
 
 
-static YAR_Project create_yar_project(const std::string& input_file) {
+static YAR_Project create_yar_project(const char* input_file) {
     fs::path path(input_file);
     if (!path.has_extension())
-        error("Unknown file type because there is no extension: %s. The supported file types are: yar, pbrt, obj", input_file.c_str());
+        error("Unknown file type because there is no extension: %s. The supported file types are: yar, pbrt, obj", input_file);
 
     YAR_Project project;
     std::string ext = to_lower(path.extension().string());
@@ -71,12 +71,12 @@ static void finalize_scene(Scene& scene) {
     scene.lights.update_total_light_count();
 }
 
-Scene load_scene(const std::string& input_file) {
+Scene load_scene(const char* input_file) {
     YAR_Project project = create_yar_project(input_file);
 
     Scene scene;
     scene.type = project.scene_type;
-    scene.path = project.scene_path.string();
+    scene.path = project.scene_path.string().c_str();
 
     if (project.scene_type == Scene_Type::pbrt) {
         load_pbrt_scene(project, scene);
@@ -142,9 +142,9 @@ int add_scene_texture(const Texture_Descriptor& texture_desc, Scene* scene)
     return (int)scene->texture_descriptors.size() - 1;
 }
 
-int add_scene_texture(const std::string& file_name, Scene* scene)
+int add_scene_texture(const char* file_name, Scene* scene)
 {
-    ASSERT(!file_name.empty());
+    ASSERT(file_name[0]);
     return add_scene_texture(Texture_Descriptor{ .file_name = file_name }, scene);
 }
 

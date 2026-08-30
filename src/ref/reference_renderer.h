@@ -10,7 +10,7 @@ struct Scene_Context;
 struct Reference_Renderer_Config
 {
     int thread_count = 0;
-    std::string checkpoint_directory;
+    String checkpoint_directory;
     bool rebuild_kdtree_cache = false;
 
     // Can be useful during debugging to vary random numbers and get configuration that
@@ -28,7 +28,7 @@ struct Scene_Overrides
 
 struct EXR_Attributes
 {
-    std::string input_file;
+    String input_file;
     int spp = 0; // samples per pixel
     float variance = 0.f;
 
@@ -53,4 +53,4 @@ void init_scene_context(
 );
 
 Image render_scene(const Scene_Context& scene_ctx, double* variance_estimate, float* render_time);
-bool write_openexr_image(const std::string& filename, const Image& image, const EXR_Write_Params& write_params);
+bool write_openexr_image(const char* filename, const Image& image, const EXR_Write_Params& write_params);

@@ -4,6 +4,8 @@
 #define _ITERATOR_DEBUG_LEVEL 0
 #endif
 
+#include "lib/minilib.h"
+
 #include <algorithm>
 #include <array>
 #include <atomic>

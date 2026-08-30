@@ -11,7 +11,7 @@ constexpr int time_category_field_width = 21; // for printf 'width' specifier
 static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::vector<Triangle_Mesh_Geometry_Data>& geometry_datas,
     std::array<int, Geometry_Type_Count>* geometry_type_offsets, bool force_rebuild_cache)
 {
-    fs::path kdtree_cache_directory = get_data_directory() / "kdtree-cache" / get_project_unique_name(scene.path);
+    fs::path kdtree_cache_directory = get_data_directory() / "kdtree-cache" / get_project_unique_name(scene.path.data()).data();
     bool cache_exists = fs_exists(kdtree_cache_directory);
 
     // Check --force-rebuild-kdtree-cache command line option.
@@ -42,7 +42,7 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
                 while (index < geometry_datas.size()) {
                     KdTree kdtree = build_triangle_mesh_kdtree(&geometry_datas[index]);
                     fs::path kdtree_file = kdtree_cache_directory / (std::to_string(index) + ".kdtree");
-                    kdtree.save(kdtree_file.string());
+                    kdtree.save(kdtree_file.string().c_str());
                     index = kdtree_counter.fetch_add(1);
                 }
             };
@@ -72,7 +72,7 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
 
     for (size_t i = 0; i < geometry_datas.size(); i++) {
         fs::path kdtree_file = kdtree_cache_directory / (std::to_string(i) + ".kdtree");
-        KdTree kdtree = KdTree::load(kdtree_file.string());
+        KdTree kdtree = KdTree::load(kdtree_file.string().c_str());
         kdtree.set_geometry_data(&geometry_datas[i]);
         kdtrees.push_back(std::move(kdtree));
     }

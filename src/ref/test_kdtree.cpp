@@ -28,9 +28,9 @@ private:
 };
 
 struct Operation_Info {
-    std::string mesh_file_name;
+    String mesh_file_name;
     Triangle_Mesh* custom_mesh = nullptr;
-    std::string custom_mesh_name;
+    String custom_mesh_name;
     int validation_ray_count = 0;
 };
 } // namesapce
@@ -260,13 +260,13 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
     for (const Operation_Info& info : infos) {
         printf("================================================================\n");
         printf("Ray casting triangle mesh: %s\n", info.custom_mesh_name.empty()
-            ? info.mesh_file_name.c_str()
-            : info.custom_mesh_name.c_str());
+            ? info.mesh_file_name.data()
+            : info.custom_mesh_name.data());
         printf("================================================================\n");
 
         Triangle_Mesh mesh;
         if (!info.mesh_file_name.empty()) {
-            Obj_Data obj_data = load_obj(info.mesh_file_name);
+            Obj_Data obj_data = load_obj(info.mesh_file_name.data());
             ASSERT(!obj_data.meshes.empty());
             mesh = std::move(obj_data.meshes[0].mesh);
         }
@@ -279,19 +279,19 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
         Triangle_Mesh_Geometry_Data geometry_data;
         geometry_data.mesh = &mesh;
 
-        fs::path kdtree_filename = fs::path(info.mesh_file_name).replace_extension(".kdtree");
+        fs::path kdtree_filename = fs::path(info.mesh_file_name.data()).replace_extension(".kdtree");
         if (!info.mesh_file_name.empty() && !fs_exists(kdtree_filename)) {
             Timestamp t;
             KdTree kdtree = build_triangle_mesh_kdtree(&geometry_data);
             printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
-            kdtree.save(kdtree_filename.string());
+            kdtree.save(kdtree_filename.string().c_str());
             printf("\n");
             kdtree_calculate_stats(kdtree).print();
         }
 
         KdTree triangle_mesh_kdtree;
         if (!info.mesh_file_name.empty()) {
-            triangle_mesh_kdtree = KdTree::load(kdtree_filename.string());
+            triangle_mesh_kdtree = KdTree::load(kdtree_filename.string().c_str());
             triangle_mesh_kdtree.set_geometry_data(&geometry_data);
         }
         else {

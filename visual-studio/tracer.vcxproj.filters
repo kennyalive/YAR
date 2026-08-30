@@ -18,6 +18,9 @@
     <ClCompile Include="..\src\ref\test.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\ref\test_string.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\ref\test_kdtree.cpp">
       <Filter>tests</Filter>
     </ClCompile>

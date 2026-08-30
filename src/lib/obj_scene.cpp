@@ -14,7 +14,7 @@ void load_obj_scene(const YAR_Project& project, Scene& scene) {
     mesh_load_params.normal_calculation_params.use_crease_angle = project.mesh_use_crease_angle;
     mesh_load_params.normal_calculation_params.crease_angle = project.mesh_crease_angle;
     mesh_load_params.invert_winding_order = project.mesh_invert_winding_order;
-    Obj_Data obj_data = load_obj(project.scene_path.string(), mesh_load_params, &project.ignore_geometry_names);
+    Obj_Data obj_data = load_obj(project.scene_path.string().c_str(), mesh_load_params, &project.ignore_geometry_names);
 
     scene.materials.diffuse.resize(obj_data.materials.size());
     for (auto [i, obj_material] : enumerate(obj_data.materials)) {
@@ -26,7 +26,7 @@ void load_obj_scene(const YAR_Project& project, Scene& scene) {
         else {
             scene.materials.diffuse[i].reflectance.eval_mode = EvaluationMode::value;
             scene.materials.diffuse[i].reflectance.value.is_constant = false;
-            scene.materials.diffuse[i].reflectance.value.texture.texture_index = add_scene_texture(obj_material.diffuse_texture, &scene);
+            scene.materials.diffuse[i].reflectance.value.texture.texture_index = add_scene_texture(obj_material.diffuse_texture.data(), &scene);
         }
     }
 
@@ -34,7 +34,7 @@ void load_obj_scene(const YAR_Project& project, Scene& scene) {
     // We can have more elements in case of instancing.
     scene.objects.reserve(obj_data.meshes.size()); 
 
-    std::map<std::string, std::vector<YAR_Instance>> instance_infos;
+    std::map<String, std::vector<YAR_Instance>> instance_infos;
     for (const YAR_Instance& instance : project.instances)
         instance_infos[instance.geometry_name].push_back(instance);
 

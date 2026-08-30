@@ -184,7 +184,7 @@ KdTree_Builder::KdTree_Builder(
     // Edge::primitive_and_flags reserves 2 bits for flags and 30 bits are left for primitive index.
     static constexpr uint32_t max_primitive_count = 0x3fffffff; //  max ~ 1 billion primitives
     if (total_primitive_count > max_primitive_count) {
-        error("exceeded the maximum number of primitives: " + std::to_string(max_primitive_count));
+        error("exceeded the maximum number of primitives: %u", max_primitive_count);
     }
 
     primitive_buffer.reserve(total_primitive_count);
@@ -207,7 +207,7 @@ KdTree_Builder::KdTree_Builder(
 void KdTree_Builder::build_node(const Bounding_Box& node_bounds, uint32_t primitives_offset, uint32_t primitive_count, int depth, uint32_t above_primitives_offset)
 {
     if (nodes.size() >= KdNode::max_node_count)
-        error("maximum number of KdTree nodes has been reached: " + std::to_string(KdNode::max_node_count));
+        error("maximum number of KdTree nodes has been reached: %u", KdNode::max_node_count);
 
     // check if leaf node should be created
     if (primitive_count <= (uint32_t)leaf_primitive_count_threshold || depth == 0) {

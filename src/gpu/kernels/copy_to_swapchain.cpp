@@ -7,7 +7,7 @@
 
 void Copy_To_Swapchain::create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
-    Vk_Shader_Module shader(get_spirv_file("copy_to_swapchain"));
+    Vk_Shader_Module shader(get_spirv_file("copy_to_swapchain").data());
     pipeline = vk_create_compute_pipeline(shader.handle, descriptor_mappings, "copy_to_swapchain_pipeline");
 }
 

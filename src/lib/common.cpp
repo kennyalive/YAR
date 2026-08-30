@@ -5,14 +5,10 @@
 #include "meow-hash/meow_hash_x64_aesni.h"
 
 // Default data folder path. Can be changed with -data-dir command line option.
-static std::string  g_data_dir = "./../data";
-
-void error(const std::string& message) {
-    printf("\nError: %s\n", message.c_str());
-#ifdef _WIN32
-    __debugbreak();
-#endif
-    exit(1);
+static String& data_directory()
+{
+    static String path = "./../data";
+    return path;
 }
 
 void error(const char* format, ...) {
@@ -57,40 +53,40 @@ bool fs_rename(const fs::path& old_path, const fs::path& new_path) {
     return !ec;
 }
 
-void set_data_directory(const std::string& path)
+void set_data_directory(const char* path)
 {
-    g_data_dir = path;
+    data_directory() = path;
 }
 
 fs::path get_data_directory()
 {
-    return g_data_dir;
+    return data_directory().data();
 }
 
-std::string get_project_unique_name(const std::string& scene_path) {
+String get_project_unique_name(const char* scene_path) {
     std::string file_name = to_lower(fs::path(scene_path).filename().string());
     if (file_name.empty())
-        error("Failed to extract filename from scene path: %s", scene_path.c_str());
+        error("Failed to extract filename from scene path: %s", scene_path);
 
-    std::string path_lowercase = to_lower(scene_path);
+    std::string path_lowercase = to_lower(std::string(scene_path));
     meow_u128 hash_128 = MeowHash(MeowDefaultSeed, path_lowercase.size(), (void*)path_lowercase.c_str());
     uint32_t hash_32 = MeowU32From(hash_128, 0);
 
     std::ostringstream oss;
     oss << std::setfill('0') << std::setw(8) << std::hex << hash_32;
     oss << "-" << file_name;
-    return oss.str();
+    return oss.str().c_str();
 }
 
-std::string get_spirv_file(const char* spirv_base_name)
+String get_spirv_file(const char* spirv_base_name)
 {
-    return (get_data_directory() / "spirv" / (std::string(spirv_base_name) + ".spv")).string();
+    return (get_data_directory() / "spirv" / (std::string(spirv_base_name) + ".spv")).string().c_str();
 }
 
-std::vector<uint8_t> read_binary_file(const std::string& file_path) {
+std::vector<uint8_t> read_binary_file(const char* file_path) {
     std::ifstream file(file_path, std::ios_base::in | std::ios_base::binary);
     if (!file)
-        error("failed to open file: " + file_path);
+        error("failed to open file: %s", file_path);
 
     // get file size
     file.seekg(0, std::ios_base::end);
@@ -98,28 +94,29 @@ std::vector<uint8_t> read_binary_file(const std::string& file_path) {
     file.seekg(0, std::ios_base::beg);
 
     if (file_size == std::streampos(-1) || !file)
-        error("failed to read file stats: " + file_path);
+        error("failed to read file stats: %s", file_path);
 
     // read file content
     std::vector<uint8_t> file_content(static_cast<size_t>(file_size));
     file.read(reinterpret_cast<char*>(file_content.data()), file_size);
     if (!file)
-        error("failed to read file content: " + file_path);
+        error("failed to read file content: %s", file_path);
 
     return file_content;
 }
 
-std::string read_text_file(const std::string& file_path) {
+String read_text_file(const char* file_path) {
     std::ifstream file(file_path);
     if (!file)
-        error("failed to open file: %s", file_path.c_str());
+        error("failed to open file: %s", file_path);
     std::stringstream buffer;
     buffer << file.rdbuf();
-    return buffer.str();
+    std::string text = buffer.str();
+    return String(text.data(), static_cast<uint32_t>(text.size()));
 }
 
-std::string get_extension(const std::string& file_path) {
-    return to_lower(fs::path(file_path).extension().string());
+String get_extension(const char* file_path) {
+    return to_lower(fs::path(file_path).extension().string()).c_str();
 }
 
 double get_base_cpu_frequency_ghz() {

@@ -116,6 +116,7 @@
     <ClCompile Include="..\src\ref\image_texture.cpp" />
     <ClCompile Include="..\src\ref\delta_scattering.cpp" />
     <ClCompile Include="..\src\ref\test.cpp" />
+    <ClCompile Include="..\src\ref\test_string.cpp" />
     <ClCompile Include="..\src\ref\test_kdtree.cpp" />
     <ClCompile Include="..\src\ref\benchmark_pbrt_parser.cpp" />
     <ClCompile Include="..\src\ref\test_random.cpp" />

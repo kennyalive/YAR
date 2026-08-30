@@ -16,7 +16,7 @@ enum class Scene_Type
 
 struct Texture_Descriptor
 {
-    std::string file_name;
+    String file_name;
     bool decode_srgb = false;
     float scale = 1.f;
 
@@ -29,10 +29,10 @@ struct Texture_Descriptor
 struct Scene
 {
     Scene_Type type = Scene_Type::none;
-    std::string path;
+    String path;
 
     // Optional filename of the output image.
-    std::string output_filename;
+    String output_filename;
 
     //
     // Renderer configuration
@@ -62,8 +62,8 @@ struct Scene
     Lights lights;
     std::vector<Scene_Object> objects;
 
-    std::string get_resource_absolute_path(const std::string& resource_relative_path) const
+    String get_resource_absolute_path(const char* resource_relative_path) const
     {
-        return (fs::path(path).parent_path() / resource_relative_path).string();
+        return (fs::path(path.data()).parent_path() / resource_relative_path).string().c_str();
     }
 };

@@ -10,6 +10,7 @@ const char* vk_result_to_string(VkResult result) { return string_VkResult(result
 
 #include <format>
 #include <fstream>
+#include <string>
 
 constexpr uint32_t max_timestamp_queries = 64;
 
@@ -21,6 +22,15 @@ template<typename> constexpr bool vk_dependent_false_v = false;
 // device, command pool, swapchain, etc.
 //
 Vk_Instance vk;
+
+void vk_check_result(VkResult result)
+{
+    if (result < 0 && vk.error) {
+        std::string message = "Error: ";
+        message += vk_result_to_string(result);
+        vk.error(message.c_str());
+    }
+}
 
 static void create_instance(Span<const char* const> instance_extensions)
 {
@@ -38,7 +48,7 @@ static void create_instance(Span<const char* const> instance_extensions)
             }
         }
         if (!supported) {
-            vk.error("Required instance extension is not available: " + std::string(name));
+            vk.error(("Required instance extension is not available: " + std::string(name)).c_str());
         }
     }
 
@@ -64,7 +74,7 @@ static void create_device(const Vk_Init_Params& params, GLFWwindow* window)
         }
         if (params.physical_device_index >= (int)gpu_count) {
             vk.error(std::format("Requested physical device index (zero-based) is {}, but physical device count is {}",
-                params.physical_device_index, gpu_count));
+                params.physical_device_index, gpu_count).c_str());
         }
         std::vector<VkPhysicalDevice> physical_devices(gpu_count);
         VK_CHECK(vkEnumeratePhysicalDevices(vk.instance, &gpu_count, physical_devices.data()));
@@ -75,8 +85,8 @@ static void create_device(const Vk_Init_Params& params, GLFWwindow* window)
         if (params.physical_device_index != -1) {
             vkGetPhysicalDeviceProperties(physical_devices[params.physical_device_index], &gpu_properties);
             if (VK_VERSION_MAJOR(gpu_properties.apiVersion) != 1 || VK_VERSION_MINOR(gpu_properties.apiVersion) < 3) {
-                vk.error(std::format("Physical device %d reports unsupported Vulkan version: {}.{}. Vulkan 1.3 or higher is required",
-                    params.physical_device_index, VK_VERSION_MAJOR(gpu_properties.apiVersion), VK_VERSION_MINOR(gpu_properties.apiVersion)));
+                vk.error(std::format("Physical device {} reports unsupported Vulkan version: {}.{}. Vulkan 1.3 or higher is required",
+                    params.physical_device_index, VK_VERSION_MAJOR(gpu_properties.apiVersion), VK_VERSION_MINOR(gpu_properties.apiVersion)).c_str());
             }
             selected_gpu = params.physical_device_index;
         }
@@ -140,7 +150,7 @@ static void create_device(const Vk_Init_Params& params, GLFWwindow* window)
         };
         for (auto required_extension : params.device_extensions) {
             if (!is_extension_supported(required_extension)) {
-                vk.error("Vulkan: required device extension is not available: " + std::string(required_extension));
+                vk.error(("Vulkan: required device extension is not available: " + std::string(required_extension)).c_str());
             }
         }
 
@@ -760,26 +770,26 @@ Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate
     return image;
 }
 
-Vk_Image vk_load_texture(const std::string& texture_file)
+Vk_Image vk_load_texture(const char* texture_file)
 {
     int w, h;
     int component_count;
 
-    auto rgba_pixels = stbi_load(texture_file.c_str(), &w, &h, &component_count,STBI_rgb_alpha);
+    auto rgba_pixels = stbi_load(texture_file, &w, &h, &component_count,STBI_rgb_alpha);
     if (rgba_pixels == nullptr) {
-        vk.error("failed to load image file: " + texture_file);
+        vk.error((std::string("failed to load image file: ") + texture_file).c_str());
     }
 
-    Vk_Image texture = vk_create_texture(w, h, VK_FORMAT_R8G8B8A8_SRGB, true, rgba_pixels, 4, texture_file.c_str());
+    Vk_Image texture = vk_create_texture(w, h, VK_FORMAT_R8G8B8A8_SRGB, true, rgba_pixels, 4, texture_file);
     stbi_image_free(rgba_pixels);
     return texture;
 }
 
-static std::vector<uint8_t> read_binary_file(const std::string& file_name)
+static std::vector<uint8_t> read_binary_file(const char* file_name)
 {
     std::ifstream file(file_name, std::ios_base::in | std::ios_base::binary);
     if (!file) {
-        vk.error("failed to open file: " + file_name);
+        vk.error((std::string("failed to open file: ") + file_name).c_str());
     }
     // get file size
     file.seekg(0, std::ios_base::end);
@@ -787,18 +797,18 @@ static std::vector<uint8_t> read_binary_file(const std::string& file_name)
     file.seekg(0, std::ios_base::beg);
 
     if (file_size == std::streampos(-1) || !file) {
-        vk.error("failed to read file stats: " + file_name);
+        vk.error((std::string("failed to read file stats: ") + file_name).c_str());
     }
     // read file content
     std::vector<uint8_t> file_content(static_cast<size_t>(file_size));
     file.read(reinterpret_cast<char*>(file_content.data()), file_size);
     if (!file) {
-        vk.error("failed to read file content: " + file_name);
+        vk.error((std::string("failed to read file content: ") + file_name).c_str());
     }
     return file_content;
 }
 
-VkShaderModule vk_load_spirv(const std::string& spirv_file)
+VkShaderModule vk_load_spirv(const char* spirv_file)
 {
     std::vector<uint8_t> bytes = read_binary_file(spirv_file);
 
@@ -1208,7 +1218,7 @@ SET_NAME_SPECIALIZATION(VkAccelerationStructureKHR)
 // Misc Vulkan utilities section
 //
 //*****************************************************************************
-Vk_Shader_Module::Vk_Shader_Module(const std::string& spirv_file)
+Vk_Shader_Module::Vk_Shader_Module(const char* spirv_file)
 {
     handle = vk_load_spirv(spirv_file);
 }

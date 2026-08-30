@@ -81,7 +81,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     pnexer.next(robustness2_features);
 
     Vk_Init_Params vk_init_params;
-    vk_init_params.error_reporter = &error;
+    vk_init_params.error_reporter = [](const char* message) { error("%s", message); };
     vk_init_params.physical_device_index = gpu_index;
     vk_init_params.vsync = ui.vsync;
     vk_init_params.instance_extensions = instance_extensions;
@@ -236,7 +236,7 @@ void YAR::write_common_descriptors()
     descriptor_heap.write_sampler_descriptor(sampler_create_info, descriptor_heap_layout.image_sampler);
 }
 
-void YAR::load_project(const std::string& input_file)
+void YAR::load_project(const char* input_file)
 {
     ASSERT(scene.type == Scene_Type::none);
     VK_CHECK(vkDeviceWaitIdle(vk.device));
@@ -353,7 +353,7 @@ void YAR::run_frame()
         if (scene.type != Scene_Type::none) {
             unload_project();
         }
-        load_project(ui.project_file);
+        load_project(ui.project_file.c_str());
     }
     if (ui_actions.unload_project) {
         if (scene.type != Scene_Type::none) {
@@ -485,12 +485,12 @@ void YAR::do_run_reference_renderer(const Reference_Renderer_Config& reference_r
 
     // Save results
     EXR_Write_Params write_params;
-    const std::string image_filename = "image.exr";
+    const char* image_filename = "image.exr";
     if (!write_openexr_image(image_filename, image, write_params)) {
-        printf("Failed to save rendered image: %s\n", image_filename.c_str());
+        printf("Failed to save rendered image: %s\n", image_filename);
     }
     else {
-        printf("Saved output image to %s\n\n", image_filename.c_str());
+        printf("Saved output image to %s\n\n", image_filename);
     }
     reference_renderer_running.store(false);
 }
