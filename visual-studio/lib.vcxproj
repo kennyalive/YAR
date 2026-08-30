@@ -131,6 +131,10 @@
     <ClCompile Include="..\src\lib\material_parameter.cpp" />
     <ClCompile Include="..\src\lib\material_pbrt.cpp" />
     <ClCompile Include="..\src\lib\math.cpp" />
+    <ClCompile Include="..\src\lib\minilib.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PreprocessorDefinitions>_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\src\lib\obj_loader.cpp" />
     <ClCompile Include="..\src\lib\tessellation.cpp" />
     <ClCompile Include="..\src\lib\utils.cpp" />

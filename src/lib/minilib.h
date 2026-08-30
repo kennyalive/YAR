@@ -1,5 +1,77 @@
 #pragma once
 
+#include <stddef.h>
+#include <stdint.h>
+
+#ifndef MINILIB_STRING_DEFINED
+#define MINILIB_STRING_DEFINED
+// Immutable, zero-terminated string. Each non-empty String owns its characters.
+struct String
+{
+    String();
+    String(const char* string);
+    String(const char* string, uint32_t size);
+    String(const String& other);
+    String(String&& other) noexcept;
+    String& operator=(String other) noexcept { swap(other); return *this; }
+    ~String();
+
+    const char* data() const
+    {
+        return is_small() ? storage.small : storage.heap.data;
+    }
+
+    uint32_t size() const
+    {
+        return is_small() ? SMALL_CAPACITY - static_cast<uint8_t>(storage.small[SMALL_CAPACITY]) : storage.heap.size;
+    }
+
+    const char* c_str() const { return data(); }
+    bool empty() const { return size() == 0; }
+    const char* begin() const { return data(); }
+    const char* end() const { return data() + size(); }
+    char operator[](uint32_t index) const { return data()[index]; }
+
+    void swap(String& other) noexcept;
+
+private:
+    static constexpr uint32_t STORAGE_SIZE = 32;
+    static constexpr uint32_t SMALL_CAPACITY = STORAGE_SIZE - 1;
+    static constexpr uint8_t HEAP_TAG = 0x80;
+
+    struct Heap_Storage
+    {
+        const char* data;
+        uint32_t size;
+        char padding[STORAGE_SIZE - sizeof(const char*) - sizeof(uint32_t) - 1];
+        uint8_t tag;
+    };
+
+    union Storage
+    {
+        char small[STORAGE_SIZE];
+        Heap_Storage heap;
+    } storage;
+
+    bool is_small() const
+    {
+        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(&storage);
+        return (bytes[SMALL_CAPACITY] & HEAP_TAG) == 0;
+    }
+
+    void set_empty();
+
+    // The members total STORAGE_SIZE bytes, so this also guarantees that tag is the last byte.
+    static_assert(sizeof(Heap_Storage) == STORAGE_SIZE);
+};
+
+static_assert(sizeof(String) == 32);
+
+bool operator==(const String& a, const String& b);
+bool operator==(const String& a, const char* b);
+bool operator<(const String& a, const String& b);
+#endif // MINILIB_STRING_DEFINED
+
 #ifndef MINILIB_SPAN_DEFINED
 #define MINILIB_SPAN_DEFINED
 #include <initializer_list> // light std include
