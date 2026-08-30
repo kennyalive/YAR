@@ -27,7 +27,7 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
         "fourier bsdf loader assumes little endian byte order");
     const std::array magic = { 'S', 'C', 'A', 'T', 'F', 'U', 'N' };
 
-    const std::vector<uint8_t> data = read_binary_file(bsdf_file);
+    const std::vector<uint8_t> data = read_binary_file(bsdf_file.data());
     const uint8_t* ptr = data.data();
 
     auto read_floats = [&data, &ptr](uint32_t float_count, std::vector<float>& output) -> bool {

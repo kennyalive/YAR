@@ -63,7 +63,7 @@ UI_Actions UI::run_imgui() {
             }
             ImGui::EndDisabled();
 
-            ImGui::InputText("Project file", &project_file);
+            ImGui::InputText("Project file", project_file, sizeof(project_file));
             if (ImGui::Button("Load")) {
                 actions.load_project = true;
             }

@@ -19,10 +19,10 @@
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr/tinyexr.h"
 
-static std::vector<ColorRGB> load_pfm_image(const std::string& file_path, int* width, int* height) {
-    Scoped_File f = fopen(file_path.c_str(), "rb");
+static std::vector<ColorRGB> load_pfm_image(const char* file_path, int* width, int* height) {
+    Scoped_File f = fopen(file_path, "rb");
     if (!f)
-        error("load_pfm_image: failed to open file: %s", file_path.c_str());
+        error("load_pfm_image: failed to open file: %s", file_path);
 
     static constexpr int buffer_size = 1024;
     char buffer[buffer_size];
@@ -40,32 +40,32 @@ static std::vector<ColorRGB> load_pfm_image(const std::string& file_path, int* w
             buffer[i++] = (char)ch;
         }
         if (!newline_found)
-            error("load_pfm_image: header ascii line does not end with a new line character: %s", file_path.c_str());
+            error("load_pfm_image: header ascii line does not end with a new line character: %s", file_path);
     };
 
     // Read file type.
     read_ascii_line();
     if (strncmp(buffer, "PF", 2) != 0)
-        error("load_pfm_image: non-RGB file detected, only RGB files are supported: %s", file_path.c_str());
+        error("load_pfm_image: non-RGB file detected, only RGB files are supported: %s", file_path);
 
     // Read image dimensions.
     read_ascii_line();
     if (sscanf(buffer, "%d %d", width, height) != 2)
-        error("load_pfm_image: failed to read image dimensions: %s", file_path.c_str());
+        error("load_pfm_image: failed to read image dimensions: %s", file_path);
 
     // Read aspect ratio/endianess value.
     read_ascii_line();
     float endianess;
     if (sscanf(buffer, "%f", &endianess) != 1)
-        error("load_pfm_image: failed to read aspect ratio/endianess value: %s", file_path.c_str());
+        error("load_pfm_image: failed to read aspect ratio/endianess value: %s", file_path);
     if (endianess > 0)
-        error("load_pfm_image: big endian RGB data is not supported: %s", file_path.c_str());
+        error("load_pfm_image: big endian RGB data is not supported: %s", file_path);
 
     // Read RGB floating point triplets.
     int pixel_count = (*width) * (*height);
     std::vector<ColorRGB> pixels(pixel_count);
     if (fread(pixels.data(), sizeof(ColorRGB), pixel_count, f) != pixel_count)
-        error("load_pfm_image: failed to read rgb data: %s", file_path.c_str());
+        error("load_pfm_image: failed to read rgb data: %s", file_path);
 
     // PFM format defines image rows from bottom to top, we need to flip
     std::vector<ColorRGB> flipped_pixels(pixel_count);
@@ -86,13 +86,13 @@ Image::Image(int width, int height)
 {
 }
 
-bool Image::load_from_file(const std::string file_path, bool decode_srgb, bool* is_hdr_image) {
+bool Image::load_from_file(const char* file_path, bool decode_srgb, bool* is_hdr_image) {
     if (is_hdr_image)
         *is_hdr_image = false;
     if (get_extension(file_path) == ".exr") {
         // Load image using TinyEXR library.
         float* out;
-        int ret = LoadEXR(&out, &width, &height, file_path.c_str(), nullptr);
+        int ret = LoadEXR(&out, &width, &height, file_path, nullptr);
         if (ret != TINYEXR_SUCCESS)
             return false;
         data.resize(width * height);
@@ -113,7 +113,7 @@ bool Image::load_from_file(const std::string file_path, bool decode_srgb, bool* 
         stbi_uc* rgba_texels = nullptr;
         {
             int component_count;
-            rgba_texels = stbi_load(file_path.c_str(), &width, &height, &component_count, STBI_rgb_alpha);
+            rgba_texels = stbi_load(file_path, &width, &height, &component_count, STBI_rgb_alpha);
             if (rgba_texels == nullptr)
                 return false;
         }
@@ -143,7 +143,7 @@ void Image::init_from_constant_value(int width, int height, const ColorRGB color
     data.resize(width * height, color);
 }
 
-bool Image::write_tga(const std::string& file_path) const {
+bool Image::write_tga(const char* file_path) const {
     ASSERT(int(data.size()) == width * height);
     std::vector<uint8_t> srgb_image(data.size() * 3);
     uint8_t* p = srgb_image.data();
@@ -157,10 +157,10 @@ bool Image::write_tga(const std::string& file_path) const {
         *p++ = uint8_t(255.f * srgb_encode(pixel.g) + 0.5f);
         *p++ = uint8_t(255.f * srgb_encode(pixel.b) + 0.5f);
     }
-    return stbi_write_tga(file_path.c_str(), width, height, 3, srgb_image.data()) != 0;
+    return stbi_write_tga(file_path, width, height, 3, srgb_image.data()) != 0;
 }
 
-bool Image::write_exr(const std::string& file_path, bool compress_image, const std::vector<EXRAttribute>& custom_attributes) const
+bool Image::write_exr(const char* file_path, bool compress_image, const std::vector<EXRAttribute>& custom_attributes) const
 {
     std::vector<float> channels[3];
     channels[0].resize(width * height);
@@ -215,7 +215,7 @@ bool Image::write_exr(const std::string& file_path, bool compress_image, const s
     exr_header.requested_pixel_types = output_component_types;
 
     const char* err = nullptr;
-    int result = SaveEXRImageToFile(&exr_image, &exr_header, file_path.c_str(), &err);
+    int result = SaveEXRImageToFile(&exr_image, &exr_header, file_path, &err);
     if (err) {
         printf("Image::write_exr: tinexr returned error message: %s\n", err);
         FreeEXRErrorMessage(err);

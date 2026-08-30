@@ -1,5 +1,7 @@
 #pragma once
 
+#include "minilib.h"
+
 // https://pbr-book.org/3ed-2018/Reflection_Models/Fourier_Basis_BSDFs
 struct Pbrt3_Fourier_Material {
     bool load_bsdf_file();
@@ -7,7 +9,7 @@ struct Pbrt3_Fourier_Material {
         return bsdf_file == other.bsdf_file;
     }
 
-    std::string bsdf_file;
+    String bsdf_file;
 
     // Bounds the number of coefficients in the fourier series.
     uint32_t max_order = 0;

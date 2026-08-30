@@ -40,10 +40,10 @@ void Path_Tracing::create_pipeline(const std::vector<VkDescriptorSetAndBindingMa
 {
     // pipeline
     {
-        Vk_Shader_Module rgen_shader(get_spirv_file("path_tracing.rgen"));
-        Vk_Shader_Module miss_shader(get_spirv_file("path_tracing.miss"));
-        Vk_Shader_Module chit_shader(get_spirv_file("path_tracing.chit"));
-        Vk_Shader_Module shadow_ray_chit_shader(get_spirv_file("path_tracing_shadow_ray.chit"));
+        Vk_Shader_Module rgen_shader(get_spirv_file("path_tracing.rgen").data());
+        Vk_Shader_Module miss_shader(get_spirv_file("path_tracing.miss").data());
+        Vk_Shader_Module chit_shader(get_spirv_file("path_tracing.chit").data());
+        Vk_Shader_Module shadow_ray_chit_shader(get_spirv_file("path_tracing_shadow_ray.chit").data());
 
         VkPipelineShaderStageCreateInfo stage_infos[4]{};
         stage_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

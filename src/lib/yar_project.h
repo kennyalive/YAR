@@ -15,7 +15,7 @@ struct YAR_Obj_Info {
 };
 
 struct YAR_Instance {
-    std::string geometry_name;
+    String geometry_name;
     Matrix3x4 transform;
 };
 
@@ -50,9 +50,9 @@ struct YAR_Project {
     std::vector<Diffuse_Rectangular_Light> diffuse_rectangular_lights;
 
     std::vector<YAR_Instance> instances;
-    std::vector<std::string> ignore_geometry_names;
+    std::vector<String> ignore_geometry_names;
 
     YAR_Obj_Info obj_info;
 };
 
-YAR_Project parse_yar_file(const std::string& yar_file_path);
+YAR_Project parse_yar_file(const char* yar_file_path);

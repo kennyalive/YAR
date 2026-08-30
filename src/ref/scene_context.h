@@ -36,8 +36,8 @@ struct Array2D_Registry {
 };
 
 struct Scene_Context {
-    std::string input_filename;
-    std::string checkpoint_directory;
+    String input_filename;
+    String checkpoint_directory;
     int thread_count = 0;
 
     Bounds2i render_region;

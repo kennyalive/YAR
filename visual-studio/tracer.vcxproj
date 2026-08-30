@@ -120,6 +120,7 @@
     <ClCompile Include="..\src\ref\benchmark_pbrt_parser.cpp" />
     <ClCompile Include="..\src\ref\test_random.cpp" />
     <ClCompile Include="..\src\ref\test_sampling.cpp" />
+    <ClCompile Include="..\src\ref\test_string.cpp" />
     <ClCompile Include="..\src\ref\benchmark_triangle_intersection.cpp" />
     <ClCompile Include="..\src\ref\test_triangle_intersection.cpp" />
     <ClCompile Include="..\src\ref\test_watertightness.cpp" />

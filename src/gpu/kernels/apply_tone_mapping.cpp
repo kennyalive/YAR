@@ -6,7 +6,7 @@
 
 void Apply_Tone_Mapping::create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
-    Vk_Shader_Module shader(get_spirv_file("apply_tone_mapping"));
+    Vk_Shader_Module shader(get_spirv_file("apply_tone_mapping").data());
     pipeline = vk_create_compute_pipeline(shader.handle, descriptor_mappings, "apply_tone_mapping_pipeline_layout");
 }
 

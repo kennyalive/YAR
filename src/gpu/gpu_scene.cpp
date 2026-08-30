@@ -140,7 +140,7 @@ void GPU_Scene::load(const Scene& scene)
     {
         images.reserve(images.size() + scene.texture_descriptors.size());
         for (const Texture_Descriptor& texture_desc : scene.texture_descriptors) {
-            Vk_Image image = vk_load_texture(scene.get_resource_absolute_path(texture_desc.file_name));
+            Vk_Image image = vk_load_texture(scene.get_resource_absolute_path(texture_desc.file_name.data()).data());
             images.push_back(image);
         }
 

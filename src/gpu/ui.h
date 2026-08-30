@@ -24,7 +24,7 @@ struct UI
 
     // Externally provide state displayed or used by the UI.
     bool scene_loaded = false;
-    std::string project_file;
+    char project_file[512] = {}; // ImGui edits it in place; load_project rejects paths that do not fit
     bool reference_renderer_running = false;
     const Vk_Timer* frame_time_scope = nullptr;
     Vector3 camera_position;

@@ -28,7 +28,7 @@ public:
         float scale = 1.f;
     };
 
-    void initialize_from_file(const std::string& image_path, const Init_Params& params);
+    void initialize_from_file(const char* image_path, const Init_Params& params);
     void initialize_from_constant_value(const ColorRGB& color);
 
     const std::vector<Image>& get_mips() const { return mips; }

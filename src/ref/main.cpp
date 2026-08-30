@@ -37,9 +37,9 @@ struct Command_Line_Options {
     // Enables OpenEXR feature to store image data in compressed form (zip)
     bool openexr_enable_compression = false;
 
-    std::string output_directory;
-    std::string output_filename_suffix;
-    std::string checkpoint_directory;
+    String output_directory;
+    String output_filename_suffix;
+    String checkpoint_directory;
 
     int samples_per_pixel = 0; // overrides project settings
     Vector2i film_resolution; // overrides project settings
@@ -58,7 +58,7 @@ struct Command_Line_Options {
 };
 
 struct Parsed_Command_Line {
-    std::vector<std::string> files;
+    std::vector<String> files;
     Command_Line_Options options;
     bool exit_app = false;
     int exit_code = 0;
@@ -169,20 +169,20 @@ static void print_help_string(getopt_context_t* ctx)
     printf("Options:\n%s\n", getopt_create_help_string(ctx, buffer, sizeof(buffer)));
 }
 
-static std::vector<std::string> read_list_file(const std::string& list_file)
+static std::vector<String> read_list_file(const char* list_file)
 {
-    std::string content = read_text_file(list_file);
-    std::vector<std::string> filenames;
+    String content = read_text_file(list_file);
+    std::vector<String> filenames;
     size_t start = SIZE_MAX;
     size_t last;
     for (size_t i = 0; i < content.size(); i++) {
-        if (content[i] == '\n') { // handle new line
+        if (content.data()[i] == '\n') { // handle new line
             if (start != SIZE_MAX) {
-                filenames.emplace_back(content.data() + start, content.data() + last + 1);
+                filenames.emplace_back(content.data() + start, (uint32_t)(last + 1 - start));
                 start = SIZE_MAX;
             }
         }
-        else if (content[i] > 32) { // handle non-whitespace symbols
+        else if (content.data()[i] > 32) { // handle non-whitespace symbols
             if (start == SIZE_MAX) {
                 start = i;
             }
@@ -190,7 +190,7 @@ static std::vector<std::string> read_list_file(const std::string& list_file)
         }
     }
     if (start != SIZE_MAX) { // handle last filename
-        filenames.emplace_back(content.data() + start, content.data() + last + 1);
+        filenames.emplace_back(content.data() + start, (uint32_t)(last + 1 - start));
     }
     return filenames;
 }
@@ -203,7 +203,7 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
         return 1;
     }
 
-    std::vector<std::string> files;
+    std::vector<String> files;
     Command_Line_Options options;
 
     bool is_render_region_specified = false;
@@ -225,9 +225,9 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
             return 0;
         }
         else if (opt == '+') {
-            std::string filename = ctx.current_opt_arg;
-            if (to_lower(fs::path(filename).extension().string()) == ".list") {
-                auto filenames = read_list_file(filename);
+            String filename = ctx.current_opt_arg;
+            if (get_extension(filename.data()) == ".list") {
+                auto filenames = read_list_file(filename.data());
                 files.insert(files.end(), filenames.begin(), filenames.end());
             }
             else {
@@ -305,7 +305,7 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
                 options.film_resolution = Vector2i{ width, height };
             }
             else {
-                std::string s = to_lower(ctx.current_opt_arg);
+                String s = to_lower(ctx.current_opt_arg);
                 if (s == "720p" || s == "hd") {
                     options.film_resolution = Vector2i{ 1280, 720 };
                 }
@@ -361,10 +361,10 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
     return cmdline;
 }
 
-static void process_input_file(const std::string& input_file, const Command_Line_Options& options)
+static void process_input_file(const char* input_file, const Command_Line_Options& options)
 {
     Timestamp t_start;
-    printf("Loading: %s\n", input_file.c_str());
+    printf("Loading: %s\n", input_file);
 
     //
     // Load scene.
@@ -434,18 +434,17 @@ static void process_input_file(const std::string& input_file, const Command_Line
         image.flip_horizontally();
     }
 
-    std::string image_filename;
+    String image_filename;
     if (!scene.output_filename.empty()) {
-        image_filename = fs::path(scene.output_filename).replace_extension().string();
+        image_filename = to_string(fs::path(scene.output_filename.data()).replace_extension());
     }
     else {
-        image_filename = fs::path(input_file).stem().string();
+        image_filename = to_string(fs::path(input_file).stem());
     }
     if (!options.output_directory.empty()) {
-        image_filename = (fs::path(options.output_directory) / fs::path(image_filename)).string();
+        image_filename = to_string(fs::path(options.output_directory.data()) / fs::path(image_filename.data()));
     }
-    image_filename += options.output_filename_suffix;
-    image_filename += ".exr"; // output is OpenEXR image
+    image_filename = string_printf("%s%s.exr", image_filename.data(), options.output_filename_suffix.data()); // output is OpenEXR image
 
     EXR_Write_Params write_params;
     write_params.enable_varying_attributes = options.openexr_enable_varying_attributes;
@@ -459,10 +458,10 @@ static void process_input_file(const std::string& input_file, const Command_Line
         .render_time = render_time,
     };
 
-    if (!write_openexr_image(image_filename, image, write_params)) {
-        error("Failed to save rendered image: %s", image_filename.c_str());
+    if (!write_openexr_image(image_filename.data(), image, write_params)) {
+        error("Failed to save rendered image: %s", image_filename.data());
     }
-    printf("Saved output image to %s\n\n", image_filename.c_str());
+    printf("Saved output image to %s\n\n", image_filename.data());
 }
 
 int main(int argc, char** argv)
@@ -473,8 +472,8 @@ int main(int argc, char** argv)
         return cmdline.exit_code;
     }
 
-    for (const std::string& input_file : cmdline.files) {
-        process_input_file(input_file, cmdline.options);
+    for (const String& input_file : cmdline.files) {
+        process_input_file(input_file.data(), cmdline.options);
     }
     return 0;
 }

@@ -254,12 +254,12 @@ static Image generate_next_mip_level_with_box_filter(const Image& image) {
     return result;
 }
 
-void Image_Texture::initialize_from_file(const std::string& image_path, const Image_Texture::Init_Params& params) {
+void Image_Texture::initialize_from_file(const char* image_path, const Image_Texture::Init_Params& params) {
     // Load base mip level.
     bool is_hdr_image;
     Image base_mip;
     if (!base_mip.load_from_file(image_path, params.decode_srgb, &is_hdr_image))
-        error("failed to load image file: %s", image_path.c_str());
+        error("failed to load image file: %s", image_path);
 
     // Apply scale if specified.
     if (params.scale != 1.f) {
@@ -286,8 +286,8 @@ void Image_Texture::initialize_from_file(const std::string& image_path, const Im
         // DEBUG
         #if 0
         for (int i = 0; i < int(mips.size()); i++) {
-            const std::string image_name = fs::path(image_path).filename().replace_extension("").string();
-            mips[i].write_tga(image_name + "_" + get_filter_name(params.mip_filter) + "_mip_" + std::to_string(i) + ".tga");
+            const String image_name = to_string(fs::path(image_path).filename().replace_extension(""));
+            mips[i].write_tga(string_printf("%s_%s_mip_%d.tga", image_name.data(), get_filter_name(params.mip_filter), i).data());
         }
         #endif
     }

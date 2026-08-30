@@ -7,9 +7,9 @@
 struct Command_Line_Params
 {
     bool requested_help_info = false;
-    std::string data_dir;
+    String data_dir;
     int gpu_index = -1;
-    std::string input_file;
+    String input_file;
 };
 
 struct Window_State
@@ -139,7 +139,7 @@ static int run_realtime_renderer(const Command_Line_Params& params)
     glfwSetWindowUserPointer(window_state.window, &window_state);
 
     if (!params.input_file.empty()) {
-        yar.load_project(params.input_file);
+        yar.load_project(params.input_file.data());
     }
     while (!glfwWindowShouldClose(window_state.window)) {
         if (window_state.active) {

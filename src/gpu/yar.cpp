@@ -15,6 +15,11 @@
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_glfw.h"
 
+static void vk_error(const char* message)
+{
+    error("%s", message);
+}
+
 void YAR::initialize(GLFWwindow* window, int gpu_index) {
     std::array instance_extensions = {
         VK_KHR_SURFACE_EXTENSION_NAME,
@@ -81,7 +86,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     pnexer.next(robustness2_features);
 
     Vk_Init_Params vk_init_params;
-    vk_init_params.error_reporter = &error;
+    vk_init_params.error_reporter = &vk_error;
     vk_init_params.physical_device_index = gpu_index;
     vk_init_params.vsync = ui.vsync;
     vk_init_params.instance_extensions = instance_extensions;
@@ -236,7 +241,7 @@ void YAR::write_common_descriptors()
     descriptor_heap.write_sampler_descriptor(sampler_create_info, descriptor_heap_layout.image_sampler);
 }
 
-void YAR::load_project(const std::string& input_file)
+void YAR::load_project(const char* input_file)
 {
     ASSERT(scene.type == Scene_Type::none);
     VK_CHECK(vkDeviceWaitIdle(vk.device));
@@ -260,7 +265,8 @@ void YAR::load_project(const std::string& input_file)
 
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
     ui.scene_loaded = true;
-    ui.project_file = input_file;
+    if (snprintf(ui.project_file, sizeof(ui.project_file), "%s", input_file) >= (int)sizeof(ui.project_file))
+        error("Project path is longer than the UI can hold (%zu characters): %s", sizeof(ui.project_file) - 1, input_file);
 
     if (ui.rendering_algorithm == 0) {
         direct_lighting_renderer.activate();
@@ -485,12 +491,12 @@ void YAR::do_run_reference_renderer(const Reference_Renderer_Config& reference_r
 
     // Save results
     EXR_Write_Params write_params;
-    const std::string image_filename = "image.exr";
+    const char* image_filename = "image.exr";
     if (!write_openexr_image(image_filename, image, write_params)) {
-        printf("Failed to save rendered image: %s\n", image_filename.c_str());
+        printf("Failed to save rendered image: %s\n", image_filename);
     }
     else {
-        printf("Saved output image to %s\n\n", image_filename.c_str());
+        printf("Saved output image to %s\n\n", image_filename);
     }
     reference_renderer_running.store(false);
 }

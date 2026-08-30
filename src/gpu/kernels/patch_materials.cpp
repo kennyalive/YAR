@@ -4,7 +4,7 @@
 
 void Patch_Materials::create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
-    Vk_Shader_Module shader(get_spirv_file("patch_materials"));
+    Vk_Shader_Module shader(get_spirv_file("patch_materials").data());
     pipeline = vk_create_compute_pipeline(shader.handle, descriptor_mappings, "patch_materials_pipeline");
 }
 

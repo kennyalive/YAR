@@ -127,7 +127,7 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
 
     if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture)) {
         Texture_Descriptor texture_desc{
-            .file_name = image_texture->fileName,
+            .file_name = image_texture->fileName.c_str(),
             .decode_srgb = image_texture->gamma,
             .scale = image_texture->scale,
         };
@@ -232,7 +232,7 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
 
     if (auto image_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(pbrt_texture)) {
         Texture_Descriptor texture_desc{
-            .file_name = image_texture->fileName,
+            .file_name = image_texture->fileName.c_str(),
             .decode_srgb = image_texture->gamma,
             .scale = image_texture->scale,
         };
@@ -659,12 +659,12 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
 
     if (auto fourier_material = std::dynamic_pointer_cast<pbrt::FourierMaterial>(pbrt_material)) {
         Pbrt3_Fourier_Material mtl;
-        mtl.bsdf_file = scene->get_resource_absolute_path(fourier_material->fileName);
+        mtl.bsdf_file = scene->get_resource_absolute_path(fourier_material->fileName.c_str());
         if (mtl.load_bsdf_file()) {
             return add_material<Material_Type::pbrt3_fourier>(materials, mtl);
         }
         printf("import_pbrt_material: Failed to load %s fourier bsdf file, fallback to using default material\n",
-            mtl.bsdf_file.c_str());
+            mtl.bsdf_file.data());
     }
 
     // Use red diffuse material to indicate unsupported material.
@@ -731,7 +731,7 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
     {
         auto alpha_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(alpha_texture_it->second);
         if (alpha_texture)
-            mesh.alpha_texture_index = add_scene_texture(alpha_texture->fileName, scene);
+            mesh.alpha_texture_index = add_scene_texture(alpha_texture->fileName.c_str(), scene);
     }
 
     if (pbrt_mesh->no_shadows) {
@@ -964,7 +964,7 @@ static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const M
         light.scale = ColorRGB(&infinite_light->scale.x) * ColorRGB(&infinite_light->L.x);
 
         if (!infinite_light->mapName.empty()) {
-            light.environment_map_index = add_scene_texture(infinite_light->mapName, scene);
+            light.environment_map_index = add_scene_texture(infinite_light->mapName.c_str(), scene);
         }
         else {
             Texture_Descriptor texture_desc{
@@ -1048,7 +1048,7 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
 // PBRT scene main loading routine.
 //
 void load_pbrt_scene(const YAR_Project& project, Scene& scene) {
-    pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(scene.path);
+    pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(scene.path.data());
     pbrt_scene->makeSingleLevel();
 
     // TODO: re-work pbrt-parser to decouple material from shape to be able to use
@@ -1099,7 +1099,7 @@ void load_pbrt_scene(const YAR_Project& project, Scene& scene) {
     // Import film.
     pbrt::Film::SP pbrt_film = pbrt_scene->film;
     if (pbrt_film) {
-        scene.output_filename = pbrt_film->fileName;
+        scene.output_filename = pbrt_film->fileName.c_str();
         scene.film_resolution.x = pbrt_film->resolution.x;
         scene.film_resolution.y = pbrt_film->resolution.y;
 

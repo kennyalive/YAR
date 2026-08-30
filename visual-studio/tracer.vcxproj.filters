@@ -24,6 +24,9 @@
     <ClCompile Include="..\src\ref\test_sampling.cpp">
       <Filter>tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\ref\test_string.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\ref\light_sampling.cpp" />
     <ClCompile Include="..\src\ref\pixel_sampling.cpp" />
     <ClCompile Include="..\src\ref\path_tracing.cpp" />

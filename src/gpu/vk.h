@@ -12,7 +12,6 @@ constexpr int VK_VERSION = -4;
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
 #include "vma/vk_mem_alloc.h"
 
-#include <string>
 #include <vector>
 
 //
@@ -83,10 +82,10 @@ struct Function_Ref<R(Args...)>
 //
 
 const char* vk_result_to_string(VkResult result);
-#define VK_CHECK_RESULT(result) if (result < 0 && vk.error) vk.error(std::string("Error: ") + vk_result_to_string(result));
+#define VK_CHECK_RESULT(result) if (result < 0 && vk.error) vk.error(vk_result_to_string(result));
 #define VK_CHECK(function_call) { VkResult result = function_call;  VK_CHECK_RESULT(result); }
 
-using Vk_Error_Func = void (*)(const std::string& error_message);
+using Vk_Error_Func = void (*)(const char* error_message);
 
 struct Vk_Init_Params {
     Vk_Error_Func error_reporter = nullptr;
@@ -173,9 +172,9 @@ Vk_Buffer vk_create_mapped_buffer_with_alignment(VkDeviceSize size, VkBufferUsag
 // Images
 Vk_Image vk_create_image(int width, int height, VkFormat format, VkImageUsageFlags usage_flags, const char* name);
 Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate_mipmaps, const uint8_t* pixels, int bytes_per_pixel, const char*  name);
-Vk_Image vk_load_texture(const std::string& texture_file);
+Vk_Image vk_load_texture(const char* texture_file);
 
-VkShaderModule vk_load_spirv(const std::string& spirv_file);
+VkShaderModule vk_load_spirv(const char* spirv_file);
 
 Vk_Graphics_Pipeline_State get_default_graphics_pipeline_state();
 
@@ -292,7 +291,7 @@ struct Vk_PNexer {
 };
 
 struct Vk_Shader_Module {
-    Vk_Shader_Module(const std::string& spirv_file);
+    Vk_Shader_Module(const char* spirv_file);
     ~Vk_Shader_Module();
     VkShaderModule handle;
 };
