@@ -1,8 +1,10 @@
 #pragma once
 
+constexpr int MINILIB_VERSION = 0;
+
 #ifndef MINILIB_SPAN_DEFINED
 #define MINILIB_SPAN_DEFINED
-#include <initializer_list> // light std include
+#include <initializer_list>
 template <typename T>
 struct Span
 {
@@ -38,10 +40,10 @@ struct Span
 };
 #endif // MINILIB_SPAN_DEFINED
 
-// Non-owning reference to a callable. The callable must outlive this object.
-// Mutable lambdas are intentionally unsupported. Capture mutable state by reference instead.
 #ifndef MINILIB_FUNCTION_REF_DEFINED
 #define MINILIB_FUNCTION_REF_DEFINED
+// Non-owning reference to a callable. The callable must outlive this object.
+// Mutable lambdas are intentionally unsupported. Capture mutable state by reference instead.
 template <typename> struct Function_Ref;
 template <typename R, typename... Args>
 struct Function_Ref<R(Args...)>
@@ -59,3 +61,66 @@ struct Function_Ref<R(Args...)>
     {}
 };
 #endif // MINILIB_FUNCTION_REF_DEFINED
+
+#ifndef MINILIB_STRING_DEFINED
+#define MINILIB_STRING_DEFINED
+#include <stddef.h>
+#include <stdint.h>
+// Immutable string that owns its characters.
+// There is no mutation API: build text elsewhere (string_printf, a local buffer).
+// data() is never null and always points to a zero-terminated sequence.
+//
+// Strings of up to max_small characters (31 by default) live inside the object.
+// Longer strings use heap storage.
+// By default, a String object occupies 32 bytes (two per cache line).
+struct String
+{
+    String() { storage.small[0] = 0; storage.small[max_small] = char(max_small); }
+    String(const char* s);
+    String(const char* s, size_t n);
+    String(const String& other);
+    String(String&& other) noexcept;
+    ~String();
+    String& operator=(const String& other);
+    String& operator=(String&& other) noexcept;
+
+    const char* data() const { return is_small() ? storage.small : storage.heap.chars; }
+    size_t size() const { return is_small() ? max_small - last_byte() : storage.heap.count; }
+
+    bool empty() const { return size() == 0; }
+    const char* c_str() const { return data(); }
+    const char* begin() const { return data(); }
+    const char* end() const { return data() + size(); }
+
+    static constexpr uint32_t object_size = 32;
+
+private:
+    // Characters that fit inside the object
+    static constexpr uint32_t max_small = object_size - 1;
+    // The last byte identifies the storage layout. Small strings store
+    // (max_small - size) in this byte. At full capacity this byte is zero
+    // and serves as the terminator. Heap strings store heap_tag in this byte.
+    static constexpr uint8_t heap_tag = 0x80;
+
+    struct Heap {
+        const char* chars;
+        size_t count;
+        uint8_t unused[object_size - sizeof(chars) - sizeof(count) - 1 /*tag*/];
+        uint8_t tag;
+    };
+    union Storage {
+        char small[object_size];
+        Heap heap;
+    } storage;
+
+    uint8_t last_byte() const { return ((const unsigned char*)&storage)[object_size - 1]; }
+    bool is_small() const { return last_byte() != heap_tag; }
+    friend String string_printf(const char* format, ...);
+};
+static_assert(sizeof(String) == String::object_size);
+bool operator==(const String& a, const String& b);
+bool operator!=(const String& a, const String& b);
+bool operator==(const String& a, const char* b);
+bool operator<(const String& a, const String& b);
+String string_printf(const char* format, ...);
+#endif // MINILIB_STRING_DEFINED
