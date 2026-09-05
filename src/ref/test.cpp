@@ -1,5 +1,6 @@
 #include "std.h"
 #include "test.h"
+#include "lib/minilib.h"
 
 void test_random();
 void test_sampling();
@@ -11,7 +12,7 @@ void benchmark_triangle_intersection();
 void benchmark_kdtree();
 void benchmark_pbrt_parser();
 
-void run_tests(const std::string& test_name) {
+void run_tests(const String& test_name) {
     if (test_name.empty()) {
         test_random();
         test_sampling();

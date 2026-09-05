@@ -1,6 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "image_texture.h"
+#include "lib/minilib.h"
 
 #include "lib/math.h"
 #include "lib/vector.h"
@@ -254,7 +255,7 @@ static Image generate_next_mip_level_with_box_filter(const Image& image) {
     return result;
 }
 
-void Image_Texture::initialize_from_file(const std::string& image_path, const Image_Texture::Init_Params& params) {
+void Image_Texture::initialize_from_file(const String& image_path, const Image_Texture::Init_Params& params) {
     // Load base mip level.
     bool is_hdr_image;
     Image base_mip;
@@ -286,8 +287,8 @@ void Image_Texture::initialize_from_file(const std::string& image_path, const Im
         // DEBUG
         #if 0
         for (int i = 0; i < int(mips.size()); i++) {
-            const std::string image_name = fs::path(image_path).filename().replace_extension("").string();
-            mips[i].write_tga(image_name + "_" + get_filter_name(params.mip_filter) + "_mip_" + std::to_string(i) + ".tga");
+            const std::string image_name = fs::path(image_path.c_str()).filename().replace_extension("").string();
+            mips[i].write_tga((image_name + "_" + get_filter_name(params.mip_filter) + "_mip_" + std::to_string(i) + ".tga").c_str());
         }
         #endif
     }

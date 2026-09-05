@@ -39,7 +39,7 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
                 Image_Texture texture;
 
                 if (!texture_desc.file_name.empty()) {
-                    std::string path = scene.get_resource_absolute_path(texture_desc.file_name);
+                    String path = scene.get_resource_absolute_path(texture_desc.file_name);
                     Image_Texture::Init_Params init_params;
                     init_params.generate_mips = true;
                     init_params.decode_srgb = texture_desc.decode_srgb;
@@ -177,19 +177,19 @@ struct Checkpoint {
 };
 }
 
-Checkpoint start_or_resume_checkpoint(const std::string& checkpoint_directory, const Checkpoint_Info& info)
+Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const Checkpoint_Info& info)
 {
     const char* func_name = "start_or_resume_from_checkpoint_directory";
-    fs::path metadata_file_path = fs::path(checkpoint_directory) / "checkpoint";
+    fs::path metadata_file_path = fs::path(checkpoint_directory.c_str()) / "checkpoint";
 
     // If checkpoint directory does not exist or it is an empty directory then perform
     // initialization of the checkpoint by creating checkpoint metadata file.
-    if (!fs_exists(checkpoint_directory)) {
-        if (!fs_create_directories(checkpoint_directory))
+    if (!fs_exists(checkpoint_directory.c_str())) {
+        if (!fs_create_directories(checkpoint_directory.c_str()))
             error("%s: failed to create checkpoint directory: %s",
                 func_name, checkpoint_directory.c_str());
     }
-    if (fs_is_empty(checkpoint_directory)) {
+    if (fs_is_empty(checkpoint_directory.c_str())) {
         std::ofstream metadata_file(metadata_file_path, std::ofstream::out);
         if (!metadata_file)
             error("%s: failed to create checkpoint file: %s",
@@ -251,7 +251,7 @@ Checkpoint start_or_resume_checkpoint(const std::string& checkpoint_directory, c
 
     // Scan checkpoint directory for already finished tiles.
     Checkpoint checkpoint;
-    for (const auto& entry : fs::directory_iterator(checkpoint_directory)) {
+    for (const auto& entry : fs::directory_iterator(checkpoint_directory.c_str())) {
         std::string filename = entry.path().stem().string();
         if (!filename.starts_with("tile_"))
             continue;
@@ -280,14 +280,14 @@ Checkpoint start_or_resume_checkpoint(const std::string& checkpoint_directory, c
     return checkpoint;
 }
 
-static void write_tile_to_checkpoint_directory(const std::string& checkpoint_directory,
+static void write_tile_to_checkpoint_directory(const String& checkpoint_directory,
     const Film_Tile& tile, int tile_index, float current_render_time, double tile_variance_accumulator)
 {
     const char* func_name = "write_tile_to_checkpoint_directory";
 
     // The first step, is to write a tile to a temporary file. If the program terminates
     // during write operation then the checpoint directory will stay in consistent state.
-    fs::path temp_file_path = fs::path(checkpoint_directory) / ("temp_tile_" + format_tile_index(tile_index));
+    fs::path temp_file_path = fs::path(checkpoint_directory.c_str()) / ("temp_tile_" + format_tile_index(tile_index));
     std::ofstream temp_file(temp_file_path, std::ofstream::out | std::ofstream::binary);
     if (!temp_file)
         error("%s: failed to create file: %s", func_name, temp_file_path.string().c_str());
@@ -316,7 +316,7 @@ static void write_tile_to_checkpoint_directory(const std::string& checkpoint_dir
     temp_file.close();
 
     // Rename temporary tile file. The assumption is that std::filesystem::rename is atomic.
-    fs::path file_path = fs::path(checkpoint_directory) / ("tile_" + format_tile_index(tile_index));
+    fs::path file_path = fs::path(checkpoint_directory.c_str()) / ("tile_" + format_tile_index(tile_index));
     if (fs_exists(file_path))
         error("%s: tile file already exists: %s", func_name, file_path.string().c_str());
     if (!fs_rename(temp_file_path, file_path))
@@ -443,7 +443,7 @@ static Film_Filter create_film_filter(const Raytracer_Config& cfg)
     return Film_Filter{};
 }
 
-static std::vector<int> load_checkpoint(const std::string& checkpoint_directory, const Checkpoint_Info& info,
+static std::vector<int> load_checkpoint(const String& checkpoint_directory, const Checkpoint_Info& info,
     std::vector<Film_Tile>* tiles, std::vector<double>* tile_variance_accumulators, float* previous_sessions_time)
 {
     Checkpoint checkpoint = start_or_resume_checkpoint(checkpoint_directory, info);
@@ -489,7 +489,7 @@ Image render_scene(const Scene_Context& scene_ctx, double* variance_estimate, fl
     std::vector<int> tiles_to_render;
     if (!scene_ctx.checkpoint_directory.empty()) {
         Checkpoint_Info info;
-        info.input_filename = scene_ctx.input_filename;
+        info.input_filename.assign(scene_ctx.input_filename.data(), scene_ctx.input_filename.size());
         info.total_tile_count = film.get_tile_count();
         info.samples_per_pixel = scene_ctx.pixel_sampler_config.get_samples_per_pixel();
 
@@ -670,11 +670,11 @@ private:
     }
 };
 
-bool write_openexr_image(const std::string& filename, const Image& image, const EXR_Write_Params& write_params)
+bool write_openexr_image(const String& filename, const Image& image, const EXR_Write_Params& write_params)
 {
     EXR_Attributes_Writer attrib_writer;
     if (write_params.dump_attributes) {
-        std::string dumpfile = fs::path(filename).replace_extension(".txt").string();
+        String dumpfile = fs::path(filename.c_str()).replace_extension(".txt").string().c_str();
         attrib_writer.dump_file = fopen(dumpfile.c_str(), "w");
     }
 

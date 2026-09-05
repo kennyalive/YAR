@@ -1,6 +1,7 @@
 #include "std.h"
 #include "common.h"
 #include "image.h"
+#include "minilib.h"
 
 #include "color.h"
 
@@ -19,7 +20,7 @@
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr/tinyexr.h"
 
-static std::vector<ColorRGB> load_pfm_image(const std::string& file_path, int* width, int* height) {
+static std::vector<ColorRGB> load_pfm_image(const String& file_path, int* width, int* height) {
     Scoped_File f = fopen(file_path.c_str(), "rb");
     if (!f)
         error("load_pfm_image: failed to open file: %s", file_path.c_str());
@@ -86,7 +87,7 @@ Image::Image(int width, int height)
 {
 }
 
-bool Image::load_from_file(const std::string file_path, bool decode_srgb, bool* is_hdr_image) {
+bool Image::load_from_file(const String& file_path, bool decode_srgb, bool* is_hdr_image) {
     if (is_hdr_image)
         *is_hdr_image = false;
     if (get_extension(file_path) == ".exr") {
@@ -143,7 +144,7 @@ void Image::init_from_constant_value(int width, int height, const ColorRGB color
     data.resize(width * height, color);
 }
 
-bool Image::write_tga(const std::string& file_path) const {
+bool Image::write_tga(const String& file_path) const {
     ASSERT(int(data.size()) == width * height);
     std::vector<uint8_t> srgb_image(data.size() * 3);
     uint8_t* p = srgb_image.data();
@@ -160,7 +161,7 @@ bool Image::write_tga(const std::string& file_path) const {
     return stbi_write_tga(file_path.c_str(), width, height, 3, srgb_image.data()) != 0;
 }
 
-bool Image::write_exr(const std::string& file_path, bool compress_image, const std::vector<EXRAttribute>& custom_attributes) const
+bool Image::write_exr(const String& file_path, bool compress_image, const std::vector<EXRAttribute>& custom_attributes) const
 {
     std::vector<float> channels[3];
     channels[0].resize(width * height);

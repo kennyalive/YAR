@@ -34,7 +34,7 @@ void load_obj_scene(const YAR_Project& project, Scene& scene) {
     // We can have more elements in case of instancing.
     scene.objects.reserve(obj_data.meshes.size()); 
 
-    std::map<std::string, std::vector<YAR_Instance>> instance_infos;
+    std::map<String, std::vector<YAR_Instance>> instance_infos;
     for (const YAR_Instance& instance : project.instances)
         instance_infos[instance.geometry_name].push_back(instance);
 

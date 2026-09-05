@@ -36,7 +36,7 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
     bool has_normals = true;
 
     obj_meshes.push_back(Obj_Mesh{});
-    obj_meshes.back().name = shape.name;
+    obj_meshes.back().name = String(shape.name.data(), shape.name.size());
     obj_meshes.back().material_index = current_material_id;
     Triangle_Mesh* mesh = &obj_meshes.back().mesh;
 
@@ -52,7 +52,7 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
                     calculate_normals(params.normal_calculation_params, *mesh);
 
                 obj_meshes.push_back(Obj_Mesh{});
-                obj_meshes.back().name = shape.name;
+                obj_meshes.back().name = String(shape.name.data(), shape.name.size());
                 obj_meshes.back().material_index = material_id;
                 mesh = &obj_meshes.back().mesh;
                 current_material_id = material_id;
@@ -108,14 +108,14 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
 Obj_Data load_obj(
     const std::string& obj_file_path,
     const Triangle_Mesh_Load_Params& params,
-    const std::vector<std::string>* ignore_geometry_names)
+    const std::vector<String>* ignore_geometry_names)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    const std::string mtl_dir = fs::path(obj_file_path).parent_path().string();
+    const String mtl_dir = fs::path(obj_file_path).parent_path().string().c_str();
 
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, obj_file_path.c_str(), mtl_dir.c_str()))
         error("failed to load obj model: " + obj_file_path);
@@ -128,12 +128,12 @@ Obj_Data load_obj(
         mtl.k_diffuse = ColorRGB{tinyobj_mtl.diffuse};
         mtl.k_specular = ColorRGB{tinyobj_mtl.specular};
         if (!tinyobj_mtl.diffuse_texname.empty())
-            mtl.diffuse_texture = tinyobj_mtl.diffuse_texname;
+            mtl.diffuse_texture = String(tinyobj_mtl.diffuse_texname.data(), tinyobj_mtl.diffuse_texname.size());
     }
 
     for (const tinyobj::shape_t& shape : shapes) {
         if (ignore_geometry_names) {
-            if (std::find(ignore_geometry_names->begin(), ignore_geometry_names->end(), shape.name) != ignore_geometry_names->end()) {
+            if (std::find(ignore_geometry_names->begin(), ignore_geometry_names->end(), shape.name.c_str()) != ignore_geometry_names->end()) {
                 continue;
             }
         }

@@ -48,7 +48,7 @@ struct Parser {
     {}
 
     struct Error {
-        std::string description;
+        String description;
     };
 
     void check(bool condition, const char* format, ...) const {
@@ -79,11 +79,12 @@ struct Parser {
         return true;
     }
 
-    std::string get_string() {
+    String get_string() {
         ASSERT(token.type == JSMN_STRING);
         std::string_view escaped_string = get_current_token_string();
         next_token();
-        return unescape_json_string(escaped_string);
+        std::string str = unescape_json_string(escaped_string);
+        return String(str.data(), str.size());
     }
 
     template <typename T>
@@ -114,11 +115,11 @@ struct Parser {
             values[i] = get_numeric<T>();
     }
 
-    std::vector<std::string> get_array_of_strings() {
+    std::vector<String> get_array_of_strings() {
         CHECK(token.type == JSMN_ARRAY);
         const int array_size = token.size;
         next_token();
-        std::vector<std::string> strs;
+        std::vector<String> strs;
         strs.reserve(array_size);
         for (int i = 0; i < array_size; i++)
             strs.push_back(get_string());
@@ -179,7 +180,7 @@ struct Parser {
                 check(false, "unknown scene_type: %.*s", (int)get_current_token_string().size(), get_current_token_string().data());
         }
         else if (match_string("scene_path")) {
-            project.scene_path = get_string();
+            project.scene_path = get_string().c_str();
         }
         else if (match_string("film_resolution")) {
             get_fixed_numeric_array(2, &project.film_resolution.x);
@@ -264,7 +265,7 @@ struct Parser {
 
     void parse_point_light(int num_fields) {
         Point_Light light{};
-        std::string spectrum_shape = "constant";
+        String spectrum_shape = "constant";
         float luminous_flux = 0.f;
         for (int i = 0; i < num_fields; i++) {
             if (match_string("position")) {
@@ -364,7 +365,7 @@ struct Parser {
 
 #undef CHECK
 
-YAR_Project parse_yar_file(const std::string& yar_file_path) {
+YAR_Project parse_yar_file(const String& yar_file_path) {
     ASSERT(get_extension(yar_file_path) == ".yar");
 
     std::string content = read_text_file(yar_file_path);
@@ -383,7 +384,7 @@ YAR_Project parse_yar_file(const std::string& yar_file_path) {
     // relative scene path to be either an absolute path or to be relative to the
     // current working directory.
     if (project.scene_path.is_relative()) {
-        project.scene_path = fs::path(yar_file_path).parent_path() / project.scene_path;
+        project.scene_path = fs::path(yar_file_path.c_str()).parent_path() / project.scene_path;
     }
 
     return project;

@@ -1,5 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
+#include "lib/minilib.h"
 #include "yar.h"
 
 #include "shaders/shared.slang"
@@ -236,7 +237,7 @@ void YAR::write_common_descriptors()
     descriptor_heap.write_sampler_descriptor(sampler_create_info, descriptor_heap_layout.image_sampler);
 }
 
-void YAR::load_project(const std::string& input_file)
+void YAR::load_project(const String& input_file)
 {
     ASSERT(scene.type == Scene_Type::none);
     VK_CHECK(vkDeviceWaitIdle(vk.device));
@@ -260,7 +261,7 @@ void YAR::load_project(const std::string& input_file)
 
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
     ui.scene_loaded = true;
-    ui.project_file = input_file;
+    ui.project_file.assign(input_file.data(), input_file.size());
 
     if (ui.rendering_algorithm == 0) {
         direct_lighting_renderer.activate();
@@ -353,7 +354,7 @@ void YAR::run_frame()
         if (scene.type != Scene_Type::none) {
             unload_project();
         }
-        load_project(ui.project_file);
+        load_project(ui.project_file.c_str());
     }
     if (ui_actions.unload_project) {
         if (scene.type != Scene_Type::none) {
@@ -485,7 +486,7 @@ void YAR::do_run_reference_renderer(const Reference_Renderer_Config& reference_r
 
     // Save results
     EXR_Write_Params write_params;
-    const std::string image_filename = "image.exr";
+    const String image_filename = "image.exr";
     if (!write_openexr_image(image_filename, image, write_params)) {
         printf("Failed to save rendered image: %s\n", image_filename.c_str());
     }

@@ -7,9 +7,9 @@
 struct Command_Line_Params
 {
     bool requested_help_info = false;
-    std::string data_dir;
+    String data_dir;
     int gpu_index = -1;
-    std::string input_file;
+    String input_file;
 };
 
 struct Window_State

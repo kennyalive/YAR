@@ -37,9 +37,9 @@ struct Command_Line_Options {
     // Enables OpenEXR feature to store image data in compressed form (zip)
     bool openexr_enable_compression = false;
 
-    std::string output_directory;
+    String output_directory;
     std::string output_filename_suffix;
-    std::string checkpoint_directory;
+    String checkpoint_directory;
 
     int samples_per_pixel = 0; // overrides project settings
     Vector2i film_resolution; // overrides project settings
@@ -58,7 +58,7 @@ struct Command_Line_Options {
 };
 
 struct Parsed_Command_Line {
-    std::vector<std::string> files;
+    std::vector<String> files;
     Command_Line_Options options;
     bool exit_app = false;
     int exit_code = 0;
@@ -169,16 +169,16 @@ static void print_help_string(getopt_context_t* ctx)
     printf("Options:\n%s\n", getopt_create_help_string(ctx, buffer, sizeof(buffer)));
 }
 
-static std::vector<std::string> read_list_file(const std::string& list_file)
+static std::vector<String> read_list_file(const String& list_file)
 {
     std::string content = read_text_file(list_file);
-    std::vector<std::string> filenames;
+    std::vector<String> filenames;
     size_t start = SIZE_MAX;
     size_t last;
     for (size_t i = 0; i < content.size(); i++) {
         if (content[i] == '\n') { // handle new line
             if (start != SIZE_MAX) {
-                filenames.emplace_back(content.data() + start, content.data() + last + 1);
+                filenames.emplace_back(content.data() + start, last - start + 1);
                 start = SIZE_MAX;
             }
         }
@@ -190,7 +190,7 @@ static std::vector<std::string> read_list_file(const std::string& list_file)
         }
     }
     if (start != SIZE_MAX) { // handle last filename
-        filenames.emplace_back(content.data() + start, content.data() + last + 1);
+        filenames.emplace_back(content.data() + start, last - start + 1);
     }
     return filenames;
 }
@@ -203,7 +203,7 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
         return 1;
     }
 
-    std::vector<std::string> files;
+    std::vector<String> files;
     Command_Line_Options options;
 
     bool is_render_region_specified = false;
@@ -225,8 +225,8 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
             return 0;
         }
         else if (opt == '+') {
-            std::string filename = ctx.current_opt_arg;
-            if (to_lower(fs::path(filename).extension().string()) == ".list") {
+            String filename = ctx.current_opt_arg;
+            if (to_lower(fs::path(filename.c_str()).extension().string()) == ".list") {
                 auto filenames = read_list_file(filename);
                 files.insert(files.end(), filenames.begin(), filenames.end());
             }
@@ -361,7 +361,7 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
     return cmdline;
 }
 
-static void process_input_file(const std::string& input_file, const Command_Line_Options& options)
+static void process_input_file(const String& input_file, const Command_Line_Options& options)
 {
     Timestamp t_start;
     printf("Loading: %s\n", input_file.c_str());
@@ -436,13 +436,13 @@ static void process_input_file(const std::string& input_file, const Command_Line
 
     std::string image_filename;
     if (!scene.output_filename.empty()) {
-        image_filename = fs::path(scene.output_filename).replace_extension().string();
+        image_filename = fs::path(scene.output_filename.c_str()).replace_extension().string();
     }
     else {
-        image_filename = fs::path(input_file).stem().string();
+        image_filename = fs::path(input_file.c_str()).stem().string();
     }
     if (!options.output_directory.empty()) {
-        image_filename = (fs::path(options.output_directory) / fs::path(image_filename)).string();
+        image_filename = (fs::path(options.output_directory.c_str()) / fs::path(image_filename)).string();
     }
     image_filename += options.output_filename_suffix;
     image_filename += ".exr"; // output is OpenEXR image
@@ -459,7 +459,7 @@ static void process_input_file(const std::string& input_file, const Command_Line
         .render_time = render_time,
     };
 
-    if (!write_openexr_image(image_filename, image, write_params)) {
+    if (!write_openexr_image(image_filename.c_str(), image, write_params)) {
         error("Failed to save rendered image: %s", image_filename.c_str());
     }
     printf("Saved output image to %s\n\n", image_filename.c_str());
@@ -473,7 +473,7 @@ int main(int argc, char** argv)
         return cmdline.exit_code;
     }
 
-    for (const std::string& input_file : cmdline.files) {
+    for (const String& input_file : cmdline.files) {
         process_input_file(input_file, cmdline.options);
     }
     return 0;

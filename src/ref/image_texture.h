@@ -3,6 +3,7 @@
 #include "lib/color.h"
 #include "lib/image.h"
 
+struct String;
 struct Vector2;
 
 enum class Wrap_Mode {
@@ -28,7 +29,7 @@ public:
         float scale = 1.f;
     };
 
-    void initialize_from_file(const std::string& image_path, const Init_Params& params);
+    void initialize_from_file(const String& image_path, const Init_Params& params);
     void initialize_from_constant_value(const ColorRGB& color);
 
     const std::vector<Image>& get_mips() const { return mips; }

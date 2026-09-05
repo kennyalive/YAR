@@ -1,6 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "kdtree.h"
+#include "lib/minilib.h"
 
 #include "image_texture.h"
 #include "intersection.h"
@@ -108,9 +109,9 @@ static bool intersect_any_scene_geometry_data(const Ray& ray, const void* geomet
     return (*data->kdtrees)[kdtree_index].intersect_any(ray_in_object_space, ray_tmax);
 }
 
-KdTree KdTree::load(const std::string& file_name)
+KdTree KdTree::load(const String& file_name)
 {
-    std::ifstream file(file_name, std::ios_base::in | std::ios_base::binary);
+    std::ifstream file(file_name.c_str(), std::ios_base::in | std::ios_base::binary);
     if (!file)
         error("KdTree::load: failed to open file: %s", file_name.c_str());
 
@@ -137,9 +138,9 @@ KdTree KdTree::load(const std::string& file_name)
     return kdtree;
 }
 
-void KdTree::save(const std::string& file_name) const
+void KdTree::save(const String& file_name) const
 {
-    std::ofstream file(file_name, std::ios_base::out | std::ios_base::binary);
+    std::ofstream file(file_name.c_str(), std::ios_base::out | std::ios_base::binary);
     if (!file)
         error("KdTree::save: failed to open file for writing: %s", file_name.c_str());
 

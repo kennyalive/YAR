@@ -17,6 +17,7 @@
 struct GLFWwindow;
 struct Reference_Renderer_Config;
 struct Scene_Overrides;
+struct String;
 
 class YAR
 {
@@ -28,7 +29,7 @@ public:
     bool vsync_enabled() const { return ui.vsync; }
     void toggle_ui() { ui.show_ui = !ui.show_ui; }
 
-    void load_project(const std::string& input_file);
+    void load_project(const String& input_file);
     void unload_project();
 
     void run_frame();

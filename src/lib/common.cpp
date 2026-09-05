@@ -1,11 +1,12 @@
 #include "std.h"
 #include "common.h"
+#include "minilib.h"
 
 #include "immintrin.h"
 #include "meow-hash/meow_hash_x64_aesni.h"
 
 // Default data folder path. Can be changed with -data-dir command line option.
-static std::string  g_data_dir = "./../data";
+static String g_data_dir = "./../data";
 
 void error(const std::string& message) {
     printf("\nError: %s\n", message.c_str());
@@ -57,14 +58,14 @@ bool fs_rename(const fs::path& old_path, const fs::path& new_path) {
     return !ec;
 }
 
-void set_data_directory(const std::string& path)
+void set_data_directory(const String& path)
 {
     g_data_dir = path;
 }
 
 fs::path get_data_directory()
 {
-    return g_data_dir;
+    return g_data_dir.c_str();
 }
 
 std::string get_project_unique_name(const std::string& scene_path) {
@@ -109,8 +110,8 @@ std::vector<uint8_t> read_binary_file(const std::string& file_path) {
     return file_content;
 }
 
-std::string read_text_file(const std::string& file_path) {
-    std::ifstream file(file_path);
+std::string read_text_file(const String& file_path) {
+    std::ifstream file(file_path.c_str());
     if (!file)
         error("failed to open file: %s", file_path.c_str());
     std::stringstream buffer;
@@ -118,8 +119,8 @@ std::string read_text_file(const std::string& file_path) {
     return buffer.str();
 }
 
-std::string get_extension(const std::string& file_path) {
-    return to_lower(fs::path(file_path).extension().string());
+std::string get_extension(const String& file_path) {
+    return to_lower(fs::path(file_path.c_str()).extension().string());
 }
 
 double get_base_cpu_frequency_ghz() {

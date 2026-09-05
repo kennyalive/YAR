@@ -7,6 +7,7 @@ struct Intersection;
 struct KdTree;
 struct Ray;
 struct Scene_Object;
+struct String;
 class Image_Texture;
 
 // 8 byte KdTree node. KdTree is a linear array of nodes.
@@ -98,8 +99,8 @@ struct Scene_Geometry_Data {
 };
 
 struct KdTree {
-    static KdTree load(const std::string& file_name);
-    void save(const std::string& file_name) const;
+    static KdTree load(const String& file_name);
+    void save(const String& file_name) const;
 
     // Sets reference to geometry data. Should be called after kdtree is loaded from the file.
     // These functions return false when the hash computed from geometry data differs from KdTree::geometry_data_hash.

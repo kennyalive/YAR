@@ -1,5 +1,7 @@
 #pragma once
 
+struct String;
+
 #define ENABLE_ASSERT 1
 #define ENABLE_PROFILING 1
 #define ENABLE_INVALID_FP_EXCEPTION 1
@@ -23,7 +25,7 @@ bool fs_rename(const fs::path& old_path, const fs::path& new_path);
 
 // The place where program's resources are located (spirv binaries) and also
 // the program can write to this location if necessary (kdtree cache).
-void set_data_directory(const std::string& path);
+void set_data_directory(const String& path);
 fs::path get_data_directory();
 
 // Returns a name that can be used to create a directory to store additional/generated project data.
@@ -36,10 +38,10 @@ fs::path get_data_directory();
 std::string get_project_unique_name(const std::string & scene_path);
 
 std::vector<uint8_t> read_binary_file(const std::string& file_path);
-std::string read_text_file(const std::string& file_path);
+std::string read_text_file(const String& file_path);
 
 // Returns extension in lower case in the form ".ext".
-std::string get_extension(const std::string& file_path);
+std::string get_extension(const String& file_path);
 
 std::string get_spirv_file(const char* spirv_base_name);
 
