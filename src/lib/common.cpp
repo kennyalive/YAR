@@ -82,7 +82,8 @@ String get_project_unique_name(const String& scene_path) {
 
 String get_spirv_file(const char* spirv_base_name)
 {
-    return (get_data_directory() / "spirv" / string_concat(spirv_base_name, ".spv").c_str()).string().c_str();
+    fs::path path = get_data_directory() / "spirv" / string_concat(spirv_base_name, ".spv").c_str();
+    return path.string().c_str();
 }
 
 std::vector<uint8_t> read_binary_file(const String& file_path) {

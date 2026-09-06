@@ -188,9 +188,7 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
             error("%s: failed to create checkpoint file: %s",
                 func_name, metadata_file_path.string().c_str());
 
-        metadata_file << "input_filename ";
-        metadata_file.write(info.input_filename.data(), info.input_filename.size());
-        metadata_file << "\n";
+        metadata_file << "input_filename " << info.input_filename.c_str() << "\n";
         metadata_file << "total_tile_count " << info.total_tile_count << "\n";
         metadata_file << "samples_per_pixer " << info.samples_per_pixel << "\n";
         // default checkpoint object describes that no tiles were finished yet
@@ -227,7 +225,7 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
         error("%s: failed to read all the required fields from the metadata file: %s",
             func_name, metadata_file_path.string().c_str());
 
-    if (stored_input_filename.compare(0, stored_input_filename.size(), info.input_filename.data(), info.input_filename.size()) != 0)
+    if (info.input_filename != stored_input_filename.c_str())
         error("%s: can not resume rendering because input_filename is changed.\n"
             "Checkpoint: %s, current project: %s",
             func_name, stored_input_filename.c_str(), info.input_filename.c_str());
