@@ -14,7 +14,7 @@ void load_obj_scene(const YAR_Project& project, Scene& scene) {
     mesh_load_params.normal_calculation_params.use_crease_angle = project.mesh_use_crease_angle;
     mesh_load_params.normal_calculation_params.crease_angle = project.mesh_crease_angle;
     mesh_load_params.invert_winding_order = project.mesh_invert_winding_order;
-    Obj_Data obj_data = load_obj(project.scene_path.string(), mesh_load_params, &project.ignore_geometry_names);
+    Obj_Data obj_data = load_obj(project.scene_path.string().c_str(), mesh_load_params, &project.ignore_geometry_names);
 
     scene.materials.diffuse.resize(obj_data.materials.size());
     for (auto [i, obj_material] : enumerate(obj_data.materials)) {

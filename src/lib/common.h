@@ -13,7 +13,7 @@ struct String;
 #define ASSERT(expression)
 #endif
 
-void error(const std::string& message);
+void error(const String& message);
 void error(const char* format, ...);
 
 namespace fs = std::filesystem;
@@ -35,15 +35,15 @@ fs::path get_data_directory();
 // NOTE: if per project temp directories are needed then one option is to create project
 // specific subdirectories inside temp scene directory - in this case we can share 
 // scene's additional data between multiple projects.
-std::string get_project_unique_name(const std::string & scene_path);
+String get_project_unique_name(const String& scene_path);
 
-std::vector<uint8_t> read_binary_file(const std::string& file_path);
+std::vector<uint8_t> read_binary_file(const String& file_path);
 std::string read_text_file(const String& file_path);
 
 // Returns extension in lower case in the form ".ext".
 std::string get_extension(const String& file_path);
 
-std::string get_spirv_file(const char* spirv_base_name);
+String get_spirv_file(const char* spirv_base_name);
 
 struct Timestamp {
     Timestamp() : t(std::chrono::steady_clock::now()) {}

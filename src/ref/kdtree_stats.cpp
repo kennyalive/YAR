@@ -1,5 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
+#include "lib/minilib.h"
 
 #include "kdtree_stats.h"
 #include "kdtree.h"
@@ -144,13 +145,13 @@ static std::vector<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree,
     return subtree_primitive_indices;
 }
 
-static void print_primitive_subdivisions_for_subtree(const KdTree& kdtree, const std::string& current_path, uint32_t node_index,
+static void print_primitive_subdivisions_for_subtree(const KdTree& kdtree, const String& current_path, uint32_t node_index,
     const std::unordered_map<uint32_t, uint32_t>& node_index_to_primitive_count)
 {
     auto it = node_index_to_primitive_count.find(node_index);
     ASSERT(it != node_index_to_primitive_count.end());
     uint32_t primitive_count = it->second;
-    std::string path = current_path + (current_path.empty() ? "" : " ") + std::to_string(primitive_count);
+    String path = string_concat(current_path, current_path.empty() ? "" : " ", string_printf("%u", primitive_count));
     KdNode node = kdtree.nodes[node_index];
     if (node.is_leaf()) {
         if (node.get_primitive_count() > 0) {
@@ -165,8 +166,8 @@ static void print_primitive_subdivisions_for_subtree(const KdTree& kdtree, const
     uint32_t above_child = node.get_above_child();
     bool above_child_empty = kdtree.nodes[above_child].is_leaf() && kdtree.nodes[above_child].get_primitive_count() == 0;
 
-    print_primitive_subdivisions_for_subtree(kdtree, above_child_empty ? path + "*" : path, below_child, node_index_to_primitive_count);
-    print_primitive_subdivisions_for_subtree(kdtree, below_child_empty ? path + "*" : path, above_child, node_index_to_primitive_count);
+    print_primitive_subdivisions_for_subtree(kdtree, above_child_empty ? string_concat(path, "*") : path, below_child, node_index_to_primitive_count);
+    print_primitive_subdivisions_for_subtree(kdtree, below_child_empty ? string_concat(path, "*") : path, above_child, node_index_to_primitive_count);
 }
 
 void kdtree_print_primitive_subdivisions_from_root_to_leaves(const KdTree& kdtree)

@@ -287,8 +287,8 @@ void Image_Texture::initialize_from_file(const String& image_path, const Image_T
         // DEBUG
         #if 0
         for (int i = 0; i < int(mips.size()); i++) {
-            const std::string image_name = fs::path(image_path.c_str()).filename().replace_extension("").string();
-            mips[i].write_tga((image_name + "_" + get_filter_name(params.mip_filter) + "_mip_" + std::to_string(i) + ".tga").c_str());
+            const String image_name = fs::path(image_path.c_str()).filename().replace_extension("").string().c_str();
+            mips[i].write_tga(string_printf("%s_%s_mip_%d.tga", image_name.c_str(), get_filter_name(params.mip_filter), i));
         }
         #endif
     }

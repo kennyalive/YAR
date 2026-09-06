@@ -106,7 +106,7 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
 }
 
 Obj_Data load_obj(
-    const std::string& obj_file_path,
+    const String& obj_file_path,
     const Triangle_Mesh_Load_Params& params,
     const std::vector<String>* ignore_geometry_names)
 {
@@ -115,10 +115,10 @@ Obj_Data load_obj(
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
-    const String mtl_dir = fs::path(obj_file_path).parent_path().string().c_str();
+    const String mtl_dir = fs::path(obj_file_path.c_str()).parent_path().string().c_str();
 
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, obj_file_path.c_str(), mtl_dir.c_str()))
-        error("failed to load obj model: " + obj_file_path);
+        error("failed to load obj model: %s", obj_file_path.c_str());
 
     Obj_Data obj_data;
 

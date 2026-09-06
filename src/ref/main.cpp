@@ -38,7 +38,7 @@ struct Command_Line_Options {
     bool openexr_enable_compression = false;
 
     String output_directory;
-    std::string output_filename_suffix;
+    String output_filename_suffix;
     String checkpoint_directory;
 
     int samples_per_pixel = 0; // overrides project settings
@@ -434,18 +434,17 @@ static void process_input_file(const String& input_file, const Command_Line_Opti
         image.flip_horizontally();
     }
 
-    std::string image_filename;
+    String image_filename;
     if (!scene.output_filename.empty()) {
-        image_filename = fs::path(scene.output_filename.c_str()).replace_extension().string();
+        image_filename = fs::path(scene.output_filename.c_str()).replace_extension().string().c_str();
     }
     else {
-        image_filename = fs::path(input_file.c_str()).stem().string();
+        image_filename = fs::path(input_file.c_str()).stem().string().c_str();
     }
     if (!options.output_directory.empty()) {
-        image_filename = (fs::path(options.output_directory.c_str()) / fs::path(image_filename)).string();
+        image_filename = (fs::path(options.output_directory.c_str()) / image_filename.c_str()).string().c_str();
     }
-    image_filename += options.output_filename_suffix;
-    image_filename += ".exr"; // output is OpenEXR image
+    image_filename = string_concat(image_filename, options.output_filename_suffix, ".exr"); // output is OpenEXR image
 
     EXR_Write_Params write_params;
     write_params.enable_varying_attributes = options.openexr_enable_varying_attributes;
@@ -459,7 +458,7 @@ static void process_input_file(const String& input_file, const Command_Line_Opti
         .render_time = render_time,
     };
 
-    if (!write_openexr_image(image_filename.c_str(), image, write_params)) {
+    if (!write_openexr_image(image_filename, image, write_params)) {
         error("Failed to save rendered image: %s", image_filename.c_str());
     }
     printf("Saved output image to %s\n\n", image_filename.c_str());

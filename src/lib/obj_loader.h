@@ -22,7 +22,7 @@ struct Obj_Data {
 };
 
 Obj_Data load_obj(
-    const std::string& obj_file_path,
+    const String& obj_file_path,
     const Triangle_Mesh_Load_Params& params = Triangle_Mesh_Load_Params{},
     const std::vector<String>* ignore_geometry_names = nullptr
 );

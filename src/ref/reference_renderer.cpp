@@ -152,16 +152,9 @@ static void init_triangle_mesh_light_samplers(const Scene& scene, Scene_Context&
     }
 }
 
-static std::string format_tile_index(int tile_index)
-{
-    std::string s = std::to_string(tile_index);
-    s.insert(0, s.length() <= 4 ? 4 - s.length() : 0, '0');
-    return s;
-}
-
 namespace {
 struct Checkpoint_Info {
-    std::string input_filename;
+    String input_filename;
     int total_tile_count = 0;
     int samples_per_pixel = 0;
 };
@@ -195,7 +188,9 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
             error("%s: failed to create checkpoint file: %s",
                 func_name, metadata_file_path.string().c_str());
 
-        metadata_file << "input_filename " << info.input_filename << "\n";
+        metadata_file << "input_filename ";
+        metadata_file.write(info.input_filename.data(), info.input_filename.size());
+        metadata_file << "\n";
         metadata_file << "total_tile_count " << info.total_tile_count << "\n";
         metadata_file << "samples_per_pixer " << info.samples_per_pixel << "\n";
         // default checkpoint object describes that no tiles were finished yet
@@ -212,10 +207,10 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
         error("%s: failed to open checkpoint metadata file: %s",
             func_name, metadata_file_path.string().c_str());
 
-    auto str_to_int = [](const std::string& s) {
+    auto str_to_int = [](String_View s) {
         int result = 0;
-        auto conv_result = std::from_chars(&*s.begin(), &*s.end(), result);
-        ASSERT(conv_result.ptr == &*s.end());
+        auto conv_result = std::from_chars(s.data, s.data + s.size, result);
+        ASSERT(conv_result.ptr == s.data + s.size);
         return result;
     };
 
@@ -232,18 +227,18 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
         error("%s: failed to read all the required fields from the metadata file: %s",
             func_name, metadata_file_path.string().c_str());
 
-    if (stored_input_filename != info.input_filename)
+    if (stored_input_filename.compare(0, stored_input_filename.size(), info.input_filename.data(), info.input_filename.size()) != 0)
         error("%s: can not resume rendering because input_filename is changed.\n"
             "Checkpoint: %s, current project: %s",
             func_name, stored_input_filename.c_str(), info.input_filename.c_str());
 
-    int stored_total_tile_count = str_to_int(total_tile_count_str);
+    int stored_total_tile_count = str_to_int(String_View(total_tile_count_str.data(), total_tile_count_str.size()));
     if (stored_total_tile_count != info.total_tile_count)
         error("%s: can not resume rendering because total_tile_count is changed.\n"
             "Checkpoint: %d, current project: %d",
             func_name, stored_total_tile_count, info.total_tile_count);
 
-    int stored_samples_per_pixel = str_to_int(samples_per_pixel_str);
+    int stored_samples_per_pixel = str_to_int(String_View(samples_per_pixel_str.data(), samples_per_pixel_str.size()));
     if (stored_samples_per_pixel != info.samples_per_pixel)
         error("%s: can not resume rendering because samples_per_pixer is changed.\n"
             "Checkpoint: %d, current project: %d",
@@ -256,10 +251,10 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
         if (!filename.starts_with("tile_"))
             continue;
 
-        int tile_index = str_to_int(filename.substr(5));
+        int tile_index = str_to_int(String_View(filename.data() + 5, filename.size() - 5));
         Checkpoint_Tile_Data& tile_data = checkpoint.finished_tiles[tile_index];
 
-        std::vector<uint8_t> content = read_binary_file(entry.path().string());
+        std::vector<uint8_t> content = read_binary_file(entry.path().string().c_str());
         int offset = 0;
 
         float time;
@@ -287,7 +282,7 @@ static void write_tile_to_checkpoint_directory(const String& checkpoint_director
 
     // The first step, is to write a tile to a temporary file. If the program terminates
     // during write operation then the checpoint directory will stay in consistent state.
-    fs::path temp_file_path = fs::path(checkpoint_directory.c_str()) / ("temp_tile_" + format_tile_index(tile_index));
+    fs::path temp_file_path = fs::path(checkpoint_directory.c_str()) / string_printf("temp_tile_%04d", tile_index).c_str();
     std::ofstream temp_file(temp_file_path, std::ofstream::out | std::ofstream::binary);
     if (!temp_file)
         error("%s: failed to create file: %s", func_name, temp_file_path.string().c_str());
@@ -316,7 +311,7 @@ static void write_tile_to_checkpoint_directory(const String& checkpoint_director
     temp_file.close();
 
     // Rename temporary tile file. The assumption is that std::filesystem::rename is atomic.
-    fs::path file_path = fs::path(checkpoint_directory.c_str()) / ("tile_" + format_tile_index(tile_index));
+    fs::path file_path = fs::path(checkpoint_directory.c_str()) / string_printf("tile_%04d", tile_index).c_str();
     if (fs_exists(file_path))
         error("%s: tile file already exists: %s", func_name, file_path.string().c_str());
     if (!fs_rename(temp_file_path, file_path))
@@ -489,7 +484,7 @@ Image render_scene(const Scene_Context& scene_ctx, double* variance_estimate, fl
     std::vector<int> tiles_to_render;
     if (!scene_ctx.checkpoint_directory.empty()) {
         Checkpoint_Info info;
-        info.input_filename.assign(scene_ctx.input_filename.data(), scene_ctx.input_filename.size());
+        info.input_filename = scene_ctx.input_filename;
         info.total_tile_count = film.get_tile_count();
         info.samples_per_pixel = scene_ctx.pixel_sampler_config.get_samples_per_pixel();
 

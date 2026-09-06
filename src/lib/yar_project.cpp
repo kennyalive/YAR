@@ -8,25 +8,25 @@
 #define JSMN_STATIC 
 #include "jsmn/jsmn.h"
 
-static std::string unescape_json_string(const std::string_view& escaped_json_string) {
+static std::string unescape_json_string(String_View escaped_json_string) {
     std::string str;
-    str.reserve(escaped_json_string.size());
-    for (int i = 0; i < (int)escaped_json_string.size(); i++) {
-        if (escaped_json_string[i] != '\\') {
-            str.push_back(escaped_json_string[i]);
+    str.reserve(escaped_json_string.size);
+    for (int i = 0; i < (int)escaped_json_string.size; i++) {
+        if (escaped_json_string.data[i] != '\\') {
+            str.push_back(escaped_json_string.data[i]);
             continue;
         }
         // Handle escaped character.
-        if (++i < (int)escaped_json_string.size()) {
-            if (escaped_json_string[i] == '\\')
+        if (++i < (int)escaped_json_string.size) {
+            if (escaped_json_string.data[i] == '\\')
                 str.push_back('\\');
-            else if (escaped_json_string[i] == '/')
+            else if (escaped_json_string.data[i] == '/')
                 str.push_back('/');
-            else if (escaped_json_string[i] == 't')
+            else if (escaped_json_string.data[i] == 't')
                 str.push_back('\t');
-            else if (escaped_json_string[i] == 'n')
+            else if (escaped_json_string.data[i] == 'n')
                 str.push_back('\n');
-            else if (escaped_json_string[i] == '"')
+            else if (escaped_json_string.data[i] == '"')
                 str.push_back('"');
         }
     }
@@ -37,13 +37,13 @@ static std::string unescape_json_string(const std::string_view& escaped_json_str
 
 namespace {
 struct Parser {
-    const std::string& content;
+    String_View content;
     YAR_Project& project;
     std::vector<jsmntok_t> tokens;
     int next_token_index = 0;
     jsmntok_t token;
 
-    Parser(const std::string& content, YAR_Project& project)
+    Parser(String_View content, YAR_Project& project)
         : content(content), project(project)
     {}
 
@@ -67,13 +67,13 @@ struct Parser {
         token = tokens[next_token_index++];
     }
 
-    std::string_view get_current_token_string() const {
-        return std::string_view(content.data() + token.start, token.end - token.start);
+    String_View get_current_token_string() const {
+        return String_View(content.data + token.start, token.end - token.start);
     }
 
     bool match_string(const char* str) {
         CHECK(token.type == JSMN_STRING);
-        if (strncmp(content.data() + token.start, str, token.end - token.start) != 0)
+        if (strncmp(content.data + token.start, str, token.end - token.start) != 0)
             return false;
         next_token();
         return true;
@@ -81,7 +81,7 @@ struct Parser {
 
     String get_string() {
         ASSERT(token.type == JSMN_STRING);
-        std::string_view escaped_string = get_current_token_string();
+        String_View escaped_string = get_current_token_string();
         next_token();
         std::string str = unescape_json_string(escaped_string);
         return String(str.data(), str.size());
@@ -90,18 +90,18 @@ struct Parser {
     template <typename T>
     T get_numeric() {
         CHECK(token.type == JSMN_PRIMITIVE);
-        CHECK(content[token.start] == '-' || (content[token.start] >= '0' && content[token.start] <= '9'));
+        CHECK(content.data[token.start] == '-' || (content.data[token.start] >= '0' && content.data[token.start] <= '9'));
         T value;
-        std::from_chars_result result = std::from_chars(content.data() + token.start, content.data() + token.end, value);
-        CHECK(result.ptr == content.data() + token.end);
+        std::from_chars_result result = std::from_chars(content.data + token.start, content.data + token.end, value);
+        CHECK(result.ptr == content.data + token.end);
         next_token();
         return value;
     }
 
     bool get_bool() {
         CHECK(token.type == JSMN_PRIMITIVE);
-        CHECK(content[token.start] == 't' || content[token.start] == 'f');
-        bool result = content[token.start] == 't';
+        CHECK(content.data[token.start] == 't' || content.data[token.start] == 'f');
+        bool result = content.data[token.start] == 't';
         next_token();
         return result;
     }
@@ -140,7 +140,7 @@ struct Parser {
         {
             jsmn_parser parser;
             jsmn_init(&parser);
-            token_count = jsmn_parse(&parser, content.c_str(), content.size(), nullptr, 0);
+            token_count = jsmn_parse(&parser, content.data, content.size, nullptr, 0);
             check(token_count >= 0, "JSMN parser failed to tokenize the document");
         }
         if (token_count == 0)
@@ -150,7 +150,7 @@ struct Parser {
         {
             jsmn_parser parser;
             jsmn_init(&parser);
-            int result = jsmn_parse(&parser, content.c_str(), content.size(), tokens.data(), token_count);
+            int result = jsmn_parse(&parser, content.data, content.size, tokens.data(), token_count);
             CHECK(result == token_count);
             tokens[token_count] = jsmntok_t{ JSMN_UNDEFINED }; // terminator token
         }
@@ -177,7 +177,7 @@ struct Parser {
             else if (match_string("obj"))
                 project.scene_type = Scene_Type::obj;
             else
-                check(false, "unknown scene_type: %.*s", (int)get_current_token_string().size(), get_current_token_string().data());
+                check(false, "unknown scene_type: %.*s", (int)get_current_token_string().size, get_current_token_string().data);
         }
         else if (match_string("scene_path")) {
             project.scene_path = get_string().c_str();
@@ -220,7 +220,7 @@ struct Parser {
             project.ignore_geometry_names = get_array_of_strings();
         }
         else {
-            check(false, "Unknown token [%.*s]", (int)get_current_token_string().size(), get_current_token_string().data());
+            check(false, "Unknown token [%.*s]", (int)get_current_token_string().size, get_current_token_string().data);
         }
     }
 
@@ -278,7 +278,7 @@ struct Parser {
                 luminous_flux = get_numeric<float>();
             }
             else
-                check(false, "unknown point light attribute [%.*s]", (int)get_current_token_string().size(), get_current_token_string().data());
+                check(false, "unknown point light attribute [%.*s]", (int)get_current_token_string().size, get_current_token_string().data);
         }
 
         if (spectrum_shape.empty() || spectrum_shape == "constant")
@@ -301,7 +301,7 @@ struct Parser {
 
             }
             else
-                check(false, "unknown directional light attribute [%.*s]", (int)get_current_token_string().size(), get_current_token_string().data());
+                check(false, "unknown directional light attribute [%.*s]", (int)get_current_token_string().size, get_current_token_string().data);
         }
         project.directional_lights.emplace_back(std::move(light));
     }
@@ -323,7 +323,7 @@ struct Parser {
                 light.sample_count = get_numeric<int>();
             }
             else
-                check(false, "unknown diffuse rectangular light attribute [%.*s", (int)get_current_token_string().size(), get_current_token_string().data());
+                check(false, "unknown diffuse rectangular light attribute [%.*s", (int)get_current_token_string().size, get_current_token_string().data);
         }
 
         float radiant_flux_per_wavelength = luminous_flux / (683.f * CIE_Y_integral); // [W/m]
@@ -353,7 +353,7 @@ struct Parser {
                 has_transform = true;
             }
             else 
-                check(false, "unknown instance attribute [%.e*s]", (int)get_current_token_string().size(), get_current_token_string().data());
+                check(false, "unknown instance attribute [%.e*s]", (int)get_current_token_string().size, get_current_token_string().data);
         }
         CHECK(!instance.geometry_name.empty());
         CHECK(has_transform);
@@ -370,7 +370,7 @@ YAR_Project parse_yar_file(const String& yar_file_path) {
 
     std::string content = read_text_file(yar_file_path);
     YAR_Project project;
-    Parser parser(content, project);
+    Parser parser(String_View(content.data(), content.size()), project);
     try {
         parser.parse();
     } catch (const Parser::Error& parser_error) {

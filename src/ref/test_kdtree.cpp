@@ -266,7 +266,7 @@ static void process_kdrees(std::function<void (const KdTree&, const Operation_In
 
         Triangle_Mesh mesh;
         if (!info.mesh_file_name.empty()) {
-            Obj_Data obj_data = load_obj(info.mesh_file_name.c_str());
+            Obj_Data obj_data = load_obj(info.mesh_file_name);
             ASSERT(!obj_data.meshes.empty());
             mesh = std::move(obj_data.meshes[0].mesh);
         }
