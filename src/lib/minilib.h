@@ -66,6 +66,7 @@ struct Function_Ref<R(Args...)>
 #define MINILIB_STRING_DEFINED
 #include <stddef.h>
 #include <stdint.h>
+
 // Immutable string that owns its characters.
 // There is no mutation API: build text elsewhere (string_printf, a local buffer).
 // data() is never null and always points to a zero-terminated sequence.
@@ -86,7 +87,6 @@ struct String
 
     const char* data() const { return is_small() ? storage.small : storage.heap.chars; }
     size_t size() const { return is_small() ? max_small - last_byte() : storage.heap.count; }
-
     bool empty() const { return size() == 0; }
     const char* c_str() const { return data(); }
     const char* begin() const { return data(); }
@@ -94,9 +94,9 @@ struct String
 
     static constexpr uint32_t object_size = 32;
 
-private:
     // Characters that fit inside the object
     static constexpr uint32_t max_small = object_size - 1;
+
     // The last byte identifies the storage layout. Small strings store
     // (max_small - size) in this byte. At full capacity this byte is zero
     // and serves as the terminator. Heap strings store heap_tag in this byte.
@@ -113,14 +113,30 @@ private:
         Heap heap;
     } storage;
 
+private:
     uint8_t last_byte() const { return ((const unsigned char*)&storage)[object_size - 1]; }
     bool is_small() const { return last_byte() != heap_tag; }
-    friend String string_printf(const char* format, ...);
 };
 static_assert(sizeof(String) == String::object_size);
+
+// Non-owning string. The characters must outlive the view.
+// The characters need not be zero-terminated.
+struct String_View
+{
+    const char* data = "";
+    size_t size = 0;
+    String_View() = default;
+    String_View(const String& s) : data(s.data()), size(s.size()) {}
+    String_View(const char* s);
+    String_View(const char* s, size_t n) : data(s), size(n) {} // s may be null when n is zero
+};
+
 bool operator==(const String& a, const String& b);
 bool operator!=(const String& a, const String& b);
 bool operator==(const String& a, const char* b);
 bool operator<(const String& a, const String& b);
 String string_printf(const char* format, ...);
+String string_concat(String_View a, String_View b);
+String string_concat(String_View a, String_View b, String_View c);
+String string_concat(String_View a, String_View b, String_View c, String_View d);
 #endif // MINILIB_STRING_DEFINED

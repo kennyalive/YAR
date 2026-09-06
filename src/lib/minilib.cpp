@@ -138,3 +138,51 @@ String string_printf(const char* format, ...)
     str.storage.heap.tag = String::heap_tag;
     return str;
 }
+
+String_View::String_View(const char* s) : data(s), size(strlen(s)) {}
+
+static String concat(const String_View* parts, size_t count)
+{
+    size_t total = 0;
+    for (size_t i = 0; i < count; i++) {
+        total += parts[i].size;
+    }
+    String result;
+    char* p;
+    if (total <= String::max_small) {
+        p = result.storage.small;
+        p[String::max_small] = char(String:: max_small - total);
+    }
+    else {
+        p = new char[total + 1];
+        result.storage.heap.chars = p;
+        result.storage.heap.count = total;
+        result.storage.heap.tag = String::heap_tag;
+    }
+    for (size_t i = 0; i < count; i++) {
+        if (parts[i].size != 0) {
+            memcpy(p, parts[i].data, parts[i].size);
+            p += parts[i].size;
+        }
+    }
+    *p = 0;
+    return result;
+}
+
+String string_concat(String_View a, String_View b)
+{
+    String_View parts[] = {a, b};
+    return concat(parts, 2);
+}
+
+String string_concat(String_View a, String_View b, String_View c)
+{
+    String_View parts[] = {a, b, c};
+    return concat(parts, 3);
+}
+
+String string_concat(String_View a, String_View b, String_View c, String_View d)
+{
+    String_View parts[] = {a, b, c, d};
+    return concat(parts, 4);
+}
