@@ -2,9 +2,10 @@
 
 constexpr int MINILIB_VERSION = 0;
 
-#ifndef MINILIB_SPAN_DEFINED
-#define MINILIB_SPAN_DEFINED
+#include <stddef.h>
+#include <stdint.h>
 #include <initializer_list>
+
 template <typename T>
 struct Span
 {
@@ -38,10 +39,7 @@ struct Span
     T* end() const { return data + size; }
     bool empty() const { return size == 0; }
 };
-#endif // MINILIB_SPAN_DEFINED
 
-#ifndef MINILIB_FUNCTION_REF_DEFINED
-#define MINILIB_FUNCTION_REF_DEFINED
 // Non-owning reference to a callable. The callable must outlive this object.
 // Mutable lambdas are intentionally unsupported. Capture mutable state by reference instead.
 template <typename> struct Function_Ref;
@@ -60,12 +58,6 @@ struct Function_Ref<R(Args...)>
         })
     {}
 };
-#endif // MINILIB_FUNCTION_REF_DEFINED
-
-#ifndef MINILIB_STRING_DEFINED
-#define MINILIB_STRING_DEFINED
-#include <stddef.h>
-#include <stdint.h>
 
 // Immutable string that owns its characters.
 // There is no mutation API: build text elsewhere (string_printf, a local buffer).
@@ -139,4 +131,3 @@ String string_printf(const char* format, ...);
 String string_concat(String_View a, String_View b);
 String string_concat(String_View a, String_View b, String_View c);
 String string_concat(String_View a, String_View b, String_View c, String_View d);
-#endif // MINILIB_STRING_DEFINED
