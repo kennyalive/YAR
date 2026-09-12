@@ -14,7 +14,6 @@
 #include <cstdarg>
 #include <filesystem>
 #include <fstream>
-#include <functional>
 #include <limits>
 #include <map>
 #include <mutex>
