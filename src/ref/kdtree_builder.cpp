@@ -1,5 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
+#include "lib/minilib.h"
 #include "kdtree_builder.h"
 
 #include "lib/scene_object.h"
@@ -134,7 +135,7 @@ namespace {
 struct KdTree_Builder {
     KdTree_Builder(
         uint32_t total_primitive_count,
-        std::function<Bounding_Box (uint32_t)> get_primitive_bounds,  // get bounds for primitive with a given index
+        Function_Ref<Bounding_Box(uint32_t)> get_primitive_bounds,  // get bounds for primitive with a given index
         const Triangle_Mesh* mesh // optional, used if build kdtree for triangle mesh geometry
     );
 
@@ -174,7 +175,7 @@ struct KdTree_Builder {
 
 KdTree_Builder::KdTree_Builder(
     uint32_t total_primitive_count,
-    std::function<Bounding_Box(uint32_t)> get_primitive_bounds,
+    Function_Ref<Bounding_Box(uint32_t)> get_primitive_bounds,
     const Triangle_Mesh* mesh
 )
     : total_primitive_count(total_primitive_count)

@@ -1,6 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
 #include "lib/math.h"
+#include "lib/minilib.h"
 #include "lib/obj_loader.h"
 #include "lib/random.h"
 #include "lib/triangle_mesh.h"
@@ -245,7 +246,7 @@ static std::vector<Triangle_Mesh> create_custom_meshes() {
     return meshes;
 }
 
-static void process_kdrees(std::function<void (const KdTree&, const Operation_Info&)> kdtree_handler)
+static void process_kdrees(Function_Ref<void(const KdTree&, const Operation_Info&)> kdtree_handler)
 {
     std::vector<Triangle_Mesh> custom_meshes = create_custom_meshes();
 
