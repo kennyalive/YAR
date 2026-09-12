@@ -4,27 +4,31 @@
 
 constexpr int Tile_Size = 64;
 
-static Film_Pixel& get_tile_pixel(Film_Tile& tile, Vector2i p) {
+static Film_Pixel& get_tile_pixel(Film_Tile& tile, Vector2i p)
+{
     ASSERT(is_inside_bounds(tile.pixel_bounds, p));
     int offset = (p.y - tile.pixel_bounds.p0.y) * tile.pixel_bounds.size().x + (p.x - tile.pixel_bounds.p0.x);
     ASSERT(offset < tile.pixels.size());
     return tile.pixels[offset];
 }
 
-static Film_Pixel& get_film_pixel(Film& film, Vector2i p) {
+static Film_Pixel& get_film_pixel(Film& film, Vector2i p)
+{
     ASSERT(is_inside_bounds(film.render_region, p));
     int offset = (p.y - film.render_region.p0.y) * film.render_region.size().x + (p.x - film.render_region.p0.x);
     ASSERT(offset < film.pixels.size());
     return film.pixels[offset];
 }
 
-Film_Tile::Film_Tile(Bounds2i pixel_bounds) {
+Film_Tile::Film_Tile(Bounds2i pixel_bounds)
+{
     this->pixel_bounds = pixel_bounds;
     pixels.resize(pixel_bounds.area());
     memset(pixels.data(), 0, pixels.size() * sizeof(Film_Pixel));
 }
 
-void Film_Tile::add_sample(const Film_Filter& filter, Vector2 film_pos, ColorRGB color) {
+void Film_Tile::add_sample(const Film_Filter& filter, Vector2 film_pos, ColorRGB color)
+{
     // find pixels that are affected by the sample
     Bounds2i region;
     region.p0.x = (int)std::ceil(film_pos.x - filter.radius - 0.5f);
@@ -40,7 +44,7 @@ void Film_Tile::add_sample(const Film_Filter& filter, Vector2 film_pos, ColorRGB
             Vector2 pixel_pos { x + 0.5f, y + 0.5f };
             Vector2 filter_point = film_pos - pixel_pos;
 
-            float weight = filter.func(filter_point);
+            float weight = filter.evaluate(filter_point);
 
             Film_Pixel& pixel = get_tile_pixel(*this, Vector2i{x, y});
             pixel.color_sum += weight * color;
@@ -49,7 +53,8 @@ void Film_Tile::add_sample(const Film_Filter& filter, Vector2 film_pos, ColorRGB
     }
 }
 
-Film::Film(Bounds2i render_region, Film_Filter filter) {
+Film::Film(Bounds2i render_region, Film_Filter filter)
+{
     this->render_region = render_region;
     this->filter = filter;
 
@@ -70,7 +75,8 @@ Film::Film(Bounds2i render_region, Film_Filter filter) {
     memset(pixels.data(), 0, pixels.size() * sizeof(Film_Pixel));
 }
 
-void Film::get_tile_bounds(int tile_index, Bounds2i& tile_sample_bounds, Bounds2i& tile_pixel_bounds) const {
+void Film::get_tile_bounds(int tile_index, Bounds2i& tile_sample_bounds, Bounds2i& tile_pixel_bounds) const
+{
     ASSERT(tile_index < get_tile_count());
     int tile_x_pos = tile_index % tile_grid_size.x;
     int tile_y_pos = tile_index / tile_grid_size.x;
@@ -85,7 +91,8 @@ void Film::get_tile_bounds(int tile_index, Bounds2i& tile_sample_bounds, Bounds2
     tile_pixel_bounds.p1.y = std::min((int)std::floor(tile_sample_bounds.p1.y + filter.radius - 0.5f) + 1, render_region.p1.y);
 }
 
-void Film::merge_tile(const Film_Tile& tile) {
+void Film::merge_tile(const Film_Tile& tile)
+{
     for (int y = tile.pixel_bounds.p0.y; y < tile.pixel_bounds.p1.y; y++) {
         for (int x = tile.pixel_bounds.p0.x; x < tile.pixel_bounds.p1.x; x++) {
             Vector2i p {x, y};
@@ -99,7 +106,8 @@ void Film::merge_tile(const Film_Tile& tile) {
     }
 }
 
-Image Film::get_image() const {
+Image Film::get_image() const
+{
     Image image(render_region.size().x, render_region.size().y);
     ColorRGB* image_pixel = image.data.data();
 
@@ -120,23 +128,32 @@ Image Film::get_image() const {
 //
 // Filters.
 //
-Film_Filter get_box_filter(float radius) {
-    auto box_filter = [](Vector2 p) { return 1.f; };
-    return Film_Filter{ box_filter, radius };
-}
-
-Film_Filter get_gaussian_filter(float radius, float alpha) {
-    float zero_level = std::exp(-alpha*radius*radius);
-    
-    auto gaussian_filter = [alpha, zero_level](Vector2 p) {
+float Film_Filter::evaluate(Vector2 p) const
+{
+    switch (type) {
+    case Type::box:
+        return 1.f;
+    case Type::gaussian:
         return std::max(0.f, std::exp(-alpha * p.length_squared()) - zero_level);
-    };
-    return Film_Filter{ gaussian_filter, radius };
+    case Type::triangle:
+        return std::max(0.f, radius - std::abs(p.x)) * std::max(0.f, radius - std::abs(p.y));
+    }
+    ASSERT(!"Film_Filter::evaluate: Unknown filter type");
+    return 0.f;
 }
 
-Film_Filter get_triangle_filter(float radius) {
-    auto triangle_filter = [radius](Vector2 p) {
-        return std::max(0.f, radius - std::abs(p.x)) * std::max(0.f, radius - std::abs(p.y));
-    };
-    return Film_Filter{ triangle_filter, radius };
+Film_Filter get_box_filter(float radius)
+{
+    return Film_Filter{ Film_Filter::Type::box, radius };
+}
+
+Film_Filter get_gaussian_filter(float radius, float alpha)
+{
+    float zero_level = std::exp(-alpha*radius*radius);
+    return Film_Filter{ Film_Filter::Type::gaussian, radius, alpha, zero_level };
+}
+
+Film_Filter get_triangle_filter(float radius)
+{
+    return Film_Filter{ Film_Filter::Type::triangle, radius };
 }

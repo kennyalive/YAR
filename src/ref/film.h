@@ -19,8 +19,18 @@
 // (we order tiles according to tile index value).
 
 struct Film_Filter {
-    std::function<float(Vector2)> func;
+    enum class Type {
+        box,
+        gaussian,
+        triangle
+    };
+
+    Type type = Type::box;
     float radius = 0.f;
+    float alpha = 0.f; // used by gaussian filter
+    float zero_level = 0.f; // used by gaussian filter
+
+    float evaluate(Vector2 p) const;
 };
 
 struct Film_Pixel {
