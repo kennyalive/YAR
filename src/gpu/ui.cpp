@@ -4,7 +4,6 @@
 #include "gpu/vk.h"
 
 #include "imgui/imgui.h"
-#include "imgui/imgui_stdlib.h"
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_glfw.h"
 
@@ -63,7 +62,7 @@ UI_Actions UI::run_imgui() {
             }
             ImGui::EndDisabled();
 
-            ImGui::InputText("Project file", &project_file);
+            ImGui::InputText("Project file", project_file, sizeof(project_file));
             if (ImGui::Button("Load")) {
                 actions.load_project = true;
             }

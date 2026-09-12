@@ -261,7 +261,7 @@ void YAR::load_project(const String& input_file)
 
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
     ui.scene_loaded = true;
-    ui.project_file.assign(input_file.data(), input_file.size());
+    snprintf(ui.project_file, sizeof(ui.project_file), "%s", input_file.c_str());
 
     if (ui.rendering_algorithm == 0) {
         direct_lighting_renderer.activate();
@@ -354,7 +354,7 @@ void YAR::run_frame()
         if (scene.type != Scene_Type::none) {
             unload_project();
         }
-        load_project(ui.project_file.c_str());
+        load_project(ui.project_file);
     }
     if (ui_actions.unload_project) {
         if (scene.type != Scene_Type::none) {

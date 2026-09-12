@@ -162,9 +162,6 @@
     <ClCompile Include="..\third-party\imgui\imgui_impl_vulkan.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\third-party\imgui\imgui_stdlib.cpp">
-      <Filter>imgui</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\third-party\glfw\egl_context.h">
