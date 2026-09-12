@@ -112,7 +112,6 @@
     <ClInclude Include="..\src\lib\scene_loader.h" />
     <ClInclude Include="..\src\lib\tessellation.h" />
     <ClInclude Include="..\src\lib\utils.h" />
-    <ClInclude Include="..\src\lib\yar_project.h" />
     <ClInclude Include="..\src\lib\random.h" />
     <ClInclude Include="..\src\lib\ray.h" />
     <ClInclude Include="..\src\lib\scene_object.h" />
@@ -138,10 +137,8 @@
     <ClCompile Include="..\src\lib\obj_loader.cpp" />
     <ClCompile Include="..\src\lib\tessellation.cpp" />
     <ClCompile Include="..\src\lib\utils.cpp" />
-    <ClCompile Include="..\src\lib\yar_project.cpp" />
     <ClCompile Include="..\src\lib\light.cpp" />
     <ClCompile Include="..\src\lib\matrix.cpp" />
-    <ClCompile Include="..\src\lib\obj_scene.cpp" />
     <ClCompile Include="..\src\lib\pbrt_scene.cpp">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4244</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4244</DisableSpecificWarnings>

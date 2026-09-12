@@ -2,56 +2,10 @@
 #include "common.h"
 #include "scene_loader.h"
 
-#include "yar_project.h"
-
 #include "stb/stb_image.h"
 
 // defined in pbrt_scene.cpp
-void load_pbrt_scene(const YAR_Project& project, Scene& scene);
-// defined in obj_scene.cpp
-void load_obj_scene(const YAR_Project& project, Scene& scene);
-
-
-static YAR_Project create_yar_project(const String& input_file) {
-    fs::path path(input_file.c_str());
-    if (!path.has_extension())
-        error("Unknown file type because there is no extension: %s. The supported file types are: yar, pbrt, obj", input_file.c_str());
-
-    YAR_Project project;
-    std::string ext = to_lower(path.extension().string());
-    if (ext == ".yar") {
-        project = parse_yar_file(input_file);
-    }
-    else if (ext == ".pbrt") {
-        project.scene_type = Scene_Type::pbrt;
-        project.scene_path = input_file.c_str();
-    }
-    else {
-        error("Unsupported file extension: %s", ext.c_str());
-        return YAR_Project{};
-    }
-    return project;
-}
-
-static void add_light_sources_from_yar_project(Scene& scene, const YAR_Project& project) {
-    scene.lights.point_lights.insert(scene.lights.point_lights.end(),
-        project.point_lights.begin(), project.point_lights.end());
-
-    scene.lights.directional_lights.insert(scene.lights.directional_lights.end(),
-        project.directional_lights.begin(), project.directional_lights.end());
-
-    for (const Diffuse_Rectangular_Light& light : project.diffuse_rectangular_lights) {
-        scene.lights.diffuse_rectangular_lights.push_back(light);
-        scene.geometries.triangle_meshes.emplace_back(light.get_geometry());
-
-        Scene_Object scene_object;
-        scene_object.area_light = {Light_Type::diffuse_rectangular, (int)scene.lights.diffuse_rectangular_lights.size()-1};
-        scene_object.geometry = {Geometry_Type::triangle_mesh, (int)scene.geometries.triangle_meshes.size()-1};
-        scene_object.object_to_world_transform = Matrix3x4::identity;
-        scene_object.world_to_object_transform = Matrix3x4::identity;
-        scene.objects.push_back(scene_object);
-    }
-}
+void load_pbrt_scene(Scene& scene);
 
 static void finalize_scene(Scene& scene) {
     for (Scene_Object& scene_object : scene.objects) {
@@ -72,51 +26,34 @@ static void finalize_scene(Scene& scene) {
 }
 
 Scene load_scene(const String& input_file) {
-    YAR_Project project = create_yar_project(input_file);
+    fs::path path(input_file.c_str());
+    if (!path.has_extension())
+        error("Unknown file type because there is no extension: %s. The supported file type is: pbrt", input_file.c_str());
+
+    std::string ext = to_lower(path.extension().string());
+    if (ext != ".pbrt")
+        error("Unsupported file extension: %s", ext.c_str());
 
     Scene scene;
-    scene.type = project.scene_type;
-    scene.path = project.scene_path.string().c_str();
+    scene.type = Scene_Type::pbrt;
+    scene.path = input_file;
 
-    if (project.scene_type == Scene_Type::pbrt) {
-        load_pbrt_scene(project, scene);
+    load_pbrt_scene(scene);
 
-        // In pbrt texture coordinate space has(0, 0) at the lower left corner.
-        // Workaround with flipping texture coordinates instead is not robust
-        // enough because it doesn't handle procedural texturing case.
-        stbi_set_flip_vertically_on_load(true);
-    }
-    else {
-        ASSERT(project.scene_type == Scene_Type::obj);
-        load_obj_scene(project, scene);
-    }
+    // In pbrt texture coordinate space has(0, 0) at the lower left corner.
+    // Workaround with flipping texture coordinates instead is not robust
+    // enough because it doesn't handle procedural texturing case.
+    stbi_set_flip_vertically_on_load(true);
 
-    add_light_sources_from_yar_project(scene, project);
-
-    if (project.film_resolution != Vector2i{})
-        scene.film_resolution = project.film_resolution;
     if (scene.film_resolution == Vector2i{})
         scene.film_resolution = Vector2i{ 1920, 1080 };
 
-    if (project.render_region != Bounds2i{})
-        scene.render_region = project.render_region;
     if (scene.render_region == Bounds2i{})
         scene.render_region = Bounds2i{ {0, 0}, scene.film_resolution };
 
-    if (project.obj_info.z_is_up_specified) {
-        ASSERT(project.scene_type == Scene_Type::obj);
-        scene.z_is_up = project.obj_info.z_is_up;
-    }
-
-    scene.mesh_disable_backfacing_culling = project.mesh_disable_backfacing_culling;
-
-    if (!project.camera_to_world.is_zero())
-        scene.view_points = { project.camera_to_world };
     if (scene.view_points.empty())
         scene.view_points = { Matrix3x4::identity };
 
-    if (project.camera_fov_y)
-        scene.camera_fov_y = project.camera_fov_y;
     if (!scene.camera_fov_y)
         scene.camera_fov_y = 45.f;
 

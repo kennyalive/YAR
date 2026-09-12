@@ -6,7 +6,6 @@
 #include "scene.h"
 #include "scene_loader.h"
 #include "tessellation.h"
-#include "yar_project.h"
 
 #include "pbrtParser/Scene.h"
 #include "pbrt-parser/impl/syntactic/Scene.h"
@@ -1047,7 +1046,7 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
 //
 // PBRT scene main loading routine.
 //
-void load_pbrt_scene(const YAR_Project& project, Scene& scene) {
+void load_pbrt_scene(Scene& scene) {
     pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(scene.path.c_str());
     pbrt_scene->makeSingleLevel();
 

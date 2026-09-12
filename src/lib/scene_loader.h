@@ -4,7 +4,7 @@
 
 struct String;
 
-// Supported file formats: yar, pbrt, obj
+// Supported file formats: pbrt
 Scene load_scene(const String& input_file);
 
 // Scene loader utilities

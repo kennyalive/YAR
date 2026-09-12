@@ -71,8 +71,6 @@ struct Diffuse_Rectangular_Light {
     ColorRGB emitted_radiance;
     Vector2 size;
     int sample_count = 1;
-
-    Triangle_Mesh get_geometry() const;
 };
 
 struct Diffuse_Sphere_Light {

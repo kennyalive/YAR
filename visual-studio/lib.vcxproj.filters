@@ -30,9 +30,6 @@
     </ClInclude>
     <ClInclude Include="..\src\lib\image.h" />
     <ClInclude Include="..\src\lib\math.h" />
-    <ClInclude Include="..\src\lib\yar_project.h">
-      <Filter>scene_loader</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\lib\scene_loader.h">
       <Filter>scene_loader</Filter>
     </ClInclude>
@@ -66,13 +63,7 @@
     </ClCompile>
     <ClCompile Include="..\src\lib\image.cpp" />
     <ClCompile Include="..\src\lib\math.cpp" />
-    <ClCompile Include="..\src\lib\yar_project.cpp">
-      <Filter>scene_loader</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\lib\scene_loader.cpp">
-      <Filter>scene_loader</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\lib\obj_scene.cpp">
       <Filter>scene_loader</Filter>
     </ClCompile>
     <ClCompile Include="..\src\lib\pbrt_scene.cpp">

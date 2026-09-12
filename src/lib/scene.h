@@ -12,7 +12,6 @@ enum class Scene_Type
 {
     none, // not initialize scene
     pbrt,
-    obj,
 };
 
 struct Texture_Descriptor
@@ -42,7 +41,6 @@ struct Scene
     Bounds2i render_region;
     float camera_fov_y = 0.f;
     bool  z_is_up = false;
-    bool mesh_disable_backfacing_culling = false;
     bool front_face_has_clockwise_winding = false;
     Raytracer_Config raytracer_config;
 

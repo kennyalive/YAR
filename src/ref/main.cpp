@@ -165,7 +165,7 @@ static const getopt_option_t option_list[] =
 static void print_help_string(getopt_context_t* ctx)
 {
     char buffer[4096];
-    printf("Usage: RAY.exe <pbrt_file or yar_file> [options...]\n");
+    printf("Usage: RAY.exe <pbrt_file> [options...]\n");
     printf("Options:\n%s\n", getopt_create_help_string(ctx, buffer, sizeof(buffer)));
 }
 
