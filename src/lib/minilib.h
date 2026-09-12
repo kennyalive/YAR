@@ -4,6 +4,7 @@ constexpr int MINILIB_VERSION = 0;
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <initializer_list>
 
 template <typename T>
@@ -131,3 +132,44 @@ String string_printf(const char* format, ...);
 String string_concat(String_View a, String_View b);
 String string_concat(String_View a, String_View b, String_View c);
 String string_concat(String_View a, String_View b, String_View c, String_View d);
+
+// Hashing.
+// 
+// hash_value(x) returns a 64-bit hash whose bits look uniformly random
+// even for structured inputs (round floats, small integers).
+// Types add support by overloading hash_value.
+// Compound types fold member hashes with hash_combine.
+//
+// hash_mix is the SplitMix64 finalizer (bijection on 64-bit values)
+inline uint64_t hash_mix(uint64_t h)
+{
+    h ^= h >> 30; h *= 0xbf58476d1ce4e5b9ull;
+    h ^= h >> 27; h *= 0x94d049bb133111ebull;
+    h ^= h >> 31;
+    return h;
+}
+
+inline uint64_t hash_value(uint32_t v) { return hash_mix(v); }
+inline uint64_t hash_value(int32_t v) { return hash_mix(uint32_t(v)); }
+inline uint64_t hash_value(uint64_t v) { return hash_mix(v); }
+inline uint64_t hash_value(float v)
+{
+    if (v == 0.f) {
+        v = 0.f; // -0 and +0 compare equal, so they must hash equal
+    }
+    uint32_t bits;
+    memcpy(&bits, &v, sizeof(bits));
+    return hash_mix(bits);
+}
+
+// Boost hash_combine with a 64-bit constant. Inputs must already be well mixed hashes
+inline void hash_combine(uint64_t& seed, uint64_t hash)
+{
+    seed ^= hash + 0x9e3779b97f4a7c15ull + (seed << 6) + (seed >> 2);
+}
+
+struct Hasher
+{
+    template <typename T>
+    size_t operator()(const T& v) const { return size_t(hash_value(v)); }
+};

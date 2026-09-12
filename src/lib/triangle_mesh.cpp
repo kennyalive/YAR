@@ -1,5 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
+#include "lib/minilib.h"
 #include "triangle_mesh.h"
 
 void Triangle_Mesh::remove_degenerate_triangles() {
@@ -87,7 +88,7 @@ static void convert_to_mesh_with_face_normals(Triangle_Mesh& mesh) {
 static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_groups(std::vector<uint64_t>& normal_groups, float crease_angle, Triangle_Mesh& mesh) {
     normal_groups.resize(mesh.vertices.size());
 
-    std::unordered_map<Vector3, std::vector<int>> vertex_faces;
+    std::unordered_map<Vector3, std::vector<int>, Hasher> vertex_faces;
     for (int i = 0, face = 0; i < (int)mesh.indices.size(); i += 3, face++) {
         vertex_faces[mesh.vertices[mesh.indices[i + 0]]].push_back(face);
         vertex_faces[mesh.vertices[mesh.indices[i + 1]]].push_back(face);
@@ -235,9 +236,9 @@ static void adjust_normal_for_duplicated_vertices(const std::vector<uint64_t>& n
     };
     struct Vertex_Info_Hasher {
         size_t operator()(const Vertex_Info& v) const {
-            size_t hash = 0;
-            hash_combine(hash, v.pos);
-            hash_combine(hash, v.normal_group);
+            uint64_t hash = 0;
+            hash_combine(hash, hash_value(v.pos));
+            hash_combine(hash, hash_value(v.normal_group));
             return hash;
         }
     };

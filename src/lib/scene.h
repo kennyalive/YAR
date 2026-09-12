@@ -51,7 +51,7 @@ struct Scene
     std::vector<Matrix3x4> view_points;
 
     // Cache of tesselated spheres with different radius
-    std::unordered_map<float, Geometry_Handle> radius_to_sphere_geometry;
+    std::unordered_map<float, Geometry_Handle, Hasher> radius_to_sphere_geometry;
 
     //
     // Description of the virtual environment.

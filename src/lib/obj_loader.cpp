@@ -19,10 +19,10 @@ struct Mesh_Vertex {
 
 struct Mesh_Vertex_Hasher {
     size_t operator()(const Mesh_Vertex& v) const {
-        size_t hash = 0;
-        hash_combine(hash, v.pos);
-        hash_combine(hash, v.normal);
-        hash_combine(hash, v.uv);
+        uint64_t hash = 0;
+        hash_combine(hash, hash_value(v.pos));
+        hash_combine(hash, hash_value(v.normal));
+        hash_combine(hash, hash_value(v.uv));
         return hash;
     }
 };

@@ -1,5 +1,6 @@
 #include "std.h"
 #include "common.h"
+#include "minilib.h"
 
 #include "tessellation.h"
 
@@ -85,7 +86,7 @@ Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level, bool textu
 
     std::vector<Vector3> next_subdiv_vertices;
     std::vector<int32_t> next_subdiv_indices;
-    std::unordered_map<Vector3, int32_t> position_to_index; // removes duplicated positions
+    std::unordered_map<Vector3, int32_t, Hasher> position_to_index; // removes duplicated positions
 
     auto add_vertex = [&position_to_index, &next_subdiv_vertices](const Vector3& v) {
         auto it = position_to_index.find(v);

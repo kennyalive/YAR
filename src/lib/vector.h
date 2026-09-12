@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "minilib.h"
 
 struct Vector2;
 struct Vector2i;
@@ -180,16 +181,12 @@ inline Vector3 cross(const Vector3& v1, const Vector3& v2) {
         v1.x*v2.y - v1.y*v2.x);
 }
 
-namespace std {
-template<> struct hash<Vector3> {
-    size_t operator()(Vector3 v) const {
-        size_t hash = 0;
-        hash_combine(hash, v.x);
-        hash_combine(hash, v.y);
-        hash_combine(hash, v.z);
-        return hash;
-    }
-};
+inline uint64_t hash_value(Vector3 v) {
+    uint64_t hash = 0;
+    hash_combine(hash, hash_value(v.x));
+    hash_combine(hash, hash_value(v.y));
+    hash_combine(hash, hash_value(v.z));
+    return hash;
 }
 
 //
@@ -299,15 +296,11 @@ inline float dot2(const Vector2& v1, const Vector2& v2) {
     return v1.x * v2.x + v1.y * v2.y;
 }
 
-namespace std {
-template<> struct hash<Vector2> {
-    size_t operator()(Vector2 v) const {
-        size_t hash = 0;
-        hash_combine(hash, v.x);
-        hash_combine(hash, v.y);
-        return hash;
-    }
-};
+inline uint64_t hash_value(Vector2 v) {
+    uint64_t hash = 0;
+    hash_combine(hash, hash_value(v.x));
+    hash_combine(hash, hash_value(v.y));
+    return hash;
 }
 
 inline Vector3::Vector3(Vector2 v, float z)
@@ -359,17 +352,13 @@ inline Vector4 operator*(float t, const Vector4& v) {
     return v * t;
 }
 
-namespace std {
-template<> struct hash<Vector4> {
-    size_t operator()(Vector4 v) const {
-        size_t hash = 0;
-        hash_combine(hash, v.x);
-        hash_combine(hash, v.y);
-        hash_combine(hash, v.z);
-        hash_combine(hash, v.w);
-        return hash;
-    }
-};
+inline uint64_t hash_value(Vector4 v) {
+    uint64_t hash = 0;
+    hash_combine(hash, hash_value(v.x));
+    hash_combine(hash, hash_value(v.y));
+    hash_combine(hash, hash_value(v.z));
+    hash_combine(hash, hash_value(v.w));
+    return hash;
 }
 
 inline Vector3::Vector3(const Vector4& v)
