@@ -14,6 +14,54 @@ static const char* heap_copy(const char* s, size_t n)
     return p;
 }
 
+String_View::String_View(const char* s) : data(s), size(strlen(s)) {}
+
+bool operator==(String_View a, String_View b)
+{
+    if (a.size != b.size) {
+        return false;
+    }
+    if (a.size == 0) {
+        return true;
+    }
+    return memcmp(a.data, b.data, a.size) == 0;
+}
+
+bool operator!=(String_View a, String_View b)
+{
+    return !(a == b);
+}
+
+bool operator<(String_View a, String_View b)
+{
+    size_t n = a.size < b.size ? a.size : b.size;
+    if (n != 0) {
+        int c = memcmp(a.data, b.data, n);
+        if (c != 0) {
+            return c < 0;
+        }
+    }
+    return a.size < b.size;
+}
+
+// Case is ignored for ascii letters only, other bytes must match exactly
+bool equals_ignore_case(String_View a, String_View b)
+{
+    if (a.size != b.size) {
+        return false;
+    }
+    for (size_t i = 0; i < a.size; i++) {
+        char x = a.data[i];
+        char y = b.data[i];
+        if (x >= 'A' && x <= 'Z') x += 'a' - 'A';
+        if (y >= 'A' && y <= 'Z') y += 'a' - 'A';
+        if (x != y) {
+            return false;
+        }
+    }
+    return true;
+}
+
 String::String(const char* s) : String(s, strlen(s)) {}
 
 String::String(const char* s, size_t n)
@@ -49,8 +97,14 @@ String::String(const String& other)
 String::String(String&& other) noexcept
 {
     storage = other.storage;
-    other.storage.small[0] = 0;
-    other.storage.small[max_small] = char(max_small);
+    other.reset_storage();
+}
+
+String::~String()
+{
+    if (!is_small()) {
+        delete[] storage.heap.chars;
+    }
 }
 
 String& String::operator=(const String& other)
@@ -81,38 +135,8 @@ String& String::operator=(String&& other) noexcept
         delete[] storage.heap.chars;
     }
     storage = other.storage;
-    other.storage.small[0] = 0;
-    other.storage.small[max_small] = char(max_small);
+    other.reset_storage();
     return *this;
-}
-
-String::~String()
-{
-    if (!is_small()) {
-        delete[] storage.heap.chars;
-    }
-}
-
-bool operator==(const String& a, const String& b)
-{
-    return a.size() == b.size() && memcmp(a.data(), b.data(), a.size()) == 0;
-}
-
-bool operator!=(const String& a, const String& b)
-{
-    return !(a == b);
-}
-
-bool operator==(const String& a, const char* b)
-{
-    return a.size() == strlen(b) && memcmp(a.data(), b, a.size()) == 0;
-}
-
-bool operator<(const String& a, const String& b)
-{
-    size_t n = a.size() < b.size() ? a.size() : b.size();
-    int c = memcmp(a.data(), b.data(), n);
-    return c < 0 || (c == 0 && a.size() < b.size());
 }
 
 String string_printf(const char* format, ...)
@@ -138,8 +162,6 @@ String string_printf(const char* format, ...)
     str.storage.heap.tag = String::heap_tag;
     return str;
 }
-
-String_View::String_View(const char* s) : data(s), size(strlen(s)) {}
 
 static String concat(const String_View* parts, size_t count)
 {
@@ -185,4 +207,17 @@ String string_concat(String_View a, String_View b, String_View c, String_View d)
 {
     String_View parts[] = {a, b, c, d};
     return concat(parts, 4);
+}
+
+//
+// Hashing
+//
+uint64_t hash_value(float v)
+{
+    if (v == 0.f) {
+        v = 0.f; // -0 and +0 compare equal, so they must hash equal
+    }
+    uint32_t bits;
+    memcpy(&bits, &v, sizeof(bits));
+    return hash_mix(bits);
 }

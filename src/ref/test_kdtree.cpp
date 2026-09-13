@@ -3,6 +3,7 @@
 #include "lib/math.h"
 #include "lib/minilib.h"
 #include "lib/obj_loader.h"
+#include "lib/path.h"
 #include "lib/random.h"
 #include "lib/triangle_mesh.h"
 #include "lib/vector.h"
@@ -280,19 +281,19 @@ static void process_kdrees(Function_Ref<void(const KdTree&, const Operation_Info
         Triangle_Mesh_Geometry_Data geometry_data;
         geometry_data.mesh = &mesh;
 
-        fs::path kdtree_filename = fs::path(info.mesh_file_name.c_str()).replace_extension(".kdtree");
-        if (!info.mesh_file_name.empty() && !fs_exists(kdtree_filename)) {
+        String kdtree_filename = path_replace_extension(info.mesh_file_name, "kdtree");
+        if (!info.mesh_file_name.empty() && !fs_exists(kdtree_filename.c_str())) {
             Timestamp t;
             KdTree kdtree = build_triangle_mesh_kdtree(&geometry_data);
             printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
-            kdtree.save(kdtree_filename.string().c_str());
+            kdtree.save(kdtree_filename.c_str());
             printf("\n");
             kdtree_calculate_stats(kdtree).print();
         }
 
         KdTree triangle_mesh_kdtree;
         if (!info.mesh_file_name.empty()) {
-            triangle_mesh_kdtree = KdTree::load(kdtree_filename.string().c_str());
+            triangle_mesh_kdtree = KdTree::load(kdtree_filename.c_str());
             triangle_mesh_kdtree.set_geometry_data(&geometry_data);
         }
         else {

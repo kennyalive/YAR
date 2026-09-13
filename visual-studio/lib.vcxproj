@@ -107,6 +107,7 @@
     <ClInclude Include="..\src\lib\matrix.h" />
     <ClInclude Include="..\src\lib\minilib.h" />
     <ClInclude Include="..\src\lib\obj_loader.h" />
+    <ClInclude Include="..\src\lib\path.h" />
     <ClInclude Include="..\src\lib\material_parameter.h" />
     <ClInclude Include="..\src\lib\raytracer_config.h" />
     <ClInclude Include="..\src\lib\scene_loader.h" />
@@ -131,6 +132,10 @@
     <ClCompile Include="..\src\lib\material_pbrt.cpp" />
     <ClCompile Include="..\src\lib\math.cpp" />
     <ClCompile Include="..\src\lib\minilib.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\src\lib\path.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>

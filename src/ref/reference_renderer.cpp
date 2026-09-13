@@ -1,5 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
+#include "lib/path.h"
 #include "reference_renderer.h"
 
 #include "camera.h"
@@ -667,7 +668,7 @@ bool write_openexr_image(const String& filename, const Image& image, const EXR_W
 {
     EXR_Attributes_Writer attrib_writer;
     if (write_params.dump_attributes) {
-        String dumpfile = fs::path(filename.c_str()).replace_extension(".txt").string().c_str();
+        String dumpfile = path_replace_extension(filename, "txt");
         attrib_writer.dump_file = fopen(dumpfile.c_str(), "w");
     }
 

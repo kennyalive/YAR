@@ -48,6 +48,7 @@
       <Filter>scene</Filter>
     </ClInclude>
     <ClInclude Include="..\src\lib\minilib.h" />
+    <ClInclude Include="..\src\lib\path.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />
@@ -81,6 +82,7 @@
       <Filter>scene</Filter>
     </ClCompile>
     <ClCompile Include="..\src\lib\minilib.cpp" />
+    <ClCompile Include="..\src\lib\path.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="scene">

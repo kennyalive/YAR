@@ -1,5 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
+#include "lib/path.h"
 #include "reference_renderer.h"
 #include "scene_context.h"
 #include "test.h"
@@ -226,7 +227,7 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
         }
         else if (opt == '+') {
             String filename = ctx.current_opt_arg;
-            if (to_lower(fs::path(filename.c_str()).extension().string()) == ".list") {
+            if (equals_ignore_case(path_extension(filename), "list")) {
                 auto filenames = read_list_file(filename);
                 files.insert(files.end(), filenames.begin(), filenames.end());
             }
@@ -436,13 +437,13 @@ static void process_input_file(const String& input_file, const Command_Line_Opti
 
     String image_filename;
     if (!scene.output_filename.empty()) {
-        image_filename = fs::path(scene.output_filename.c_str()).replace_extension().string().c_str();
+        image_filename = path_replace_extension(scene.output_filename, "");
     }
     else {
-        image_filename = fs::path(input_file.c_str()).stem().string().c_str();
+        image_filename = path_stem(input_file);
     }
     if (!options.output_directory.empty()) {
-        image_filename = (fs::path(options.output_directory.c_str()) / image_filename.c_str()).string().c_str();
+        image_filename = path_join(options.output_directory, image_filename);
     }
     image_filename = string_concat(image_filename, options.output_filename_suffix, ".exr"); // output is OpenEXR image
 

@@ -4,7 +4,6 @@ constexpr int MINILIB_VERSION = 0;
 
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 #include <initializer_list>
 
 template <typename T>
@@ -60,23 +59,40 @@ struct Function_Ref<R(Args...)>
     {}
 };
 
+// Non-owning string. The characters must outlive the view.
+// The characters need not be zero-terminated.
+struct String_View
+{
+    const char* data = nullptr;
+    size_t size = 0;
+    String_View() = default;
+    String_View(const char* s); // s can't be null
+    String_View(const char* s, size_t n) : data(s), size(n) {} // s can be null when n is zero
+};
+
+bool operator==(String_View a, String_View b);
+bool operator!=(String_View a, String_View b);
+bool operator<(String_View a, String_View b);
+bool equals_ignore_case(String_View a, String_View b);
+
 // Immutable string that owns its characters.
 // There is no mutation API: build text elsewhere (string_printf, a local buffer).
 // data() is never null and always points to a zero-terminated sequence.
 //
 // Strings of up to max_small characters (31 by default) live inside the object.
-// Longer strings use heap storage.
-// By default, a String object occupies 32 bytes (two per cache line).
+// Longer strings use heap storage. A String object occupies 32 bytes.
 struct String
 {
-    String() { storage.small[0] = 0; storage.small[max_small] = char(max_small); }
-    String(const char* s);
-    String(const char* s, size_t n);
+    String() { reset_storage(); }
+    String(const char* s); // s can't be null
+    String(const char* s, size_t n); // s can be null when n is zero
+    String(String_View v) : String(v.data, v.size) {}
     String(const String& other);
     String(String&& other) noexcept;
     ~String();
     String& operator=(const String& other);
     String& operator=(String&& other) noexcept;
+    operator String_View() const { return {data(), size()}; }
 
     const char* data() const { return is_small() ? storage.small : storage.heap.chars; }
     size_t size() const { return is_small() ? max_small - last_byte() : storage.heap.count; }
@@ -107,27 +123,12 @@ struct String
     } storage;
 
 private:
+    void reset_storage() { storage.small[0] = 0; storage.small[max_small] = char(max_small); }
     uint8_t last_byte() const { return ((const unsigned char*)&storage)[object_size - 1]; }
     bool is_small() const { return last_byte() != heap_tag; }
 };
 static_assert(sizeof(String) == String::object_size);
 
-// Non-owning string. The characters must outlive the view.
-// The characters need not be zero-terminated.
-struct String_View
-{
-    const char* data = "";
-    size_t size = 0;
-    String_View() = default;
-    String_View(const String& s) : data(s.data()), size(s.size()) {}
-    String_View(const char* s);
-    String_View(const char* s, size_t n) : data(s), size(n) {} // s may be null when n is zero
-};
-
-bool operator==(const String& a, const String& b);
-bool operator!=(const String& a, const String& b);
-bool operator==(const String& a, const char* b);
-bool operator<(const String& a, const String& b);
 String string_printf(const char* format, ...);
 String string_concat(String_View a, String_View b);
 String string_concat(String_View a, String_View b, String_View c);
@@ -152,15 +153,7 @@ inline uint64_t hash_mix(uint64_t h)
 inline uint64_t hash_value(uint32_t v) { return hash_mix(v); }
 inline uint64_t hash_value(int32_t v) { return hash_mix(uint32_t(v)); }
 inline uint64_t hash_value(uint64_t v) { return hash_mix(v); }
-inline uint64_t hash_value(float v)
-{
-    if (v == 0.f) {
-        v = 0.f; // -0 and +0 compare equal, so they must hash equal
-    }
-    uint32_t bits;
-    memcpy(&bits, &v, sizeof(bits));
-    return hash_mix(bits);
-}
+uint64_t hash_value(float v);
 
 // Boost hash_combine with a 64-bit constant. Inputs must already be well mixed hashes
 inline void hash_combine(uint64_t& seed, uint64_t hash)

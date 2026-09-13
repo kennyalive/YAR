@@ -1,5 +1,6 @@
 #include "std.h"
 #include "common.h"
+#include "path.h"
 #include "scene_loader.h"
 
 #include "stb/stb_image.h"
@@ -26,13 +27,11 @@ static void finalize_scene(Scene& scene) {
 }
 
 Scene load_scene(const String& input_file) {
-    fs::path path(input_file.c_str());
-    if (!path.has_extension())
+    String_View extension = path_extension(input_file);
+    if (extension.size == 0)
         error("Unknown file type because there is no extension: %s. The supported file type is: pbrt", input_file.c_str());
-
-    std::string ext = to_lower(path.extension().string());
-    if (ext != ".pbrt")
-        error("Unsupported file extension: %s", ext.c_str());
+    if (!equals_ignore_case(extension, "pbrt"))
+        error("Unsupported file extension: %.*s", (int)extension.size, extension.data);
 
     Scene scene;
     scene.type = Scene_Type::pbrt;

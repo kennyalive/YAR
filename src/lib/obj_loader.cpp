@@ -1,5 +1,6 @@
 #include "std.h"
 #include "common.h"
+#include "path.h"
 
 #include "obj_loader.h"
 
@@ -114,7 +115,7 @@ Obj_Data load_obj(
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
 
-    const String mtl_dir = fs::path(obj_file_path.c_str()).parent_path().string().c_str();
+    const String mtl_dir = path_strip_filename(obj_file_path);
 
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, nullptr, obj_file_path.c_str(), mtl_dir.c_str()))
         error("failed to load obj model: %s", obj_file_path.c_str());

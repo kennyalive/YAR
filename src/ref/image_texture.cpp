@@ -2,6 +2,7 @@
 #include "lib/common.h"
 #include "image_texture.h"
 #include "lib/minilib.h"
+#include "lib/path.h"
 
 #include "lib/math.h"
 #include "lib/vector.h"
@@ -287,7 +288,7 @@ void Image_Texture::initialize_from_file(const String& image_path, const Image_T
         // DEBUG
         #if 0
         for (int i = 0; i < int(mips.size()); i++) {
-            const String image_name = fs::path(image_path.c_str()).filename().replace_extension("").string().c_str();
+            const String image_name = path_stem(image_path);
             mips[i].write_tga(string_printf("%s_%s_mip_%d.tga", image_name.c_str(), get_filter_name(params.mip_filter), i));
         }
         #endif

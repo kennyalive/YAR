@@ -1,6 +1,7 @@
 #include "std.h"
 #include "common.h"
 #include "minilib.h"
+#include "path.h"
 
 #include "immintrin.h"
 #include "meow-hash/meow_hash_x64_aesni.h"
@@ -69,7 +70,8 @@ fs::path get_data_directory()
 }
 
 String get_project_unique_name(const String& scene_path) {
-    std::string file_name = to_lower(fs::path(scene_path.c_str()).filename().string());
+    String_View filename = path_filename(scene_path);
+    std::string file_name = to_lower(std::string(filename.data, filename.size));
     if (file_name.empty())
         error("Failed to extract filename from scene path: %s", scene_path.c_str());
 
@@ -115,10 +117,6 @@ std::string read_text_file(const String& file_path) {
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
-}
-
-std::string get_extension(const String& file_path) {
-    return to_lower(fs::path(file_path.c_str()).extension().string());
 }
 
 double get_base_cpu_frequency_ghz() {

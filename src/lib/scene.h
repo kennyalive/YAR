@@ -1,6 +1,7 @@
 #pragma once
 
 #include "minilib.h"
+#include "path.h"
 #include "geometry.h"
 #include "light.h"
 #include "material.h"
@@ -63,6 +64,6 @@ struct Scene
 
     String get_resource_absolute_path(const String& resource_relative_path) const
     {
-        return (fs::path(path.c_str()).parent_path() / resource_relative_path.c_str()).string().c_str();
+        return path_join(path_strip_filename(path), resource_relative_path);
     }
 };

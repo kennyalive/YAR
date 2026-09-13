@@ -40,9 +40,6 @@ String get_project_unique_name(const String& scene_path);
 std::vector<uint8_t> read_binary_file(const String& file_path);
 std::string read_text_file(const String& file_path);
 
-// Returns extension in lower case in the form ".ext".
-std::string get_extension(const String& file_path);
-
 String get_spirv_file(const char* spirv_base_name);
 
 struct Timestamp {

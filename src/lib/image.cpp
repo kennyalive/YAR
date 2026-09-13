@@ -2,6 +2,7 @@
 #include "common.h"
 #include "image.h"
 #include "minilib.h"
+#include "path.h"
 
 #include "color.h"
 
@@ -90,7 +91,7 @@ Image::Image(int width, int height)
 bool Image::load_from_file(const String& file_path, bool decode_srgb, bool* is_hdr_image) {
     if (is_hdr_image)
         *is_hdr_image = false;
-    if (get_extension(file_path) == ".exr") {
+    if (equals_ignore_case(path_extension(file_path), "exr")) {
         // Load image using TinyEXR library.
         float* out;
         int ret = LoadEXR(&out, &width, &height, file_path.c_str(), nullptr);
@@ -104,7 +105,7 @@ bool Image::load_from_file(const String& file_path, bool decode_srgb, bool* is_h
         if (is_hdr_image)
             *is_hdr_image = true;
     }
-    else if (get_extension(file_path) == ".pfm") {
+    else if (equals_ignore_case(path_extension(file_path), "pfm")) {
         data = load_pfm_image(file_path, &width, &height);
         if (is_hdr_image)
             *is_hdr_image = true;
