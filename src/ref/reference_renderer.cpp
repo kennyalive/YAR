@@ -174,22 +174,22 @@ struct Checkpoint {
 Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const Checkpoint_Info& info)
 {
     const char* func_name = "start_or_resume_from_checkpoint_directory";
-    fs::path metadata_file_path = fs::path(checkpoint_directory.c_str()) / "checkpoint";
+    fs::path metadata_file_path = fs::path(checkpoint_directory.data()) / "checkpoint";
 
     // If checkpoint directory does not exist or it is an empty directory then perform
     // initialization of the checkpoint by creating checkpoint metadata file.
-    if (!fs_exists(checkpoint_directory.c_str())) {
-        if (!fs_create_directories(checkpoint_directory.c_str()))
+    if (!fs_exists(checkpoint_directory.data())) {
+        if (!fs_create_directories(checkpoint_directory.data()))
             error("%s: failed to create checkpoint directory: %s",
-                func_name, checkpoint_directory.c_str());
+                func_name, checkpoint_directory.data());
     }
-    if (fs_is_empty(checkpoint_directory.c_str())) {
+    if (fs_is_empty(checkpoint_directory.data())) {
         std::ofstream metadata_file(metadata_file_path, std::ofstream::out);
         if (!metadata_file)
             error("%s: failed to create checkpoint file: %s",
-                func_name, metadata_file_path.string().c_str());
+                func_name, metadata_file_path.string().data());
 
-        metadata_file << "input_filename " << info.input_filename.c_str() << "\n";
+        metadata_file << "input_filename " << info.input_filename.data() << "\n";
         metadata_file << "total_tile_count " << info.total_tile_count << "\n";
         metadata_file << "samples_per_pixer " << info.samples_per_pixel << "\n";
         // default checkpoint object describes that no tiles were finished yet
@@ -199,12 +199,12 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
     // Check that we have a valid checkpoint and that metadata matches current project settings.
     if (!fs_exists(metadata_file_path))
         error("%s: %s is not a checkpoint directory: 'checkpoint' file is missing",
-            func_name, checkpoint_directory.c_str());
+            func_name, checkpoint_directory.data());
 
     std::ifstream metadata_file(metadata_file_path);
     if (!metadata_file)
         error("%s: failed to open checkpoint metadata file: %s",
-            func_name, metadata_file_path.string().c_str());
+            func_name, metadata_file_path.string().data());
 
     auto str_to_int = [](String_View s) {
         int result = 0;
@@ -224,12 +224,12 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
 
     if (!metadata_file)
         error("%s: failed to read all the required fields from the metadata file: %s",
-            func_name, metadata_file_path.string().c_str());
+            func_name, metadata_file_path.string().data());
 
-    if (info.input_filename != stored_input_filename.c_str())
+    if (info.input_filename != stored_input_filename.data())
         error("%s: can not resume rendering because input_filename is changed.\n"
             "Checkpoint: %s, current project: %s",
-            func_name, stored_input_filename.c_str(), info.input_filename.c_str());
+            func_name, stored_input_filename.data(), info.input_filename.data());
 
     int stored_total_tile_count = str_to_int(String_View(total_tile_count_str.data(), total_tile_count_str.size()));
     if (stored_total_tile_count != info.total_tile_count)
@@ -245,7 +245,7 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
 
     // Scan checkpoint directory for already finished tiles.
     Checkpoint checkpoint;
-    for (const auto& entry : fs::directory_iterator(checkpoint_directory.c_str())) {
+    for (const auto& entry : fs::directory_iterator(checkpoint_directory.data())) {
         std::string filename = entry.path().stem().string();
         if (!filename.starts_with("tile_"))
             continue;
@@ -253,7 +253,7 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
         int tile_index = str_to_int(String_View(filename.data() + 5, filename.size() - 5));
         Checkpoint_Tile_Data& tile_data = checkpoint.finished_tiles[tile_index];
 
-        std::vector<uint8_t> content = read_binary_file(entry.path().string().c_str());
+        std::vector<uint8_t> content = read_binary_file(entry.path().string().data());
         int offset = 0;
 
         float time;
@@ -281,10 +281,10 @@ static void write_tile_to_checkpoint_directory(const String& checkpoint_director
 
     // The first step, is to write a tile to a temporary file. If the program terminates
     // during write operation then the checpoint directory will stay in consistent state.
-    fs::path temp_file_path = fs::path(checkpoint_directory.c_str()) / string_printf("temp_tile_%04d", tile_index).c_str();
+    fs::path temp_file_path = fs::path(checkpoint_directory.data()) / string_printf("temp_tile_%04d", tile_index).data();
     std::ofstream temp_file(temp_file_path, std::ofstream::out | std::ofstream::binary);
     if (!temp_file)
-        error("%s: failed to create file: %s", func_name, temp_file_path.string().c_str());
+        error("%s: failed to create file: %s", func_name, temp_file_path.string().data());
 
     // just to check we don't have padded bytes inside the structure and
     // we can serialize entire structure with a single write.
@@ -306,15 +306,15 @@ static void write_tile_to_checkpoint_directory(const String& checkpoint_director
     temp_file.write(data_ptr, tile.pixels.size() * sizeof(Film_Pixel));
 
     if (temp_file.fail())
-        error("%s: failed to write to file: %s", func_name, temp_file_path.string().c_str());
+        error("%s: failed to write to file: %s", func_name, temp_file_path.string().data());
     temp_file.close();
 
     // Rename temporary tile file. The assumption is that std::filesystem::rename is atomic.
-    fs::path file_path = fs::path(checkpoint_directory.c_str()) / string_printf("tile_%04d", tile_index).c_str();
+    fs::path file_path = fs::path(checkpoint_directory.data()) / string_printf("tile_%04d", tile_index).data();
     if (fs_exists(file_path))
-        error("%s: tile file already exists: %s", func_name, file_path.string().c_str());
+        error("%s: tile file already exists: %s", func_name, file_path.string().data());
     if (!fs_rename(temp_file_path, file_path))
-        error("%s: failed to rename temp file to: %s", func_name, file_path.string().c_str());
+        error("%s: failed to rename temp file to: %s", func_name, file_path.string().data());
 }
 
 struct Rendering_Progress {
@@ -458,14 +458,14 @@ static std::vector<int> load_checkpoint(const String& checkpoint_directory, cons
 
     if (!checkpoint.finished_tiles.empty()) {
         int checkpoint_progress_percentage = 100 * (int)checkpoint.finished_tiles.size() / info.total_tile_count;
-        printf("Resuming rendering from checkpoint %s\n", checkpoint_directory.c_str());
+        printf("Resuming rendering from checkpoint %s\n", checkpoint_directory.data());
         printf("Time spent in previous sessions: %.3f seconds\n", checkpoint.previous_sessions_time);
         printf("Rendering progress: %d%%", checkpoint_progress_percentage);
         if (checkpoint_progress_percentage == 100)
             printf("\n");
     }
     else {
-        printf("Created new checkpoint %s\n", checkpoint_directory.c_str());
+        printf("Created new checkpoint %s\n", checkpoint_directory.data());
     }
     return tiles_to_render;
 }
@@ -669,7 +669,7 @@ bool write_openexr_image(const String& filename, const Image& image, const EXR_W
     EXR_Attributes_Writer attrib_writer;
     if (write_params.dump_attributes) {
         String dumpfile = path_replace_extension(filename, "txt");
-        attrib_writer.dump_file = fopen(dumpfile.c_str(), "w");
+        attrib_writer.dump_file = fopen(dumpfile.data(), "w");
     }
 
     const EXR_Attributes& attribs = write_params.attributes;
@@ -678,7 +678,7 @@ bool write_openexr_image(const String& filename, const Image& image, const EXR_W
     attrib_writer.add_string_attribute("yar_build_version", "0.0");
     attrib_writer.add_integer_attribute("yar_build_asserts", ENABLE_ASSERT);
     attrib_writer.add_string_attribute("yar_render_device", "cpu");
-    attrib_writer.add_string_attribute("yar_input_file", attribs.input_file.c_str());
+    attrib_writer.add_string_attribute("yar_input_file", attribs.input_file.data());
     attrib_writer.add_integer_attribute("yar_spp", attribs.spp);
 
     // The CPU renderer is deterministic, so the variance does not change between renderings

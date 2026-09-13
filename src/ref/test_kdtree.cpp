@@ -262,8 +262,8 @@ static void process_kdrees(Function_Ref<void(const KdTree&, const Operation_Info
     for (const Operation_Info& info : infos) {
         printf("================================================================\n");
         printf("Ray casting triangle mesh: %s\n", info.custom_mesh_name.empty()
-            ? info.mesh_file_name.c_str()
-            : info.custom_mesh_name.c_str());
+            ? info.mesh_file_name.data()
+            : info.custom_mesh_name.data());
         printf("================================================================\n");
 
         Triangle_Mesh mesh;
@@ -282,18 +282,18 @@ static void process_kdrees(Function_Ref<void(const KdTree&, const Operation_Info
         geometry_data.mesh = &mesh;
 
         String kdtree_filename = path_replace_extension(info.mesh_file_name, "kdtree");
-        if (!info.mesh_file_name.empty() && !fs_exists(kdtree_filename.c_str())) {
+        if (!info.mesh_file_name.empty() && !fs_exists(kdtree_filename.data())) {
             Timestamp t;
             KdTree kdtree = build_triangle_mesh_kdtree(&geometry_data);
             printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);
-            kdtree.save(kdtree_filename.c_str());
+            kdtree.save(kdtree_filename.data());
             printf("\n");
             kdtree_calculate_stats(kdtree).print();
         }
 
         KdTree triangle_mesh_kdtree;
         if (!info.mesh_file_name.empty()) {
-            triangle_mesh_kdtree = KdTree::load(kdtree_filename.c_str());
+            triangle_mesh_kdtree = KdTree::load(kdtree_filename.data());
             triangle_mesh_kdtree.set_geometry_data(&geometry_data);
         }
         else {

@@ -365,7 +365,7 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
 static void process_input_file(const String& input_file, const Command_Line_Options& options)
 {
     Timestamp t_start;
-    printf("Loading: %s\n", input_file.c_str());
+    printf("Loading: %s\n", input_file.data());
 
     //
     // Load scene.
@@ -460,9 +460,9 @@ static void process_input_file(const String& input_file, const Command_Line_Opti
     };
 
     if (!write_openexr_image(image_filename, image, write_params)) {
-        error("Failed to save rendered image: %s", image_filename.c_str());
+        error("Failed to save rendered image: %s", image_filename.data());
     }
-    printf("Saved output image to %s\n\n", image_filename.c_str());
+    printf("Saved output image to %s\n\n", image_filename.data());
 }
 
 int main(int argc, char** argv)

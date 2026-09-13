@@ -608,7 +608,7 @@ Vk_Image vk_create_image(int width, int height, VkFormat format, VkImageUsageFla
         create_info.subresourceRange.layerCount = 1;
 
         VK_CHECK(vkCreateImageView(vk.device, &create_info, nullptr, &image.view));
-        vk_set_debug_name(image.view, string_concat(name, " (ImageView)").c_str());
+        vk_set_debug_name(image.view, string_concat(name, " (ImageView)").data());
     }
     return image;
 }
@@ -663,7 +663,7 @@ Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate
         create_info.subresourceRange    = subresource_range;
 
         VK_CHECK(vkCreateImageView(vk.device, &create_info, nullptr, &image.view));
-        vk_set_debug_name(image.view, string_concat(name, " (ImageView)").c_str());
+        vk_set_debug_name(image.view, string_concat(name, " (ImageView)").data());
     }
 
     // upload image data
@@ -764,19 +764,19 @@ Vk_Image vk_load_texture(const String& texture_file)
     int w, h;
     int component_count;
 
-    auto rgba_pixels = stbi_load(texture_file.c_str(), &w, &h, &component_count,STBI_rgb_alpha);
+    auto rgba_pixels = stbi_load(texture_file.data(), &w, &h, &component_count,STBI_rgb_alpha);
     if (rgba_pixels == nullptr) {
         vk.error(string_concat("failed to load image file: ", texture_file));
     }
 
-    Vk_Image texture = vk_create_texture(w, h, VK_FORMAT_R8G8B8A8_SRGB, true, rgba_pixels, 4, texture_file.c_str());
+    Vk_Image texture = vk_create_texture(w, h, VK_FORMAT_R8G8B8A8_SRGB, true, rgba_pixels, 4, texture_file.data());
     stbi_image_free(rgba_pixels);
     return texture;
 }
 
 static std::vector<uint8_t> read_binary_file(const String& file_name)
 {
-    std::ifstream file(file_name.c_str(), std::ios_base::in | std::ios_base::binary);
+    std::ifstream file(file_name.data(), std::ios_base::in | std::ios_base::binary);
     if (!file) {
         vk.error(string_concat("failed to open file: ", file_name));
     }

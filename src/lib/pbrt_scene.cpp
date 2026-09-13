@@ -658,12 +658,12 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
 
     if (auto fourier_material = std::dynamic_pointer_cast<pbrt::FourierMaterial>(pbrt_material)) {
         Pbrt3_Fourier_Material mtl;
-        mtl.bsdf_file = scene->get_resource_absolute_path(fourier_material->fileName.c_str());
+        mtl.bsdf_file = scene->get_resource_absolute_path(fourier_material->fileName.data());
         if (mtl.load_bsdf_file()) {
             return add_material<Material_Type::pbrt3_fourier>(materials, mtl);
         }
         printf("import_pbrt_material: Failed to load %s fourier bsdf file, fallback to using default material\n",
-            mtl.bsdf_file.c_str());
+            mtl.bsdf_file.data());
     }
 
     // Use red diffuse material to indicate unsupported material.
@@ -730,7 +730,7 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
     {
         auto alpha_texture = std::dynamic_pointer_cast<pbrt::ImageTexture>(alpha_texture_it->second);
         if (alpha_texture)
-            mesh.alpha_texture_index = add_scene_texture(alpha_texture->fileName.c_str(), scene);
+            mesh.alpha_texture_index = add_scene_texture(alpha_texture->fileName.data(), scene);
     }
 
     if (pbrt_mesh->no_shadows) {
@@ -963,7 +963,7 @@ static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const M
         light.scale = ColorRGB(&infinite_light->scale.x) * ColorRGB(&infinite_light->L.x);
 
         if (!infinite_light->mapName.empty()) {
-            light.environment_map_index = add_scene_texture(infinite_light->mapName.c_str(), scene);
+            light.environment_map_index = add_scene_texture(infinite_light->mapName.data(), scene);
         }
         else {
             Texture_Descriptor texture_desc{
@@ -1047,7 +1047,7 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
 // PBRT scene main loading routine.
 //
 void load_pbrt_scene(Scene& scene) {
-    pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(scene.path.c_str());
+    pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(scene.path.data());
     pbrt_scene->makeSingleLevel();
 
     // TODO: re-work pbrt-parser to decouple material from shape to be able to use

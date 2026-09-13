@@ -117,8 +117,8 @@ Obj_Data load_obj(
 
     const String mtl_dir = path_strip_filename(obj_file_path);
 
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, nullptr, obj_file_path.c_str(), mtl_dir.c_str()))
-        error("failed to load obj model: %s", obj_file_path.c_str());
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, nullptr, obj_file_path.data(), mtl_dir.data()))
+        error("failed to load obj model: %s", obj_file_path.data());
 
     Obj_Data obj_data;
 
@@ -133,7 +133,7 @@ Obj_Data load_obj(
 
     for (const tinyobj::shape_t& shape : shapes) {
         if (ignore_geometry_names) {
-            if (std::find(ignore_geometry_names->begin(), ignore_geometry_names->end(), shape.name.c_str()) != ignore_geometry_names->end()) {
+            if (std::find(ignore_geometry_names->begin(), ignore_geometry_names->end(), shape.name.data()) != ignore_geometry_names->end()) {
                 continue;
             }
         }

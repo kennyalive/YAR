@@ -46,7 +46,7 @@ static Command_Line_Params parse_command_line(int argc, char** argv)
             }
         }
         else if (strcmp(argv[i], "-help") == 0) {
-            printf("%-15s Path to the data directory. Default: %s\n", "-data-dir", get_data_directory().string().c_str());
+            printf("%-15s Path to the data directory. Default: %s\n", "-data-dir", get_data_directory().string().data());
             printf("%-15s Help attempt (shows this information).\n", "-help");
             params.requested_help_info = true;
         }

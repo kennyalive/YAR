@@ -157,7 +157,7 @@ static void print_primitive_subdivisions_for_subtree(const KdTree& kdtree, const
         if (node.get_primitive_count() > 0) {
             int depth = (int)std::count(path.begin(), path.end(), ' ');
             bool is_max_depth = (depth == KdTree::get_max_depth_limit(kdtree.get_primitive_count()));
-            printf("[%c%-2d] %s\n", is_max_depth ? '*' : ' ', depth, path.c_str());
+            printf("[%c%-2d] %s\n", is_max_depth ? '*' : ' ', depth, path.data());
         }
         return;
     }

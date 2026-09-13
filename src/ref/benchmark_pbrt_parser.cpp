@@ -24,7 +24,7 @@ void benchmark_pbrt_parser()
         printf("scene       : %s\n", scene_relative_paths);
         Timestamp t;
 
-        pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(scene_path.c_str());
+        pbrt::Scene::SP pbrt_scene = pbrt::importPBRT(scene_path.data());
 
         int64_t ns = elapsed_nanoseconds(t);
         double seconds = ns / 1'000'000'000.0;

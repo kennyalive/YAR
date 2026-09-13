@@ -111,9 +111,9 @@ static bool intersect_any_scene_geometry_data(const Ray& ray, const void* geomet
 
 KdTree KdTree::load(const String& file_name)
 {
-    std::ifstream file(file_name.c_str(), std::ios_base::in | std::ios_base::binary);
+    std::ifstream file(file_name.data(), std::ios_base::in | std::ios_base::binary);
     if (!file)
-        error("KdTree::load: failed to open file: %s", file_name.c_str());
+        error("KdTree::load: failed to open file: %s", file_name.data());
 
     KdTree kdtree;
 
@@ -133,16 +133,16 @@ KdTree KdTree::load(const String& file_name)
     file.read(reinterpret_cast<char*>(kdtree.nodes.data()), nodes_byte_count);
 
     if (file.fail())
-        error("KdTree::load: failed to read kdtree data: %s", file_name.c_str());
+        error("KdTree::load: failed to read kdtree data: %s", file_name.data());
 
     return kdtree;
 }
 
 void KdTree::save(const String& file_name) const
 {
-    std::ofstream file(file_name.c_str(), std::ios_base::out | std::ios_base::binary);
+    std::ofstream file(file_name.data(), std::ios_base::out | std::ios_base::binary);
     if (!file)
-        error("KdTree::save: failed to open file for writing: %s", file_name.c_str());
+        error("KdTree::save: failed to open file for writing: %s", file_name.data());
 
     // bounds
     file.write(reinterpret_cast<const char*>(&bounds), sizeof(Bounding_Box));
@@ -157,7 +157,7 @@ void KdTree::save(const String& file_name) const
     file.write(reinterpret_cast<const char*>(nodes.data()), nodes_byte_count);
 
     if (file.fail())
-        error("KdTree::save: failed to write kdtree data: %s", file_name.c_str());
+        error("KdTree::save: failed to write kdtree data: %s", file_name.data());
 }
 
 bool KdTree::set_geometry_data(const Triangle_Mesh_Geometry_Data* triangle_mesh_geometry_data)

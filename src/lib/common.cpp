@@ -10,7 +10,7 @@
 static String g_data_dir = "./../data";
 
 void error(const String& message) {
-    printf("\nError: %s\n", message.c_str());
+    printf("\nError: %s\n", message.data());
 #ifdef _WIN32
     __debugbreak();
 #endif
@@ -66,17 +66,17 @@ void set_data_directory(const String& path)
 
 fs::path get_data_directory()
 {
-    return g_data_dir.c_str();
+    return g_data_dir.data();
 }
 
 String get_project_unique_name(const String& scene_path) {
     String_View filename = path_filename(scene_path);
     std::string file_name = to_lower(std::string(filename.data, filename.size));
     if (file_name.empty())
-        error("Failed to extract filename from scene path: %s", scene_path.c_str());
+        error("Failed to extract filename from scene path: %s", scene_path.data());
 
-    std::string path_lowercase = to_lower(scene_path.c_str());
-    meow_u128 hash_128 = MeowHash(MeowDefaultSeed, path_lowercase.size(), (void*)path_lowercase.c_str());
+    std::string path_lowercase = to_lower(scene_path.data());
+    meow_u128 hash_128 = MeowHash(MeowDefaultSeed, path_lowercase.size(), (void*)path_lowercase.data());
     uint32_t hash_32 = MeowU32From(hash_128, 0);
 
     return string_concat(string_printf("%08x", hash_32), "-", String_View(file_name.data(), file_name.size()));
@@ -84,14 +84,14 @@ String get_project_unique_name(const String& scene_path) {
 
 String get_spirv_file(const char* spirv_base_name)
 {
-    fs::path path = get_data_directory() / "spirv" / string_concat(spirv_base_name, ".spv").c_str();
-    return path.string().c_str();
+    fs::path path = get_data_directory() / "spirv" / string_concat(spirv_base_name, ".spv").data();
+    return path.string().data();
 }
 
 std::vector<uint8_t> read_binary_file(const String& file_path) {
-    std::ifstream file(file_path.c_str(), std::ios_base::in | std::ios_base::binary);
+    std::ifstream file(file_path.data(), std::ios_base::in | std::ios_base::binary);
     if (!file)
-        error("failed to open file: %s", file_path.c_str());
+        error("failed to open file: %s", file_path.data());
 
     // get file size
     file.seekg(0, std::ios_base::end);
@@ -99,21 +99,21 @@ std::vector<uint8_t> read_binary_file(const String& file_path) {
     file.seekg(0, std::ios_base::beg);
 
     if (file_size == std::streampos(-1) || !file)
-        error("failed to read file stats: %s", file_path.c_str());
+        error("failed to read file stats: %s", file_path.data());
 
     // read file content
     std::vector<uint8_t> file_content(static_cast<size_t>(file_size));
     file.read(reinterpret_cast<char*>(file_content.data()), file_size);
     if (!file)
-        error("failed to read file content: %s", file_path.c_str());
+        error("failed to read file content: %s", file_path.data());
 
     return file_content;
 }
 
 std::string read_text_file(const String& file_path) {
-    std::ifstream file(file_path.c_str());
+    std::ifstream file(file_path.data());
     if (!file)
-        error("failed to open file: %s", file_path.c_str());
+        error("failed to open file: %s", file_path.data());
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();

@@ -261,7 +261,7 @@ void Image_Texture::initialize_from_file(const String& image_path, const Image_T
     bool is_hdr_image;
     Image base_mip;
     if (!base_mip.load_from_file(image_path, params.decode_srgb, &is_hdr_image))
-        error("failed to load image file: %s", image_path.c_str());
+        error("failed to load image file: %s", image_path.data());
 
     // Apply scale if specified.
     if (params.scale != 1.f) {
@@ -289,7 +289,7 @@ void Image_Texture::initialize_from_file(const String& image_path, const Image_T
         #if 0
         for (int i = 0; i < int(mips.size()); i++) {
             const String image_name = path_stem(image_path);
-            mips[i].write_tga(string_printf("%s_%s_mip_%d.tga", image_name.c_str(), get_filter_name(params.mip_filter), i));
+            mips[i].write_tga(string_printf("%s_%s_mip_%d.tga", image_name.data(), get_filter_name(params.mip_filter), i));
         }
         #endif
     }

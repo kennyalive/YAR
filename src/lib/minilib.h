@@ -97,7 +97,6 @@ struct String
     const char* data() const { return is_small() ? storage.small : storage.heap.chars; }
     size_t size() const { return is_small() ? max_small - last_byte() : storage.heap.count; }
     bool empty() const { return size() == 0; }
-    const char* c_str() const { return data(); }
     const char* begin() const { return data(); }
     const char* end() const { return data() + size(); }
 

@@ -40,6 +40,6 @@ void run_tests(const String& test_name) {
         benchmark_pbrt_parser();
     }
     else {
-        printf("run_tests: Unknown test name: %s\n", test_name.c_str());
+        printf("run_tests: Unknown test name: %s\n", test_name.data());
     }
 }

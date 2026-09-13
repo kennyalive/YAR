@@ -261,7 +261,7 @@ void YAR::load_project(const String& input_file)
 
     flying_camera.initialize(scene.view_points[0], scene.z_is_up);
     ui.scene_loaded = true;
-    snprintf(ui.project_file, sizeof(ui.project_file), "%s", input_file.c_str());
+    snprintf(ui.project_file, sizeof(ui.project_file), "%s", input_file.data());
 
     if (ui.rendering_algorithm == 0) {
         direct_lighting_renderer.activate();
@@ -488,10 +488,10 @@ void YAR::do_run_reference_renderer(const Reference_Renderer_Config& reference_r
     EXR_Write_Params write_params;
     const String image_filename = "image.exr";
     if (!write_openexr_image(image_filename, image, write_params)) {
-        printf("Failed to save rendered image: %s\n", image_filename.c_str());
+        printf("Failed to save rendered image: %s\n", image_filename.data());
     }
     else {
-        printf("Saved output image to %s\n\n", image_filename.c_str());
+        printf("Saved output image to %s\n\n", image_filename.data());
     }
     reference_renderer_running.store(false);
 }
