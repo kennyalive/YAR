@@ -38,7 +38,7 @@ fs::path get_data_directory();
 String get_project_unique_name(const String& scene_path);
 
 std::vector<uint8_t> read_binary_file(const String& file_path);
-std::string read_text_file(const String& file_path);
+String read_text_file(const String& file_path);
 
 String get_spirv_file(const char* spirv_base_name);
 

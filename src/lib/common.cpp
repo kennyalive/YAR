@@ -110,13 +110,25 @@ std::vector<uint8_t> read_binary_file(const String& file_path) {
     return file_content;
 }
 
-std::string read_text_file(const String& file_path) {
-    std::ifstream file(file_path.data());
+String read_text_file(const String& file_path) {
+    Scoped_File file = fopen(file_path.data(), "rb");
     if (!file)
         error("failed to open file: %s", file_path.data());
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
+
+    if (fseek(file, 0, SEEK_END) != 0)
+        error("failed to read file size: %s", file_path.data());
+    long size = ftell(file);
+    if (size < 0)
+        error("failed to read file size: %s", file_path.data());
+    rewind(file);
+
+    char* buffer = new char[(size_t)size];
+    size_t n = fread(buffer, 1, (size_t)size, file);
+    if (n != (size_t)size)
+        error("failed to read file content: %s", file_path.data());
+    String content(buffer, n);
+    delete[] buffer;
+    return content;
 }
 
 double get_base_cpu_frequency_ghz() {

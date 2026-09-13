@@ -172,18 +172,19 @@ static void print_help_string(getopt_context_t* ctx)
 
 static std::vector<String> read_list_file(const String& list_file)
 {
-    std::string content = read_text_file(list_file);
+    String content = read_text_file(list_file);
+    const char* text = content.data();
     std::vector<String> filenames;
     size_t start = SIZE_MAX;
     size_t last;
     for (size_t i = 0; i < content.size(); i++) {
-        if (content[i] == '\n') { // handle new line
+        if (text[i] == '\n') { // handle new line
             if (start != SIZE_MAX) {
-                filenames.emplace_back(content.data() + start, last - start + 1);
+                filenames.emplace_back(text + start, last - start + 1);
                 start = SIZE_MAX;
             }
         }
-        else if (content[i] > 32) { // handle non-whitespace symbols
+        else if (text[i] > 32) { // handle non-whitespace symbols
             if (start == SIZE_MAX) {
                 start = i;
             }
@@ -191,7 +192,7 @@ static std::vector<String> read_list_file(const String& list_file)
         }
     }
     if (start != SIZE_MAX) { // handle last filename
-        filenames.emplace_back(content.data() + start, last - start + 1);
+        filenames.emplace_back(text + start, last - start + 1);
     }
     return filenames;
 }
