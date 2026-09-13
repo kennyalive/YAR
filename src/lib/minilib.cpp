@@ -76,9 +76,8 @@ String::String(const char* s, size_t n)
         storage.small[max_small] = char(max_small - n);
     }
     else {
-        storage.heap.chars = heap_copy(s, n);
-        storage.heap.count = n;
-        storage.heap.tag = heap_tag;
+        const char* p = heap_copy(s, n);
+        storage.heap.init(p, n);
     }
 }
 
@@ -88,9 +87,8 @@ String::String(const String& other)
         storage = other.storage;
     }
     else {
-        storage.heap.chars = heap_copy(other.storage.heap.chars, other.storage.heap.count);
-        storage.heap.count = other.storage.heap.count;
-        storage.heap.tag = heap_tag;
+        const char* p = heap_copy(other.storage.heap.chars, other.storage.heap.count);
+        storage.heap.init(p, other.storage.heap.count);
     }
 }
 
@@ -119,9 +117,8 @@ String& String::operator=(const String& other)
         storage = other.storage;
     }
     else {
-        storage.heap.chars = heap_copy(other.storage.heap.chars, other.storage.heap.count);
-        storage.heap.count = other.storage.heap.count;
-        storage.heap.tag = heap_tag;
+        const char* p = heap_copy(other.storage.heap.chars, other.storage.heap.count);
+        storage.heap.init(p, other.storage.heap.count);
     }
     return *this;
 }
@@ -157,9 +154,7 @@ String string_printf(const char* format, ...)
     vsnprintf(alloced_buffer, (size_t)n + 1, format, args);
     va_end(args);
     String str;
-    str.storage.heap.chars = alloced_buffer;
-    str.storage.heap.count = n;
-    str.storage.heap.tag = String::heap_tag;
+    str.storage.heap.init(alloced_buffer, n);
     return str;
 }
 
@@ -177,9 +172,7 @@ static String concat(const String_View* parts, size_t count)
     }
     else {
         p = new char[total + 1];
-        result.storage.heap.chars = p;
-        result.storage.heap.count = total;
-        result.storage.heap.tag = String::heap_tag;
+        result.storage.heap.init(p, total);
     }
     for (size_t i = 0; i < count; i++) {
         if (parts[i].size != 0) {

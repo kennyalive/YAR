@@ -115,6 +115,12 @@ struct String
         size_t count;
         uint8_t unused[object_size - sizeof(chars) - sizeof(count) - 1 /*tag*/];
         uint8_t tag;
+        void init(const char* chars, size_t count)
+        {
+            this->chars = chars;
+            this->count = count;
+            tag = heap_tag;
+        }
     };
     union Storage {
         char small[object_size];
