@@ -307,17 +307,18 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
                 options.film_resolution = Vector2i{ width, height };
             }
             else {
-                std::string s = to_lower(ctx.current_opt_arg);
-                if (s == "720p" || s == "hd") {
+                String_View arg = ctx.current_opt_arg;
+                auto is = [&](const char* name) { return equals_ignore_case(arg, name); };
+                if (is("720p") || is("hd")) {
                     options.film_resolution = Vector2i{ 1280, 720 };
                 }
-                else if (s == "1080p" || s == "fhd") {
+                else if (is("1080p") || is("fhd")) {
                     options.film_resolution = Vector2i{ 1920, 1080 };
                 }
-                else if (s == "1440p" || s == "qhd") {
+                else if (is("1440p") || is("qhd")) {
                     options.film_resolution = Vector2i{ 2560, 1440 };
                 }
-                else if (s == "2160p" || s == "uhd" || s == "4k") {
+                else if (is("2160p") || is("uhd") || is("4k")) {
                     options.film_resolution = Vector2i{ 3840, 2160 };
                 }
                 else {

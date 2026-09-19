@@ -44,6 +44,11 @@ bool operator<(String_View a, String_View b)
     return a.size < b.size;
 }
 
+static char ascii_to_lower(char c)
+{
+    return (c >= 'A' && c <= 'Z') ? char(c + ('a' - 'A')) : c;
+}
+
 // Case is ignored for ascii letters only, other bytes must match exactly
 bool equals_ignore_case(String_View a, String_View b)
 {
@@ -51,11 +56,7 @@ bool equals_ignore_case(String_View a, String_View b)
         return false;
     }
     for (size_t i = 0; i < a.size; i++) {
-        char x = a.data[i];
-        char y = b.data[i];
-        if (x >= 'A' && x <= 'Z') x += 'a' - 'A';
-        if (y >= 'A' && y <= 'Z') y += 'a' - 'A';
-        if (x != y) {
+        if (ascii_to_lower(a.data[i]) != ascii_to_lower(b.data[i])) {
             return false;
         }
     }
@@ -200,6 +201,16 @@ String string_concat(String_View a, String_View b, String_View c, String_View d)
 {
     String_View parts[] = {a, b, c, d};
     return concat(parts, 4);
+}
+
+String string_to_lower(String_View s)
+{
+    String str(s);
+    char* p = (char*)str.data(); // str owns these characters, so folding them in place is fine
+    for (size_t i = 0; i < s.size; i++) {
+        p[i] = ascii_to_lower(p[i]);
+    }
+    return str;
 }
 
 //

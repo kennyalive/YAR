@@ -70,16 +70,15 @@ fs::path get_data_directory()
 }
 
 String get_project_unique_name(const String& scene_path) {
-    String_View filename = path_filename(scene_path);
-    std::string file_name = to_lower(std::string(filename.data, filename.size));
+    String file_name = string_to_lower(path_filename(scene_path));
     if (file_name.empty())
         error("Failed to extract filename from scene path: %s", scene_path.data());
 
-    std::string path_lowercase = to_lower(scene_path.data());
+    String path_lowercase = string_to_lower(scene_path);
     meow_u128 hash_128 = MeowHash(MeowDefaultSeed, path_lowercase.size(), (void*)path_lowercase.data());
     uint32_t hash_32 = MeowU32From(hash_128, 0);
 
-    return string_concat(string_printf("%08x", hash_32), "-", String_View(file_name.data(), file_name.size()));
+    return string_concat(string_printf("%08x", hash_32), "-", file_name);
 }
 
 String get_spirv_file(const char* spirv_base_name)

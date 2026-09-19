@@ -110,12 +110,6 @@ template <typename T,
     return iterable_wrapper{ std::forward<T>(iterable) };
 }
 
-inline std::string to_lower(std::string s) {
-    for (char& c : s)
-        c = tolower(c);
-    return s;
-}
-
 inline float srgb_encode(float f) {
     if (f <= 0.0031308f)
         return 12.92f * f;
