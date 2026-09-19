@@ -175,7 +175,7 @@ static void validate_triangle_mesh_kdtree(const KdTree& kdtree, const Operation_
                 brute_force_intersection.t, brute_force_intersection.t,
                 o.x, o.y, o.z, d.x, d.y, d.z
             );
-            error("KdTree traversal error detected");
+            fatal("KdTree traversal error detected");
         }
 
         if (kdtree_intersection.t != Infinity) {

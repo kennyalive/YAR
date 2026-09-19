@@ -462,7 +462,7 @@ static void process_input_file(const String& input_file, const Command_Line_Opti
     };
 
     if (!write_openexr_image(image_filename, image, write_params)) {
-        error("Failed to save rendered image: %s", image_filename.data());
+        fatal("Failed to save rendered image: %s", image_filename.data());
     }
     printf("Saved output image to %s\n\n", image_filename.data());
 }

@@ -118,7 +118,7 @@ Obj_Data load_obj(
     const String mtl_dir = path_strip_filename(obj_file_path);
 
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, nullptr, nullptr, obj_file_path.data(), mtl_dir.data()))
-        error("failed to load obj model: %s", obj_file_path.data());
+        fatal("failed to load obj model: %s", obj_file_path.data());
 
     Obj_Data obj_data;
 

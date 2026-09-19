@@ -82,7 +82,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     pnexer.next(robustness2_features);
 
     Vk_Init_Params vk_init_params;
-    vk_init_params.error_reporter = &error;
+    vk_init_params.error_reporter = &fatal;
     vk_init_params.physical_device_index = gpu_index;
     vk_init_params.vsync = ui.vsync;
     vk_init_params.instance_extensions = instance_extensions;
@@ -212,7 +212,7 @@ void YAR::write_resolution_dependent_descriptors()
 {
     uint32_t swapchain_image_offset = descriptor_heap_layout.get_image_descriptor_offset(Image_Descriptor_Index::swapchain_first_image);
     if (vk.swapchain_info.images.size() > max_swapchain_image_descriptors) {
-        error("Too many swapchain images (%u), max_swapchain_image_descriptors = %u\n",
+        fatal("Too many swapchain images (%u), max_swapchain_image_descriptors = %u\n",
             (uint32_t)vk.swapchain_info.images.size(), max_swapchain_image_descriptors);
     }
     for (size_t i = 0; i < vk.swapchain_info.images.size(); i++) {

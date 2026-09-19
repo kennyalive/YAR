@@ -17,7 +17,7 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
     // Check --force-rebuild-kdtree-cache command line option.
     if (cache_exists && force_rebuild_cache) {
         if (!fs_delete_directory(kdtree_cache_directory))
-            error("Failed to delete kdtree cache (%s) when handling --force-update-kdtree-cache command", kdtree_cache_directory.c_str());
+            fatal("Failed to delete kdtree cache (%s) when handling --force-update-kdtree-cache command", kdtree_cache_directory.c_str());
         cache_exists = false;
     }
 
@@ -28,7 +28,7 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
         printf("%-*s", time_category_field_width, "Building kdtree cache ");
 
         if (!fs_create_directories(kdtree_cache_directory))
-            error("Failed to create kdtree cache directory: %s\n", kdtree_cache_directory.string().data());
+            fatal("Failed to create kdtree cache directory: %s\n", kdtree_cache_directory.string().data());
 
         std::atomic_int kdtree_counter{ 0 };
         auto build_kdtree_func = [

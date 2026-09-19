@@ -180,13 +180,13 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
     // initialization of the checkpoint by creating checkpoint metadata file.
     if (!fs_exists(checkpoint_directory.data())) {
         if (!fs_create_directories(checkpoint_directory.data()))
-            error("%s: failed to create checkpoint directory: %s",
+            fatal("%s: failed to create checkpoint directory: %s",
                 func_name, checkpoint_directory.data());
     }
     if (fs_is_empty(checkpoint_directory.data())) {
         std::ofstream metadata_file(metadata_file_path, std::ofstream::out);
         if (!metadata_file)
-            error("%s: failed to create checkpoint file: %s",
+            fatal("%s: failed to create checkpoint file: %s",
                 func_name, metadata_file_path.string().data());
 
         metadata_file << "input_filename " << info.input_filename.data() << "\n";
@@ -198,12 +198,12 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
 
     // Check that we have a valid checkpoint and that metadata matches current project settings.
     if (!fs_exists(metadata_file_path))
-        error("%s: %s is not a checkpoint directory: 'checkpoint' file is missing",
+        fatal("%s: %s is not a checkpoint directory: 'checkpoint' file is missing",
             func_name, checkpoint_directory.data());
 
     std::ifstream metadata_file(metadata_file_path);
     if (!metadata_file)
-        error("%s: failed to open checkpoint metadata file: %s",
+        fatal("%s: failed to open checkpoint metadata file: %s",
             func_name, metadata_file_path.string().data());
 
     auto str_to_int = [](String_View s) {
@@ -223,23 +223,23 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
     metadata_file >> tag_name; metadata_file >> samples_per_pixel_str;
 
     if (!metadata_file)
-        error("%s: failed to read all the required fields from the metadata file: %s",
+        fatal("%s: failed to read all the required fields from the metadata file: %s",
             func_name, metadata_file_path.string().data());
 
     if (info.input_filename != stored_input_filename.data())
-        error("%s: can not resume rendering because input_filename is changed.\n"
+        fatal("%s: can not resume rendering because input_filename is changed.\n"
             "Checkpoint: %s, current project: %s",
             func_name, stored_input_filename.data(), info.input_filename.data());
 
     int stored_total_tile_count = str_to_int(String_View(total_tile_count_str.data(), total_tile_count_str.size()));
     if (stored_total_tile_count != info.total_tile_count)
-        error("%s: can not resume rendering because total_tile_count is changed.\n"
+        fatal("%s: can not resume rendering because total_tile_count is changed.\n"
             "Checkpoint: %d, current project: %d",
             func_name, stored_total_tile_count, info.total_tile_count);
 
     int stored_samples_per_pixel = str_to_int(String_View(samples_per_pixel_str.data(), samples_per_pixel_str.size()));
     if (stored_samples_per_pixel != info.samples_per_pixel)
-        error("%s: can not resume rendering because samples_per_pixer is changed.\n"
+        fatal("%s: can not resume rendering because samples_per_pixer is changed.\n"
             "Checkpoint: %d, current project: %d",
             func_name, stored_samples_per_pixel, info.samples_per_pixel);
 
@@ -284,7 +284,7 @@ static void write_tile_to_checkpoint_directory(const String& checkpoint_director
     fs::path temp_file_path = fs::path(checkpoint_directory.data()) / string_printf("temp_tile_%04d", tile_index).data();
     std::ofstream temp_file(temp_file_path, std::ofstream::out | std::ofstream::binary);
     if (!temp_file)
-        error("%s: failed to create file: %s", func_name, temp_file_path.string().data());
+        fatal("%s: failed to create file: %s", func_name, temp_file_path.string().data());
 
     // just to check we don't have padded bytes inside the structure and
     // we can serialize entire structure with a single write.
@@ -306,15 +306,15 @@ static void write_tile_to_checkpoint_directory(const String& checkpoint_director
     temp_file.write(data_ptr, tile.pixels.size() * sizeof(Film_Pixel));
 
     if (temp_file.fail())
-        error("%s: failed to write to file: %s", func_name, temp_file_path.string().data());
+        fatal("%s: failed to write to file: %s", func_name, temp_file_path.string().data());
     temp_file.close();
 
     // Rename temporary tile file. The assumption is that std::filesystem::rename is atomic.
     fs::path file_path = fs::path(checkpoint_directory.data()) / string_printf("tile_%04d", tile_index).data();
     if (fs_exists(file_path))
-        error("%s: tile file already exists: %s", func_name, file_path.string().data());
+        fatal("%s: tile file already exists: %s", func_name, file_path.string().data());
     if (!fs_rename(temp_file_path, file_path))
-        error("%s: failed to rename temp file to: %s", func_name, file_path.string().data());
+        fatal("%s: failed to rename temp file to: %s", func_name, file_path.string().data());
 }
 
 struct Rendering_Progress {

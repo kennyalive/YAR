@@ -9,7 +9,7 @@
 // Default data folder path. Can be changed with -data-dir command line option.
 static String g_data_dir = "./../data";
 
-void error(const String& message) {
+[[noreturn]] void fatal(const String& message) {
     printf("\nError: %s\n", message.data());
 #ifdef _WIN32
     __debugbreak();
@@ -17,7 +17,7 @@ void error(const String& message) {
     exit(1);
 }
 
-void error(const char* format, ...) {
+[[noreturn]] void fatal(const char* format, ...) {
     printf("\nError: ");
     va_list args;
     va_start(args, format);
@@ -72,7 +72,7 @@ fs::path get_data_directory()
 String get_project_unique_name(const String& scene_path) {
     String file_name = string_to_lower(path_filename(scene_path));
     if (file_name.empty())
-        error("Failed to extract filename from scene path: %s", scene_path.data());
+        fatal("Failed to extract filename from scene path: %s", scene_path.data());
 
     String path_lowercase = string_to_lower(scene_path);
     meow_u128 hash_128 = MeowHash(MeowDefaultSeed, path_lowercase.size(), (void*)path_lowercase.data());
@@ -90,7 +90,7 @@ String get_spirv_file(const char* spirv_base_name)
 std::vector<uint8_t> read_binary_file(const String& file_path) {
     std::ifstream file(file_path.data(), std::ios_base::in | std::ios_base::binary);
     if (!file)
-        error("failed to open file: %s", file_path.data());
+        fatal("failed to open file: %s", file_path.data());
 
     // get file size
     file.seekg(0, std::ios_base::end);
@@ -98,13 +98,13 @@ std::vector<uint8_t> read_binary_file(const String& file_path) {
     file.seekg(0, std::ios_base::beg);
 
     if (file_size == std::streampos(-1) || !file)
-        error("failed to read file stats: %s", file_path.data());
+        fatal("failed to read file stats: %s", file_path.data());
 
     // read file content
     std::vector<uint8_t> file_content(static_cast<size_t>(file_size));
     file.read(reinterpret_cast<char*>(file_content.data()), file_size);
     if (!file)
-        error("failed to read file content: %s", file_path.data());
+        fatal("failed to read file content: %s", file_path.data());
 
     return file_content;
 }
@@ -112,19 +112,19 @@ std::vector<uint8_t> read_binary_file(const String& file_path) {
 String read_text_file(const String& file_path) {
     Scoped_File file = fopen(file_path.data(), "rb");
     if (!file)
-        error("failed to open file: %s", file_path.data());
+        fatal("failed to open file: %s", file_path.data());
 
     if (fseek(file, 0, SEEK_END) != 0)
-        error("failed to read file size: %s", file_path.data());
+        fatal("failed to read file size: %s", file_path.data());
     long size = ftell(file);
     if (size < 0)
-        error("failed to read file size: %s", file_path.data());
+        fatal("failed to read file size: %s", file_path.data());
     rewind(file);
 
     char* buffer = new char[(size_t)size];
     size_t n = fread(buffer, 1, (size_t)size, file);
     if (n != (size_t)size)
-        error("failed to read file content: %s", file_path.data());
+        fatal("failed to read file content: %s", file_path.data());
     String content(buffer, n);
     delete[] buffer;
     return content;

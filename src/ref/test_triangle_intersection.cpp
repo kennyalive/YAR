@@ -131,7 +131,7 @@ void test_triangle_intersection()
 
 void test_simd_triangle_intersection()
 {
-#define CHECK(expr) if (expr) {} else error("Failure! Failed expression: %s", #expr)
+#define CHECK(expr) if (expr) {} else fatal("Failure! Failed expression: %s", #expr)
 
     printf("-------------\n");
     printf("Test: test_simd_triangle_intersection\n");

@@ -221,7 +221,7 @@ static RGB_Parameter import_pbrt_texture_rgb(const pbrt::Texture::SP pbrt_textur
         set_constant_parameter(param, Color_White);
     }
     else {
-        error("Unsupported pbrt texture type");
+        fatal("Unsupported pbrt texture type");
     }
     return param;
 }
@@ -333,7 +333,7 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
         set_constant_parameter(param, Color_Black);
     }
     else {
-        error("Unsupported pbrt texture type");
+        fatal("Unsupported pbrt texture type");
     }
     return param;
 }
@@ -844,7 +844,7 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                 }
             }
             else {
-                error("unsupported area light type");
+                fatal("unsupported area light type");
             }
         }
     }
@@ -884,13 +884,13 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                 shape.area_light = { Light_Type::diffuse_sphere, (int)scene->lights.diffuse_sphere_lights.size() - 1 };
             }
             else {
-                error("unsupported area light type");
+                fatal("unsupported area light type");
             }
         }
     }
 
     if (shape.geometry == Null_Geometry)
-        error("unsupported pbrt shape type");
+        fatal("unsupported pbrt shape type");
 
     // The covention that area lights only emit light and do not exhibit relfection properties.
     // Here we parse material only if the shape does not have associated area light.
@@ -1146,7 +1146,7 @@ void load_pbrt_scene(Scene& scene) {
             scene.raytracer_config.rendering_algorithm = Raytracer_Config::Rendering_Algorithm::path_tracer;
         }
         else {
-            error("Unsupported pbrt integrator");
+            fatal("Unsupported pbrt integrator");
         }
 
         if (pbrt_integrator->maxDepth >= 0) {
@@ -1174,7 +1174,7 @@ void load_pbrt_scene(Scene& scene) {
             scene.raytracer_config.pixel_filter_type = Raytracer_Config::Pixel_Filter_Type::triangle;
         }
         else {
-            error("Unsupported pbrt pixel filter");
+            fatal("Unsupported pbrt pixel filter");
         }
         scene.raytracer_config.pixel_filter_radius = pbrt_pixel_filter->radius;
         scene.raytracer_config.pixel_filter_alpha = pbrt_pixel_filter->alpha;

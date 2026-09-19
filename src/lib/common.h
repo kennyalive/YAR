@@ -13,8 +13,8 @@ struct String;
 #define ASSERT(expression)
 #endif
 
-void error(const String& message);
-void error(const char* format, ...);
+[[noreturn]] void fatal(const String& message);
+[[noreturn]] void fatal(const char* format, ...);
 
 namespace fs = std::filesystem;
 bool fs_exists(const fs::path& path);

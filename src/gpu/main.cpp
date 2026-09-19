@@ -121,7 +121,7 @@ static int run_realtime_renderer(const Command_Line_Params& params)
 {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) {
-        error("glfwInit failed");
+        fatal("glfwInit failed");
     }
     Window_State window_state;
 

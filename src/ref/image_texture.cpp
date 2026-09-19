@@ -261,7 +261,7 @@ void Image_Texture::initialize_from_file(const String& image_path, const Image_T
     bool is_hdr_image;
     Image base_mip;
     if (!base_mip.load_from_file(image_path, params.decode_srgb, &is_hdr_image))
-        error("failed to load image file: %s", image_path.data());
+        fatal("failed to load image file: %s", image_path.data());
 
     // Apply scale if specified.
     if (params.scale != 1.f) {
