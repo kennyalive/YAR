@@ -4,7 +4,18 @@ constexpr int MINILIB_VERSION = 0;
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <initializer_list>
+
+#ifndef ENABLE_ASSERT
+#define ENABLE_ASSERT 1
+#endif
+
+#if ENABLE_ASSERT
+#define ASSERT(expression) if (expression) {} else __debugbreak()
+#else
+#define ASSERT(expression)
+#endif
 
 template <typename T>
 struct Span
@@ -139,6 +150,44 @@ String string_concat(String_View a, String_View b);
 String string_concat(String_View a, String_View b, String_View c);
 String string_concat(String_View a, String_View b, String_View c, String_View d);
 String string_to_lower(String_View s); // ASCII letters only, other bytes unchanged
+
+// FILE* wrapper with convenience helpers.
+// Does NOT close file automatically
+struct File
+{
+    FILE* file = nullptr;
+
+    File(FILE* file = nullptr) : file(file) {}
+    operator FILE* () const { return file; }
+
+    bool close();
+    bool read(void* destination, size_t size);
+    bool write(const void* source, size_t size);
+};
+
+// Closes file automatically when it exits the scope
+struct Scoped_File : File
+{
+    Scoped_File(FILE* file) : File(file) {}
+    ~Scoped_File();
+    Scoped_File(const Scoped_File&) = delete;
+    Scoped_File& operator=(const Scoped_File&) = delete;
+};
+
+// TEMP: until custom dynamic array is introduced
+struct Byte_Buffer
+{
+    uint8_t* data = nullptr;
+    size_t size = 0;
+
+    Byte_Buffer() = default;
+    explicit Byte_Buffer(size_t size);
+    ~Byte_Buffer();
+    Byte_Buffer(const Byte_Buffer&) = delete;
+    Byte_Buffer& operator=(const Byte_Buffer&) = delete;
+    Byte_Buffer(Byte_Buffer&& other) noexcept;
+    Byte_Buffer& operator=(Byte_Buffer&& other) noexcept;
+};
 
 // Hashing.
 // 

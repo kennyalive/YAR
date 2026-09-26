@@ -24,6 +24,10 @@ String_View path_filename(String_View path);
 // "scene" for "dir/scene.pbrt": the last component without its extension
 String_View path_stem(String_View path);
 
+// Parent directory: "dir/" for both "dir/child" and "dir/child/".
+// A root is its own parent
+String_View path_parent(String_View path);
+
 // "dir/" for "dir/scene.pbrt", keeping the separator.
 // Empty if there is no separator
 String_View path_strip_filename(String_View path);

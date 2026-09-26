@@ -49,6 +49,7 @@
     </ClInclude>
     <ClInclude Include="..\src\lib\minilib.h" />
     <ClInclude Include="..\src\lib\path.h" />
+    <ClInclude Include="..\src\lib\platform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />
@@ -83,6 +84,8 @@
     </ClCompile>
     <ClCompile Include="..\src\lib\minilib.cpp" />
     <ClCompile Include="..\src\lib\path.cpp" />
+    <ClCompile Include="..\src\lib\platform_shared.cpp" />
+    <ClCompile Include="..\src\lib\platform_win.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="scene">

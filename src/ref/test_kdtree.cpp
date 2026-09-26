@@ -282,7 +282,7 @@ static void process_kdrees(Function_Ref<void(const KdTree&, const Operation_Info
         geometry_data.mesh = &mesh;
 
         String kdtree_filename = path_replace_extension(info.mesh_file_name, "kdtree");
-        if (!info.mesh_file_name.empty() && !fs_exists(kdtree_filename.data())) {
+        if (!info.mesh_file_name.empty() && !fs_exists(kdtree_filename)) {
             Timestamp t;
             KdTree kdtree = build_triangle_mesh_kdtree(&geometry_data);
             printf("KdTree build time = %.2fs\n", elapsed_milliseconds(t) / 1000.f);

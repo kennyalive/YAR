@@ -3,13 +3,14 @@
 #include "minilib.h"
 #include "path.h"
 
+#include <stdlib.h>
 #include "immintrin.h"
 #include "meow-hash/meow_hash_x64_aesni.h"
 
 // Default data folder path. Can be changed with -data-dir command line option.
 static String g_data_dir = "./../data";
 
-void error(const String& message) {
+[[noreturn]] void error(const String& message) {
     printf("\nError: %s\n", message.data());
 #ifdef _WIN32
     __debugbreak();
@@ -17,7 +18,7 @@ void error(const String& message) {
     exit(1);
 }
 
-void error(const char* format, ...) {
+[[noreturn]] void error(const char* format, ...) {
     printf("\nError: ");
     va_list args;
     va_start(args, format);
@@ -145,34 +146,6 @@ double get_cpu_frequency_ghz() {
 #else
     return get_base_cpu_frequency_ghz();
 #endif
-}
-
-int64_t elapsed_milliseconds(Timestamp timestamp) {
-    auto duration = std::chrono::steady_clock::now() - timestamp.t;
-    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
-    return static_cast<int64_t>(milliseconds);
-}
-
-int64_t elapsed_microseconds(Timestamp timestamp) {
-    auto duration = std::chrono::steady_clock::now() - timestamp.t;
-    auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-    return static_cast<int64_t>(microseconds);
-}
-
-int64_t elapsed_nanoseconds(Timestamp timestamp) {
-    auto duration = std::chrono::steady_clock::now() - timestamp.t;
-    auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
-    return static_cast<int64_t>(nanoseconds);
-}
-
-float elapsed_seconds(Timestamp timestamp)
-{
-    return (float)((double)elapsed_nanoseconds(timestamp) / 1e9);
-}
-
-void enable_invalid_fp_exception() {
-    _MM_SET_EXCEPTION_STATE(0); // reset current exception state
-    _MM_SET_EXCEPTION_MASK(_MM_MASK_MASK & ~_MM_MASK_INVALID /*un-mask invalid fp exception bit*/);
 }
 
 void initialize_fp_state() {

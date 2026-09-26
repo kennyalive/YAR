@@ -214,6 +214,63 @@ String string_to_lower(String_View s)
 }
 
 //
+// File IO
+//
+bool File::close()
+{
+    if (!file) {
+        return true;
+    }
+    bool closed = (fclose(file) == 0);
+    file = nullptr;
+    return closed;
+}
+
+bool File::read(void* destination, size_t size)
+{
+    ASSERT(file);
+    ASSERT(destination || !size);
+    return !size || fread(destination, 1, size, file) == size;
+}
+
+bool File::write(const void* source, size_t size)
+{
+    ASSERT(file);
+    ASSERT(source || !size);
+    return !size || fwrite(source, 1, size, file) == size;
+}
+
+Scoped_File::~Scoped_File()
+{
+    close();
+}
+
+Byte_Buffer::Byte_Buffer(size_t size)
+    : data(size ? new uint8_t[size] : nullptr), size(size)
+{}
+
+Byte_Buffer::~Byte_Buffer() { delete[] data; }
+
+Byte_Buffer::Byte_Buffer(Byte_Buffer&& other) noexcept
+    : data(other.data), size(other.size)
+{
+    other.data = nullptr;
+    other.size = 0;
+}
+
+Byte_Buffer& Byte_Buffer::operator=(Byte_Buffer&& other) noexcept
+{
+    if (this != &other) {
+        delete[] data;
+        data = other.data;
+        size = other.size;
+        other.data = nullptr;
+        other.size = 0;
+    }
+    return *this;
+}
+
+//
 // Hashing
 //
 uint64_t hash_value(float v)

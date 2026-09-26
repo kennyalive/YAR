@@ -178,10 +178,8 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
 
     // If checkpoint directory does not exist or it is an empty directory then perform
     // initialization of the checkpoint by creating checkpoint metadata file.
-    if (!fs_exists(checkpoint_directory.data())) {
-        if (!fs_create_directories(checkpoint_directory.data()))
-            error("%s: failed to create checkpoint directory: %s",
-                func_name, checkpoint_directory.data());
+    if (!fs_create_directory(checkpoint_directory)) {
+        error("Failed to create checkpoint directory: %s", checkpoint_directory.data());
     }
     if (fs_is_empty(checkpoint_directory.data())) {
         std::ofstream metadata_file(metadata_file_path, std::ofstream::out);

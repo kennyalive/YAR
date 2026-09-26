@@ -53,6 +53,18 @@ String_View path_stem(String_View path)
     return {path.data + start, dot - start};
 }
 
+String_View path_parent(String_View path)
+{
+    while (path.size > 1 && is_separator(path.data[path.size - 1])) {
+        // Keep the trailing separator in drive roots such as "C:\"
+        if (path.size == 3 && path.data[1] == ':') {
+            break;
+        }
+        path.size--;
+    }
+    return path_strip_filename(path);
+}
+
 String_View path_strip_filename(String_View path)
 {
     return {path.data, filename_start_index(path)};

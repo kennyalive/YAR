@@ -1,20 +1,13 @@
 #pragma once
 
-struct String;
+#include "platform.h"
 
-#define ENABLE_ASSERT 1
 #define ENABLE_PROFILING 1
 #define ENABLE_INVALID_FP_EXCEPTION 1
 #define ENABLE_PREFETCH 1
 
-#if ENABLE_ASSERT
-#define ASSERT(expression) if (expression) {} else __debugbreak()
-#else
-#define ASSERT(expression)
-#endif
-
-void error(const String& message);
-void error(const char* format, ...);
+[[noreturn]] void error(const String& message);
+[[noreturn]] void error(const char* format, ...);
 
 namespace fs = std::filesystem;
 bool fs_exists(const fs::path& path);
@@ -42,18 +35,8 @@ String read_text_file(const String& file_path);
 
 String get_spirv_file(const char* spirv_base_name);
 
-struct Timestamp {
-    Timestamp() : t(std::chrono::steady_clock::now()) {}
-    std::chrono::time_point<std::chrono::steady_clock> t;
-};
-
 double get_base_cpu_frequency_ghz();
 double get_cpu_frequency_ghz();
-
-int64_t elapsed_milliseconds(Timestamp timestamp);
-int64_t elapsed_microseconds(Timestamp timestamp);
-int64_t elapsed_nanoseconds(Timestamp timestamp);
-float elapsed_seconds(Timestamp timestamp);
 
 #if ENABLE_PROFILING
 struct Profile_Scope {
@@ -64,7 +47,7 @@ struct Profile_Scope {
         : message(message) {}
 
     ~Profile_Scope() {
-        printf("Profiler: %s %.2f ms\n", message, elapsed_microseconds(t) / 1000.f);
+        printf("Profiler: %s %.2f ms\n", message, elapsed_nanoseconds(t) / 1e6f);
     }
 };
 #define REPORT_FUNCTION_TIME() Profile_Scope function_time_reporter(__FUNCTION__);
@@ -158,37 +141,11 @@ inline float to_MB(uint64_t bytes) {
 }
 
 // These functions control per-thread state.
-void enable_invalid_fp_exception();
 void initialize_fp_state();
-
-struct Scoped_File {
-    FILE* f = nullptr;
-    Scoped_File(FILE* f) : f(f) {}
-    ~Scoped_File() { if (f != nullptr) fclose(f); }
-    operator FILE* () { return f; }
-};
 
 inline void prefetch(const void* ptr) {
 #if ENABLE_PREFETCH
     _mm_prefetch((const char*)ptr, _MM_HINT_T0);
-#endif
-}
-
-inline void* allocate_aligned_memory(size_t size, size_t alignment)
-{
-#ifdef _MSC_VER
-    return _aligned_malloc(size, alignment);
-#else
-#error allocate_aligned_memory is not implemented
-#endif
-}
-
-inline void free_aligned_memory(void* ptr)
-{
-#ifdef _MSC_VER
-    _aligned_free(ptr);
-#else
-#error free_aligned_memory is not implemented
 #endif
 }
 

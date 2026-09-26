@@ -79,7 +79,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_ITERATOR_DEBUG_LEVEL=0;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)..\src;$(ProjectDir)..\third-party;$(ProjectDir)..\third-party\pbrt-parser\include</AdditionalIncludeDirectories>
@@ -108,6 +108,7 @@
     <ClInclude Include="..\src\lib\minilib.h" />
     <ClInclude Include="..\src\lib\obj_loader.h" />
     <ClInclude Include="..\src\lib\path.h" />
+    <ClInclude Include="..\src\lib\platform.h" />
     <ClInclude Include="..\src\lib\material_parameter.h" />
     <ClInclude Include="..\src\lib\raytracer_config.h" />
     <ClInclude Include="..\src\lib\scene_loader.h" />
@@ -138,6 +139,12 @@
     <ClCompile Include="..\src\lib\path.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\src\lib\platform_shared.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\src\lib\platform_win.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\src\lib\obj_loader.cpp" />
     <ClCompile Include="..\src\lib\tessellation.cpp" />
