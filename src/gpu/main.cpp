@@ -32,7 +32,11 @@ static Command_Line_Params parse_command_line(int argc, char** argv)
                 printf("-gpu parameter does not specify integer gpu index\n");
             }
             else {
-                params.gpu_index = std::stoi(argv[i + 1]);
+                String_View text = argv[i + 1];
+                auto parsed = std::from_chars(text.data, text.data + text.size, params.gpu_index);
+                if (parsed.ec != std::errc{} || parsed.ptr != text.data + text.size) {
+                    error("Invalid GPU index: %s", argv[i + 1]);
+                }
                 i++;
             }
         }
@@ -46,7 +50,7 @@ static Command_Line_Params parse_command_line(int argc, char** argv)
             }
         }
         else if (strcmp(argv[i], "-help") == 0) {
-            printf("%-15s Path to the data directory. Default: %s\n", "-data-dir", get_data_directory().string().data());
+            printf("%-15s Path to the data directory. Default: %s\n", "-data-dir", get_data_directory().data());
             printf("%-15s Help attempt (shows this information).\n", "-help");
             params.requested_help_info = true;
         }

@@ -22,9 +22,10 @@
 #include "tinyexr/tinyexr.h"
 
 static std::vector<ColorRGB> load_pfm_image(const String& file_path, int* width, int* height) {
-    Scoped_File f = fopen(file_path.data(), "rb");
-    if (!f)
+    Scoped_File f = fs_open(file_path, "rb");
+    if (!f) {
         error("load_pfm_image: failed to open file: %s", file_path.data());
+    }
 
     static constexpr int buffer_size = 1024;
     char buffer[buffer_size];
@@ -114,10 +115,15 @@ bool Image::load_from_file(const String& file_path, bool decode_srgb, bool* is_h
         // Load image using STB library.
         stbi_uc* rgba_texels = nullptr;
         {
-            int component_count;
-            rgba_texels = stbi_load(file_path.data(), &width, &height, &component_count, STBI_rgb_alpha);
-            if (rgba_texels == nullptr)
+            Scoped_File file = fs_open(file_path, "rb");
+            if (!file) {
                 return false;
+            }
+            int component_count;
+            rgba_texels = stbi_load_from_file(file, &width, &height, &component_count, STBI_rgb_alpha);
+            if (rgba_texels == nullptr) {
+                return false;
+            }
         }
 
         // Convert image data to floating-point representation.
@@ -159,7 +165,17 @@ bool Image::write_tga(const String& file_path) const {
         *p++ = uint8_t(255.f * srgb_encode(pixel.g) + 0.5f);
         *p++ = uint8_t(255.f * srgb_encode(pixel.b) + 0.5f);
     }
-    return stbi_write_tga(file_path.data(), width, height, 3, srgb_image.data()) != 0;
+    Scoped_File file = fs_open(file_path, "wb");
+    if (!file) {
+        return false;
+    }
+    auto write = [](void* context, void* data, int size) {
+        fwrite(data, 1, size, static_cast<FILE*>(context));
+    };
+    if (!stbi_write_tga_to_func(write, file, width, height, 3, srgb_image.data()) || ferror(file)) {
+        return false;
+    }
+    return file.close();
 }
 
 bool Image::write_exr(const String& file_path, bool compress_image, const std::vector<EXRAttribute>& custom_attributes) const

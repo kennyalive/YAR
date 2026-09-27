@@ -27,12 +27,15 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
         "fourier bsdf loader assumes little endian byte order");
     const std::array magic = { 'S', 'C', 'A', 'T', 'F', 'U', 'N' };
 
-    const std::vector<uint8_t> data = read_binary_file(bsdf_file);
-    const uint8_t* ptr = data.data();
+    Byte_Buffer data;
+    if (!fs_load(bsdf_file, data)) {
+        error("Failed to load BSDF file: %s", bsdf_file.data());
+    }
+    const uint8_t* ptr = data.data;
 
     auto read_floats = [&data, &ptr](uint32_t float_count, std::vector<float>& output) -> bool {
         auto end = ptr + float_count * sizeof(float);
-        if (end > data.data() + data.size()) {
+        if (end > data.data + data.size) {
             return false;
         }
         output.resize(float_count);
@@ -42,7 +45,7 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
     };
     auto read_uints = [&data, &ptr](uint32_t uint_count, std::vector<uint32_t>& output) -> bool {
         auto end = ptr + uint_count * sizeof(uint32_t);
-        if (end > data.data() + data.size()) {
+        if (end > data.data + data.size) {
             return false;
         }
         output.resize(uint_count);
@@ -51,7 +54,7 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
         return true;
     };
 
-    if (data.size() < sizeof(Fourier_Bsdf_Header)) {
+    if (data.size < sizeof(Fourier_Bsdf_Header)) {
         return false;
     }
     const auto& header = *reinterpret_cast<const Fourier_Bsdf_Header*>(ptr);

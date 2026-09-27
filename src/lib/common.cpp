@@ -3,6 +3,7 @@
 #include "minilib.h"
 #include "path.h"
 
+#include <stdarg.h>
 #include <stdlib.h>
 #include "immintrin.h"
 #include "meow-hash/meow_hash_x64_aesni.h"
@@ -30,44 +31,14 @@ static String g_data_dir = "./../data";
     exit(1);
 }
 
-bool fs_exists(const fs::path& path) {
-    std::error_code ec;
-    bool result = fs::exists(path, ec);
-    ASSERT(!ec);
-    return result;
-}
-
-bool fs_create_directories(const fs::path& path) {
-    std::error_code ec;
-    return fs::create_directories(path, ec);
-}
-
-bool fs_delete_directory(const fs::path& path) {
-    std::error_code ec;
-    return fs::remove_all(path, ec) != static_cast<std::uintmax_t>(-1);
-}
-
-bool fs_is_empty(const fs::path& path) {
-    std::error_code ec;
-    bool result = fs::is_empty(path, ec);
-    ASSERT(!ec);
-    return result;
-}
-
-bool fs_rename(const fs::path& old_path, const fs::path& new_path) {
-    std::error_code ec;
-    fs::rename(old_path, new_path, ec);
-    return !ec;
-}
-
 void set_data_directory(const String& path)
 {
     g_data_dir = path;
 }
 
-fs::path get_data_directory()
+String get_data_directory()
 {
-    return g_data_dir.data();
+    return g_data_dir;
 }
 
 String get_project_unique_name(const String& scene_path) {
@@ -84,51 +55,8 @@ String get_project_unique_name(const String& scene_path) {
 
 String get_spirv_file(const char* spirv_base_name)
 {
-    fs::path path = get_data_directory() / "spirv" / string_concat(spirv_base_name, ".spv").data();
-    return path.string().data();
-}
-
-std::vector<uint8_t> read_binary_file(const String& file_path) {
-    std::ifstream file(file_path.data(), std::ios_base::in | std::ios_base::binary);
-    if (!file)
-        error("failed to open file: %s", file_path.data());
-
-    // get file size
-    file.seekg(0, std::ios_base::end);
-    std::streampos file_size = file.tellg();
-    file.seekg(0, std::ios_base::beg);
-
-    if (file_size == std::streampos(-1) || !file)
-        error("failed to read file stats: %s", file_path.data());
-
-    // read file content
-    std::vector<uint8_t> file_content(static_cast<size_t>(file_size));
-    file.read(reinterpret_cast<char*>(file_content.data()), file_size);
-    if (!file)
-        error("failed to read file content: %s", file_path.data());
-
-    return file_content;
-}
-
-String read_text_file(const String& file_path) {
-    Scoped_File file = fopen(file_path.data(), "rb");
-    if (!file)
-        error("failed to open file: %s", file_path.data());
-
-    if (fseek(file, 0, SEEK_END) != 0)
-        error("failed to read file size: %s", file_path.data());
-    long size = ftell(file);
-    if (size < 0)
-        error("failed to read file size: %s", file_path.data());
-    rewind(file);
-
-    char* buffer = new char[(size_t)size];
-    size_t n = fread(buffer, 1, (size_t)size, file);
-    if (n != (size_t)size)
-        error("failed to read file content: %s", file_path.data());
-    String content(buffer, n);
-    delete[] buffer;
-    return content;
+    String path = path_join(path_join(get_data_directory(), "spirv"), string_concat(spirv_base_name, ".spv"));
+    return path;
 }
 
 double get_base_cpu_frequency_ghz() {

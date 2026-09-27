@@ -9,17 +9,10 @@
 [[noreturn]] void error(const String& message);
 [[noreturn]] void error(const char* format, ...);
 
-namespace fs = std::filesystem;
-bool fs_exists(const fs::path& path);
-bool fs_create_directories(const fs::path& path);
-bool fs_delete_directory(const fs::path & path);
-bool fs_is_empty(const fs::path& path);
-bool fs_rename(const fs::path& old_path, const fs::path& new_path);
-
 // The place where program's resources are located (spirv binaries) and also
 // the program can write to this location if necessary (kdtree cache).
 void set_data_directory(const String& path);
-fs::path get_data_directory();
+String get_data_directory();
 
 // Returns a name that can be used to create a directory to store additional/generated project data.
 // The name is based on the hash of the scene's full path. So, for different project files that
@@ -29,9 +22,6 @@ fs::path get_data_directory();
 // specific subdirectories inside temp scene directory - in this case we can share 
 // scene's additional data between multiple projects.
 String get_project_unique_name(const String& scene_path);
-
-std::vector<uint8_t> read_binary_file(const String& file_path);
-String read_text_file(const String& file_path);
 
 String get_spirv_file(const char* spirv_base_name);
 

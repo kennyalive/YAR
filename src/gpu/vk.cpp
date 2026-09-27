@@ -1,14 +1,15 @@
 #define VMA_IMPLEMENTATION
 #include "vk.h"
 
+#include <stdio.h>
+#include <string.h>
+
 #include "stb/stb_image.h"
 #include "glfw/glfw3.h"
 #include "imgui/imgui_impl_vulkan.h"
 
 #include "vulkan/vk_enum_string_helper.h"
 const char* vk_result_to_string(VkResult result) { return string_VkResult(result); }
-
-#include <fstream>
 
 constexpr uint32_t max_timestamp_queries = 64;
 
@@ -774,40 +775,45 @@ Vk_Image vk_load_texture(const String& texture_file)
     return texture;
 }
 
-static std::vector<uint8_t> read_binary_file(const String& file_name)
+static bool read_binary_file(const String& file_name, Byte_Buffer& bytes)
 {
-    std::ifstream file(file_name.data(), std::ios_base::in | std::ios_base::binary);
+    Scoped_File file = fopen(file_name.data(), "rb");
     if (!file) {
-        vk.error(string_concat("failed to open file: ", file_name));
+        return false;
     }
-    // get file size
-    file.seekg(0, std::ios_base::end);
-    std::streampos file_size = file.tellg();
-    file.seekg(0, std::ios_base::beg);
-
-    if (file_size == std::streampos(-1) || !file) {
-        vk.error(string_concat("failed to read file stats: ", file_name));
+    if (fseek(file, 0, SEEK_END) != 0) {
+        return false;
     }
-    // read file content
-    std::vector<uint8_t> file_content(static_cast<size_t>(file_size));
-    file.read(reinterpret_cast<char*>(file_content.data()), file_size);
-    if (!file) {
-        vk.error(string_concat("failed to read file content: ", file_name));
+    long size = ftell(file);
+    if (size < 0 || fseek(file, 0, SEEK_SET) != 0) {
+        return false;
     }
-    return file_content;
+    Byte_Buffer content{size_t(size)};
+    bool read = file.read(content.data, content.size);
+    bool closed = file.close();
+    if (!read || !closed) {
+        return false;
+    }
+    bytes = static_cast<Byte_Buffer&&>(content);
+    return true;
 }
 
 VkShaderModule vk_load_spirv(const String& spirv_file)
 {
-    std::vector<uint8_t> bytes = read_binary_file(spirv_file);
+    Byte_Buffer bytes;
+    if (!read_binary_file(spirv_file, bytes)) {
+        vk.error(string_concat("failed to read file: ", spirv_file));
+        return VK_NULL_HANDLE;
+    }
 
-    if (bytes.size() % 4 != 0) {
+    if (bytes.size % 4 != 0) {
         vk.error("Vulkan: SPIR-V binary buffer size is not multiple of 4");
+        return VK_NULL_HANDLE;
     }
 
     VkShaderModuleCreateInfo create_info { VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO } ;
-    create_info.codeSize = bytes.size();
-    create_info.pCode = reinterpret_cast<const uint32_t*>(bytes.data());
+    create_info.codeSize = bytes.size;
+    create_info.pCode = reinterpret_cast<const uint32_t*>(bytes.data);
 
     VkShaderModule shader_module;
     VK_CHECK(vkCreateShaderModule(vk.device, &create_info, nullptr, &shader_module));

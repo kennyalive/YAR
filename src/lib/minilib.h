@@ -168,7 +168,7 @@ struct File
 // Closes file automatically when it exits the scope
 struct Scoped_File : File
 {
-    Scoped_File(FILE* file) : File(file) {}
+    Scoped_File(FILE* file = nullptr) : File(file) {}
     ~Scoped_File();
     Scoped_File(const Scoped_File&) = delete;
     Scoped_File& operator=(const Scoped_File&) = delete;

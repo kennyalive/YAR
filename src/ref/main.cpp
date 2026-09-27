@@ -172,7 +172,10 @@ static void print_help_string(getopt_context_t* ctx)
 
 static std::vector<String> read_list_file(const String& list_file)
 {
-    String content = read_text_file(list_file);
+    String content;
+    if (!fs_load_text(list_file, content)) {
+        error("Failed to load list file: %s", list_file.data());
+    }
     const char* text = content.data();
     std::vector<String> filenames;
     size_t start = SIZE_MAX;
@@ -396,7 +399,7 @@ static void process_input_file(const String& input_file, const Command_Line_Opti
     }
     int thread_count = options.thread_count;
     if (!thread_count) {
-        thread_count = std::max(1u, std::thread::hardware_concurrency());
+        thread_count = logical_processor_count();
     }
 
     //

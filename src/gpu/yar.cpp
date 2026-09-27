@@ -318,7 +318,10 @@ void YAR::run_frame()
     if (!ImGui::GetIO().WantCaptureKeyboard) {
         if (ImGui::IsKeyDown(ImGuiKey_F1)) {
             Matrix3x4 camera_pose = flying_camera.get_camera_pose();
-            FILE* f = fopen("camera.txt", "w");
+            Scoped_File f = fs_open("camera.txt", "w");
+            if (!f) {
+                error("Failed to open camera.txt");
+            }
 
             for (int i = 0; i < 3; i++) {
                 fprintf(f, "%f, %f, %f, %f,\n", camera_pose.a[i][0], camera_pose.a[i][1], camera_pose.a[i][2], camera_pose.a[i][3]);
@@ -329,8 +332,6 @@ void YAR::run_frame()
             get_pbrt_lookat_from_camera_pose(camera_pose, scene.z_is_up, from, to, up);
             fprintf(f, "pbrt: LookAt %f %f %f  %f %f %f  %f %f %f\n",
                 from.x, from.y, from.z, to.x, to.y, to.z, up.x, up.y, up.z);
-
-            fclose(f);
         }
     }
 
@@ -452,7 +453,7 @@ void YAR::start_reference_renderer()
     Reference_Renderer_Config reference_renderer_config;
     int thread_count = ui.ref_params.thread_count;
     if (!thread_count) {
-        thread_count = std::max(1u, std::thread::hardware_concurrency());
+        thread_count = logical_processor_count();
     }
     reference_renderer_config.thread_count = thread_count;
 

@@ -60,7 +60,7 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
 
         // Start loading threads.
         {
-            int thread_count = std::max(1, (int)std::thread::hardware_concurrency());
+            int thread_count = logical_processor_count();
             thread_count = std::min(thread_count, (int)scene.texture_descriptors.size());
 
             std::vector<std::jthread> threads;
@@ -173,146 +173,133 @@ struct Checkpoint {
 
 Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const Checkpoint_Info& info)
 {
-    const char* func_name = "start_or_resume_from_checkpoint_directory";
-    fs::path metadata_file_path = fs::path(checkpoint_directory.data()) / "checkpoint";
+    String metadata_path = path_join(checkpoint_directory, "checkpoint");
 
     // If checkpoint directory does not exist or it is an empty directory then perform
     // initialization of the checkpoint by creating checkpoint metadata file.
     if (!fs_create_directory(checkpoint_directory)) {
         error("Failed to create checkpoint directory: %s", checkpoint_directory.data());
     }
-    if (fs_is_empty(checkpoint_directory.data())) {
-        std::ofstream metadata_file(metadata_file_path, std::ofstream::out);
-        if (!metadata_file)
-            error("%s: failed to create checkpoint file: %s",
-                func_name, metadata_file_path.string().data());
-
-        metadata_file << "input_filename " << info.input_filename.data() << "\n";
-        metadata_file << "total_tile_count " << info.total_tile_count << "\n";
-        metadata_file << "samples_per_pixer " << info.samples_per_pixel << "\n";
-        // default checkpoint object describes that no tiles were finished yet
+    if (fs_is_directory_empty(checkpoint_directory)) {
+        // "samples_per_pixer" is used by existing checkpoints.
+        String text = string_printf("input_filename %s\n"
+            "total_tile_count %d\n"
+            "samples_per_pixer %d\n",
+            info.input_filename.data(), info.total_tile_count, info.samples_per_pixel);
+        if (!fs_save_text(metadata_path, text)) {
+            error("Failed to save checkpoint metadata: %s", metadata_path.data());
+        }
         return Checkpoint{};
     }
 
-    // Check that we have a valid checkpoint and that metadata matches current project settings.
-    if (!fs_exists(metadata_file_path))
-        error("%s: %s is not a checkpoint directory: 'checkpoint' file is missing",
-            func_name, checkpoint_directory.data());
-
-    std::ifstream metadata_file(metadata_file_path);
-    if (!metadata_file)
-        error("%s: failed to open checkpoint metadata file: %s",
-            func_name, metadata_file_path.string().data());
-
-    auto str_to_int = [](String_View s) {
+    String metadata;
+    if (!fs_load_text(metadata_path, metadata)) {
+        error("Failed to load checkpoint metadata: %s", metadata_path.data());
+    }
+    String_View remaining = metadata;
+    auto read_field = [&](String_View tag) {
+        size_t length = 0;
+        while (length < remaining.size && remaining.data[length] != '\n') {
+            length++;
+        }
+        String_View line{remaining.data, length};
+        size_t consumed = length + (length < remaining.size ? 1 : 0);
+        remaining = {remaining.data + consumed, remaining.size - consumed};
+        if (line.size && line.data[line.size - 1] == '\r') {
+            line.size--;
+        }
+        if (line.size < tag.size + 1 || String_View(line.data, tag.size) != tag || line.data[tag.size] != ' ') {
+            error("Invalid checkpoint metadata field '%s': %s", String(tag).data(), metadata_path.data());
+        }
+        return String_View(line.data + tag.size + 1, line.size - tag.size - 1);
+    };
+    auto str_to_int = [](String_View text) {
+        if (!text.size) {
+            error("Missing integer in checkpoint");
+        }
         int result = 0;
-        auto conv_result = std::from_chars(s.data, s.data + s.size, result);
-        ASSERT(conv_result.ptr == s.data + s.size);
+        auto parsed = std::from_chars(text.data, text.data + text.size, result);
+        if (parsed.ec != std::errc{} || parsed.ptr != text.data + text.size) {
+            error("Invalid checkpoint integer: %s", String(text).data());
+        }
         return result;
     };
 
-    std::string tag_name;
-    std::string stored_input_filename;
-    std::string total_tile_count_str;
-    std::string samples_per_pixel_str;
+    String_View stored_filename = read_field("input_filename");
+    if (info.input_filename != stored_filename) {
+        error("Cannot resume: input filename changed from '%s' to '%s'", String(stored_filename).data(), info.input_filename.data());
+    }
+    int stored_total_tiles = str_to_int(read_field("total_tile_count"));
+    if (stored_total_tiles != info.total_tile_count) {
+        error("Cannot resume: tile count changed from %d to %d", stored_total_tiles, info.total_tile_count);
+    }
+    int stored_samples = str_to_int(read_field("samples_per_pixer"));
+    if (stored_samples != info.samples_per_pixel) {
+        error("Cannot resume: samples per pixel changed from %d to %d", stored_samples, info.samples_per_pixel);
+    }
 
-    metadata_file >> tag_name; metadata_file >> stored_input_filename;
-    metadata_file >> tag_name; metadata_file >> total_tile_count_str;
-    metadata_file >> tag_name; metadata_file >> samples_per_pixel_str;
-
-    if (!metadata_file)
-        error("%s: failed to read all the required fields from the metadata file: %s",
-            func_name, metadata_file_path.string().data());
-
-    if (info.input_filename != stored_input_filename.data())
-        error("%s: can not resume rendering because input_filename is changed.\n"
-            "Checkpoint: %s, current project: %s",
-            func_name, stored_input_filename.data(), info.input_filename.data());
-
-    int stored_total_tile_count = str_to_int(String_View(total_tile_count_str.data(), total_tile_count_str.size()));
-    if (stored_total_tile_count != info.total_tile_count)
-        error("%s: can not resume rendering because total_tile_count is changed.\n"
-            "Checkpoint: %d, current project: %d",
-            func_name, stored_total_tile_count, info.total_tile_count);
-
-    int stored_samples_per_pixel = str_to_int(String_View(samples_per_pixel_str.data(), samples_per_pixel_str.size()));
-    if (stored_samples_per_pixel != info.samples_per_pixel)
-        error("%s: can not resume rendering because samples_per_pixer is changed.\n"
-            "Checkpoint: %d, current project: %d",
-            func_name, stored_samples_per_pixel, info.samples_per_pixel);
-
-    // Scan checkpoint directory for already finished tiles.
     Checkpoint checkpoint;
-    for (const auto& entry : fs::directory_iterator(checkpoint_directory.data())) {
-        std::string filename = entry.path().stem().string();
-        if (!filename.starts_with("tile_"))
-            continue;
-
-        int tile_index = str_to_int(String_View(filename.data() + 5, filename.size() - 5));
+    fs_for_each_file(checkpoint_directory, [&](String_View path) {
+        String_View filename = path_stem(path);
+        if (filename.size < 5 || String_View(filename.data, 5) != "tile_") {
+            return;
+        }
+        int tile_index = str_to_int({filename.data + 5, filename.size - 5});
         Checkpoint_Tile_Data& tile_data = checkpoint.finished_tiles[tile_index];
 
-        std::vector<uint8_t> content = read_binary_file(entry.path().string().data());
-        int offset = 0;
-
+        Byte_Buffer content;
+        if (!fs_load(path, content)) {
+            error("Failed to load checkpoint tile: %s", String(path).data());
+        }
+        size_t offset = 0;
+        auto read = [&](void* destination, size_t size) {
+            if (size > content.size - offset) {
+                error("Truncated checkpoint tile: %s", String(path).data());
+            }
+            if (size) {
+                memcpy(destination, content.data + offset, size);
+            }
+            offset += size;
+        };
         float time;
-        memcpy(&time, content.data() + offset, sizeof(float));
-        offset += sizeof(float);
+        read(&time, sizeof(time));
         checkpoint.previous_sessions_time = std::max(checkpoint.previous_sessions_time, time);
-
-        memcpy(&tile_data.tile_variance_accumulator, content.data() + offset, sizeof(double));
-        offset += sizeof(double);
-
-        memcpy(&tile_data.tile.pixel_bounds, content.data() + offset, sizeof(Bounds2i));
-        offset += sizeof(Bounds2i);
-
+        read(&tile_data.tile_variance_accumulator, sizeof(double));
+        read(&tile_data.tile.pixel_bounds, sizeof(Bounds2i));
         int pixel_count = tile_data.tile.pixel_bounds.area();
+        if (pixel_count < 0 || size_t(pixel_count) > (content.size - offset) / sizeof(Film_Pixel)) {
+            error("Invalid checkpoint tile size: %s", String(path).data());
+        }
         tile_data.tile.pixels.resize(pixel_count);
-        memcpy(tile_data.tile.pixels.data(), content.data() + offset, pixel_count * sizeof(Film_Pixel));
-    }
+        read(tile_data.tile.pixels.data(), size_t(pixel_count) * sizeof(Film_Pixel));
+    });
     return checkpoint;
 }
 
 static void write_tile_to_checkpoint_directory(const String& checkpoint_directory,
     const Film_Tile& tile, int tile_index, float current_render_time, double tile_variance_accumulator)
 {
-    const char* func_name = "write_tile_to_checkpoint_directory";
+    String temporary_path = path_join(checkpoint_directory, string_printf("temp_tile_%04d", tile_index));
+    Scoped_File file = fs_open(temporary_path, "wb");
+    if (!file) {
+        error("Failed to open checkpoint tile: %s", temporary_path.data());
+    }
 
-    // The first step, is to write a tile to a temporary file. If the program terminates
-    // during write operation then the checpoint directory will stay in consistent state.
-    fs::path temp_file_path = fs::path(checkpoint_directory.data()) / string_printf("temp_tile_%04d", tile_index).data();
-    std::ofstream temp_file(temp_file_path, std::ofstream::out | std::ofstream::binary);
-    if (!temp_file)
-        error("%s: failed to create file: %s", func_name, temp_file_path.string().data());
-
-    // just to check we don't have padded bytes inside the structure and
-    // we can serialize entire structure with a single write.
     static_assert(sizeof(Bounds2i) == 16);
     static_assert(sizeof(Film_Pixel) == 16);
-
-    const char* data_ptr;
-
-    data_ptr = reinterpret_cast<const char*>(&current_render_time);
-    temp_file.write(data_ptr, sizeof(float));
-
-    data_ptr = reinterpret_cast<const char*>(&tile_variance_accumulator);
-    temp_file.write(data_ptr, sizeof(double));
-
-    data_ptr = reinterpret_cast<const char*>(&tile.pixel_bounds);
-    temp_file.write(data_ptr, sizeof(Bounds2i));
-
-    data_ptr = reinterpret_cast<const char*>(tile.pixels.data());
-    temp_file.write(data_ptr, tile.pixels.size() * sizeof(Film_Pixel));
-
-    if (temp_file.fail())
-        error("%s: failed to write to file: %s", func_name, temp_file_path.string().data());
-    temp_file.close();
-
-    // Rename temporary tile file. The assumption is that std::filesystem::rename is atomic.
-    fs::path file_path = fs::path(checkpoint_directory.data()) / string_printf("tile_%04d", tile_index).data();
-    if (fs_exists(file_path))
-        error("%s: tile file already exists: %s", func_name, file_path.string().data());
-    if (!fs_rename(temp_file_path, file_path))
-        error("%s: failed to rename temp file to: %s", func_name, file_path.string().data());
+    if (!file.write(&current_render_time, sizeof(float)) ||
+        !file.write(&tile_variance_accumulator, sizeof(double)) ||
+        !file.write(&tile.pixel_bounds, sizeof(Bounds2i)) ||
+        !file.write(tile.pixels.data(), tile.pixels.size() * sizeof(Film_Pixel))) {
+        error("Failed to write checkpoint tile: %s", temporary_path.data());
+    }
+    if (!file.close()) {
+        error("Failed to close checkpoint tile: %s", temporary_path.data());
+    }
+    String path = path_join(checkpoint_directory, string_printf("tile_%04d", tile_index));
+    if (!fs_rename_file(temporary_path, path)) {
+        error("Failed to commit checkpoint tile: %s", path.data());
+    }
 }
 
 struct Rendering_Progress {
@@ -617,7 +604,7 @@ struct EXR_Attributes_Writer {
     unsigned char value_buffer[buffer_size];
     unsigned char* buffer_ptr = value_buffer;
     std::vector<EXRAttribute> attributes;
-    FILE* dump_file = nullptr;
+    File dump_file;
 
     void add_string_attribute(const char* name, const char* value, bool add_to_image = true) {
         if (add_to_image) {
@@ -665,9 +652,14 @@ private:
 bool write_openexr_image(const String& filename, const Image& image, const EXR_Write_Params& write_params)
 {
     EXR_Attributes_Writer attrib_writer;
+    Scoped_File dump_file;
     if (write_params.dump_attributes) {
         String dumpfile = path_replace_extension(filename, "txt");
-        attrib_writer.dump_file = fopen(dumpfile.data(), "w");
+        dump_file.file = fs_open(dumpfile, "w");
+        if (!dump_file) {
+            error("Failed to open image attribute dump: %s", dumpfile.data());
+        }
+        attrib_writer.dump_file = dump_file;
     }
 
     const EXR_Attributes& attribs = write_params.attributes;
@@ -688,7 +680,11 @@ bool write_openexr_image(const String& filename, const Image& image, const EXR_W
     attrib_writer.add_float_attribute("yar_render_time", attribs.render_time, write_params.enable_varying_attributes);
 
     if (attrib_writer.dump_file) {
-        fclose(attrib_writer.dump_file);
+        bool written = !ferror(dump_file);
+        bool closed = dump_file.close();
+        if (!written || !closed) {
+            error("Failed to write image attribute dump");
+        }
         attrib_writer.dump_file = nullptr;
     }
 

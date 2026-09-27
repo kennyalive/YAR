@@ -111,53 +111,45 @@ static bool intersect_any_scene_geometry_data(const Ray& ray, const void* geomet
 
 KdTree KdTree::load(const String& file_name)
 {
-    std::ifstream file(file_name.data(), std::ios_base::in | std::ios_base::binary);
-    if (!file)
+    Scoped_File file = fs_open(file_name, "rb");
+    if (!file) {
         error("KdTree::load: failed to open file: %s", file_name.data());
-
+    }
     KdTree kdtree;
-
-    // bounds
-    static_assert(sizeof(Bounding_Box) == 2 * 3*sizeof(float));
-    file.read(reinterpret_cast<char*>(&kdtree.bounds), sizeof(Bounding_Box));
-
-    // geometry hash
-    static_assert(sizeof(KdTree::geometry_data_hash) == sizeof(uint64_t));
-    file.read(reinterpret_cast<char*>(&kdtree.geometry_data_hash), sizeof(uint64_t));
-
-    // nodes
     uint32_t node_count = 0;
-    file.read(reinterpret_cast<char*>(&node_count), 4);
+    static_assert(sizeof(Bounding_Box) == 2 * 3*sizeof(float));
+    static_assert(sizeof(KdTree::geometry_data_hash) == sizeof(uint64_t));
+    if (!file.read(&kdtree.bounds, sizeof(Bounding_Box)) ||
+        !file.read(&kdtree.geometry_data_hash, sizeof(uint64_t)) ||
+        !file.read(&node_count, sizeof(node_count))) {
+        error("KdTree::load: failed to read file: %s", file_name.data());
+    }
+
     kdtree.nodes.resize(node_count);
     size_t nodes_byte_count = node_count * sizeof(KdNode);
-    file.read(reinterpret_cast<char*>(kdtree.nodes.data()), nodes_byte_count);
-
-    if (file.fail())
-        error("KdTree::load: failed to read kdtree data: %s", file_name.data());
-
+    if (!file.read(kdtree.nodes.data(), nodes_byte_count)) {
+        error("KdTree::load: failed to read file: %s", file_name.data());
+    }
     return kdtree;
 }
 
 void KdTree::save(const String& file_name) const
 {
-    std::ofstream file(file_name.data(), std::ios_base::out | std::ios_base::binary);
-    if (!file)
-        error("KdTree::save: failed to open file for writing: %s", file_name.data());
-
-    // bounds
-    file.write(reinterpret_cast<const char*>(&bounds), sizeof(Bounding_Box));
-
-    // geometry hash
-    file.write(reinterpret_cast<const char*>(&geometry_data_hash), sizeof(uint64_t));
-
-    // nodes
+    Scoped_File file = fs_open(file_name, "wb");
+    if (!file) {
+        error("KdTree::save: failed to open file: %s", file_name.data());
+    }
     uint32_t node_count = (uint32_t)nodes.size();
-    file.write(reinterpret_cast<const char*>(&node_count), sizeof(uint32_t));
     size_t nodes_byte_count = node_count * sizeof(KdNode);
-    file.write(reinterpret_cast<const char*>(nodes.data()), nodes_byte_count);
-
-    if (file.fail())
-        error("KdTree::save: failed to write kdtree data: %s", file_name.data());
+    if (!file.write(&bounds, sizeof(Bounding_Box)) ||
+        !file.write(&geometry_data_hash, sizeof(uint64_t)) ||
+        !file.write(&node_count, sizeof(node_count)) ||
+        !file.write(nodes.data(), nodes_byte_count)) {
+        error("KdTree::save: failed to write file: %s", file_name.data());
+    }
+    if (!file.close()) {
+        error("KdTree::save: failed to close file: %s", file_name.data());
+    }
 }
 
 bool KdTree::set_geometry_data(const Triangle_Mesh_Geometry_Data* triangle_mesh_geometry_data)

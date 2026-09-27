@@ -1,4 +1,5 @@
 #include "std.h"
+#include <iterator>
 #include "lib/common.h"
 #include "lib/minilib.h"
 
