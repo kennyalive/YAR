@@ -221,3 +221,31 @@ struct Hasher
     template <typename T>
     size_t operator()(const T& v) const { return size_t(hash_value(v)); }
 };
+
+
+//
+// Misc utilities
+// 
+template <typename T>
+T min(T a, T b)
+{
+    return b < a ? b : a;
+}
+
+template <typename T>
+T max(T a, T b)
+{
+    return a < b ? b : a;
+}
+
+template <typename T>
+T clamp(T value, T low, T high)
+{
+    if (value < low) {
+        return low;
+    }
+    if (value > high) {
+        return high;
+    }
+    return value;
+}
