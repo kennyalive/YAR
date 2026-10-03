@@ -4,7 +4,6 @@
 #define _ITERATOR_DEBUG_LEVEL 0
 #endif
 
-#include <algorithm>
 #include <array>
 #include <atomic>
 #include <bit>

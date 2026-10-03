@@ -2,6 +2,7 @@
 #include "lib/common.h"
 #include "lib/minilib.h"
 #include "kdtree_builder.h"
+#include <algorithm>
 
 #include "lib/scene_object.h"
 #include "lib/triangle_mesh.h"
