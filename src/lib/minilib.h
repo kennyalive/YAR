@@ -222,10 +222,15 @@ struct Hasher
     size_t operator()(const T& v) const { return size_t(hash_value(v)); }
 };
 
-
 //
 // Misc utilities
-// 
+//
+template <typename T>
+T&& rvalue(T& value)
+{
+    return static_cast<T&&>(value);
+}
+
 template <typename T>
 T min(T a, T b)
 {

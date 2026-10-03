@@ -106,6 +106,7 @@
     <ClInclude Include="..\src\lib\math.h" />
     <ClInclude Include="..\src\lib\matrix.h" />
     <ClInclude Include="..\src\lib\minilib.h" />
+    <ClInclude Include="..\src\lib\minilib_extra.h" />
     <ClInclude Include="..\src\lib\obj_loader.h" />
     <ClInclude Include="..\src\lib\path.h" />
     <ClInclude Include="..\src\lib\platform.h" />

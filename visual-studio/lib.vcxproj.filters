@@ -48,6 +48,7 @@
       <Filter>scene</Filter>
     </ClInclude>
     <ClInclude Include="..\src\lib\minilib.h" />
+    <ClInclude Include="..\src\lib\minilib_extra.h" />
     <ClInclude Include="..\src\lib\path.h" />
     <ClInclude Include="..\src\lib\platform.h" />
   </ItemGroup>
