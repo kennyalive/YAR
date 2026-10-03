@@ -318,17 +318,17 @@ void calculate_normals(const Normal_Calculation_Params& params, Triangle_Mesh& m
         if (params.averaging_mode == Normal_Averaging_Mode::angle) {
             Vector3 d1 = b - a;
             Vector3 d2 = c - a;
-            float angle = std::acos(std::clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
+            float angle = std::acos(clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
             scaled_n_a = cross(d1, d2).normalized() * angle;
 
             d1 = c - b;
             d2 = a - b;
-            angle = std::acos(std::clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
+            angle = std::acos(clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
             scaled_n_b = cross(d1, d2).normalized() * angle;
 
             d1 = a - c;
             d2 = b - c;
-            angle = std::acos(std::clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
+            angle = std::acos(clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
             scaled_n_c = cross(d1, d2).normalized() * angle;
         } else {
             ASSERT(params.averaging_mode == Normal_Averaging_Mode::area);

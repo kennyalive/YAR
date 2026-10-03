@@ -110,7 +110,7 @@ static Delta_Info get_pbrt_uber_info(const Thread_Context& thread_ctx, const Pbr
     int component_type = params.components[component_index];
 
     // re-normalize u_scattering_type random variable, so it can be re-used in the bsdf pipeline
-    *u_scattering_type = std::clamp(fp_index - float(component_index), 0.f, One_Minus_Epsilon);
+    *u_scattering_type = clamp(fp_index - float(component_index), 0.f, One_Minus_Epsilon);
 
     if (component_type == Pbrt3_Uber_Material::DELTA_REFLECTION) {
         bool enter_event = shading_ctx.nested_dielectric ?
@@ -156,7 +156,7 @@ static Delta_Info get_mix_info(const Thread_Context& thread_ctx, const Mix_Mater
     const Shading_Context& shading_ctx = thread_ctx.shading_context;
     Delta_Info delta_info;
 
-    const float mix_amount = std::min(evaluate_rgb_parameter(thread_ctx, params.mix_amount).luminance(), 1.f);
+    const float mix_amount = min(evaluate_rgb_parameter(thread_ctx, params.mix_amount).luminance(), 1.f);
 
     const bool mat1_has_bsdf = material_has_bsdf(params.material1.type);
     const bool mat2_has_bsdf = material_has_bsdf(params.material2.type);

@@ -101,7 +101,7 @@ inline float cos_delta_phi(const Vector2& a, const Vector2& b)
         return 1.f;
     }
     float cosine = dot2(a, b) / std::sqrt(a_len_sq * b_len_sq);
-    return std::clamp(cosine, -1.f, 1.f);
+    return clamp(cosine, -1.f, 1.f);
 }
 
 inline float cos_delta_phi(const Vector3& a, const Vector3& b, const Vector3& tangent1, const Vector3& tangent2)
@@ -124,7 +124,7 @@ inline bool refract(const Vector3& w_incident, const Vector3& normal, float etaI
     float cos_i = dot(w_incident, normal);
     ASSERT(cos_i >= 0.f);
 
-    float sin_t_squared = etaI_over_etaT * etaI_over_etaT * std::max(0.f, 1.f - cos_i * cos_i);
+    float sin_t_squared = etaI_over_etaT * etaI_over_etaT * max(0.f, 1.f - cos_i * cos_i);
 
     if (sin_t_squared >= 1.f)
         return false;  // total internal reflection

@@ -345,13 +345,13 @@ float Shading_Context::compute_texture_lod(int mip_count, const Vector2& uv_scal
     // To satisfy Nyquist limit the filter width should be twice as large as computed here.
     // This is achieved implicitly by using bilinear filtering to sample mip levels.
     /*
-    float filter_width = std::max(
-            std::max(std::abs(dUVdx_scaled.u), std::abs(dUVdx_scaled.v)),
-            std::max(std::abs(dUVdy_scaled.u), std::abs(dUVdy_scaled.v)));
+    float filter_width = max(
+            max(std::abs(dUVdx_scaled.u), std::abs(dUVdx_scaled.v)),
+            max(std::abs(dUVdy_scaled.u), std::abs(dUVdy_scaled.v)));
     */
-    float filter_width = std::max(dUVdx_scaled.length(), dUVdy_scaled.length());
+    float filter_width = max(dUVdx_scaled.length(), dUVdy_scaled.length());
 
-    return std::max(0.f, mip_count - 1 + log2(std::clamp(filter_width, 1e-6f, 1.0f)));
+    return max(0.f, mip_count - 1 + log2(clamp(filter_width, 1e-6f, 1.0f)));
 }
 
 Differential_Rays Shading_Context::compute_differential_rays_for_specular_reflection(const Ray& reflected_ray) const

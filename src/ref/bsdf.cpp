@@ -448,7 +448,7 @@ ColorRGB Ashikhmin_Shirley_Phong_BRDF::evaluate(const Vector3& wo, const Vector3
     ColorRGB F = schlick_fresnel(r0, cos_theta_i);
     float D = GGX_Distribution::D_anisotropic(wh_local, alpha_x, alpha_y);
 
-    ColorRGB specular_brdf = F * (D / (4.f * cos_theta_i * std::max(wo_local.z, wi_local.z)));
+    ColorRGB specular_brdf = F * (D / (4.f * cos_theta_i * max(wo_local.z, wi_local.z)));
 
     auto pow5 = [](float v) { return (v * v) * (v * v) * v; };
 

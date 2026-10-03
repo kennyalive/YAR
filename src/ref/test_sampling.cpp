@@ -42,14 +42,14 @@ void test_uniform_sphere_sampling() {
 
         ASSERT(std::abs(p.z) <= 1.f);
         float theta = std::acos(p.z);
-        theta = std::clamp(theta, 0.f, Pi);
-        int theta_slice = std::clamp(int((theta / Pi) * theta_slice_count), 0, theta_slice_count - 1);
+        theta = clamp(theta, 0.f, Pi);
+        int theta_slice = clamp(int((theta / Pi) * theta_slice_count), 0, theta_slice_count - 1);
 
         float phi = std::atan2(p.y, p.x);
         if (phi < 0)
             phi += Pi2;
-        phi = std::clamp(phi, 0.f, Pi2);
-        int phi_slice = std::clamp(int((phi / Pi2) * phi_slice_count), 0, phi_slice_count - 1);
+        phi = clamp(phi, 0.f, Pi2);
+        int phi_slice = clamp(int((phi / Pi2) * phi_slice_count), 0, phi_slice_count - 1);
 
         sphere_sectors[theta_slice][phi_slice]++;
     }
@@ -113,14 +113,14 @@ void test_uniform_hemisphere_sampling() {
 
         ASSERT(p.z >= 0 && p.z <= 1.f);
         float theta = std::acos(p.z);
-        theta = std::clamp(theta, 0.f, 0.5f * Pi);
-        int theta_slice = std::clamp(int((theta / (0.5f * Pi)) * theta_slice_count), 0, theta_slice_count - 1);
+        theta = clamp(theta, 0.f, 0.5f * Pi);
+        int theta_slice = clamp(int((theta / (0.5f * Pi)) * theta_slice_count), 0, theta_slice_count - 1);
 
         float phi = std::atan2(p.y, p.x);
         if (phi < 0)
             phi += Pi2;
-        phi = std::clamp(phi, 0.f, Pi2);
-        int phi_slice = std::clamp(int((phi / Pi2) * phi_slice_count), 0, phi_slice_count - 1);
+        phi = clamp(phi, 0.f, Pi2);
+        int phi_slice = clamp(int((phi / Pi2) * phi_slice_count), 0, phi_slice_count - 1);
 
         sphere_sectors[theta_slice][phi_slice]++;
     }
@@ -184,14 +184,14 @@ void test_cosine_hemisphere_sampling() {
 
         ASSERT(p.z >= 0 && p.z <= 1.f);
         float theta = std::acos(p.z);
-        theta = std::clamp(theta, 0.f, 0.5f * Pi);
-        int theta_slice = std::clamp(int((theta / (0.5f * Pi)) * theta_slice_count), 0, theta_slice_count - 1);
+        theta = clamp(theta, 0.f, 0.5f * Pi);
+        int theta_slice = clamp(int((theta / (0.5f * Pi)) * theta_slice_count), 0, theta_slice_count - 1);
 
         float phi = std::atan2(p.y, p.x);
         if (phi < 0)
             phi += Pi2;
-        phi = std::clamp(phi, 0.f, Pi2);
-        int phi_slice = std::clamp(int((phi / Pi2) * phi_slice_count), 0, phi_slice_count - 1);
+        phi = clamp(phi, 0.f, Pi2);
+        int phi_slice = clamp(int((phi / Pi2) * phi_slice_count), 0, phi_slice_count - 1);
 
         sphere_sectors[theta_slice][phi_slice]++;
     }

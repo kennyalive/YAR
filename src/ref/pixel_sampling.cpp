@@ -108,8 +108,8 @@ void Stratified_Pixel_Sampler::next_pixel()
                 int x = k % array_info.x_size;
                 int y = k / array_info.x_size;
 
-                float sx = std::min(float(x + u->x) * dx_array, One_Minus_Epsilon);
-                float sy = std::min(float(y + u->y) * dy_array, One_Minus_Epsilon);
+                float sx = min(float(x + u->x) * dx_array, One_Minus_Epsilon);
+                float sy = min(float(y + u->y) * dy_array, One_Minus_Epsilon);
                 *s++ = Vector2(sx, sy);
 
                 // Go to the next array2d sample for the current pixel sample 'i' by jumping
@@ -133,7 +133,7 @@ void Stratified_Pixel_Sampler::next_pixel()
         for (int i = 0; i < pixel_sample_count; i++) {
             float* u = &stratified_grids[i];
             for (int x = 0; x < array_info.size; x++) {
-                *s++ = std::min(float(x + *u) * dx_array, One_Minus_Epsilon);
+                *s++ = min(float(x + *u) * dx_array, One_Minus_Epsilon);
                 u += pixel_sample_count;
             }
         }

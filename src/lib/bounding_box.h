@@ -20,13 +20,13 @@ struct Bounding_Box {
         , max_p(point) {}
 
     Bounding_Box& add_point(Vector3 point) {
-        min_p.x = std::min(min_p.x, point.x);
-        min_p.y = std::min(min_p.y, point.y);
-        min_p.z = std::min(min_p.z, point.z);
+        min_p.x = min(min_p.x, point.x);
+        min_p.y = min(min_p.y, point.y);
+        min_p.z = min(min_p.z, point.z);
 
-        max_p.x = std::max(max_p.x, point.x);
-        max_p.y = std::max(max_p.y, point.y);
-        max_p.z = std::max(max_p.z, point.z);
+        max_p.x = max(max_p.x, point.x);
+        max_p.y = max(max_p.y, point.y);
+        max_p.z = max(max_p.z, point.z);
         return *this;
     }
 
@@ -86,25 +86,25 @@ struct Bounding_Box {
 
     static Bounding_Box compute_union(const Bounding_Box& bounds, const Bounding_Box& bounds2) {
         return Bounding_Box(
-            Vector3(std::min(bounds.min_p.x, bounds2.min_p.x),
-                   std::min(bounds.min_p.y, bounds2.min_p.y),
-                   std::min(bounds.min_p.z, bounds2.min_p.z)),
+            Vector3(min(bounds.min_p.x, bounds2.min_p.x),
+                   min(bounds.min_p.y, bounds2.min_p.y),
+                   min(bounds.min_p.z, bounds2.min_p.z)),
 
-            Vector3(std::max(bounds.max_p.x, bounds2.max_p.x),
-                   std::max(bounds.max_p.y, bounds2.max_p.y),
-                   std::max(bounds.max_p.z, bounds2.max_p.z)));
+            Vector3(max(bounds.max_p.x, bounds2.max_p.x),
+                   max(bounds.max_p.y, bounds2.max_p.y),
+                   max(bounds.max_p.z, bounds2.max_p.z)));
     }
 
     static Bounding_Box compute_intersection(const Bounding_Box& bounds, const Bounding_Box& bounds2) {
         Vector3 min_p;
-        min_p.x = std::max(bounds.min_p.x, bounds2.min_p.x);
-        min_p.y = std::max(bounds.min_p.y, bounds2.min_p.y);
-        min_p.z = std::max(bounds.min_p.z, bounds2.min_p.z);
+        min_p.x = max(bounds.min_p.x, bounds2.min_p.x);
+        min_p.y = max(bounds.min_p.y, bounds2.min_p.y);
+        min_p.z = max(bounds.min_p.z, bounds2.min_p.z);
 
         Vector3 max_p;
-        max_p.x = std::min(bounds.max_p.x, bounds2.max_p.x);
-        max_p.y = std::min(bounds.max_p.y, bounds2.max_p.y);
-        max_p.z = std::min(bounds.max_p.z, bounds2.max_p.z);
+        max_p.x = min(bounds.max_p.x, bounds2.max_p.x);
+        max_p.y = min(bounds.max_p.y, bounds2.max_p.y);
+        max_p.z = min(bounds.max_p.z, bounds2.max_p.z);
 
         return Bounding_Box(min_p, max_p);
     }
@@ -133,8 +133,8 @@ struct Bounds2i {
 
 inline Bounds2i intersect_bounds(const Bounds2i& a, const Bounds2i& b) {
     return Bounds2i {
-        Vector2i{ std::max(a.p0.x, b.p0.x), std::max(a.p0.y, b.p0.y) },
-        Vector2i{ std::min(a.p1.x, b.p1.x), std::min(a.p1.y, b.p1.y) }
+        Vector2i{ max(a.p0.x, b.p0.x), max(a.p0.y, b.p0.y) },
+        Vector2i{ min(a.p1.x, b.p1.x), min(a.p1.y, b.p1.y) }
     };
 }
 

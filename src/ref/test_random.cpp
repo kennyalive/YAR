@@ -139,7 +139,7 @@ void test_random_float() {
     for (int i = 0; i < n; i++) {
         float f = rng.get_float();
         ASSERT(f >= 0 && f < 1.f);
-        int bucket_index = std::min(int(f * bucket_count), int(bucket_count - 1));
+        int bucket_index = min(int(f * bucket_count), int(bucket_count - 1));
         buckets[bucket_index]++;
     }
 

@@ -26,8 +26,8 @@ void GPU_Scene::load(const Scene& scene)
         for (const Triangle_Mesh& mesh : scene.geometries.triangle_meshes) {
             const uint64_t vertex_size = (uint64_t)mesh.vertices.size() * sizeof(GPU_Vertex);
             const uint64_t index_size = (uint64_t)mesh.indices.size() * sizeof(uint32_t);
-            max_mesh_vertex_size = std::max(max_mesh_vertex_size, vertex_size);
-            max_mesh_index_size = std::max(max_mesh_index_size, index_size);
+            max_mesh_vertex_size = max(max_mesh_vertex_size, vertex_size);
+            max_mesh_index_size = max(max_mesh_index_size, index_size);
             total_mesh_vertex_size += vertex_size;
             total_mesh_index_size += index_size;
         }

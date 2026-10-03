@@ -16,7 +16,7 @@ ColorRGB schlick_fresnel(const ColorRGB& R0, float cos_theta_i)
 
 float dielectric_fresnel(float cos_theta_i, float eta)
 {
-    cos_theta_i = std::min(std::abs(cos_theta_i), 1.f);
+    cos_theta_i = min(std::abs(cos_theta_i), 1.f);
     float sin_theta_i = std::sqrt(1.f - cos_theta_i * cos_theta_i);
     float sin_theta_t = (1.f / eta) * sin_theta_i;
     if (sin_theta_t >= 1.f) {
@@ -38,7 +38,7 @@ float dielectric_fresnel(float cos_theta_i, float eta)
 
 ColorRGB conductor_fresnel(float cos_theta_i, float eta_i, const ColorRGB& eta_t, const ColorRGB& k_t)
 {
-    cos_theta_i = std::abs(std::clamp(cos_theta_i, -1.f, 1.f));
+    cos_theta_i = std::abs(clamp(cos_theta_i, -1.f, 1.f));
     float cos_theta_i2 = cos_theta_i * cos_theta_i;
     float sin_theta_i2 = 1.f - cos_theta_i2;
 
@@ -179,7 +179,7 @@ float GGX_Distribution::D(const Vector3& wh, const Vector3& n, float alpha)
 
 float GGX_Distribution::D_anisotropic(const Vector3& wh_local, float alpha_x, float alpha_y)
 {
-    float cos_theta = std::clamp(wh_local.z, -1.f, 1.f);
+    float cos_theta = clamp(wh_local.z, -1.f, 1.f);
     float cos2_theta = cos_theta * cos_theta;
     float sin2_theta = 1.f - cos2_theta;
 
@@ -195,7 +195,7 @@ static float GGX_lambda(const Vector3& v, const Vector3& n, float alpha)
 {
     float cos_theta = dot(v, n);
     float cos2_theta = cos_theta * cos_theta;
-    float tan2_theta = std::max(0.f, (1.f - cos2_theta) / cos2_theta); // could be Infinity, that's fine
+    float tan2_theta = max(0.f, (1.f - cos2_theta) / cos2_theta); // could be Infinity, that's fine
 
     float lambda = 0.5f * (-1.f + std::sqrt(1.f + alpha * alpha * tan2_theta));
     return lambda;
@@ -203,7 +203,7 @@ static float GGX_lambda(const Vector3& v, const Vector3& n, float alpha)
 
 static float GGX_lambda_anisotropic(const Vector3& v_local, float alpha_x, float alpha_y)
 {
-    float cos_theta = std::clamp(v_local.z, -1.f, 1.f);
+    float cos_theta = clamp(v_local.z, -1.f, 1.f);
     float cos2_theta = cos_theta * cos_theta;
     float sin2_theta = 1.f - cos2_theta;
     float tan2_theta = sin2_theta / cos2_theta; // could be Infinity, that's fine
@@ -239,7 +239,7 @@ float GGX_Distribution::G1_anisotropic(const Vector3& v_local, float alpha_x, fl
 
 static float pbrt3_roughness_to_alpha(float roughness)
 {
-    roughness = std::max(roughness, 1e-3f);
+    roughness = max(roughness, 1e-3f);
     float x = std::log(roughness);
     float alpha =
         1.621420000f +

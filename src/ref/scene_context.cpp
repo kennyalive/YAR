@@ -52,7 +52,7 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
         // Start kdtree build threads.
         {
             int thread_count = logical_processor_count();
-            thread_count = std::min(thread_count, (int)geometry_datas.size());
+            thread_count = min(thread_count, (int)geometry_datas.size());
 
             std::vector<std::jthread> threads;
             threads.reserve(thread_count - 1);

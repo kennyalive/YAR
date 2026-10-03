@@ -192,7 +192,7 @@ uint64_t KdTree::get_allocated_memory_size() const
 int KdTree::get_max_depth_limit(uint32_t primitive_count)
 {
     int depth = std::lround(8.0 + 1.3 * std::floor(std::log2(primitive_count)));
-    return std::min(depth, max_traversal_depth);
+    return min(depth, max_traversal_depth);
 }
 
 uint64_t KdTree::compute_triangle_mesh_hash(const Triangle_Mesh& mesh)

@@ -152,16 +152,16 @@ static void clamp_pixel_values(std::vector<ColorRGB>& pixels, bool is_hdr_image)
 {
     if (is_hdr_image) {
         for (ColorRGB& p : pixels) {
-            p.r = std::max(0.f, p.r);
-            p.g = std::max(0.f, p.g);
-            p.b = std::max(0.f, p.b);
+            p.r = max(0.f, p.r);
+            p.g = max(0.f, p.g);
+            p.b = max(0.f, p.b);
         }
     }
     else {
         for (ColorRGB& p : pixels) {
-            p.r = std::clamp(p.r, 0.f, 1.f);
-            p.g = std::clamp(p.g, 0.f, 1.f);
-            p.b = std::clamp(p.b, 0.f, 1.f);
+            p.r = clamp(p.r, 0.f, 1.f);
+            p.g = clamp(p.g, 0.f, 1.f);
+            p.b = clamp(p.b, 0.f, 1.f);
         }
     }
 }
@@ -179,8 +179,8 @@ static Image generate_mip_level_with_separable_filter(const Image& base_image, i
     ASSERT(filter != Filter_Type::box);
 
     ASSERT(mip_level_to_generate >= 1);
-    const int mip_width = std::max(1, base_image.width >> mip_level_to_generate);
-    const int mip_height = std::max(1, base_image.height >> mip_level_to_generate);
+    const int mip_width = max(1, base_image.width >> mip_level_to_generate);
+    const int mip_height = max(1, base_image.height >> mip_level_to_generate);
 
     // Filter's pixel footprint is computed based on the fact that the texels
     // from mip level >= 1 are mapped to integer coordinates of the base mip
@@ -209,7 +209,7 @@ static Image generate_mip_level_with_separable_filter(const Image& base_image, i
             for (int x = 0; x < mip_width; x++, filter_start_x += width_ratio) {
                 ColorRGB& t = temp[y*mip_width + x];
                 for (int k = 0; k < filter_pixel_count; k++)
-                    t += weights[k] * base_image.data[y*base_image.width + std::clamp(filter_start_x + k, 0, base_image.width - 1)];
+                    t += weights[k] * base_image.data[y*base_image.width + clamp(filter_start_x + k, 0, base_image.width - 1)];
             }
         }
     }
@@ -222,7 +222,7 @@ static Image generate_mip_level_with_separable_filter(const Image& base_image, i
             for (int x = 0; x < mip_width; x++) {
                 ColorRGB& t = result.data[y*mip_width + x];
                 for (int k = 0; k < filter_pixel_count; k++)
-                    t += weights[k] * temp[std::clamp(filter_start_y + k, 0, base_image.height - 1)*mip_width + x];
+                    t += weights[k] * temp[clamp(filter_start_y + k, 0, base_image.height - 1)*mip_width + x];
             }
         }
     }
@@ -232,8 +232,8 @@ static Image generate_mip_level_with_separable_filter(const Image& base_image, i
 
 static Image generate_next_mip_level_with_box_filter(const Image& image) {
     Image result(
-        std::max(1, image.width >> 1),
-        std::max(1, image.height >> 1)
+        max(1, image.width >> 1),
+        max(1, image.height >> 1)
     );
     if (image.width == 1 || image.height == 1) {
         for (int i = 0; i < int(image.data.size()); i += 2) {
@@ -273,7 +273,7 @@ void Image_Texture::initialize_from_file(const String& image_path, const Image_T
     // Allocate mip array.
     int mip_count = 1;
     if (params.generate_mips) {
-        uint32_t max_size = uint32_t(std::max(base_mip.width, base_mip.height));
+        uint32_t max_size = uint32_t(max(base_mip.width, base_mip.height));
         mip_count = log2_int(round_up_to_power_of_2(max_size)) + 1;
     }
     mips.resize(mip_count);
@@ -341,7 +341,7 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool is_hdr_i
             for (int x = 0; x < new_width; x++) {
                 ColorRGB& t = texels[y*new_width + x];
                 for (int k = 0; k < 4; k++) {
-                    int src_pixel_x = std::clamp(rw[x].first_pixel + k, 0, mips[0].width - 1);
+                    int src_pixel_x = clamp(rw[x].first_pixel + k, 0, mips[0].width - 1);
                     t += rw[x].pixel_weight[k] * mips[0].data[y * mips[0].width + src_pixel_x];
                 }
                 // Filters with negative regions can produce negative color components.
@@ -361,7 +361,7 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool is_hdr_i
             for (int y = 0; y < new_height; y++) {
                 ColorRGB& t = texels[y*mips[0].width + x];
                 for (int k = 0; k < 4; k++) {
-                    int src_pixel_y = std::clamp(rw[y].first_pixel + k, 0, mips[0].height - 1);
+                    int src_pixel_y = clamp(rw[y].first_pixel + k, 0, mips[0].height - 1);
                     t += rw[y].pixel_weight[k] * mips[0].data[src_pixel_y * mips[0].width + x];
                 }
                 // Filters with negative regions can produce negative color components.
@@ -417,8 +417,8 @@ inline ColorRGB get_texel_repeat(const Image& image, int x, int y) {
 }
 
 inline ColorRGB get_texel_clamp(const Image& image, int x, int y) {
-    x = std::clamp(x, 0, image.width - 1);
-    y = std::clamp(y, 0, image.height - 1);
+    x = clamp(x, 0, image.width - 1);
+    y = clamp(y, 0, image.height - 1);
     return image.data[y * image.width + x];
 }
 
@@ -483,13 +483,13 @@ ColorRGB Image_Texture::sample_bilinear(const Vector2& uv, int mip_level, Wrap_M
 }
 
 ColorRGB Image_Texture::sample_trilinear(const Vector2& uv, float lod, Wrap_Mode wrap_mode) const {
-    lod = std::clamp(lod, 0.f, float(mips.size() - 1));
+    lod = clamp(lod, 0.f, float(mips.size() - 1));
 
     float lod_floor;
     float t = std::modf(lod, &lod_floor);
 
     int level0 = int(lod_floor);
-    int level1 = std::min(level0 + 1, int(mips.size() - 1));
+    int level1 = min(level0 + 1, int(mips.size() - 1));
 
     ColorRGB mip0_sample = sample_bilinear(uv, level0, wrap_mode);
     ColorRGB mip1_sample = sample_bilinear(uv, level1, wrap_mode);
@@ -600,7 +600,7 @@ ColorRGB Image_Texture::sample_EWA(Vector2 uv, Vector2 uv_axis1, Vector2 uv_axis
         uv_axis2 *= scale;
     }
 
-    const float lod = std::max(0.f, int(mips.size()) - 1 + std::log2(minor_length));
+    const float lod = max(0.f, int(mips.size()) - 1 + std::log2(minor_length));
     float lod_floor;
     float t = std::modf(lod, &lod_floor);
 

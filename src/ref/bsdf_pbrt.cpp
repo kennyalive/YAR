@@ -167,7 +167,7 @@ ColorRGB Pbrt3_Translucent_BSDF::sample(Vector2 u, float u_scattering_type, cons
     float reflection_probability = max_r / (max_r + max_t);
 
     if (u_scattering_type < reflection_probability) {
-        u_scattering_type = std::min(u_scattering_type / reflection_probability, One_Minus_Epsilon);
+        u_scattering_type = min(u_scattering_type / reflection_probability, One_Minus_Epsilon);
         if (u_scattering_type < 0.5f) { // sample diffuse
             Vector3 local_dir = sample_hemisphere_cosine(u);
             *wi = local_to_world(local_dir);
@@ -182,7 +182,7 @@ ColorRGB Pbrt3_Translucent_BSDF::sample(Vector2 u, float u_scattering_type, cons
         }
     }
     else {
-        u_scattering_type = std::min((u_scattering_type - reflection_probability) / (1.f - reflection_probability), One_Minus_Epsilon);
+        u_scattering_type = min((u_scattering_type - reflection_probability) / (1.f - reflection_probability), One_Minus_Epsilon);
         if (u_scattering_type < 0.5f) { // sample diffuse
             Vector3 local_dir = -sample_hemisphere_cosine(u); // negate to get transmitted direction
             *wi = local_to_world(local_dir);
@@ -306,9 +306,9 @@ ColorRGB Pbrt3_Fourier_BSDF::evaluate(const Vector3& wo, const Vector3& wi) cons
 {
     // fourier bsdf data uses inversed incident direction comparing to our representation
     // (both incident and outgoing directions point away from the surface)
-    float cos_i = std::clamp(dot(normal, -wi), -1.f, 1.f);
+    float cos_i = clamp(dot(normal, -wi), -1.f, 1.f);
 
-    float cos_o = std::clamp(dot(normal, wo), -1.f, 1.f);
+    float cos_o = clamp(dot(normal, wo), -1.f, 1.f);
 
     auto find_index = [this](float cos_theta) -> int {
         const auto& cosines = data.zenith_angle_discretization;

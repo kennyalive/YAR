@@ -82,13 +82,13 @@ void Film::get_tile_bounds(int tile_index, Bounds2i& tile_sample_bounds, Bounds2
     int tile_y_pos = tile_index / tile_grid_size.x;
 
     tile_sample_bounds.p0 = sample_region.p0 + Vector2i{ tile_x_pos * Tile_Size, tile_y_pos * Tile_Size };
-    tile_sample_bounds.p1.x = std::min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
-    tile_sample_bounds.p1.y = std::min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
+    tile_sample_bounds.p1.x = min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
+    tile_sample_bounds.p1.y = min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
 
-    tile_pixel_bounds.p0.x = std::max((int)std::ceil(tile_sample_bounds.p0.x - filter.radius - 0.5f), render_region.p0.x);
-    tile_pixel_bounds.p0.y = std::max((int)std::ceil(tile_sample_bounds.p0.y - filter.radius - 0.5f), render_region.p0.y);
-    tile_pixel_bounds.p1.x = std::min((int)std::floor(tile_sample_bounds.p1.x + filter.radius - 0.5f) + 1, render_region.p1.x);
-    tile_pixel_bounds.p1.y = std::min((int)std::floor(tile_sample_bounds.p1.y + filter.radius - 0.5f) + 1, render_region.p1.y);
+    tile_pixel_bounds.p0.x = max((int)std::ceil(tile_sample_bounds.p0.x - filter.radius - 0.5f), render_region.p0.x);
+    tile_pixel_bounds.p0.y = max((int)std::ceil(tile_sample_bounds.p0.y - filter.radius - 0.5f), render_region.p0.y);
+    tile_pixel_bounds.p1.x = min((int)std::floor(tile_sample_bounds.p1.x + filter.radius - 0.5f) + 1, render_region.p1.x);
+    tile_pixel_bounds.p1.y = min((int)std::floor(tile_sample_bounds.p1.y + filter.radius - 0.5f) + 1, render_region.p1.y);
 }
 
 void Film::merge_tile(const Film_Tile& tile)
@@ -116,9 +116,9 @@ Image Film::get_image() const
             Color_Black : film_pixel.color_sum / film_pixel.weight_sum;
 
         // handle out-of-gamut values
-        resolved_color.r = std::max(0.f, resolved_color.r);
-        resolved_color.g = std::max(0.f, resolved_color.g);
-        resolved_color.b = std::max(0.f, resolved_color.b);
+        resolved_color.r = max(0.f, resolved_color.r);
+        resolved_color.g = max(0.f, resolved_color.g);
+        resolved_color.b = max(0.f, resolved_color.b);
 
         *image_pixel++ = resolved_color;
     }
@@ -134,9 +134,9 @@ float Film_Filter::evaluate(Vector2 p) const
     case Type::box:
         return 1.f;
     case Type::gaussian:
-        return std::max(0.f, std::exp(-alpha * p.length_squared()) - zero_level);
+        return max(0.f, std::exp(-alpha * p.length_squared()) - zero_level);
     case Type::triangle:
-        return std::max(0.f, radius - std::abs(p.x)) * std::max(0.f, radius - std::abs(p.y));
+        return max(0.f, radius - std::abs(p.x)) * max(0.f, radius - std::abs(p.y));
     }
     ASSERT(!"Film_Filter::evaluate: Unknown filter type");
     return 0.f;

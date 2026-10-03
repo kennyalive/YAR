@@ -10,7 +10,7 @@ constexpr uint32_t max_sampler_descriptor_data_size = 8 * 1024;
 void Descriptor_Heap::create(uint32_t descriptor_data_size)
 {
     const auto& props = vk.descriptor_heap_properties;
-    const uint32_t resource_reserved_region_alignment = (uint32_t)std::max(
+    const uint32_t resource_reserved_region_alignment = (uint32_t)max(
         props.bufferDescriptorAlignment,
         props.imageDescriptorAlignment
     );

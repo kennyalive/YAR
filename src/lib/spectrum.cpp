@@ -14,8 +14,8 @@ static float compute_average_value_for_range(const float* lambdas, const float* 
 
     float integral = 0.f;
 
-    range_start = std::max(range_start, lambdas[0]);
-    range_end = std::min(range_end, lambdas[n-1]);
+    range_start = max(range_start, lambdas[0]);
+    range_end = min(range_end, lambdas[n-1]);
 
     // Get the first sample that starts contributing to the result.
     int i = 0;

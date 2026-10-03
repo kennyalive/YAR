@@ -79,7 +79,7 @@ Vector3 uniform_sample_triangle_baricentrics(Vector2 u)
 void generate_stratified_sequence_1d(RNG& rng, int n, float* result) {
     float dx = 1.f / float(n);
     for (int x = 0; x < n; x++) {
-        *result++ = std::min((float(x) + rng.get_float()) * dx, One_Minus_Epsilon);
+        *result++ = min((float(x) + rng.get_float()) * dx, One_Minus_Epsilon);
     }
 }
 
@@ -89,8 +89,8 @@ void generate_stratified_sequence_2d(RNG& rng, int nx, int ny, Vector2* result) 
     float* f = &result->x;
     for (int y = 0; y < ny; y++) {
         for (int x = 0; x < nx; x++) {
-            *f++ = std::min((float(x) + rng.get_float()) * dx, One_Minus_Epsilon);
-            *f++ = std::min((float(y) + rng.get_float()) * dy, One_Minus_Epsilon);
+            *f++ = min((float(x) + rng.get_float()) * dx, One_Minus_Epsilon);
+            *f++ = min((float(y) + rng.get_float()) * dy, One_Minus_Epsilon);
         }
     }
 }
@@ -141,9 +141,9 @@ float sample_from_CDF(float u, const float* cdf, int n, float interval_length, f
         *interval_index = k;
     }
     if (remapped_u) {
-        *remapped_u = std::min(interval_fraction, One_Minus_Epsilon);
+        *remapped_u = min(interval_fraction, One_Minus_Epsilon);
     }
-    return std::min(x, One_Minus_Epsilon);
+    return min(x, One_Minus_Epsilon);
 }
 
 void Distribution_1D::initialize(const float* values, int n)
@@ -327,10 +327,10 @@ Vector3 GGX_sample_visible_microfacet_normal(Vector2 u, const Vector3& wo_local,
     t2 = (1.f - s) * std::sqrt(1.f - t1 * t1) + s * t2;
 
     // Reprojection onto hemisphere
-    Vector3 nh = t1 * T1 + t2 * T2 + std::sqrt(std::max(0.f, 1.f - t1 * t1 - t2 * t2)) * N;
+    Vector3 nh = t1 * T1 + t2 * T2 + std::sqrt(max(0.f, 1.f - t1 * t1 - t2 * t2)) * N;
 
     // Transforming the normal back to the ellipsoid configuration
-    Vector3 wh_local = Vector3(alpha_x * nh.x, alpha_y * nh.y, std::max(1e-6f, nh.z)).normalized();
+    Vector3 wh_local = Vector3(alpha_x * nh.x, alpha_y * nh.y, max(1e-6f, nh.z)).normalized();
     return wh_local;
 }
 
@@ -342,7 +342,7 @@ float GGX_visible_microfacet_normal_pdf(const Vector3& wo, const Vector3& wh, co
     float G1 = GGX_Distribution::G1(wo, n, alpha);
     float D = GGX_Distribution::D(wh, n, alpha);
 
-    float wh_pdf = G1 * D * std::max(0.f, dot(wo, wh)) / dot(wo, n);
+    float wh_pdf = G1 * D * max(0.f, dot(wo, wh)) / dot(wo, n);
     return wh_pdf;
 }
 
@@ -354,6 +354,6 @@ float GGX_visible_microfacet_normal_pdf_anisotropic(const Vector3& wo_local, con
     float G1 = GGX_Distribution::G1_anisotropic(wo_local, alpha_x, alpha_y);
     float D = GGX_Distribution::D_anisotropic(wh_local, alpha_x, alpha_y);
 
-    float wh_pdf = G1 * D * std::max(0.f, dot(wo_local, wh_local)) / wo_local.z;
+    float wh_pdf = G1 * D * max(0.f, dot(wo_local, wh_local)) / wo_local.z;
     return wh_pdf;
 }

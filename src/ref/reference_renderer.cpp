@@ -61,7 +61,7 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
         // Start loading threads.
         {
             int thread_count = logical_processor_count();
-            thread_count = std::min(thread_count, (int)scene.texture_descriptors.size());
+            thread_count = min(thread_count, (int)scene.texture_descriptors.size());
 
             std::vector<std::jthread> threads;
             threads.reserve(thread_count - 1);
@@ -94,8 +94,8 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
         ASSERT(rt_config.max_light_bounces >= 0);
         const int sample_1d_count_per_bounce = 4; // scattering type + light index selection + scattering type for new direction + path termination probability
         const int sample_2d_count_per_bounce = 3; // light sample + bsdf sample + bsdf sample for new direction
-        sample_1d_count = std::min(10, rt_config.max_light_bounces) * sample_1d_count_per_bounce;
-        sample_2d_count = std::min(10, rt_config.max_light_bounces) * sample_2d_count_per_bounce;
+        sample_1d_count = min(10, rt_config.max_light_bounces) * sample_1d_count_per_bounce;
+        sample_2d_count = min(10, rt_config.max_light_bounces) * sample_2d_count_per_bounce;
     }
     pixel_sampler_config.init(rt_config.x_pixel_sample_count, rt_config.y_pixel_sample_count, sample_1d_count, sample_2d_count);
 
@@ -263,7 +263,7 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
         };
         float time;
         read(&time, sizeof(time));
-        checkpoint.previous_sessions_time = std::max(checkpoint.previous_sessions_time, time);
+        checkpoint.previous_sessions_time = max(checkpoint.previous_sessions_time, time);
         read(&tile_data.tile_variance_accumulator, sizeof(double));
         read(&tile_data.tile.pixel_bounds, sizeof(Bounds2i));
         int pixel_count = tile_data.tile.pixel_bounds.area();
@@ -365,7 +365,7 @@ static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int t
                 ASSERT(radiance.is_finite());
 
                 float max_component_limit = scene_ctx.raytracer_config.max_rgb_component_value_of_film_sample;
-                float max_component = std::max(radiance.r, std::max(radiance.g, radiance.b));
+                float max_component = max(radiance.r, max(radiance.g, radiance.b));
                 if (max_component > max_component_limit)
                     radiance *= (max_component_limit / max_component);
                 if (scene_ctx.raytracer_config.film_radiance_scale != 1.f)
@@ -383,7 +383,7 @@ static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int t
                 int n = thread_ctx.pixel_sampler.config->get_samples_per_pixel();
                 double pixel_variance = (luminance_sq_sum - luminance_sum * luminance_sum / n) / (n * (n - 1));
                 // rounding errors might introduce negative values, strictly mathematically tile_variance can't be negative
-                pixel_variance = std::max(0.0, pixel_variance);
+                pixel_variance = max(0.0, pixel_variance);
                 *tile_variance_accumulator += pixel_variance;
             }
         }
@@ -527,7 +527,7 @@ Image render_scene(const Scene_Context& scene_ctx, double* variance_estimate, fl
     //
     // Render tiles. The main (this) thread also runs rendering job.
     //
-    const int thread_count = std::min(scene_ctx.thread_count, (int)tiles_to_render.size());
+    const int thread_count = min(scene_ctx.thread_count, (int)tiles_to_render.size());
     if (thread_count > 0) {
         std::vector<std::jthread> threads;
         threads.reserve(thread_count - 1);

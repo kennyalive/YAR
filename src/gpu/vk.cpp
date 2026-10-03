@@ -392,7 +392,7 @@ void vk_create_swapchain(bool vsync)
 
     // determine present mode and swapchain image count
     VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
-    uint32_t min_image_count = std::max(2u, surface_caps.minImageCount);
+    uint32_t min_image_count = max(2u, surface_caps.minImageCount);
 
     if (!vsync) {
         uint32_t present_mode_count;
@@ -403,17 +403,17 @@ void vk_create_swapchain(bool vsync)
         for (auto pm : present_modes) {
             if (pm == VK_PRESENT_MODE_MAILBOX_KHR) {
                 present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
-                min_image_count = std::max(3u, surface_caps.minImageCount);
+                min_image_count = max(3u, surface_caps.minImageCount);
                 break; // mailbox is preferred mode
             }
             if (pm == VK_PRESENT_MODE_IMMEDIATE_KHR) {
                 present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-                min_image_count = std::max(2u, surface_caps.minImageCount);
+                min_image_count = max(2u, surface_caps.minImageCount);
             }
         }
     }
     if (surface_caps.maxImageCount > 0) {
-        min_image_count = std::min(min_image_count, surface_caps.maxImageCount);
+        min_image_count = min(min_image_count, surface_caps.maxImageCount);
     }
 
     // create swap chain
@@ -621,7 +621,7 @@ Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate
     uint32_t mip_levels = 1;
     if (generate_mipmaps) {
         mip_levels = 0;
-        for (int k = std::max(width, height); k > 0; k >>= 1)
+        for (int k = max(width, height); k > 0; k >>= 1)
             mip_levels++;
     }
 
@@ -723,8 +723,8 @@ Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate
                 blit.srcSubresource.mipLevel = i - 1;
                 blit.srcOffsets[1] = VkOffset3D { w, h, 1 };
 
-                w = std::max(w >> 1, 1);
-                h = std::max(h >> 1, 1);
+                w = max(w >> 1, 1);
+                h = max(h >> 1, 1);
 
                 blit.dstSubresource.mipLevel = i;
                 blit.dstOffsets[1] = VkOffset3D { w, h, 1 };

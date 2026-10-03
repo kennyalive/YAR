@@ -262,11 +262,11 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
             is_render_region_specified = true;
         }
         else if (opt == OPT_RENDER_REGION_W) {
-            render_region_size.x = std::max(1, atoi(ctx.current_opt_arg));
+            render_region_size.x = max(1, atoi(ctx.current_opt_arg));
             is_render_region_specified = true;
         }
         else if (opt == OPT_RENDER_REGION_H) {
-            render_region_size.y = std::max(1, atoi(ctx.current_opt_arg));
+            render_region_size.y = max(1, atoi(ctx.current_opt_arg));
             is_render_region_specified = true;
         }
         else if (opt == OPT_DO_NOT_CROP_IMAGE_BY_RENDER_REGION) {

@@ -61,7 +61,7 @@ static ColorRGB direct_lighting_from_spot_light(const Scene_Context& scene_ctx, 
         return Color_Black; // outside of light cone
 
     float penumbra_attenuation = 1.f;
-    float penumbra_cos = std::cos(std::max(0.f, light.cone_angle - light.penumbra_angle));
+    float penumbra_cos = std::cos(max(0.f, light.cone_angle - light.penumbra_angle));
     if (wi_cos < penumbra_cos) {
         float k = (wi_cos - cone_cos) / (penumbra_cos - cone_cos);
         penumbra_attenuation = (k * k) * (k * k);

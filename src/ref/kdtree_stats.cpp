@@ -24,7 +24,7 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
             else {
                 primitive_per_leaf_accumulated += pc;
                 stats.leaf_count++;
-                stats.leaf_primitives_max = std::max(stats.leaf_primitives_max, pc);
+                stats.leaf_primitives_max = max(stats.leaf_primitives_max, pc);
                 if (pc <= 16)
                     stats.leaves_with_normal_primitive_count[pc - 1]++;
                 else if (pc <= 32)
@@ -115,6 +115,16 @@ std::vector<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32
     return path;
 }
 
+static bool is_strictly_increasing(Span<const uint32_t> indices)
+{
+    for (size_t i = 1; i < indices.size; i++) {
+        if (indices[i - 1] >= indices[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static std::vector<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree, uint32_t node_index,
     std::unordered_map<uint32_t, uint32_t>& node_index_to_primitive_count)
 {
@@ -141,8 +151,7 @@ static std::vector<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree,
 
         node_index_to_primitive_count[node_index] = (uint32_t)subtree_primitive_indices.size();
     }
-    ASSERT(std::is_sorted(subtree_primitive_indices.begin(), subtree_primitive_indices.end()));
-    ASSERT(std::adjacent_find(subtree_primitive_indices.begin(), subtree_primitive_indices.end()) == subtree_primitive_indices.end());
+    ASSERT(is_strictly_increasing(subtree_primitive_indices));
     return subtree_primitive_indices;
 }
 
@@ -235,7 +244,7 @@ void KdTree_Stats::print()
 
     float leaf_nodes_percentage = get_percentage(leaf_count, node_count);
     float empty_nodes_percentage = get_percentage(empty_node_count, node_count);
-    float interior_nodes_percentage = std::max(0.f, 100.f - leaf_nodes_percentage - empty_nodes_percentage);
+    float interior_nodes_percentage = max(0.f, 100.f - leaf_nodes_percentage - empty_nodes_percentage);
 
     float max_depth_leaves_percentage = get_percentage(max_depth_leaf_count, leaf_count);
     float leaves_one_primitive_percentage = get_percentage(leaves_with_normal_primitive_count[0], leaf_count);
