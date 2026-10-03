@@ -78,7 +78,10 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
         stats.max_depth_leaf_primitives_mean = float(double(max_depth_primitive_count_accumulated) / stats.max_depth_leaf_count);
 
     // Leaf depth mean/stddev.
-    uint64_t leaf_depth_accumulated = std::accumulate(leaf_depth_values.cbegin(), leaf_depth_values.cend(), uint64_t(0));
+    uint64_t leaf_depth_accumulated = 0;
+    for (uint8_t depth : leaf_depth_values) {
+        leaf_depth_accumulated += depth;
+    }
     stats.leaf_depth_mean = float(double(leaf_depth_accumulated) / stats.leaf_count);
     double accum = 0.0;
     for (uint8_t depth : leaf_depth_values) {

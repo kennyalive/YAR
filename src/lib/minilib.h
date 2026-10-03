@@ -231,6 +231,13 @@ T&& rvalue(T& value)
     return static_cast<T&&>(value);
 }
 
+// Uses a builtin supported by MSVC, GCC and Clang (including Apple Clang)
+template <typename To, typename From>
+To bit_cast(const From& value)
+{
+    return __builtin_bit_cast(To, value);
+}
+
 template <typename T>
 T min(T a, T b)
 {

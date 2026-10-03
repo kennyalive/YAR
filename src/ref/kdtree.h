@@ -33,7 +33,7 @@ struct KdNode {
         ASSERT(above_child < max_node_count);
 
         word0 = uint32_t(axis) | (above_child << 2);
-        word1 = std::bit_cast<uint32_t>(split);
+        word1 = bit_cast<uint32_t>(split);
     }
 
     void init_leaf(uint32_t primitive_count) {
@@ -68,7 +68,7 @@ struct KdNode {
 
     float get_split_position() const {
         ASSERT(!is_leaf());
-        return std::bit_cast<float>(word1);
+        return bit_cast<float>(word1);
     }
 
     uint32_t get_above_child() const {

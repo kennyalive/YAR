@@ -13,7 +13,7 @@ enum class Light_Type : uint32_t {
     diffuse_triangle_mesh,
     environment_map,
     count,
-    null_light = std::numeric_limits<uint32_t>::max()
+    null_light = U32_Max
 };
 
 struct Light_Handle {

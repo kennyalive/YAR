@@ -2,6 +2,7 @@
 
 #include "random.h"
 #include "vector.h"
+#include <math.h>
 
 struct Ray;
 struct RNG;
@@ -13,7 +14,9 @@ constexpr float Pi_Inv = 1.f / Pi;
 constexpr float Pi2_Inv = 1.f / Pi2;
 constexpr float One_Minus_Epsilon = 0x1.fffffep-1;
 
-constexpr float Infinity = std::numeric_limits<float>::infinity();
+constexpr float Infinity = INFINITY;
+constexpr uint32_t U32_Max = UINT32_MAX;
+constexpr uint64_t U64_Max = UINT64_MAX;
 
 inline bool is_finite(float f)
 {

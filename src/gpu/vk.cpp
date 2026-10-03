@@ -987,7 +987,7 @@ VkPipeline vk_create_compute_pipeline(VkShaderModule compute_shader,
 
 void vk_begin_frame()
 {
-    VK_CHECK(vkWaitForFences(vk.device, 1, &vk.frame_fence[vk.frame_index], VK_FALSE, std::numeric_limits<uint64_t>::max()));
+    VK_CHECK(vkWaitForFences(vk.device, 1, &vk.frame_fence[vk.frame_index], VK_FALSE, UINT64_MAX));
     VK_CHECK(vkResetFences(vk.device, 1, &vk.frame_fence[vk.frame_index]));
     vkResetCommandPool(vk.device, vk.command_pools[vk.frame_index], 0);
     vk.command_buffer = vk.command_buffers[vk.frame_index];

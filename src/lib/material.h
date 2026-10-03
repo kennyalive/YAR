@@ -17,7 +17,7 @@ enum class Material_Type : uint32_t {
     pbrt3_translucent,
     pbrt3_fourier,
     count,
-    null_material = std::numeric_limits<uint32_t>::max()
+    null_material = U32_Max
 };
 
 // Returns false for the pure delta material, otherwise returns true.

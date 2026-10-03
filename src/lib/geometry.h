@@ -5,7 +5,7 @@
 enum class Geometry_Type : uint32_t {
     triangle_mesh,
     count,
-    null_geometry = std::numeric_limits<uint32_t>::max()
+    null_geometry = U32_Max
 };
 
 struct Geometry_Handle {

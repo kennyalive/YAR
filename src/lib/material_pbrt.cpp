@@ -23,8 +23,10 @@ static_assert(sizeof(Fourier_Bsdf_Header) == 64);
 
 bool Pbrt3_Fourier_Material::load_bsdf_file()
 {
-    static_assert(std::endian::native == std::endian::little,
-        "fourier bsdf loader assumes little endian byte order");
+    // The Fourier BSDF loader assumes little-endian byte order
+    const uint32_t endian_check = 1;
+    ASSERT(*reinterpret_cast<const unsigned char*>(&endian_check) == 1);
+
     const std::array magic = { 'S', 'C', 'A', 'T', 'F', 'U', 'N' };
 
     Byte_Buffer data;

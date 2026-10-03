@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "minilib.h"
+#include <math.h>
 
 struct Vector2;
 struct Vector2i;
@@ -93,7 +94,7 @@ struct Vector3 {
 
     float length_squared() const {
         float sq_length = x*x + y*y + z*z;
-        ASSERT(sq_length != std::numeric_limits<float>::infinity());
+        ASSERT(sq_length != INFINITY);
         return sq_length;
     }
 

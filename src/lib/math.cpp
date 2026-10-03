@@ -87,20 +87,20 @@ void offset_ray_origin_in_both_directions(const Vector3& p, const Vector3& geome
 
     const Vector3i di = Vector3i(int_scale * geometric_normal);
 
-    int ix1 = std::bit_cast<int>(p.x) - di.x;
-    int ix2 = std::bit_cast<int>(p.x) + di.x;
-    p_adjusted_in_positive_direction->x = std::bit_cast<float>(p.x < 0 ? ix1 : ix2);
-    p_adjusted_in_negative_direction->x = std::bit_cast<float>(p.x < 0 ? ix2 : ix1);
+    int ix1 = bit_cast<int>(p.x) - di.x;
+    int ix2 = bit_cast<int>(p.x) + di.x;
+    p_adjusted_in_positive_direction->x = bit_cast<float>(p.x < 0 ? ix1 : ix2);
+    p_adjusted_in_negative_direction->x = bit_cast<float>(p.x < 0 ? ix2 : ix1);
 
-    int iy1 = std::bit_cast<int>(p.y) - di.y;
-    int iy2 = std::bit_cast<int>(p.y) + di.y;
-    p_adjusted_in_positive_direction->y = std::bit_cast<float>(p.y < 0 ? iy1 : iy2);
-    p_adjusted_in_negative_direction->y = std::bit_cast<float>(p.y < 0 ? iy2 : iy1);
+    int iy1 = bit_cast<int>(p.y) - di.y;
+    int iy2 = bit_cast<int>(p.y) + di.y;
+    p_adjusted_in_positive_direction->y = bit_cast<float>(p.y < 0 ? iy1 : iy2);
+    p_adjusted_in_negative_direction->y = bit_cast<float>(p.y < 0 ? iy2 : iy1);
 
-    int iz1 = std::bit_cast<int>(p.z) - di.z;
-    int iz2 = std::bit_cast<int>(p.z) + di.z;
-    p_adjusted_in_positive_direction->z = std::bit_cast<float>(p.z < 0 ? iz1 : iz2);
-    p_adjusted_in_negative_direction->z = std::bit_cast<float>(p.z < 0 ? iz2 : iz1);
+    int iz1 = bit_cast<int>(p.z) - di.z;
+    int iz2 = bit_cast<int>(p.z) + di.z;
+    p_adjusted_in_positive_direction->z = bit_cast<float>(p.z < 0 ? iz1 : iz2);
+    p_adjusted_in_negative_direction->z = bit_cast<float>(p.z < 0 ? iz2 : iz1);
 
     if (std::abs(p.x) < origin) {
         float dx = float_scale * geometric_normal.x;
