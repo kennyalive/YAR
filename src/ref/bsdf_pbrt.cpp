@@ -1,5 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
+#include "lib/minilib_extra.h"
 #include "bsdf.h"
 #include "bsdf_pbrt.h"
 
@@ -312,9 +313,9 @@ ColorRGB Pbrt3_Fourier_BSDF::evaluate(const Vector3& wo, const Vector3& wi) cons
 
     auto find_index = [this](float cos_theta) -> int {
         const auto& cosines = data.zenith_angle_discretization;
-        auto it = std::lower_bound(cosines.begin(), cosines.end(), cos_theta);
-        ASSERT(it != cosines.end());
-        return int(it - cosines.begin());
+        size_t index = find_first_greater_or_equal(Span<const float>(cosines), cos_theta);
+        ASSERT(index != cosines.size());
+        return int(index);
         };
     int index_i = find_index(cos_i);
     int index_o = find_index(cos_o);

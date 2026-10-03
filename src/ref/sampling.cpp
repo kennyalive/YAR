@@ -6,6 +6,7 @@
 #include "scattering.h"
 
 #include "lib/math.h"
+#include "lib/minilib_extra.h"
 #include "lib/random.h"
 
 float cosine_hemisphere_pdf(float theta_cos)
@@ -101,11 +102,10 @@ float sample_from_CDF(float u, const float* cdf, int n, float interval_length, f
     ASSERT(n >= 1);
     ASSERT(cdf[n-1] == 1.f);
 
-    auto it = std::lower_bound(cdf, cdf + n, u);
-    ASSERT(it != cdf + n);
-    ASSERT(*it >= u); // just for clarity, it's std::lower_bound guarantee
+    int k = int(find_first_greater_or_equal(Span<const float>(cdf, n), u));
+    ASSERT(k < n);
+    ASSERT(cdf[k] >= u);
 
-    int k = int(it - cdf);
     float cdf_a = (k == 0) ? 0.f : cdf[k-1];
     float cdf_b = cdf[k];
 

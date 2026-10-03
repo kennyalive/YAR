@@ -32,7 +32,7 @@ struct Span
     Span(const Span<U>& other) : data(other.data), size(other.size) {}
 
     template <typename Container>
-    // Constrain to real containers, otherwise an unconstrained Container& matches any lvalue.
+    // Prevent this overload from being chosen when copying a Span
     requires requires(Container& container) { container.data(); container.size(); }
     Span(Container& container)
     : data(container.data()), size(container.size()) {}

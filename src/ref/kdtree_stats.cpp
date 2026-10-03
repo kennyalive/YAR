@@ -1,7 +1,7 @@
 #include "std.h"
 #include <iterator>
 #include "lib/common.h"
-#include "lib/minilib.h"
+#include "lib/minilib_extra.h"
 
 #include "kdtree_stats.h"
 #include "kdtree.h"
@@ -111,7 +111,7 @@ std::vector<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32
         path.push_back(it->second);
         it = parent_map.find(it->second);
     }
-    std::reverse(path.begin(), path.end());
+    reverse(Span<uint32_t>(path));
     return path;
 }
 
@@ -165,7 +165,12 @@ static void print_primitive_subdivisions_for_subtree(const KdTree& kdtree, const
     KdNode node = kdtree.nodes[node_index];
     if (node.is_leaf()) {
         if (node.get_primitive_count() > 0) {
-            int depth = (int)std::count(path.begin(), path.end(), ' ');
+            int depth = 0;
+            for (char c : path) {
+                if (c == ' ') {
+                    depth++;
+                }
+            }
             bool is_max_depth = (depth == KdTree::get_max_depth_limit(kdtree.get_primitive_count()));
             printf("[%c%-2d] %s\n", is_max_depth ? '*' : ' ', depth, path.data());
         }
