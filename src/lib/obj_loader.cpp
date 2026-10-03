@@ -133,7 +133,14 @@ Obj_Data load_obj(
 
     for (const tinyobj::shape_t& shape : shapes) {
         if (ignore_geometry_names) {
-            if (std::find(ignore_geometry_names->begin(), ignore_geometry_names->end(), shape.name.data()) != ignore_geometry_names->end()) {
+            bool ignore_shape = false;
+            for (const String& name : *ignore_geometry_names) {
+                if (name == shape.name.data()) {
+                    ignore_shape = true;
+                    break;
+                }
+            }
+            if (ignore_shape) {
                 continue;
             }
         }

@@ -1,5 +1,4 @@
 #include "std.h"
-#include <iterator>
 #include "lib/common.h"
 #include "lib/minilib_extra.h"
 
@@ -115,6 +114,30 @@ std::vector<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32
     return path;
 }
 
+static std::vector<uint32_t> merge_primitive_indices(Span<const uint32_t> below, Span<const uint32_t> above)
+{
+    std::vector<uint32_t> indices;
+    size_t i = 0;
+    size_t j = 0;
+    while (i < below.size && j < above.size) {
+        uint32_t index = min(below[i], above[j]);
+        indices.push_back(index);
+        if (below[i] == index) {
+            i++;
+        }
+        if (above[j] == index) {
+            j++;
+        }
+    }
+    while (i < below.size) {
+        indices.push_back(below[i++]);
+    }
+    while (j < above.size) {
+        indices.push_back(above[j++]);
+    }
+    return indices;
+}
+
 static bool is_strictly_increasing(Span<const uint32_t> indices)
 {
     for (size_t i = 1; i < indices.size; i++) {
@@ -146,9 +169,7 @@ static std::vector<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree,
         uint32_t above_node = node->get_above_child();
         auto above_primitive_indices = get_subtree_primitive_indices(kdtree, above_node, node_index_to_primitive_count);
 
-        std::set_union(below_primitive_indices.begin(), below_primitive_indices.end(),
-            above_primitive_indices.begin(), above_primitive_indices.end(), std::back_inserter(subtree_primitive_indices));
-
+        subtree_primitive_indices = merge_primitive_indices(below_primitive_indices, above_primitive_indices);
         node_index_to_primitive_count[node_index] = (uint32_t)subtree_primitive_indices.size();
     }
     ASSERT(is_strictly_increasing(subtree_primitive_indices));
