@@ -6,7 +6,7 @@
 #include "shaders/shared.slang"
 #include "lib/scene.h"
 
-void Path_Tracing::create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
+void Path_Tracing::create(const Array<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
     create_pipeline(descriptor_mappings);
 
@@ -20,7 +20,7 @@ void Path_Tracing::create(const std::vector<VkDescriptorSetAndBindingMappingEXT>
         uint32_t hit_offset = round_up(miss_offset + 2 * handle_size, base_alignment);
         uint32_t sbt_buffer_size = hit_offset + 2 * handle_size;
 
-        std::vector<uint8_t> data(sbt_buffer_size, 0);
+        Array<uint8_t> data(sbt_buffer_size, 0);
         VK_CHECK(vkGetRayTracingShaderGroupHandlesKHR(vk.device, pipeline, 0, 1, 1 * handle_size, data.data() + raygen_offset));
         VK_CHECK(vkGetRayTracingShaderGroupHandlesKHR(vk.device, pipeline, 1, 1, 1 * handle_size, data.data() + miss_offset));
         VK_CHECK(vkGetRayTracingShaderGroupHandlesKHR(vk.device, pipeline, 2, 2, 2 * handle_size, data.data() + hit_offset));
@@ -36,7 +36,7 @@ void Path_Tracing::destroy()
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
 
-void Path_Tracing::create_pipeline(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
+void Path_Tracing::create_pipeline(const Array<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
     // pipeline
     {

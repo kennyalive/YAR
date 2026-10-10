@@ -8,7 +8,7 @@ struct _EXRAttribute; // from tinyexr library
 struct Image {
     int width = 0;
     int height = 0;
-    std::vector<ColorRGB> data;
+    Array<ColorRGB> data;
 
     Image() = default;
     Image(int width, int height);
@@ -16,7 +16,7 @@ struct Image {
     bool load_from_file(const String& file_path, bool decode_srgb = false, bool* is_hdr_image = nullptr);
     void init_from_constant_value(int width, int height, const ColorRGB color);
     bool write_tga(const String& file_path) const;
-    bool write_exr(const String& file_path, bool compress_image, const std::vector<_EXRAttribute>& custom_attributes) const;
+    bool write_exr(const String& file_path, bool compress_image, const Array<_EXRAttribute>& custom_attributes) const;
 
     void extend_to_region(Vector2i size, Vector2i offset);
     void flip_horizontally();

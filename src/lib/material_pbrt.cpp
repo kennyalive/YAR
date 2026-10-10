@@ -29,15 +29,15 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
 
     const std::array magic = { 'S', 'C', 'A', 'T', 'F', 'U', 'N' };
 
-    Byte_Buffer data;
+    Array<uint8_t> data;
     if (!fs_load(bsdf_file, data)) {
         error("Failed to load BSDF file: %s", bsdf_file.data());
     }
-    const uint8_t* ptr = data.data;
+    const uint8_t* ptr = data.data();
 
-    auto read_floats = [&data, &ptr](uint32_t float_count, std::vector<float>& output) -> bool {
+    auto read_floats = [&data, &ptr](uint32_t float_count, Array<float>& output) -> bool {
         auto end = ptr + float_count * sizeof(float);
-        if (end > data.data + data.size) {
+        if (end > data.data() + data.size()) {
             return false;
         }
         output.resize(float_count);
@@ -45,9 +45,9 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
         ptr = end;
         return true;
     };
-    auto read_uints = [&data, &ptr](uint32_t uint_count, std::vector<uint32_t>& output) -> bool {
+    auto read_uints = [&data, &ptr](uint32_t uint_count, Array<uint32_t>& output) -> bool {
         auto end = ptr + uint_count * sizeof(uint32_t);
-        if (end > data.data + data.size) {
+        if (end > data.data() + data.size()) {
             return false;
         }
         output.resize(uint_count);
@@ -56,7 +56,7 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
         return true;
     };
 
-    if (data.size < sizeof(Fourier_Bsdf_Header)) {
+    if (data.size() < sizeof(Fourier_Bsdf_Header)) {
         return false;
     }
     const auto& header = *reinterpret_cast<const Fourier_Bsdf_Header*>(ptr);
@@ -86,7 +86,7 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
     if (!read_floats(header.node_count * header.node_count, cdf)) {
         return false;
     }
-    std::vector<uint32_t> offset_table;
+    Array<uint32_t> offset_table;
     if (!read_uints(header.node_count * header.node_count * 2, offset_table)) {
         return false;
     }

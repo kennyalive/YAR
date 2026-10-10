@@ -21,7 +21,7 @@ struct Geometry_Handle {
 };
 
 struct Geometries {
-    std::vector<Triangle_Mesh> triangle_meshes;
+    Array<Triangle_Mesh> triangle_meshes;
 };
 
 static_assert(sizeof(Geometry_Handle) == 8);

@@ -256,6 +256,12 @@ struct Vector2 {
     }
 };
 
+template <>
+constexpr bool can_bitwise_zero_initialize<Vector2>()
+{
+    return true;
+}
+
 constexpr Vector2 Vector2_Zero = Vector2(0.f);
 
 inline Vector2 operator+(Vector2 a, Vector2 b) {
@@ -349,6 +355,12 @@ struct Vector4 {
     }
 };
 
+template <>
+constexpr bool can_bitwise_zero_initialize<Vector4>()
+{
+    return true;
+}
+
 constexpr Vector4 Vector4_Zero = Vector4(0.f);
 
 inline Vector4 operator*(const Vector4& v, float t) {
@@ -439,3 +451,9 @@ struct Vector3i {
     Vector3i(const Vector3& v)
         : x(int(v.x)), y(int(v.y)), z(int(v.z)) {}
 };
+
+template <>
+constexpr bool can_bitwise_zero_initialize<Vector3i>()
+{
+    return true;
+}

@@ -51,7 +51,7 @@ void Descriptor_Heap_Layout::initialize()
         // Write into offset variable (e.g. instance_infos)
         *p_offset = next_buffer_descriptor_offset(resource_heap_offset);
         // Add offset to the array of all storage descriptor
-        storage_buffer_descriptor_offsets.push_back(*p_offset);
+        storage_buffer_descriptor_offsets.add(*p_offset);
     }
 
     // Accelerator descriptor has size of a buffer descriptor but uses a different descriptor type.
@@ -83,66 +83,66 @@ uint32_t Descriptor_Heap_Layout::get_total_descriptor_data_size(uint32_t project
     return first_project_image_offset + project_image_count * vk_image_descriptor_size();
 }
 
-std::vector<VkDescriptorSetAndBindingMappingEXT> Descriptor_Heap_Layout::get_descriptor_mappings() const
+Array<VkDescriptorSetAndBindingMappingEXT> Descriptor_Heap_Layout::get_descriptor_mappings() const
 {
     const VkSpirvResourceTypeFlagBitsEXT resource_type_read_only_storage = VK_SPIRV_RESOURCE_TYPE_READ_ONLY_STORAGE_BUFFER_BIT_EXT;
     const VkSpirvResourceTypeFlagBitsEXT resource_type_read_write_storage = VK_SPIRV_RESOURCE_TYPE_READ_WRITE_STORAGE_BUFFER_BIT_EXT;
     const VkSpirvResourceTypeFlagBitsEXT resource_type_accelerator = VK_SPIRV_RESOURCE_TYPE_ACCELERATION_STRUCTURE_BIT_EXT;
 
-    std::vector<VkDescriptorSetAndBindingMappingEXT> mappings;
+    Array<VkDescriptorSetAndBindingMappingEXT> mappings;
 
     // Scene
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         SCENE_BASE_SET, SCENE_BASE_BINDING_SCENE_INFO, resource_type_read_only_storage, scene_info
     ));
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         SCENE_BASE_SET, SCENE_BASE_BINDING_INSTANCE_INFO, resource_type_read_only_storage, instance_infos
     ));
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         SCENE_BASE_SET, SCENE_BASE_BINDING_MESH_INFO, resource_type_read_only_storage, mesh_infos
     ));
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         SCENE_BASE_SET, SCENE_BASE_BINDING_MESH_VERTEX_DATA, resource_type_read_only_storage, mesh_vertex_data
     ));
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         SCENE_BASE_SET, SCENE_BASE_BINDING_MESH_INDEX_DATA, resource_type_read_only_storage, mesh_index_data
     ));
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         SCENE_BASE_SET, SCENE_BASE_BINDING_ACCELERATOR, resource_type_accelerator, accelerator
     ));
 
     // Materials
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         SCENE_MATERIAL_SET, SCENE_MATERIAL_BINDING_LAMBERTIAN, resource_type_read_write_storage, lambertian_materials
     ));
 
     // Lights
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         SCENE_LIGHT_SET, SCENE_LIGHT_BINDING_POINT, resource_type_read_only_storage, point_lights
     ));
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         SCENE_LIGHT_SET, SCENE_LIGHT_BINDING_DIRECTIONAL, resource_type_read_only_storage, directional_lights
     ));
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         SCENE_LIGHT_SET, SCENE_LIGHT_BINDING_RECT, resource_type_read_only_storage, rect_lights
     ));
 
     // Images
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         GLOBAL_SET, GLOBAL_BINDING_SAMPLED_IMAGES, VK_SPIRV_RESOURCE_TYPE_SAMPLED_IMAGE_BIT_EXT,
         images, vk_image_descriptor_size()
     ));
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         GLOBAL_SET, GLOBAL_BINDING_STORAGE_IMAGES_RGBA_F16, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
         images, vk_image_descriptor_size()
     ));
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         GLOBAL_SET, GLOBAL_BINDING_STORAGE_IMAGES_RGBA8, VK_SPIRV_RESOURCE_TYPE_READ_WRITE_IMAGE_BIT_EXT,
         images, vk_image_descriptor_size()
     ));
 
     // Samplers
-    mappings.push_back(map_binding_to_heap_offset(
+    mappings.add(map_binding_to_heap_offset(
         GLOBAL_SET, GLOBAL_BINDING_SAMPLER, VK_SPIRV_RESOURCE_TYPE_SAMPLER_BIT_EXT, image_sampler
     ));
     return mappings;

@@ -45,7 +45,7 @@ Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level, bool textu
     const float t = (1.f + std::sqrt(5.f)) / 2.f;
     const float s_inv = 1.f / std::sqrt(1.f + t*t);
 
-    std::vector<Vector3> vertices = {
+    Array<Vector3> vertices = {
         { t,  1,  0},
         {-t,  1,  0},
         { t, -1,  0},
@@ -61,7 +61,7 @@ Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level, bool textu
     };
     for (Vector3& v : vertices) v *= s_inv;
 
-    std::vector<int32_t> indices = {
+    Array<int32_t> indices = {
         0, 8, 4,
         1, 10, 7,
         2, 9, 11,
@@ -84,8 +84,8 @@ Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level, bool textu
         11, 7 ,5
     };
 
-    std::vector<Vector3> next_subdiv_vertices;
-    std::vector<int32_t> next_subdiv_indices;
+    Array<Vector3> next_subdiv_vertices;
+    Array<int32_t> next_subdiv_indices;
     std::unordered_map<Vector3, int32_t, Hasher> position_to_index; // removes duplicated positions
 
     auto add_vertex = [&position_to_index, &next_subdiv_vertices](const Vector3& v) {
@@ -94,7 +94,7 @@ Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level, bool textu
             return it->second;
 
         int32_t index = (int32_t)next_subdiv_vertices.size();
-        next_subdiv_vertices.push_back(v);
+        next_subdiv_vertices.add(v);
         position_to_index.insert(std::make_pair(v, index));
         return index;
     };
@@ -117,24 +117,24 @@ Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level, bool textu
             int32_t i5 = add_vertex(v02);
 
             // triangle 0
-            next_subdiv_indices.push_back(i0);
-            next_subdiv_indices.push_back(i3);
-            next_subdiv_indices.push_back(i5);
+            next_subdiv_indices.add(i0);
+            next_subdiv_indices.add(i3);
+            next_subdiv_indices.add(i5);
 
             // triangle 1
-            next_subdiv_indices.push_back(i1);
-            next_subdiv_indices.push_back(i4);
-            next_subdiv_indices.push_back(i3);
+            next_subdiv_indices.add(i1);
+            next_subdiv_indices.add(i4);
+            next_subdiv_indices.add(i3);
 
             // triangle 2
-            next_subdiv_indices.push_back(i2);
-            next_subdiv_indices.push_back(i5);
-            next_subdiv_indices.push_back(i4);
+            next_subdiv_indices.add(i2);
+            next_subdiv_indices.add(i5);
+            next_subdiv_indices.add(i4);
 
             // triangle 3
-            next_subdiv_indices.push_back(i3);
-            next_subdiv_indices.push_back(i4);
-            next_subdiv_indices.push_back(i5);
+            next_subdiv_indices.add(i3);
+            next_subdiv_indices.add(i4);
+            next_subdiv_indices.add(i5);
         }
         vertices.swap(next_subdiv_vertices);
         indices.swap(next_subdiv_indices);
@@ -143,7 +143,7 @@ Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level, bool textu
         position_to_index.clear();
     }
 
-    std::vector<Vector2> uvs(vertices.size());
+    Array<Vector2> uvs(vertices.size());
     for (int i = 0; i < (int)vertices.size(); i++) {
         Vector3 p = vertices[i];
 

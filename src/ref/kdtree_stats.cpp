@@ -40,14 +40,14 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
     stats.leaf_primitives_mean = float(double(primitive_per_leaf_accumulated) / stats.leaf_count);
 
     // Compute depth of each leaf node.
-    std::vector<uint8_t> leaf_depth_values;
+    Array<uint8_t> leaf_depth_values;
     uint64_t max_depth_primitive_count_accumulated = 0;
     {
         struct Depth_Info {
             uint32_t node_index = 0;
             uint8_t depth = 0;
         };
-        std::vector<Depth_Info> depth_info{ Depth_Info{0, 0} };
+        Array<Depth_Info> depth_info{ Depth_Info{0, 0} };
         for (size_t i = 0; i < depth_info.size(); i++) {
             uint32_t node_index = depth_info[i].node_index;
             uint8_t depth = depth_info[i].depth;
@@ -63,14 +63,14 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
 
             if (node.is_leaf()) {
                 if (node.get_primitive_count() > 0)
-                    leaf_depth_values.push_back(depth);
+                    leaf_depth_values.add(depth);
             }
             else {
                 uint32_t below_child_index = node_index + 1;
-                depth_info.push_back({ below_child_index, uint8_t(depth + 1) });
+                depth_info.add({ below_child_index, uint8_t(depth + 1) });
 
                 uint32_t above_child_index = node.get_above_child();
-                depth_info.push_back({ above_child_index, uint8_t(depth + 1) });
+                depth_info.add({ above_child_index, uint8_t(depth + 1) });
             }
         }
     }
@@ -92,7 +92,7 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
     return stats;
 }
 
-std::vector<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32_t node_index)
+Array<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32_t node_index)
 {
     ASSERT(node_index >= 0 && node_index < kdtree.nodes.size());
     std::map<uint32_t, uint32_t> parent_map;
@@ -107,24 +107,24 @@ std::vector<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32
             i += kdtree.nodes[i].get_primitive_count() / 2; // skip nodes that store array of indices
         }
     }
-    std::vector<uint32_t> path{ node_index };
+    Array<uint32_t> path{ node_index };
     auto it = parent_map.find(node_index);
     while (it != parent_map.cend()) {
-        path.push_back(it->second);
+        path.add(it->second);
         it = parent_map.find(it->second);
     }
     reverse(Span<uint32_t>(path));
     return path;
 }
 
-static std::vector<uint32_t> merge_primitive_indices(Span<const uint32_t> below, Span<const uint32_t> above)
+static Array<uint32_t> merge_primitive_indices(Span<const uint32_t> below, Span<const uint32_t> above)
 {
-    std::vector<uint32_t> indices;
+    Array<uint32_t> indices;
     size_t i = 0;
     size_t j = 0;
     while (i < below.size && j < above.size) {
         uint32_t index = min(below[i], above[j]);
-        indices.push_back(index);
+        indices.add(index);
         if (below[i] == index) {
             i++;
         }
@@ -133,10 +133,10 @@ static std::vector<uint32_t> merge_primitive_indices(Span<const uint32_t> below,
         }
     }
     while (i < below.size) {
-        indices.push_back(below[i++]);
+        indices.add(below[i++]);
     }
     while (j < above.size) {
-        indices.push_back(above[j++]);
+        indices.add(above[j++]);
     }
     return indices;
 }
@@ -151,10 +151,10 @@ static bool is_strictly_increasing(Span<const uint32_t> indices)
     return true;
 }
 
-static std::vector<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree, uint32_t node_index,
+static Array<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree, uint32_t node_index,
     std::unordered_map<uint32_t, uint32_t>& node_index_to_primitive_count)
 {
-    std::vector<uint32_t> subtree_primitive_indices;
+    Array<uint32_t> subtree_primitive_indices;
 
     const KdNode* node = &kdtree.nodes[node_index];
     if (node->is_leaf()) {

@@ -87,11 +87,11 @@ struct Triangle_Mesh_Geometry_Data {
 // Data used by top level (entire scene) kdtree.
 struct Scene_Geometry_Data {
     // The objects in the scene. Each object has associated geometry kdtree.
-    const std::vector<Scene_Object>* scene_objects = nullptr;
+    const Array<Scene_Object>* scene_objects = nullptr;
 
     // KdTrees for all geometries in the scene.
     // Multiple scene objects can use the same kdtree due to instancing.
-    const std::vector<KdTree>* kdtrees = nullptr;
+    const Array<KdTree>* kdtrees = nullptr;
 
     // Offsets in kdtrees array.
     // Each offset defines where the range of kdtrees for specific geometry type starts.
@@ -123,7 +123,7 @@ struct KdTree {
     // It is used to invalidate cached kdtree when geometry changes.
     uint64_t geometry_data_hash = 0;
 
-    std::vector<KdNode> nodes;
+    Array<KdNode> nodes;
 
     // Reference to geometry data for which this kdtree is built.
     // For triangle mesh kdtree it points to Triangle_Mesh_Geometry_Data object.

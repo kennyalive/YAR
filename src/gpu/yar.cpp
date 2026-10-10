@@ -122,7 +122,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     const uint32_t descriptor_data_size = descriptor_heap_layout.get_total_descriptor_data_size(0);
     descriptor_heap.create(descriptor_data_size);
 
-    const std::vector<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_heap_layout.get_descriptor_mappings();
+    const Array<VkDescriptorSetAndBindingMappingEXT> descriptor_mappings = descriptor_heap_layout.get_descriptor_mappings();
 
     kernels.create_kernels(descriptor_heap_layout);
     path_tracing_renderer.initialize(descriptor_mappings, time_keeper);

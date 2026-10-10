@@ -95,12 +95,12 @@ struct Environment_Light {
 };
 
 struct Lights {
-    std::vector<Point_Light> point_lights;
-    std::vector<Spot_Light> spot_lights;
-    std::vector<Directional_Light> directional_lights;
-    std::vector<Diffuse_Rectangular_Light> diffuse_rectangular_lights;
-    std::vector<Diffuse_Sphere_Light> diffuse_sphere_lights;
-    std::vector<Diffuse_Triangle_Mesh_Light> diffuse_triangle_mesh_lights;
+    Array<Point_Light> point_lights;
+    Array<Spot_Light> spot_lights;
+    Array<Directional_Light> directional_lights;
+    Array<Diffuse_Rectangular_Light> diffuse_rectangular_lights;
+    Array<Diffuse_Sphere_Light> diffuse_sphere_lights;
+    Array<Diffuse_Triangle_Mesh_Light> diffuse_triangle_mesh_lights;
 
     Environment_Light environment_light;
     bool has_environment_light = false;

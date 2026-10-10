@@ -18,7 +18,7 @@ struct Direct_Lighting_Renderer
     Vk_Timer* timer_tonemap = nullptr;
     Vk_Timer* timer_compute_copy = nullptr;
 
-    void initialize(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings, Vk_Time_Keeper& time_keeper);
+    void initialize(const Array<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings, Vk_Time_Keeper& time_keeper);
     void destroy();
     void activate();
 

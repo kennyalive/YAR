@@ -2,7 +2,7 @@
 #include "lib/common.h"
 #include "patch_materials.h"
 
-void Patch_Materials::create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
+void Patch_Materials::create(const Array<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
     Vk_Shader_Module shader(get_spirv_file("patch_materials"));
     pipeline = vk_create_compute_pipeline(shader.handle, descriptor_mappings, "patch_materials_pipeline");

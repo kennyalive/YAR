@@ -148,7 +148,7 @@ static inline float evaluate_pre_aliasing_filter(Filter_Type filter, float x, fl
 }
 
 // Negative filter weights and rounding errors can result in values outside of supported range.
-static void clamp_pixel_values(std::vector<ColorRGB>& pixels, bool is_hdr_image)
+static void clamp_pixel_values(Array<ColorRGB>& pixels, bool is_hdr_image)
 {
     if (is_hdr_image) {
         for (ColorRGB& p : pixels) {
@@ -187,7 +187,7 @@ static Image generate_mip_level_with_separable_filter(const Image& base_image, i
     // (and base level texels are on the half-integer grid)
     const int filter_pixel_count = 2 * int(get_filter_radius(filter) + 0.5f) * (1 << (mip_level_to_generate - 1));
 
-    std::vector<float> weights(filter_pixel_count);
+    Array<float> weights(filter_pixel_count);
     {
         float sampling_frequency = std::pow(0.5f, float(mip_level_to_generate));
         float sum = 0.f;
@@ -201,7 +201,7 @@ static Image generate_mip_level_with_separable_filter(const Image& base_image, i
     }
 
     // Downsample in horizontal direction.
-    std::vector<ColorRGB> temp(mip_width * base_image.height);
+    Array<ColorRGB> temp(mip_width * base_image.height);
     {
         const int width_ratio = base_image.width / mip_width;
         for (int y = 0; y < base_image.height; y++) {
@@ -307,7 +307,7 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool is_hdr_i
         float pixel_weight[4]; // weights for 4 consecutive pixels covered by the filter kernel
     };
     auto compute_resample_weights = [](int old_resolution, int new_resolution) {
-        std::vector<Resample_Weight> rw(new_resolution);
+        Array<Resample_Weight> rw(new_resolution);
 
         const float filter_radius = 2.0f;
         const float new_to_old_sample_pos = float(old_resolution) / float(new_resolution);
@@ -335,8 +335,8 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool is_hdr_i
     // Resample in horizontal direction.
     if (!is_power_of_2(mips[0].width)) {
         int new_width = int(round_up_to_power_of_2(uint32_t(mips[0].width)));
-        const std::vector<Resample_Weight> rw = compute_resample_weights(mips[0].width, new_width);
-        std::vector<ColorRGB> texels(mips[0].height * new_width);
+        const Array<Resample_Weight> rw = compute_resample_weights(mips[0].width, new_width);
+        Array<ColorRGB> texels(mips[0].height * new_width);
         for (int y = 0; y < mips[0].height; y++) {
             for (int x = 0; x < new_width; x++) {
                 ColorRGB& t = texels[y*new_width + x];
@@ -355,8 +355,8 @@ void Image_Texture::upsample_base_level_to_power_of_two_resolution(bool is_hdr_i
     // Resample in vertical direction.
     if (!is_power_of_2(mips[0].height)) {
         int new_height = int(round_up_to_power_of_2(uint32_t(mips[0].height)));
-        const std::vector<Resample_Weight> rw = compute_resample_weights(mips[0].height, new_height);
-        std::vector<ColorRGB> texels(new_height * mips[0].width);
+        const Array<Resample_Weight> rw = compute_resample_weights(mips[0].height, new_height);
+        Array<ColorRGB> texels(new_height * mips[0].width);
         for (int x = 0; x < mips[0].width; x++) {
             for (int y = 0; y < new_height; y++) {
                 ColorRGB& t = texels[y*mips[0].width + x];
@@ -502,10 +502,10 @@ ColorRGB Image_Texture::sample_trilinear(const Vector2& uv, float lod, Wrap_Mode
 // PBRT book also implements this algorithm.
 static ColorRGB do_EWA(const Image& image, Vector2 uv, Vector2 uv_axis1, Vector2 uv_axis2, Wrap_Mode wrap_mode)
 {
-    static std::vector<float> EWA_filter_weights = []() {
+    static Array<float> EWA_filter_weights = []() {
         const int table_size = 256;
         const float alpha = 2.f;
-        std::vector<float> weights(table_size);
+        Array<float> weights(table_size);
         for (int i = 0; i < int(weights.size()); i++) {
             float x = float(i) / float(table_size - 1);
             weights[i] = std::exp(-alpha * x);
@@ -608,7 +608,7 @@ ColorRGB Image_Texture::sample_EWA(Vector2 uv, Vector2 uv_axis1, Vector2 uv_axis
     int level1 = level0 + 1;
 
     if (level0 >= int(mips.size()) - 1)
-        return mips.back().data[0];
+        return mips.last().data[0];
 
     ColorRGB mip0_sample = do_EWA(mips[level0], uv, uv_axis1, uv_axis2, wrap_mode);
     ColorRGB mip1_sample = do_EWA(mips[level1], uv, uv_axis1, uv_axis2, wrap_mode);

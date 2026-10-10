@@ -195,8 +195,8 @@ static void validate_triangle_mesh_kdtree(const KdTree& kdtree, const Operation_
     printf("DONE\n");
 }
 
-static std::vector<Triangle_Mesh> create_custom_meshes() {
-    std::vector<Triangle_Mesh> meshes;
+static Array<Triangle_Mesh> create_custom_meshes() {
+    Array<Triangle_Mesh> meshes;
     // mesh 0
     {
         Triangle_Mesh mesh;
@@ -216,7 +216,7 @@ static std::vector<Triangle_Mesh> create_custom_meshes() {
             4, 5, 6,
             6, 7, 4
         };
-        meshes.push_back(std::move(mesh));
+        meshes.add(std::move(mesh));
     }
     // mesh 1
     {
@@ -241,7 +241,7 @@ static std::vector<Triangle_Mesh> create_custom_meshes() {
             6, 7, 8,
             9, 10, 11
         };
-        meshes.push_back(std::move(mesh));
+        meshes.add(std::move(mesh));
     }
 
     return meshes;
@@ -249,9 +249,9 @@ static std::vector<Triangle_Mesh> create_custom_meshes() {
 
 static void process_kdrees(Function_Ref<void(const KdTree&, const Operation_Info&)> kdtree_handler)
 {
-    std::vector<Triangle_Mesh> custom_meshes = create_custom_meshes();
+    Array<Triangle_Mesh> custom_meshes = create_custom_meshes();
 
-    std::vector<Operation_Info> infos{
+    Array<Operation_Info> infos{
         {"", &custom_meshes[0], "<mesh to test FP bug fix in clip_bounds function>", 100'000},
         {"", &custom_meshes[1], "<mesh to test FP bug when thin node is skipped during traversal>", 100'000},
         {"../data/test-files/teapot.obj", nullptr, "", 100'000},

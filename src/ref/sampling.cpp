@@ -162,7 +162,7 @@ void Distribution_1D::initialize(const float* values, int n)
         sum += values[i];
         cdf[i] = sum / total_sum;
     }
-    ASSERT(cdf.back() == 1.f);
+    ASSERT(cdf.last() == 1.f);
 }
 
 float Distribution_1D::sample(float u, float* pdf, float* remapped_u) const
@@ -189,7 +189,7 @@ void Distribution_2D::initialize(const float* values, int nx, int ny) {
     y_interval_length = 1.f / ny;
 
     // Compute sum of values from each row and the sum of all values.
-    std::vector<float> row_sums(ny);
+    Array<float> row_sums(ny);
     float total_sum = 0.f;
     int last_row_with_non_zero_sum = -1;
 
@@ -237,7 +237,7 @@ void Distribution_2D::initialize_from_latitude_longitude_radiance_map(const Imag
     ASSERT(!env_map.get_mips().empty());
     const Image& image = env_map.get_mips()[0];
 
-    std::vector<float> distribution_coeffs(image.width * image.height);
+    Array<float> distribution_coeffs(image.width * image.height);
     float* p = distribution_coeffs.data();
 
     for (int y = 0; y < image.height; y++) {

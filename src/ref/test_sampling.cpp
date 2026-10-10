@@ -26,10 +26,10 @@ void test_uniform_sphere_sampling() {
     printf("N_Sphere_Samples = %d, N_Sphere_Sectors = %d\n", n, theta_slice_count * phi_slice_count);
     printf("Error tolerance (actual vs estimated sample count): %.1f%%\n", error_tolerance_percentage * 100.f);
 
-    std::vector<std::vector<int>> sphere_sectors;
+    Array<Array<int>> sphere_sectors;
     sphere_sectors.resize(theta_slice_count);
     for (auto& theta_slice : sphere_sectors)
-        theta_slice.resize(phi_slice_count, 0);
+        theta_slice.resize(phi_slice_count);
 
     RNG rng;
     rng.init(0, 0x12345);
@@ -97,10 +97,10 @@ void test_uniform_hemisphere_sampling() {
     printf("N_Hemisphere_Samples = %d, N_Hemisphere_Sectors = %d\n", n, theta_slice_count * phi_slice_count);
     printf("Error tolerance (actual vs estimated sample count): %.1f%%\n", error_tolerance_percentage * 100.f);
 
-    std::vector<std::vector<int>> sphere_sectors;
+    Array<Array<int>> sphere_sectors;
     sphere_sectors.resize(theta_slice_count);
     for (auto& theta_slice : sphere_sectors)
-        theta_slice.resize(phi_slice_count, 0);
+        theta_slice.resize(phi_slice_count);
 
     RNG rng;
     rng.init(0, 0x12345);
@@ -168,10 +168,10 @@ void test_cosine_hemisphere_sampling() {
     printf("N_Hemisphere_Samples = %d, N_Hemisphere_Sectors = %d\n", n, theta_slice_count * phi_slice_count);
     printf("Error tolerance (actual vs estimated sample count): %.1f%%\n", error_tolerance_percentage * 100.f);
 
-    std::vector<std::vector<int>> sphere_sectors;
+    Array<Array<int>> sphere_sectors;
     sphere_sectors.resize(theta_slice_count);
     for (auto& theta_slice : sphere_sectors)
-        theta_slice.resize(phi_slice_count, 0);
+        theta_slice.resize(phi_slice_count);
 
     RNG rng;
     rng.init(0, 0x12345);
@@ -224,8 +224,8 @@ void test_uniform_cdf_sampling() {
     const int N = 10;
     const float interval_length = 1.f / N;
 
-    std::vector<float> pdf(N, 1.f);
-    std::vector<float> cdf(N);
+    Array<float> pdf(N, 1.f);
+    Array<float> cdf(N);
     for (int i = 0; i < N - 1; i++) {
         cdf[i] = (i == 0 ? 0.f : cdf[i-1]) + pdf[i] * interval_length;
     }
@@ -234,7 +234,7 @@ void test_uniform_cdf_sampling() {
     RNG rng;
     rng.init(0, 0x12345);
 
-    std::vector<int> buckets(100, 0);
+    Array<int> buckets(100, 0);
     const int Sample_Count = 100000;
 
     for (int i = 0; i < Sample_Count; i++) {
@@ -266,7 +266,7 @@ void test_non_uniform_cdf_sampling() {
     const int N = 10;
     const float interval_length = 1.f / N;
 
-    std::vector<float> pdf(N);
+    Array<float> pdf(N);
     float sum = 0.f;
     for (int i = 0; i < N; i++) {
         pdf[i] = float(i);
@@ -276,7 +276,7 @@ void test_non_uniform_cdf_sampling() {
         p *= N / sum;
     }
 
-    std::vector<float> cdf(N);
+    Array<float> cdf(N);
     for (int i = 0; i < N - 1; i++) {
         cdf[i] = (i == 0 ? 0.f : cdf[i-1]) + pdf[i] * interval_length;
     }
@@ -285,7 +285,7 @@ void test_non_uniform_cdf_sampling() {
     RNG rng;
     rng.init(0, 0x12345);
 
-    std::vector<int> buckets(100, 0);
+    Array<int> buckets(100, 0);
     const int Sample_Count = 1'000'000;
 
     for (int i = 0; i < Sample_Count; i++) {
@@ -315,14 +315,14 @@ void test_non_uniform_cdf_sampling() {
 
 void test_uniform_2d_distribution_sampling() {
     printf("Testing uniform 2D distribution sampling...\n");
-    std::vector<float> values(12, 1.f);
+    Array<float> values(12, 1.f);
     const int nx = 4;
     const int ny = 3;
 
     Distribution_2D sampler;
     sampler.initialize(values.data(), nx, ny);
 
-    std::vector<int> buckets(nx * ny, 0);
+    Array<int> buckets(nx * ny, 0);
     const int Sample_Count = 10'000;
 
     RNG rng;
@@ -358,7 +358,7 @@ void test_non_uniform_2d_distribution_sampling() {
     printf("Testing non-uniform 2D distribution sampling...\n");
     const int nx = 4;
     const int ny = 6;
-    std::vector<float> values(nx * ny);
+    Array<float> values(nx * ny);
 
     float sum = 0.f;
     for (int i = 0; i < nx*ny; i++) {
@@ -369,7 +369,7 @@ void test_non_uniform_2d_distribution_sampling() {
     Distribution_2D sampler;
     sampler.initialize(values.data(), nx, ny);
 
-    std::vector<int> buckets(nx * ny, 0);
+    Array<int> buckets(nx * ny, 0);
     const int Sample_Count = 100'000;
 
     RNG rng;

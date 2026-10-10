@@ -488,21 +488,6 @@ struct Scoped_File : File
     Scoped_File& operator=(const Scoped_File&) = delete;
 };
 
-// TEMP: until custom dynamic array is introduced
-struct Byte_Buffer
-{
-    uint8_t* data = nullptr;
-    size_t size = 0;
-
-    Byte_Buffer() = default;
-    explicit Byte_Buffer(size_t size);
-    ~Byte_Buffer();
-    Byte_Buffer(const Byte_Buffer&) = delete;
-    Byte_Buffer& operator=(const Byte_Buffer&) = delete;
-    Byte_Buffer(Byte_Buffer&& other) noexcept;
-    Byte_Buffer& operator=(Byte_Buffer&& other) noexcept;
-};
-
 // Hashing.
 // 
 // hash_value(x) returns a 64-bit hash whose bits look uniformly random

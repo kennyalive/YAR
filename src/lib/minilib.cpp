@@ -293,31 +293,6 @@ Scoped_File::~Scoped_File()
     close();
 }
 
-Byte_Buffer::Byte_Buffer(size_t size)
-    : data(size ? new uint8_t[size] : nullptr), size(size)
-{}
-
-Byte_Buffer::~Byte_Buffer() { delete[] data; }
-
-Byte_Buffer::Byte_Buffer(Byte_Buffer&& other) noexcept
-    : data(other.data), size(other.size)
-{
-    other.data = nullptr;
-    other.size = 0;
-}
-
-Byte_Buffer& Byte_Buffer::operator=(Byte_Buffer&& other) noexcept
-{
-    if (this != &other) {
-        delete[] data;
-        data = other.data;
-        size = other.size;
-        other.data = nullptr;
-        other.size = 0;
-    }
-    return *this;
-}
-
 //
 // Hashing
 //

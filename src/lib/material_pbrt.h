@@ -21,22 +21,22 @@ struct Pbrt3_Fourier_Material {
     float eta = 1.f;
 
     // Zenith angle cosines for sampled directions.
-    std::vector<float> zenith_angle_discretization;
+    Array<float> zenith_angle_discretization;
 
-    std::vector<float> cdf;
+    Array<float> cdf;
 
     // Coefficients of fourier series.
-    std::vector<float> coeffs;
+    Array<float> coeffs;
 
     // The first coefficient for each pair of zenith directions.
-    std::vector<float> first_coeffs;
+    Array<float> first_coeffs;
 
     // Offsets that define the start positions in the coeffs array of the
     // series of fourier coefficients for each pair of zenith directions.
-    std::vector<uint32_t> coeff_offset;
+    Array<uint32_t> coeff_offset;
 
     // The number of coefficients in the fourier series for each pair of zenith direction.
-    std::vector<uint32_t> coeff_count;
+    Array<uint32_t> coeff_count;
 };
 
 struct Pbrt3_Translucent_Material {

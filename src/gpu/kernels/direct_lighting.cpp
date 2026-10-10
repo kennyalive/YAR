@@ -6,7 +6,7 @@
 #include "shaders/shared.slang"
 #include "lib/scene.h"
 
-void Direct_Lighting::create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptors_mappings)
+void Direct_Lighting::create(const Array<VkDescriptorSetAndBindingMappingEXT>& descriptors_mappings)
 {
     create_pipeline(descriptors_mappings);
 
@@ -20,7 +20,7 @@ void Direct_Lighting::create(const std::vector<VkDescriptorSetAndBindingMappingE
         uint32_t hit_offset = round_up(miss_offset + 2 * handle_size, base_alignment);
         uint32_t sbt_buffer_size = hit_offset + 2 * handle_size;
 
-        std::vector<uint8_t> data(sbt_buffer_size, 0);
+        Array<uint8_t> data(sbt_buffer_size, 0);
         VK_CHECK(vkGetRayTracingShaderGroupHandlesKHR(vk.device, pipeline, 0, 1, 1 * handle_size, data.data() + raygen_offset));
         VK_CHECK(vkGetRayTracingShaderGroupHandlesKHR(vk.device, pipeline, 1, 1, 1 * handle_size, data.data() + miss_offset));
         VK_CHECK(vkGetRayTracingShaderGroupHandlesKHR(vk.device, pipeline, 2, 2, 2 * handle_size, data.data() + hit_offset));
@@ -36,7 +36,7 @@ void Direct_Lighting::destroy()
     vkDestroyPipeline(vk.device, pipeline, nullptr);
 }
 
-void Direct_Lighting::create_pipeline(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptors_mappings)
+void Direct_Lighting::create_pipeline(const Array<VkDescriptorSetAndBindingMappingEXT>& descriptors_mappings)
 {
     // pipeline
     {

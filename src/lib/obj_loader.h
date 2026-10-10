@@ -17,12 +17,12 @@ struct Obj_Mesh {
 };
 
 struct Obj_Data {
-    std::vector<Obj_Material> materials;
-    std::vector<Obj_Mesh> meshes;
+    Array<Obj_Material> materials;
+    Array<Obj_Mesh> meshes;
 };
 
 Obj_Data load_obj(
     const String& obj_file_path,
     const Triangle_Mesh_Load_Params& params = Triangle_Mesh_Load_Params{},
-    const std::vector<String>* ignore_geometry_names = nullptr
+    const Array<String>* ignore_geometry_names = nullptr
 );

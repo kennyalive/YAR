@@ -9,7 +9,7 @@
 
 constexpr int time_category_field_width = 21; // for printf 'width' specifier
 
-static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::vector<Triangle_Mesh_Geometry_Data>& geometry_datas,
+static Array<KdTree> load_geometry_kdtrees(const Scene& scene, const Array<Triangle_Mesh_Geometry_Data>& geometry_datas,
     std::array<int, Geometry_Type_Count>* geometry_type_offsets, bool force_rebuild_cache)
 {
     String kdtree_cache_directory = path_join(path_join(get_data_directory(), "kdtree-cache"), get_project_unique_name(scene.path));
@@ -54,11 +54,11 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
             int thread_count = logical_processor_count();
             thread_count = min(thread_count, (int)geometry_datas.size());
 
-            std::vector<std::jthread> threads;
+            Array<std::jthread> threads;
             threads.reserve(thread_count - 1);
 
             for (int i = 0; i < thread_count - 1; i++) {
-                threads.push_back(std::jthread(build_kdtree_func));
+                threads.add(std::jthread(build_kdtree_func));
             }
             build_kdtree_func();
         }
@@ -67,7 +67,7 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
 
     // Load triangle mesh kdtrees.
     Timestamp t_kdtree_cache;
-    std::vector<KdTree> kdtrees;
+    Array<KdTree> kdtrees;
     kdtrees.reserve(scene.geometries.triangle_meshes.size());
 
     geometry_type_offsets->fill(0);
@@ -77,13 +77,13 @@ static std::vector<KdTree> load_geometry_kdtrees(const Scene& scene, const std::
         String kdtree_file = path_join(kdtree_cache_directory, string_printf("%zu.kdtree", i));
         KdTree kdtree = KdTree::load(kdtree_file);
         kdtree.set_geometry_data(&geometry_datas[i]);
-        kdtrees.push_back(std::move(kdtree));
+        kdtrees.add(std::move(kdtree));
     }
     printf("%-*s %.3f seconds\n", time_category_field_width, "Load KdTree cache", elapsed_seconds(t_kdtree_cache));
     return kdtrees;
 }
 
-void KdTree_Data::initialize(const Scene& scene, const std::vector<Image_Texture>& textures, bool rebuild_kdtree_cache)
+void KdTree_Data::initialize(const Scene& scene, const Array<Image_Texture>& textures, bool rebuild_kdtree_cache)
 {
     const auto& meshes = scene.geometries.triangle_meshes;
     if (meshes.empty()) {

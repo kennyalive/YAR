@@ -21,7 +21,7 @@ static void finalize_scene(Scene& scene) {
         Directional_Light light;
         light.direction = Vector3(1, 1, 1).normalized();
         light.irradiance = ColorRGB(5, 5, 5);
-        scene.lights.directional_lights.push_back(light);
+        scene.lights.directional_lights.add(light);
     }
     scene.lights.update_total_light_count();
 }
@@ -74,7 +74,7 @@ int add_scene_texture(const Texture_Descriptor& texture_desc, Scene* scene)
         if (scene->texture_descriptors[i] == texture_desc)
             return (int)i;
     }
-    scene->texture_descriptors.push_back(texture_desc);
+    scene->texture_descriptors.add(texture_desc);
     return (int)scene->texture_descriptors.size() - 1;
 }
 
@@ -86,6 +86,6 @@ int add_scene_texture(const String& file_name, Scene* scene)
 
 int add_scene_material_parameter(const Parameter& parameter, Scene* scene)
 {
-    scene->material_parameters.push_back(parameter);
+    scene->material_parameters.add(parameter);
     return (int)scene->material_parameters.size() - 1;
 }

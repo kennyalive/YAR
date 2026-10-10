@@ -45,11 +45,11 @@ struct Scene
     bool front_face_has_clockwise_winding = false;
     Raytracer_Config raytracer_config;
 
-    std::vector<Texture_Descriptor> texture_descriptors;
-    std::vector<Parameter> material_parameters;
+    Array<Texture_Descriptor> texture_descriptors;
+    Array<Parameter> material_parameters;
 
     // Predefined camera positions.
-    std::vector<Matrix3x4> view_points;
+    Array<Matrix3x4> view_points;
 
     // Cache of tesselated spheres with different radius
     std::unordered_map<float, Geometry_Handle, Hasher> radius_to_sphere_geometry;
@@ -60,7 +60,7 @@ struct Scene
     Geometries geometries;
     Materials materials;
     Lights lights;
-    std::vector<Scene_Object> objects;
+    Array<Scene_Object> objects;
 
     String get_resource_absolute_path(const String& resource_relative_path) const
     {

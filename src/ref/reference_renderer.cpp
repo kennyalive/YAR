@@ -63,11 +63,11 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
             int thread_count = logical_processor_count();
             thread_count = min(thread_count, (int)scene.texture_descriptors.size());
 
-            std::vector<std::jthread> threads;
+            Array<std::jthread> threads;
             threads.reserve(thread_count - 1);
 
             for (int i = 0; i < thread_count - 1; i++) {
-                threads.push_back(std::jthread(load_texture_thread_func));
+                threads.add(std::jthread(load_texture_thread_func));
             }
             load_texture_thread_func();
         }
@@ -111,7 +111,7 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
             info.bsdf_wi_array_id = pixel_sampler_config.register_array2d_samples(k, k);
             info.bsdf_scattering_array_id = pixel_sampler_config.register_array1d_samples(k * k);
             info.array_size = k * k;
-            scene_ctx.array2d_registry.rectangular_light_arrays.push_back(info);
+            scene_ctx.array2d_registry.rectangular_light_arrays.add(info);
         }
         scene_ctx.array2d_registry.sphere_light_arrays.reserve(scene_ctx.lights.diffuse_sphere_lights.size());
         for (const Diffuse_Sphere_Light& light : scene_ctx.lights.diffuse_sphere_lights) {
@@ -124,7 +124,7 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
             info.bsdf_wi_array_id = pixel_sampler_config.register_array2d_samples(k, k);
             info.bsdf_scattering_array_id = pixel_sampler_config.register_array1d_samples(k * k);
             info.array_size = k * k;
-            scene_ctx.array2d_registry.sphere_light_arrays.push_back(info);
+            scene_ctx.array2d_registry.sphere_light_arrays.add(info);
         }
     }
 }
@@ -134,10 +134,10 @@ static void init_triangle_mesh_light_samplers(const Scene& scene, Scene_Context&
     if (scene.lights.diffuse_triangle_mesh_lights.empty()) {
         return;
     }
-    std::vector<float> areas;
+    Array<float> areas;
     scene_ctx.triangle_mesh_light_samplers.reserve(scene.lights.diffuse_triangle_mesh_lights.size());
     for (const auto& light : scene.lights.diffuse_triangle_mesh_lights) {
-        Diffuse_Triangle_Mesh_Light_Sampler& sampler = scene_ctx.triangle_mesh_light_samplers.emplace_back();
+        Diffuse_Triangle_Mesh_Light_Sampler& sampler = scene_ctx.triangle_mesh_light_samplers.add();
         sampler.light = &light;
 
         const Triangle_Mesh& mesh = scene.geometries.triangle_meshes[light.triangle_mesh_index];
@@ -247,17 +247,17 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
         int tile_index = str_to_int({filename.data + 5, filename.size - 5});
         Checkpoint_Tile_Data& tile_data = checkpoint.finished_tiles[tile_index];
 
-        Byte_Buffer content;
+        Array<uint8_t> content;
         if (!fs_load(path, content)) {
             error("Failed to load checkpoint tile: %s", String(path).data());
         }
         size_t offset = 0;
         auto read = [&](void* destination, size_t size) {
-            if (size > content.size - offset) {
+            if (size > content.size() - offset) {
                 error("Truncated checkpoint tile: %s", String(path).data());
             }
             if (size) {
-                memcpy(destination, content.data + offset, size);
+                memcpy(destination, content.data() + offset, size);
             }
             offset += size;
         };
@@ -267,7 +267,7 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
         read(&tile_data.tile_variance_accumulator, sizeof(double));
         read(&tile_data.tile.pixel_bounds, sizeof(Bounds2i));
         int pixel_count = tile_data.tile.pixel_bounds.area();
-        if (pixel_count < 0 || size_t(pixel_count) > (content.size - offset) / sizeof(Film_Pixel)) {
+        if (pixel_count < 0 || size_t(pixel_count) > (content.size() - offset) / sizeof(Film_Pixel)) {
             error("Invalid checkpoint tile size: %s", String(path).data());
         }
         tile_data.tile.pixels.resize(pixel_count);
@@ -422,17 +422,17 @@ static Film_Filter create_film_filter(const Raytracer_Config& cfg)
     return Film_Filter{};
 }
 
-static std::vector<int> load_checkpoint(const String& checkpoint_directory, const Checkpoint_Info& info,
-    std::vector<Film_Tile>* tiles, std::vector<double>* tile_variance_accumulators, float* previous_sessions_time)
+static Array<int> load_checkpoint(const String& checkpoint_directory, const Checkpoint_Info& info,
+    Array<Film_Tile>* tiles, Array<double>* tile_variance_accumulators, float* previous_sessions_time)
 {
     Checkpoint checkpoint = start_or_resume_checkpoint(checkpoint_directory, info);
 
-    std::vector<int> tiles_to_render;
+    Array<int> tiles_to_render;
     tiles_to_render.reserve(info.total_tile_count - checkpoint.finished_tiles.size());
     for (int tile_index = 0; tile_index < info.total_tile_count; tile_index++) {
         auto it = checkpoint.finished_tiles.find(tile_index);
         if (it == checkpoint.finished_tiles.end()) {
-            tiles_to_render.push_back(tile_index);
+            tiles_to_render.add(tile_index);
         }
         else {
             (*tiles)[tile_index] = std::move(it->second.tile);
@@ -461,11 +461,11 @@ Image render_scene(const Scene_Context& scene_ctx, double* variance_estimate, fl
 
     Film film(scene_ctx.render_region, create_film_filter(scene_ctx.raytracer_config));
 
-    std::vector<Film_Tile> tiles(film.get_tile_count());
-    std::vector<double> tile_variance_accumulators(film.get_tile_count(), 0.0);
+    Array<Film_Tile> tiles(film.get_tile_count());
+    Array<double> tile_variance_accumulators(film.get_tile_count(), 0.0);
     float previous_sessions_time = 0.f;
 
-    std::vector<int> tiles_to_render;
+    Array<int> tiles_to_render;
     if (!scene_ctx.checkpoint_directory.empty()) {
         Checkpoint_Info info;
         info.input_filename = scene_ctx.input_filename;
@@ -529,11 +529,11 @@ Image render_scene(const Scene_Context& scene_ctx, double* variance_estimate, fl
     //
     const int thread_count = min(scene_ctx.thread_count, (int)tiles_to_render.size());
     if (thread_count > 0) {
-        std::vector<std::jthread> threads;
+        Array<std::jthread> threads;
         threads.reserve(thread_count - 1);
 
         for (int i = 0; i < thread_count - 1; i++)
-            threads.push_back(std::jthread(render_tile_thread_func));
+            threads.add(std::jthread(render_tile_thread_func));
 
         render_tile_thread_func();
     }
@@ -603,7 +603,7 @@ struct EXR_Attributes_Writer {
     static constexpr int buffer_size = 4 * 1024;
     unsigned char value_buffer[buffer_size];
     unsigned char* buffer_ptr = value_buffer;
-    std::vector<EXRAttribute> attributes;
+    Array<EXRAttribute> attributes;
     File dump_file;
 
     void add_string_attribute(const char* name, const char* value, bool add_to_image = true) {
@@ -638,8 +638,7 @@ private:
         auto value_ptr = buffer_ptr;
         buffer_ptr += size;
 
-        attributes.push_back(EXRAttribute{});
-        EXRAttribute& attrib = attributes.back();
+        EXRAttribute& attrib = attributes.add();
         ASSERT(strlen(name) < 256);
         strcpy(attrib.name, name);
         ASSERT(strlen(type) < 256);

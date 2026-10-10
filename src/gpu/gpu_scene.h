@@ -21,8 +21,8 @@ struct GPU_Scene
 {
     bool loaded = false;
 
-    std::vector<Vk_Image> images;
-    std::vector<GPU_Mesh> meshes;
+    Array<Vk_Image> images;
+    Array<GPU_Mesh> meshes;
     Vk_Intersection_Accelerator accelerator;
 
     Vk_Buffer scene_info;

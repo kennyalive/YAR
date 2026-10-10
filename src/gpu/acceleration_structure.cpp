@@ -126,8 +126,8 @@ static TLAS_Info create_TLAS(uint32_t instance_count, VkDeviceAddress instances_
 }
 
 Vk_Intersection_Accelerator create_intersection_accelerator(
-    const std::vector<Scene_Object>& scene_objects,
-    const std::vector<GPU_Mesh>& gpu_meshes,
+    const Array<Scene_Object>& scene_objects,
+    const Array<GPU_Mesh>& gpu_meshes,
     VkDeviceAddress mesh_vertex_data_address,
     VkDeviceAddress index_vertex_data_address)
 {
@@ -141,7 +141,7 @@ Vk_Intersection_Accelerator create_intersection_accelerator(
     }
     // Create instance buffer.
     {
-        std::vector<VkAccelerationStructureInstanceKHR> instances(scene_objects.size());
+        Array<VkAccelerationStructureInstanceKHR> instances(scene_objects.size());
         for (size_t i = 0; i < instances.size(); i++) {
             memcpy(instances[i].transform.matrix, scene_objects[i].object_to_world_transform.a, sizeof(VkTransformMatrixKHR));
             instances[i].instanceCustomIndex = i;

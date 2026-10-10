@@ -20,7 +20,7 @@ struct Path_Tracing_Renderer
 
     uint32_t accumulation_index = 0;
 
-    void initialize(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings, Vk_Time_Keeper& time_keeper);
+    void initialize(const Array<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings, Vk_Time_Keeper& time_keeper);
     void destroy();
     void activate();
     void on_camera_changed();

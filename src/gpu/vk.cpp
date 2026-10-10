@@ -26,7 +26,7 @@ static void create_instance(Span<const char* const> instance_extensions)
 {
     uint32_t count = 0;
     VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
-    std::vector<VkExtensionProperties> extension_properties(count);
+    Array<VkExtensionProperties> extension_properties(count);
     VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &count, extension_properties.data()));
 
     for (auto name : instance_extensions) {
@@ -66,7 +66,7 @@ static void create_device(const Vk_Init_Params& params, GLFWwindow* window)
             vk.error(string_printf("Requested physical device index (zero-based) is %d, but physical device count is %u",
                 params.physical_device_index, gpu_count));
         }
-        std::vector<VkPhysicalDevice> physical_devices(gpu_count);
+        Array<VkPhysicalDevice> physical_devices(gpu_count);
         VK_CHECK(vkEnumeratePhysicalDevices(vk.instance, &gpu_count, physical_devices.data()));
 
         int selected_gpu = -1;
@@ -104,7 +104,7 @@ static void create_device(const Vk_Init_Params& params, GLFWwindow* window)
         uint32_t queue_family_count;
         vkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &queue_family_count, nullptr);
 
-        std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+        Array<VkQueueFamilyProperties> queue_families(queue_family_count);
         vkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &queue_family_count, queue_families.data());
 
         // select queue family with presentation and graphics support
@@ -127,7 +127,7 @@ static void create_device(const Vk_Init_Params& params, GLFWwindow* window)
     {
         uint32_t count = 0;
         VK_CHECK(vkEnumerateDeviceExtensionProperties(vk.physical_device, nullptr, &count, nullptr));
-        std::vector<VkExtensionProperties> extension_properties(count);
+        Array<VkExtensionProperties> extension_properties(count);
         VK_CHECK(vkEnumerateDeviceExtensionProperties(vk.physical_device, nullptr, &count, extension_properties.data()));
 
         auto is_extension_supported = [&extension_properties](const char* extension_name) {
@@ -286,7 +286,7 @@ void vk_initialize(GLFWwindow* window, const Vk_Init_Params& init_params)
         VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, vk.surface, &format_count, nullptr));
         assert(format_count > 0);
 
-        std::vector<VkSurfaceFormatKHR> candidates(format_count);
+        Array<VkSurfaceFormatKHR> candidates(format_count);
         VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR(vk.physical_device, vk.surface, &format_count, candidates.data()));
 
         // don't support special case described in the spec
@@ -397,7 +397,7 @@ void vk_create_swapchain(bool vsync)
     if (!vsync) {
         uint32_t present_mode_count;
         VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, vk.surface, &present_mode_count, nullptr));
-        std::vector<VkPresentModeKHR> present_modes(present_mode_count);
+        Array<VkPresentModeKHR> present_modes(present_mode_count);
         VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, vk.surface, &present_mode_count, present_modes.data()));
 
         for (auto pm : present_modes) {
@@ -775,7 +775,7 @@ Vk_Image vk_load_texture(const String& texture_file)
     return texture;
 }
 
-static bool read_binary_file(const String& file_name, Byte_Buffer& bytes)
+static bool read_binary_file(const String& file_name, Array<uint8_t>& bytes)
 {
     Scoped_File file = fopen(file_name.data(), "rb");
     if (!file) {
@@ -788,32 +788,33 @@ static bool read_binary_file(const String& file_name, Byte_Buffer& bytes)
     if (size < 0 || fseek(file, 0, SEEK_SET) != 0) {
         return false;
     }
-    Byte_Buffer content{size_t(size)};
-    bool read = file.read(content.data, content.size);
+    Array<uint8_t> content;
+    content.resize_uninitialized(size_t(size));
+    bool read = file.read(content.data(), content.size());
     bool closed = file.close();
     if (!read || !closed) {
         return false;
     }
-    bytes = static_cast<Byte_Buffer&&>(content);
+    bytes = rvalue(content);
     return true;
 }
 
 VkShaderModule vk_load_spirv(const String& spirv_file)
 {
-    Byte_Buffer bytes;
+    Array<uint8_t> bytes;
     if (!read_binary_file(spirv_file, bytes)) {
         vk.error(string_concat("failed to read file: ", spirv_file));
         return VK_NULL_HANDLE;
     }
 
-    if (bytes.size % 4 != 0) {
+    if (bytes.size() % 4 != 0) {
         vk.error("Vulkan: SPIR-V binary buffer size is not multiple of 4");
         return VK_NULL_HANDLE;
     }
 
     VkShaderModuleCreateInfo create_info { VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO } ;
-    create_info.codeSize = bytes.size;
-    create_info.pCode = reinterpret_cast<const uint32_t*>(bytes.data);
+    create_info.codeSize = bytes.size();
+    create_info.pCode = reinterpret_cast<const uint32_t*>(bytes.data());
 
     VkShaderModule shader_module;
     VK_CHECK(vkCreateShaderModule(vk.device, &create_info, nullptr, &shader_module));
@@ -1244,7 +1245,7 @@ VkDescriptorSetAndBindingMappingEXT map_binding_to_heap_offset(
 void Vk_Timer::start()
 {
     vkCmdWriteTimestamp(vk.command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk.timestamp_query_pool, start_query);
-    vk.timestamp_active_start_queries[vk.frame_index].emplace_back(start_query);
+    vk.timestamp_active_start_queries[vk.frame_index].add(start_query);
 }
 
 void Vk_Timer::stop()
@@ -1273,7 +1274,7 @@ void Vk_Time_Keeper::initialize_timers()
 
 void Vk_Time_Keeper::retrieve_query_results()
 {
-    std::vector<uint32_t>& active_start_queries = vk.timestamp_active_start_queries[vk.frame_index];
+    Array<uint32_t>& active_start_queries = vk.timestamp_active_start_queries[vk.frame_index];
     for (size_t i = 0; i < active_start_queries.size(); i++) {
         const uint32_t start_query = active_start_queries[i];
 

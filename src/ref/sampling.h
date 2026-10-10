@@ -60,7 +60,7 @@ public:
 private:
     int n = 0;
     float interval_length = 0.f; // 1/n
-    std::vector<float> cdf;
+    Array<float> cdf;
 };
 
 // Distribution_2D represents PDF (probability density function) defined over [0..1]^2.
@@ -89,8 +89,8 @@ private:
     int ny = 0;
     float x_interval_length = 0.f; // 1/nx
     float y_interval_length = 0.f; // 1/ny
-    std::vector<float> marginal_CDF_y; // cdf from marginal pdf p(y): ny elements
-    std::vector<float> CDFs_x; // cdf for each row: nx * ny elements
+    Array<float> marginal_CDF_y; // cdf from marginal pdf p(y): ny elements
+    Array<float> CDFs_x; // cdf for each row: nx * ny elements
 };
 
 // Importance sampling of GGX microfacet distribution: D(wh) * dot(wh, N)

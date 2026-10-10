@@ -32,7 +32,7 @@ public:
     void initialize_from_file(const String& image_path, const Init_Params& params);
     void initialize_from_constant_value(const ColorRGB& color);
 
-    const std::vector<Image>& get_mips() const { return mips; }
+    const Array<Image>& get_mips() const { return mips; }
 
     ColorRGB sample_nearest(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const;
     ColorRGB sample_bilinear(const Vector2& uv, int mip_level, Wrap_Mode wrap_mode) const;
@@ -44,5 +44,5 @@ private:
     void generate_mips(Filter_Type filter, bool is_hdr_image);
 
 private:
-    std::vector<Image> mips;
+    Array<Image> mips;
 };

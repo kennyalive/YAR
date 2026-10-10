@@ -8,7 +8,7 @@
 
 constexpr VkFormat output_image_format = VK_FORMAT_R16G16B16A16_SFLOAT;
 
-void Direct_Lighting_Renderer::initialize(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings, Vk_Time_Keeper& time_keeper)
+void Direct_Lighting_Renderer::initialize(const Array<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings, Vk_Time_Keeper& time_keeper)
 {
     direct_lighting.create(descriptor_mappings);
     timer_draw = time_keeper.allocate_timer("direct_draw");

@@ -40,7 +40,7 @@ struct Film_Pixel {
 
 struct Film_Tile {
     Bounds2i pixel_bounds;
-    std::vector<Film_Pixel> pixels;
+    Array<Film_Pixel> pixels;
 
     Film_Tile() = default;
     Film_Tile(Bounds2i pixel_bounds);
@@ -54,7 +54,7 @@ struct Film {
     Bounds2i sample_region;
     Vector2i tile_grid_size;
 
-    std::vector<Film_Pixel> pixels; // has render_region dimensions
+    Array<Film_Pixel> pixels; // has render_region dimensions
 
     Film(Bounds2i render_region, Film_Filter filter);
     int get_tile_count() const { return tile_grid_size.x * tile_grid_size.y; }

@@ -161,16 +161,16 @@ struct Mix_Material {
 #include "material_pbrt.h"
 
 struct Materials {
-    std::vector<Diffuse_Material> diffuse;
-    std::vector<Diffuse_Transmission_Material> diffuse_transmission;
-    std::vector<Perfect_Reflector_Material> perfect_reflector;
-    std::vector<Perfect_Refractor_Material> perfect_refractor;
-    std::vector<Metal_Material> metal;
-    std::vector<Plastic_Material> plastic;
-    std::vector<Coated_Diffuse_Material> coated_diffuse;
-    std::vector<Glass_Material> glass;
-    std::vector<Mix_Material> mix;
-    std::vector<Pbrt3_Uber_Material> pbrt3_uber;
-    std::vector<Pbrt3_Translucent_Material> pbrt3_translucent;
-    std::vector<Pbrt3_Fourier_Material> pbrt3_fourier;
+    Array<Diffuse_Material> diffuse;
+    Array<Diffuse_Transmission_Material> diffuse_transmission;
+    Array<Perfect_Reflector_Material> perfect_reflector;
+    Array<Perfect_Refractor_Material> perfect_refractor;
+    Array<Metal_Material> metal;
+    Array<Plastic_Material> plastic;
+    Array<Coated_Diffuse_Material> coated_diffuse;
+    Array<Glass_Material> glass;
+    Array<Mix_Material> mix;
+    Array<Pbrt3_Uber_Material> pbrt3_uber;
+    Array<Pbrt3_Translucent_Material> pbrt3_translucent;
+    Array<Pbrt3_Fourier_Material> pbrt3_fourier;
 };

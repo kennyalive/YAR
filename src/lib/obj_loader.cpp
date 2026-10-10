@@ -6,6 +6,7 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny/tiny_obj_loader.h>
+#include <vector>
 
 namespace {
 struct Mesh_Vertex {
@@ -30,16 +31,16 @@ struct Mesh_Vertex_Hasher {
 }
 
 static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyobj::attrib_t attrib,
-    const Triangle_Mesh_Load_Params params, std::vector<Obj_Mesh>& obj_meshes)
+    const Triangle_Mesh_Load_Params params, Array<Obj_Mesh>& obj_meshes)
 {
     int current_material_id = shape.mesh.material_ids.empty() ? -1 : shape.mesh.material_ids[0];
     std::unordered_map<Mesh_Vertex, uint32_t, Mesh_Vertex_Hasher> unique_vertices;
     bool has_normals = true;
 
-    obj_meshes.push_back(Obj_Mesh{});
-    obj_meshes.back().name = String(shape.name.data(), shape.name.size());
-    obj_meshes.back().material_index = current_material_id;
-    Triangle_Mesh* mesh = &obj_meshes.back().mesh;
+    obj_meshes.add();
+    obj_meshes.last().name = String(shape.name.data(), shape.name.size());
+    obj_meshes.last().material_index = current_material_id;
+    Triangle_Mesh* mesh = &obj_meshes.last().mesh;
 
     for (int i = 0; i < (int)shape.mesh.indices.size(); i++) {
         const tinyobj::index_t& index = shape.mesh.indices[i];
@@ -52,10 +53,10 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
                 if (!has_normals || params.force_normal_calculation)
                     calculate_normals(params.normal_calculation_params, *mesh);
 
-                obj_meshes.push_back(Obj_Mesh{});
-                obj_meshes.back().name = String(shape.name.data(), shape.name.size());
-                obj_meshes.back().material_index = material_id;
-                mesh = &obj_meshes.back().mesh;
+                obj_meshes.add();
+                obj_meshes.last().name = String(shape.name.data(), shape.name.size());
+                obj_meshes.last().material_index = material_id;
+                mesh = &obj_meshes.last().mesh;
                 current_material_id = material_id;
                 unique_vertices.clear();
                 has_normals = true;
@@ -93,13 +94,13 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
         if (unique_vertices.count(vertex) == 0) {
             vertex_index = (uint32_t)mesh->vertices.size();
             unique_vertices[vertex] = (uint32_t)mesh->vertices.size();
-            mesh->vertices.push_back(vertex.pos);
-            mesh->normals.push_back(vertex.normal);
-            mesh->uvs.push_back(vertex.uv);
+            mesh->vertices.add(vertex.pos);
+            mesh->normals.add(vertex.normal);
+            mesh->uvs.add(vertex.uv);
         } else {
             vertex_index = unique_vertices[vertex];
         }
-        mesh->indices.push_back(vertex_index);
+        mesh->indices.add(vertex_index);
     }
 
     if (!has_normals || params.force_normal_calculation)
@@ -109,7 +110,7 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
 Obj_Data load_obj(
     const String& obj_file_path,
     const Triangle_Mesh_Load_Params& params,
-    const std::vector<String>* ignore_geometry_names)
+    const Array<String>* ignore_geometry_names)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;

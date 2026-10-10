@@ -19,15 +19,15 @@ struct TLAS_Info {
 };
 
 struct Vk_Intersection_Accelerator {
-    std::vector<BLAS_Info> bottom_level_accels;
+    Array<BLAS_Info> bottom_level_accels;
     TLAS_Info top_level_accel;
     Vk_Buffer instance_buffer;
     void destroy();
 };
 
 Vk_Intersection_Accelerator create_intersection_accelerator(
-    const std::vector<Scene_Object>& scene_objects,
-    const std::vector<GPU_Mesh>& gpu_meshes,
+    const Array<Scene_Object>& scene_objects,
+    const Array<GPU_Mesh>& gpu_meshes,
     VkDeviceAddress mesh_vertex_data_address,
     VkDeviceAddress index_vertex_data_address
 );

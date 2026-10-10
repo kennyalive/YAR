@@ -166,12 +166,12 @@ struct KdTree_Builder {
     Bounding_Box total_bounds;
 
     // Intermediate storage
-    std::vector<Edge> edges[3]; // edges for each axis
-    std::vector<Primitive_Info> primitive_buffer;
-    std::vector<Primitive_Info> primitive_buffer2;
+    Array<Edge> edges[3]; // edges for each axis
+    Array<Primitive_Info> primitive_buffer;
+    Array<Primitive_Info> primitive_buffer2;
 
     // Created nodes
-    std::vector<KdNode> nodes;
+    Array<KdNode> nodes;
 };
 
 KdTree_Builder::KdTree_Builder(
@@ -192,7 +192,7 @@ KdTree_Builder::KdTree_Builder(
     primitive_buffer.reserve(total_primitive_count);
     for (uint32_t i = 0; i < total_primitive_count; i++) {
         Bounding_Box bounds = get_primitive_bounds(i);
-        primitive_buffer.push_back({ i, bounds});
+        primitive_buffer.add({ i, bounds});
         total_bounds = Bounding_Box::compute_union(total_bounds, bounds);
     }
 
@@ -289,7 +289,7 @@ void KdTree_Builder::build_node(const Bounding_Box& node_bounds, uint32_t primit
 
     // add interior node and recursively create children nodes
     uint32_t this_node_index = (uint32_t)nodes.size();
-    nodes.push_back(KdNode());
+    nodes.add();
 
     Bounding_Box bounds0 = node_bounds;
     bounds0.max_p[split_axis] = split_position;
@@ -307,12 +307,12 @@ void KdTree_Builder::create_leaf(const Primitive_Info* primitives, uint32_t prim
 {
     KdNode node;
     node.init_leaf(primitive_count);
-    nodes.push_back(node);
+    nodes.add(node);
     size_t indices_start_node = nodes.size() - 1;
     if (primitive_count > 1) {
         // nodes that are used as storage for primitive indices array
         int extra_node_count = primitive_count / 2;
-        nodes.insert(nodes.end(), extra_node_count, KdNode{});
+        nodes.resize(nodes.size() + extra_node_count);
     }
     uint32_t* indices = &nodes[indices_start_node].word1;
     for (uint32_t i = 0; i < primitive_count; i++) {

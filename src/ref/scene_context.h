@@ -16,12 +16,12 @@
 struct Scene;
 
 struct KdTree_Data {
-    std::vector<Triangle_Mesh_Geometry_Data> triangle_mesh_geometry_data;
-    std::vector<KdTree> geometry_kdtrees;
+    Array<Triangle_Mesh_Geometry_Data> triangle_mesh_geometry_data;
+    Array<KdTree> geometry_kdtrees;
     Scene_Geometry_Data scene_geometry_data;
     KdTree scene_kdtree;
 
-    void initialize(const Scene& scene, const std::vector<Image_Texture>& textures, bool rebuild_kdtree_cache);
+    void initialize(const Scene& scene, const Array<Image_Texture>& textures, bool rebuild_kdtree_cache);
 };
 
 struct MIS_Array_Info {
@@ -32,8 +32,8 @@ struct MIS_Array_Info {
 };
 
 struct Array2D_Registry {
-    std::vector<MIS_Array_Info> rectangular_light_arrays;
-    std::vector<MIS_Array_Info> sphere_light_arrays;
+    Array<MIS_Array_Info> rectangular_light_arrays;
+    Array<MIS_Array_Info> sphere_light_arrays;
 };
 
 struct Scene_Context {
@@ -49,13 +49,13 @@ struct Scene_Context {
 
     // Materials
     Materials materials;
-    std::vector<Parameter> material_parameters;
-    std::vector<Image_Texture> textures;
+    Array<Parameter> material_parameters;
+    Array<Image_Texture> textures;
 
     // Lights
     Lights lights;
     Environment_Light_Sampler environment_light_sampler;
-    std::vector<Diffuse_Triangle_Mesh_Light_Sampler> triangle_mesh_light_samplers;
+    Array<Diffuse_Triangle_Mesh_Light_Sampler> triangle_mesh_light_samplers;
 
     // Samplers
     Stratified_Pixel_Sampler_Configuration pixel_sampler_config;

@@ -23,7 +23,7 @@ int Stratified_Pixel_Sampler_Configuration::register_array2d_samples(int x_size,
     info.x_size = x_size;
     info.y_size = y_size;
     info.first_sample_offset = array2d_samples_per_pixel;
-    array2d_infos.push_back(info);
+    array2d_infos.add(info);
     array2d_samples_per_pixel += (x_size * y_size) * (x_pixel_sample_count * y_pixel_sample_count);
     return (int)array2d_infos.size() - 1;
 }
@@ -33,7 +33,7 @@ int Stratified_Pixel_Sampler_Configuration::register_array1d_samples(int size)
     Array1D_Info info;
     info.size = size;
     info.first_sample_offset = array1d_samples_per_pixel;
-    array1d_infos.push_back(info);
+    array1d_infos.add(info);
     array1d_samples_per_pixel += size * (x_pixel_sample_count * y_pixel_sample_count);
     return (int)array1d_infos.size() - 1;
 }
@@ -62,7 +62,7 @@ void Stratified_Pixel_Sampler::next_pixel()
 
     // Generate 1d samples.
     {
-        std::vector<float> samples(pixel_sample_count);
+        Array<float> samples(pixel_sample_count);
         for (int i = 0; i < config->sample_vector_1d_size; i++) {
             generate_stratified_sequence_1d(*rng, pixel_sample_count, samples.data());
             shuffle(samples.data(), pixel_sample_count, *rng);
@@ -74,7 +74,7 @@ void Stratified_Pixel_Sampler::next_pixel()
 
     // Generate 2d samples.
     {
-        std::vector<Vector2> samples(pixel_sample_count);
+        Array<Vector2> samples(pixel_sample_count);
         for (int i = 0; i < config->sample_vector_2d_size; i++) {
             generate_stratified_sequence_2d(*rng, config->x_pixel_sample_count, config->y_pixel_sample_count, samples.data());
             shuffle(samples.data(), pixel_sample_count, *rng);
@@ -89,7 +89,7 @@ void Stratified_Pixel_Sampler::next_pixel()
         int array_sample_count = array_info.x_size * array_info.y_size;
 
         // sequence of array_sample_count grids of stratified samples of size (x_pixel_samples, y_pixel_samples)
-        std::vector<Vector2> stratified_grids(array_sample_count * pixel_sample_count);
+        Array<Vector2> stratified_grids(array_sample_count * pixel_sample_count);
         for (int i = 0; i < array_sample_count; i++) {
             Vector2* grid = &stratified_grids[i * pixel_sample_count];
             generate_stratified_sequence_2d(*rng, config->x_pixel_sample_count, config->y_pixel_sample_count, grid);
@@ -122,7 +122,7 @@ void Stratified_Pixel_Sampler::next_pixel()
     // Generate 1d array samples (computations are analogous to 2d array case).
     for (const auto& array_info : config->array1d_infos) {
         // sequence of array_info.size grids of stratified samples  of size (x_pixel_samples, y_pixel_samples)
-        std::vector<float> stratified_grids(array_info.size * pixel_sample_count);
+        Array<float> stratified_grids(array_info.size * pixel_sample_count);
         for (int i = 0; i < array_info.size; i++) {
             float* grid = &stratified_grids[i * pixel_sample_count];
             generate_stratified_sequence_1d(*rng, pixel_sample_count, grid);

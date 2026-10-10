@@ -32,8 +32,8 @@ static Matrix3x4 to_matrix3x4(const pbrt::affine3f& pbrt_transform) {
 }
 
 static Sampled_Spectrum to_sampled_spectrum(const pbrt::Spectrum& pbrt_spectrum) {
-    std::vector<float> lambdas(pbrt_spectrum.spd.size());
-    std::vector<float> values(pbrt_spectrum.spd.size());
+    Array<float> lambdas(pbrt_spectrum.spd.size());
+    Array<float> values(pbrt_spectrum.spd.size());
     for (int i = 0; i < int(pbrt_spectrum.spd.size()); i++) {
         lambdas[i] = pbrt_spectrum.spd[i].first;
         values[i] = pbrt_spectrum.spd[i].second;
@@ -341,7 +341,7 @@ static Float_Parameter import_pbrt_texture_float(const pbrt::Texture::SP pbrt_te
 template <Material_Type material_type, typename Material>
 Material_Handle add_material(Materials& materials, const Material& material)
 {
-    std::vector<Material>* materials_of_given_type = nullptr;
+    Array<Material>* materials_of_given_type = nullptr;
     if constexpr (material_type == Material_Type::diffuse) {
         materials_of_given_type = &materials.diffuse;
     }
@@ -388,7 +388,7 @@ Material_Handle add_material(Materials& materials, const Material& material)
             return Material_Handle{ material_type, (int)i };
     }
     // Add new material.
-    materials_of_given_type->push_back(material);
+    materials_of_given_type->add(material);
     return Material_Handle{ material_type, (int)materials_of_given_type->size() - 1 };
 }
 
@@ -691,14 +691,14 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
         ASSERT(pbrt_mesh->normal.size() == pbrt_mesh->vertex.size());
         mesh.normals.reserve(pbrt_mesh->normal.size());
         for (const pbrt::vec3f& normal : pbrt_mesh->normal)
-            mesh.normals.push_back(Vector3(&normal.x));
+            mesh.normals.add(Vector3(&normal.x));
     }
 
     if (!pbrt_mesh->texcoord.empty()) {
         ASSERT(pbrt_mesh->texcoord.size() == pbrt_mesh->vertex.size());
         mesh.uvs.reserve(pbrt_mesh->texcoord.size());
         for (const pbrt::vec2f& texcoord : pbrt_mesh->texcoord)
-            mesh.uvs.push_back(Vector2(&texcoord.x));
+            mesh.uvs.add(Vector2(&texcoord.x));
     }
     else if (mesh.vertices.size() == 4) {
         // TODO: one improvement might be to use these default values only
@@ -737,7 +737,7 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
         mesh.visibility = Visibility::visible_no_shadows;
     }
 
-    scene->geometries.triangle_meshes.emplace_back(mesh);
+    scene->geometries.triangle_meshes.add(mesh);
     return Geometry_Handle{ Geometry_Type::triangle_mesh, (int)scene->geometries.triangle_meshes.size() - 1 };
 }
 
@@ -750,7 +750,7 @@ static Geometry_Handle import_pbrt_sphere(const pbrt::Sphere::SP pbrt_sphere, Ma
     }
 
     Triangle_Mesh sphere = create_sphere_mesh(pbrt_sphere->radius, 6, true);
-    scene->geometries.triangle_meshes.push_back(std::move(sphere));
+    scene->geometries.triangle_meshes.add(std::move(sphere));
     Geometry_Handle sphere_geometry_handle = { Geometry_Type::triangle_mesh, int(scene->geometries.triangle_meshes.size() - 1) };
     scene->radius_to_sphere_geometry.insert(std::make_pair(pbrt_sphere->radius, sphere_geometry_handle));
     return sphere_geometry_handle;
@@ -781,7 +781,7 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                     light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
                     light.size = rect_size;
                     light.sample_count = pbrt_diffuse_area_light_rgb->nSamples;
-                    scene->lights.diffuse_rectangular_lights.push_back(light);
+                    scene->lights.diffuse_rectangular_lights.add(light);
                     shape.area_light = {Light_Type::diffuse_rectangular, (int)scene->lights.diffuse_rectangular_lights.size() - 1};
                 }
                 else {
@@ -789,7 +789,7 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                     light.light_to_world_transform = instance_transform;
                     light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
                     light.triangle_mesh_index = (uint32_t)shape.geometry.index;
-                    scene->lights.diffuse_triangle_mesh_lights.push_back(light);
+                    scene->lights.diffuse_triangle_mesh_lights.add(light);
                     shape.area_light = { Light_Type::diffuse_triangle_mesh, (int)scene->lights.diffuse_triangle_mesh_lights.size() - 1 };
                 }
             }
@@ -820,7 +820,7 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
 
                     light.size = rect_size;
                     light.sample_count = pbrt_diffuse_area_light_blackbody->nSamples;
-                    scene->lights.diffuse_rectangular_lights.push_back(light);
+                    scene->lights.diffuse_rectangular_lights.add(light);
                     shape.area_light = { Light_Type::diffuse_rectangular, (int)scene->lights.diffuse_rectangular_lights.size() - 1 };
                 }
                 else {
@@ -839,7 +839,7 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                     light.emitted_radiance = XYZ_to_sRGB(xyz);
 
                     light.triangle_mesh_index = (uint32_t)shape.geometry.index;
-                    scene->lights.diffuse_triangle_mesh_lights.push_back(light);
+                    scene->lights.diffuse_triangle_mesh_lights.add(light);
                     shape.area_light = { Light_Type::diffuse_triangle_mesh, (int)scene->lights.diffuse_triangle_mesh_lights.size() - 1 };
                 }
             }
@@ -860,7 +860,7 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
                 light.emitted_radiance = ColorRGB(&pbrt_diffuse_area_light_rgb->L.x);
                 light.radius = pbrt_sphere->radius;
                 light.sample_count = pbrt_diffuse_area_light_rgb->nSamples;
-                scene->lights.diffuse_sphere_lights.push_back(light);
+                scene->lights.diffuse_sphere_lights.add(light);
                 shape.area_light = {Light_Type::diffuse_sphere, (int)scene->lights.diffuse_sphere_lights.size() - 1};
             }
             else if (auto pbrt_diffuse_area_light_blackbody = std::dynamic_pointer_cast<pbrt::DiffuseAreaLightBB>(pbrt_shape->areaLight)) {
@@ -880,7 +880,7 @@ static Shape import_pbrt_shape(pbrt::Shape::SP pbrt_shape, const Matrix3x4& inst
 
                 light.radius = pbrt_sphere->radius;
                 light.sample_count = pbrt_diffuse_area_light_blackbody->nSamples;
-                scene->lights.diffuse_sphere_lights.push_back(light);
+                scene->lights.diffuse_sphere_lights.add(light);
                 shape.area_light = { Light_Type::diffuse_sphere, (int)scene->lights.diffuse_sphere_lights.size() - 1 };
             }
             else {
@@ -909,7 +909,7 @@ static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const M
         Point_Light light;
         light.position = Vector3(&point_light->from.x);
         light.intensity = ColorRGB(&point_light->I.x) * ColorRGB(&point_light->scale.x);
-        scene->lights.point_lights.push_back(light);
+        scene->lights.point_lights.add(light);
         return;
     }
 
@@ -923,7 +923,7 @@ static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const M
         light.cone_angle = radians(spot_light->coneAngle);
         light.penumbra_angle = radians(spot_light->coneDeltaAngle);
         light.intensity = ColorRGB(&spot_light->I.x) * ColorRGB(&spot_light->scale.x);
-        scene->lights.spot_lights.push_back(light);
+        scene->lights.spot_lights.add(light);
         return;
     }
 
@@ -950,7 +950,7 @@ static void import_pbrt_non_area_light(pbrt::LightSource::SP pbrt_light, const M
         else {
             light.irradiance = ColorRGB(&distant_light->L.x) * ColorRGB(&distant_light->scale.x);
         }
-        scene->lights.directional_lights.push_back(light);
+        scene->lights.directional_lights.add(light);
         return;
     }
 
@@ -1026,7 +1026,7 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
     if (is_transform_changes_handedness(view_point))
         scene->front_face_has_clockwise_winding = true;
 
-    scene->view_points.push_back(view_point);
+    scene->view_points.add(view_point);
 
     // "fov" in pbrt project files specifies field of view of the more
     // narrow image dimension. For "horizontal" images this represents 
@@ -1082,7 +1082,7 @@ void load_pbrt_scene(Scene& scene) {
                 scene_object.area_light = shape.area_light;
                 scene_object.object_to_world_transform = instance_transform * shape.transform;
                 scene_object.world_to_object_transform = get_inverse_transform(scene_object.object_to_world_transform);
-                scene.objects.push_back(scene_object);
+                scene.objects.add(scene_object);
 
                 // Material and area light are mutually exclusive properties and one of them must be defined.
                 ASSERT((scene_object.area_light == Null_Light) != (scene_object.material == Null_Material));

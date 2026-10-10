@@ -11,10 +11,10 @@ enum class Visibility {
 };
 
 struct Triangle_Mesh {
-    std::vector<Vector3> vertices;
-    std::vector<Vector3> normals;
-    std::vector<Vector2> uvs;
-    std::vector<int32_t> indices;
+    Array<Vector3> vertices;
+    Array<Vector3> normals;
+    Array<Vector2> uvs;
+    Array<int32_t> indices;
 
     // TODO: the following fields should probably go into Scene_Object or elsewhere
     int alpha_texture_index = -1;

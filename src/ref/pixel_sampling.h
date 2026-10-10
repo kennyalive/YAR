@@ -41,7 +41,7 @@ struct Stratified_Pixel_Sampler_Configuration {
         // followed by the same amount of samples for the second pixel sample, etc.
         int first_sample_offset = -1;
     };
-    std::vector<Array2D_Info> array2d_infos; // Indexed by id returned from register_array2d_samples()
+    Array<Array2D_Info> array2d_infos; // Indexed by id returned from register_array2d_samples()
     int array2d_samples_per_pixel = 0;
     // Registers 2d array of stratified samples distributed over [0, 1)^2.
     // Returns id to use in Stratified_Pixel_Sampler::get_array2d.
@@ -51,7 +51,7 @@ struct Stratified_Pixel_Sampler_Configuration {
         int size = 0;
         int first_sample_offset = -1;
     };
-    std::vector<Array1D_Info> array1d_infos;
+    Array<Array1D_Info> array1d_infos;
     int array1d_samples_per_pixel = 0;
     // Registers 1d array of stratified samples distributed over [0, 1).
     // Returns id to use in Stratified_Pixel_Sampler::get_array1d.
@@ -65,12 +65,12 @@ struct Stratified_Pixel_Sampler {
     int current_sample_vector = 0;
 
     // Generated samples.
-    std::vector<Vector2> image_plane_samples;
+    Array<Vector2> image_plane_samples;
 
-    std::vector<float>  samples_1d;
+    Array<float>  samples_1d;
     int current_sample_1d = 0;
 
-    std::vector<Vector2> samples_2d;
+    Array<Vector2> samples_2d;
     int current_sample_2d = 0;
 
     void init(const Stratified_Pixel_Sampler_Configuration* config, RNG* rng);
@@ -88,8 +88,8 @@ struct Stratified_Pixel_Sampler {
     //
     // Arrays of samples for basic direct lighting renderer.
     //
-    std::vector<Vector2> array2d_samples; // [0..1)^2 samples for all registered 2d arrays for all pixel samples
-    std::vector<float> array1d_samples; // [0..1) samples for all registered 1d arrays for all pixel samples
+    Array<Vector2> array2d_samples; // [0..1)^2 samples for all registered 2d arrays for all pixel samples
+    Array<float> array1d_samples; // [0..1) samples for all registered 1d arrays for all pixel samples
     const Vector2* get_array2d(int array2d_id) const;
     const float* get_array1d(int array1d_id) const;
 };

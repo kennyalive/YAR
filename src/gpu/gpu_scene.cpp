@@ -50,7 +50,7 @@ void GPU_Scene::load(const Scene& scene)
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT, "index_scratch");
 
         const uint32_t mesh_count = (uint32_t)scene.geometries.triangle_meshes.size();
-        std::vector<GPU_Types::Mesh_Info> mesh_info_data(mesh_count);
+        Array<GPU_Types::Mesh_Info> mesh_info_data(mesh_count);
         meshes.resize(mesh_count);
 
         uint32_t current_vertex = 0;
@@ -120,7 +120,7 @@ void GPU_Scene::load(const Scene& scene)
 
     // Instance buffer.
     {
-        std::vector<GPU_Types::Instance_Info> instance_info_data(scene.objects.size());
+        Array<GPU_Types::Instance_Info> instance_info_data(scene.objects.size());
         for (auto [i, scene_object] : enumerate(scene.objects)) {
             instance_info_data[i].material.init(scene_object.material);
             instance_info_data[i].geometry.init(scene_object.geometry);
@@ -141,10 +141,10 @@ void GPU_Scene::load(const Scene& scene)
         images.reserve(images.size() + scene.texture_descriptors.size());
         for (const Texture_Descriptor& texture_desc : scene.texture_descriptors) {
             Vk_Image image = vk_load_texture(scene.get_resource_absolute_path(texture_desc.file_name));
-            images.push_back(image);
+            images.add(image);
         }
 
-        std::vector<GPU_Types::Lambertian_Material> gpu_lambertian_materials(scene.materials.diffuse.size());
+        Array<GPU_Types::Lambertian_Material> gpu_lambertian_materials(scene.materials.diffuse.size());
         for (auto [i, lambertian] : enumerate(scene.materials.diffuse)) {
             const RGB_Parameter& param = lambertian.reflectance;
             ASSERT(param.eval_mode == EvaluationMode::value);
@@ -180,7 +180,7 @@ void GPU_Scene::load(const Scene& scene)
         bool found_supported_lights = false;
         if (!scene.lights.point_lights.empty()) {
             found_supported_lights = true;
-            std::vector<GPU_Types::Point_Light> lights(scene.lights.point_lights.size());
+            Array<GPU_Types::Point_Light> lights(scene.lights.point_lights.size());
             for (auto [i, data] : enumerate(scene.lights.point_lights)) {
                 lights[i].init(data);
             }
@@ -190,7 +190,7 @@ void GPU_Scene::load(const Scene& scene)
         }
         if (!scene.lights.directional_lights.empty()) {
             found_supported_lights = true;
-            std::vector<GPU_Types::Directional_Light> lights(scene.lights.directional_lights.size());
+            Array<GPU_Types::Directional_Light> lights(scene.lights.directional_lights.size());
             for (auto [i, data] : enumerate(scene.lights.directional_lights)) {
                 lights[i].init(data);
             }
@@ -200,7 +200,7 @@ void GPU_Scene::load(const Scene& scene)
         }
         if (!scene.lights.diffuse_rectangular_lights.empty()) {
             found_supported_lights = true;
-            std::vector<GPU_Types::Rect_Light> lights(scene.lights.diffuse_rectangular_lights.size());
+            Array<GPU_Types::Rect_Light> lights(scene.lights.diffuse_rectangular_lights.size());
             for (auto [i, data] : enumerate(scene.lights.diffuse_rectangular_lights)) {
                 lights[i].init(data);
             }

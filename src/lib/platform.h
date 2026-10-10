@@ -15,7 +15,7 @@ FILE* fs_open(String_View path, const char* mode);
 bool fs_file_size(FILE* file, size_t& size);
 
 // Binary files
-bool fs_load(String_View path, Byte_Buffer& bytes);
+bool fs_load(String_View path, Array<uint8_t>& bytes);
 bool fs_save(String_View path, const void* data, size_t size);
 
 // Text files

@@ -15,7 +15,7 @@ void test_random_uint32_distribution() {
     printf("Testing random uint32 distribution...\n");
     printf("Bucket count = %d\n", bucket_count);
 
-    std::vector<int> buckets(bucket_count, 0);
+    Array<int> buckets(bucket_count, 0);
     RNG rng;
     rng.init(0, 0);
     for (int i = 0; i < n; i++) {
@@ -53,7 +53,7 @@ void test_random_uint32_distribution_multiple_streams() {
     int failed_estimate_count = 0;
     const float estimated_bucket_item_count = float(n) / bucket_count;
     for (int stream = 0; stream < stream_count; stream++) {
-        std::vector<int> buckets(bucket_count, 0);
+        Array<int> buckets(bucket_count, 0);
         RNG rng;
         rng.init(0, stream);
         for (int i = 0; i < n; i++) {
@@ -81,7 +81,7 @@ void test_random_bounded_uint32_distribution() {
 
     printf("Testing random bounded uint32 distribution...\n");
 
-    std::vector<uint32_t> bounds { 1, 2, 4, 5, 7, 8, 16, 24, 39, 64, 100, 256, 1001, 4096, 11111 };
+    Array<uint32_t> bounds { 1, 2, 4, 5, 7, 8, 16, 24, 39, 64, 100, 256, 1001, 4096, 11111 };
     for (int method = 0; method < 2; method++) {
         if (method == 0)
             printf("Using get_bounded_uint function\n");
@@ -92,7 +92,7 @@ void test_random_bounded_uint32_distribution() {
         for (uint32_t bound : bounds) {
             printf("Bound value: %u, ", bound);
 
-            std::vector<int> buckets(bound, 0);
+            Array<int> buckets(bound, 0);
             RNG rng;
             rng.init(0, 0);
             const int n = estimated_bucket_item_count * bound;
@@ -133,7 +133,7 @@ void test_random_float() {
     printf("Testing random float distribution...\n");
     printf("Bucket count = %d\n", bucket_count);
 
-    std::vector<int> buckets(bucket_count, 0);
+    Array<int> buckets(bucket_count, 0);
     RNG rng;
     rng.init(0, 0);
     for (int i = 0; i < n; i++) {

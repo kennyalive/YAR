@@ -18,8 +18,6 @@ constexpr int VK_VERSION = -4;
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
 #include "vma/vk_mem_alloc.h"
 
-#include <vector>
-
 const char* vk_result_to_string(VkResult result);
 #define VK_CHECK_RESULT(result) if (result < 0 && vk.error) vk.error(string_concat("Error: ", vk_result_to_string(result)));
 #define VK_CHECK(function_call) { VkResult result = function_call;  VK_CHECK_RESULT(result); }
@@ -154,9 +152,9 @@ void vk_set_debug_name(Vk_Object_Type object, const char* name);
 
 struct Swapchain_Info {
     VkSwapchainKHR handle = VK_NULL_HANDLE;
-    std::vector<VkImage> images;
-    std::vector<VkImageView> image_views;
-    std::vector<VkSemaphore> ready_for_present_semaphores;
+    Array<VkImage> images;
+    Array<VkImageView> image_views;
+    Array<VkSemaphore> ready_for_present_semaphores;
 };
 
 // Vk_Instance contains vulkan resources that do not depend on applicaton logic.
@@ -190,7 +188,7 @@ struct Vk_Instance {
 
     VkQueryPool                     timestamp_query_pools[2];
     VkQueryPool                     timestamp_query_pool; // timestamp_query_pool[frame_index]
-    std::vector<uint32_t>           timestamp_active_start_queries[2];
+    Array<uint32_t>                 timestamp_active_start_queries[2];
     uint32_t                        timestamp_query_count;
 
     // Host visible memory used to copy image data to device local memory.
@@ -251,7 +249,7 @@ struct Vk_Timer
     const char* name = nullptr;
     uint32_t start_query; // end_query == start_query + 1
     float duration_ms;
-    std::vector<Vk_Timer*> nested_timers;
+    Array<Vk_Timer*> nested_timers;
 
     void start();
     void stop();

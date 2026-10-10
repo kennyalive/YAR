@@ -4,7 +4,7 @@
 
 #include "shaders/shared.slang"
 
-void Apply_Tone_Mapping::create(const std::vector<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
+void Apply_Tone_Mapping::create(const Array<VkDescriptorSetAndBindingMappingEXT>& descriptor_mappings)
 {
     Vk_Shader_Module shader(get_spirv_file("apply_tone_mapping"));
     pipeline = vk_create_compute_pipeline(shader.handle, descriptor_mappings, "apply_tone_mapping_pipeline_layout");

@@ -4,7 +4,7 @@
 #include "triangle_mesh.h"
 
 void Triangle_Mesh::remove_degenerate_triangles() {
-    std::vector<int32_t> good_triangle_indices;
+    Array<int32_t> good_triangle_indices;
     bool mesh_has_degenerate_triangles = false;
 
     for (int i = 0; i < (int)indices.size(); i+= 3) {
@@ -27,15 +27,15 @@ void Triangle_Mesh::remove_degenerate_triangles() {
         if (degenerate_triangle) {
             if (!mesh_has_degenerate_triangles) {
                 good_triangle_indices.reserve(indices.size());
-                good_triangle_indices.assign(indices.begin(), indices.begin() + i); // copy triangles before the first degenerate one
+                good_triangle_indices.add_all({indices.data(), size_t(i)}); // copy triangles before the first degenerate one
                 mesh_has_degenerate_triangles = true;
             }
             continue;
         }
         if (mesh_has_degenerate_triangles) {
-            good_triangle_indices.push_back(i0);
-            good_triangle_indices.push_back(i1);
-            good_triangle_indices.push_back(i2);
+            good_triangle_indices.add(i0);
+            good_triangle_indices.add(i1);
+            good_triangle_indices.add(i2);
         }
     }
     if (mesh_has_degenerate_triangles)
@@ -57,8 +57,8 @@ void Triangle_Mesh::print_info() const {
 }
 
 static void convert_to_mesh_with_face_normals(Triangle_Mesh& mesh) {
-    std::vector<Vector3> temp_positions(mesh.indices.size());
-    std::vector<Vector2> temp_uvs(mesh.indices.size());
+    Array<Vector3> temp_positions(mesh.indices.size());
+    Array<Vector2> temp_uvs(mesh.indices.size());
 
     mesh.normals.resize(mesh.indices.size());
 
@@ -81,18 +81,18 @@ static void convert_to_mesh_with_face_normals(Triangle_Mesh& mesh) {
         temp_uvs[i + 1] = mesh.uvs[ib];
         temp_uvs[i + 2] = mesh.uvs[ic];
     }
-    std::swap(mesh.vertices, temp_positions);
-    std::swap(mesh.uvs, temp_uvs);
+    mesh.vertices.swap(temp_positions);
+    mesh.uvs.swap(temp_uvs);
 }
 
-static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_groups(std::vector<uint64_t>& normal_groups, float crease_angle, Triangle_Mesh& mesh) {
+static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_groups(Array<uint64_t>& normal_groups, float crease_angle, Triangle_Mesh& mesh) {
     normal_groups.resize(mesh.vertices.size());
 
-    std::unordered_map<Vector3, std::vector<int>, Hasher> vertex_faces;
+    std::unordered_map<Vector3, Array<int>, Hasher> vertex_faces;
     for (int i = 0, face = 0; i < (int)mesh.indices.size(); i += 3, face++) {
-        vertex_faces[mesh.vertices[mesh.indices[i + 0]]].push_back(face);
-        vertex_faces[mesh.vertices[mesh.indices[i + 1]]].push_back(face);
-        vertex_faces[mesh.vertices[mesh.indices[i + 2]]].push_back(face);
+        vertex_faces[mesh.vertices[mesh.indices[i + 0]]].add(face);
+        vertex_faces[mesh.vertices[mesh.indices[i + 1]]].add(face);
+        vertex_faces[mesh.vertices[mesh.indices[i + 2]]].add(face);
     }
 
     auto get_face_normal = [&mesh](int face) {
@@ -104,16 +104,16 @@ static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_gro
 
     struct Mask_Info {
         uint64_t mask;
-        std::vector<int> faces;
+        Array<int> faces;
     };
-    std::vector<Mask_Info> mask_infos; // mask infos are re-initialized for each vertex
+    Array<Mask_Info> mask_infos; // mask infos are re-initialized for each vertex
     int mask_info_count;
 
     const float crease_angle_cos = std::cos(crease_angle);
 
-    for (const std::pair<Vector3, std::vector<int>>& entry : vertex_faces) {
+    for (const auto& entry : vertex_faces) {
         const Vector3 pos = entry.first;
-        const std::vector<int>& faces = entry.second;
+        const Array<int>& faces = entry.second;
         ASSERT(faces.size() <= 64);
 
         // reset mask infos
@@ -153,11 +153,11 @@ static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_gro
 
             if (k == mask_info_count) {
                 if (mask_infos.size() == mask_info_count) {
-                    mask_infos.push_back(Mask_Info{});
+                    mask_infos.add();
                 }
                 mask_infos[mask_info_count++].mask = masks[i];
             }
-            mask_infos[k].faces.push_back(faces[i]);
+            mask_infos[k].faces.add(faces[i]);
         }
 
         // update normal_groups for the first mask group
@@ -176,7 +176,7 @@ static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_gro
         // Faces from the first mask group could use original vertices,
         // for other mask groups we need to duplicate vertices in order to have unique normals.
         for (int i = 1; i < mask_info_count; i++) {
-            const std::vector<int>& grouped_faces = mask_infos[i].faces;
+            const Array<int>& grouped_faces = mask_infos[i].faces;
 
             const int max_uvs = 4;
             Vector2 uvs[max_uvs];
@@ -213,11 +213,11 @@ static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_gro
                     ASSERT(uv_count < max_uvs);
                     uvs[uv_count] = mesh.uvs[v_index];
                     new_vertex_indices[uv_count] = (int)mesh.vertices.size();
-                    mesh.vertices.push_back(mesh.vertices[v_index]);
-                    mesh.normals.push_back(mesh.normals[v_index]);
-                    mesh.uvs.push_back(mesh.uvs[v_index]);
+                    mesh.vertices.add(mesh.vertices[v_index]);
+                    mesh.normals.add(mesh.normals[v_index]);
+                    mesh.uvs.add(mesh.uvs[v_index]);
                     mesh.indices[v_index_index] = new_vertex_indices[uv_count];
-                    normal_groups.push_back(mask_infos[i].mask);
+                    normal_groups.add(mask_infos[i].mask);
                     uv_count++;
                 }
             }
@@ -225,7 +225,7 @@ static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_gro
     }
 }
 
-static void adjust_normal_for_duplicated_vertices(const std::vector<uint64_t>& normal_groups, Triangle_Mesh& mesh) {
+static void adjust_normal_for_duplicated_vertices(const Array<uint64_t>& normal_groups, Triangle_Mesh& mesh) {
     struct Vertex_Info {
         Vector3 pos;
         uint64_t normal_group;
@@ -246,7 +246,7 @@ static void adjust_normal_for_duplicated_vertices(const std::vector<uint64_t>& n
     // otherwise store multiple 'indices'.
     struct Siblings {
         int index = -1;
-        std::vector<int> indices;
+        Array<int> indices;
     };
 
     std::unordered_map<Vertex_Info, Siblings, Vertex_Info_Hasher> duplicated_vertices;
@@ -256,11 +256,11 @@ static void adjust_normal_for_duplicated_vertices(const std::vector<uint64_t>& n
         if (it != duplicated_vertices.end()) {
             Siblings& s = it->second;
             if (s.index != -1) {
-                s.indices.push_back(s.index);
+                s.indices.add(s.index);
                 s.index = -1;
                 
             }
-            s.indices.push_back(i);
+            s.indices.add(i);
         }
         else {
             duplicated_vertices.insert({v_info, {i}});
@@ -293,9 +293,9 @@ void calculate_normals(const Normal_Calculation_Params& params, Triangle_Mesh& m
     mesh.normals.resize(mesh.vertices.size());
 
     // Duplicate vertices due to crease angle if requested.
-    std::vector<uint64_t> normal_groups;
+    Array<uint64_t> normal_groups;
     if (params.use_crease_angle != 0.f) {
-        normal_groups.resize(mesh.vertices.size(), 0);
+        normal_groups.resize(mesh.vertices.size());
         duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_groups(normal_groups, params.crease_angle, mesh);
     }
 

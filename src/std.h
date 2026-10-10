@@ -12,7 +12,6 @@
 #include <optional>
 #include <thread>
 #include <unordered_map>
-#include <vector>
 
 #ifdef _WIN32
 #include <intrin.h>

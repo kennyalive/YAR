@@ -59,7 +59,7 @@ struct Command_Line_Options {
 };
 
 struct Parsed_Command_Line {
-    std::vector<String> files;
+    Array<String> files;
     Command_Line_Options options;
     bool exit_app = false;
     int exit_code = 0;
@@ -170,20 +170,20 @@ static void print_help_string(getopt_context_t* ctx)
     printf("Options:\n%s\n", getopt_create_help_string(ctx, buffer, sizeof(buffer)));
 }
 
-static std::vector<String> read_list_file(const String& list_file)
+static Array<String> read_list_file(const String& list_file)
 {
     String content;
     if (!fs_load_text(list_file, content)) {
         error("Failed to load list file: %s", list_file.data());
     }
     const char* text = content.data();
-    std::vector<String> filenames;
+    Array<String> filenames;
     size_t start = SIZE_MAX;
     size_t last;
     for (size_t i = 0; i < content.size(); i++) {
         if (text[i] == '\n') { // handle new line
             if (start != SIZE_MAX) {
-                filenames.emplace_back(text + start, last - start + 1);
+                filenames.add(String(text + start, last - start + 1));
                 start = SIZE_MAX;
             }
         }
@@ -195,7 +195,7 @@ static std::vector<String> read_list_file(const String& list_file)
         }
     }
     if (start != SIZE_MAX) { // handle last filename
-        filenames.emplace_back(text + start, last - start + 1);
+        filenames.add(String(text + start, last - start + 1));
     }
     return filenames;
 }
@@ -208,7 +208,7 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
         return 1;
     }
 
-    std::vector<String> files;
+    Array<String> files;
     Command_Line_Options options;
 
     bool is_render_region_specified = false;
@@ -233,10 +233,10 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
             String filename = ctx.current_opt_arg;
             if (equals_ignore_case(path_extension(filename), "list")) {
                 auto filenames = read_list_file(filename);
-                files.insert(files.end(), filenames.begin(), filenames.end());
+                files.add_all(filenames);
             }
             else {
-                files.push_back(filename);
+                files.add(filename);
             }
         }
         else if (opt == OPT_HELP) {

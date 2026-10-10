@@ -21,7 +21,7 @@
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr/tinyexr.h"
 
-static std::vector<ColorRGB> load_pfm_image(const String& file_path, int* width, int* height) {
+static Array<ColorRGB> load_pfm_image(const String& file_path, int* width, int* height) {
     Scoped_File f = fs_open(file_path, "rb");
     if (!f) {
         error("load_pfm_image: failed to open file: %s", file_path.data());
@@ -66,12 +66,12 @@ static std::vector<ColorRGB> load_pfm_image(const String& file_path, int* width,
 
     // Read RGB floating point triplets.
     int pixel_count = (*width) * (*height);
-    std::vector<ColorRGB> pixels(pixel_count);
+    Array<ColorRGB> pixels(pixel_count);
     if (fread(pixels.data(), sizeof(ColorRGB), pixel_count, f) != pixel_count)
         error("load_pfm_image: failed to read rgb data: %s", file_path.data());
 
     // PFM format defines image rows from bottom to top, we need to flip
-    std::vector<ColorRGB> flipped_pixels(pixel_count);
+    Array<ColorRGB> flipped_pixels(pixel_count);
     ColorRGB* dst = flipped_pixels.data();
     ColorRGB* src = pixels.data() + (*width) * (*height - 1);
     for (int i = 0; i < *height; i++) {
@@ -148,12 +148,15 @@ void Image::init_from_constant_value(int width, int height, const ColorRGB color
 {
     this->width = width;
     this->height = height;
-    data.resize(width * height, color);
+    data.resize(width * height);
+    for (ColorRGB& pixel : data) {
+        pixel = color;
+    }
 }
 
 bool Image::write_tga(const String& file_path) const {
     ASSERT(int(data.size()) == width * height);
-    std::vector<uint8_t> srgb_image(data.size() * 3);
+    Array<uint8_t> srgb_image(data.size() * 3);
     uint8_t* p = srgb_image.data();
 
     for (const ColorRGB& pixel : data) {
@@ -178,9 +181,9 @@ bool Image::write_tga(const String& file_path) const {
     return file.close();
 }
 
-bool Image::write_exr(const String& file_path, bool compress_image, const std::vector<EXRAttribute>& custom_attributes) const
+bool Image::write_exr(const String& file_path, bool compress_image, const Array<EXRAttribute>& custom_attributes) const
 {
-    std::vector<float> channels[3];
+    Array<float> channels[3];
     channels[0].resize(width * height);
     channels[1].resize(width * height);
     channels[2].resize(width * height);
@@ -247,7 +250,7 @@ void Image::extend_to_region(Vector2i size, Vector2i offset) {
     ASSERT(offset.y + height <= size.y);
 
     const ColorRGB* src_pixel = data.data();
-    std::vector<ColorRGB> film_pixels(size.x * size.y, Color_Black);
+    Array<ColorRGB> film_pixels(size.x * size.y, Color_Black);
     ColorRGB* dst_pixel = &film_pixels[offset.y * size.x + offset.x];
 
     for (int y = 0; y < height; y++) {

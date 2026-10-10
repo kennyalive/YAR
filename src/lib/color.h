@@ -94,6 +94,12 @@ struct ColorRGB {
     }
 };
 
+template <>
+constexpr bool can_bitwise_zero_initialize<ColorRGB>()
+{
+    return true;
+}
+
 inline ColorRGB operator*(const ColorRGB& c, float k) {
     return ColorRGB{c[0] * k, c[1] * k, c[2] * k};
 }

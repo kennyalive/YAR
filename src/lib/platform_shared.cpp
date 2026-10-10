@@ -1,7 +1,7 @@
 #include "platform.h"
 #include <chrono>
 
-bool fs_load(String_View path, Byte_Buffer& bytes)
+bool fs_load(String_View path, Array<uint8_t>& bytes)
 {
     Scoped_File file = fs_open(path, "rb");
     if (!file) {
@@ -11,11 +11,12 @@ bool fs_load(String_View path, Byte_Buffer& bytes)
     if (!fs_file_size(file, size)) {
         return false;
     }
-    Byte_Buffer content(size);
-    if (!file.read(content.data, size)) {
+    Array<uint8_t> content;
+    content.resize_uninitialized(size);
+    if (!file.read(content.data(), size)) {
         return false;
     }
-    bytes = static_cast<Byte_Buffer&&>(content);
+    bytes = rvalue(content);
     return true;
 }
 
@@ -34,11 +35,11 @@ bool fs_save(String_View path, const void* data, size_t size)
 
 bool fs_load_text(String_View path, String& text)
 {
-    Byte_Buffer content;
+    Array<uint8_t> content;
     if (!fs_load(path, content)) {
         return false;
     }
-    text = String(reinterpret_cast<const char*>(content.data), content.size);
+    text = String(reinterpret_cast<const char*>(content.data()), content.size());
     return true;
 }
 
