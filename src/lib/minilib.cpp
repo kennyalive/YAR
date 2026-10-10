@@ -2,6 +2,54 @@
 #include "stdarg.h"
 #include "stdio.h"
 #include "string.h"
+#include <cstddef> // std::max_align_t
+
+#ifdef _WIN32
+#include <malloc.h>
+#endif
+
+//
+// Array storage
+//
+void* allocate_array_storage(size_t count, size_t element_size, size_t alignment)
+{
+    // For invalid large inputs, multiplication can wrap around to a small size
+    // that can be allocated successfully, hiding the bug
+    if (count > SIZE_MAX / element_size) {
+        abort();
+    }
+
+    const size_t size = count * element_size;
+    void* data;
+    if (alignment <= alignof(std::max_align_t)) {
+        data = malloc(size);
+    }
+    else {
+#ifdef _WIN32
+        data = _aligned_malloc(size, alignment);
+#else
+        if (posix_memalign(&data, alignment, size) != 0) {
+            data = nullptr;
+        }
+#endif
+    }
+    if (!data) {
+        abort();
+    }
+    return data;
+}
+
+void free_array_storage(void* data, size_t alignment)
+{
+#ifdef _WIN32
+    if (alignment > alignof(std::max_align_t)) {
+        _aligned_free(data);
+        return;
+    }
+#endif
+    (void)alignment;
+    free(data);
+}
 
 //
 // String

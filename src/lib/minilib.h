@@ -5,6 +5,8 @@ constexpr int MINILIB_VERSION = 0;
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <initializer_list>
 
 #ifndef ENABLE_ASSERT
@@ -17,6 +19,62 @@ constexpr int MINILIB_VERSION = 0;
 #define ASSERT(expression)
 #endif
 
+//
+// Basic type and value utilities
+//
+template <typename T>
+T&& rvalue(T& value)
+{
+    return static_cast<T&&>(value);
+}
+
+template <typename T>
+constexpr bool is_bitwise_copyable()
+{
+    // supported by MSVC, GCC and Clang (including Apple Clang)
+    return __is_trivially_copyable(T);
+}
+
+template <typename T>
+constexpr bool has_trivial_destructor()
+{
+#if defined(__GNUC__) && !defined(__clang__)
+    return __has_trivial_destructor(T);
+#else
+    // MSVC and Clang (including Apple Clang)
+    return __is_trivially_destructible(T);
+#endif
+}
+
+template <typename T> constexpr bool is_raw_pointer = false;
+template <typename T> constexpr bool is_raw_pointer<T*> = true;
+
+// Whether zeroing the bytes is equivalent to T()
+// Specialize for custom types that satisfy this condition
+template <typename T>
+constexpr bool can_bitwise_zero_initialize()
+{
+    if constexpr (is_raw_pointer<T>) {
+        return true;
+    }
+    if constexpr (__is_trivially_constructible(T)) {
+        // Trivial assignment from int selects numeric types, excluding pointers and enums
+        return __is_trivially_assignable(T&, int);
+    }
+    return false;
+}
+
+template <typename T>
+void swap_values(T& a, T& b)
+{
+    T temp = rvalue(a);
+    a = rvalue(b);
+    b = rvalue(temp);
+}
+
+//
+// Non-owning view of contiguous elements
+//
 template <typename T>
 struct Span
 {
@@ -49,6 +107,262 @@ struct Span
     T* begin() const { return data; }
     T* end() const { return data + size; }
     bool empty() const { return size == 0; }
+};
+
+// Custom placement new avoids including <new> in this header
+struct Placement_New {};
+inline void* operator new(size_t, Placement_New, void* data) noexcept { return data; }
+inline void operator delete(void*, Placement_New, void*) noexcept {}
+
+void* allocate_array_storage(size_t count, size_t element_size, size_t alignment);
+void free_array_storage(void* data, size_t alignment);
+
+//
+// Dynamic array that owns its elements
+//
+template <typename T>
+struct Array
+{
+    Array() = default;
+    explicit Array(size_t size)
+    {
+        resize(size);
+    }
+    Array(size_t size, const T& value)
+    {
+        auto construct = [&](T* destination, size_t n) {
+            for (size_t i = 0; i < n; i++) {
+                ::new (Placement_New{}, destination + i) T(value);
+            }
+        };
+        append(size, construct);
+    }
+    Array(std::initializer_list<T> values)
+    {
+        add_all({values.begin(), values.size()});
+    }
+    Array(const Array& other)
+    {
+        add_all(other);
+    }
+    Array(Array&& other) noexcept
+    {
+        swap(other);
+    }
+    ~Array()
+    {
+        clear();
+        free_storage(elements);
+    }
+
+    Array& operator=(const Array& other)
+    {
+        if (this != &other) {
+            Array copy(other);
+            swap(copy);
+        }
+        return *this;
+    }
+    Array& operator=(Array&& other) noexcept
+    {
+        Array moved(rvalue(other));
+        swap(moved);
+        return *this;
+    }
+
+    T* data() { return elements; }
+    const T* data() const { return elements; }
+    size_t size() const { return count; }
+    bool empty() const { return count == 0; }
+
+    T* begin() { return elements; }
+    const T* begin() const { return elements; }
+    T* end() { return elements + count; }
+    const T* end() const { return elements + count; }
+
+    Span<T> span() { return {elements, count}; }
+    Span<const T> span() const { return {elements, count}; }
+
+    T& operator[](size_t index)
+    {
+        ASSERT(index < count);
+        return elements[index];
+    }
+    const T& operator[](size_t index) const
+    {
+        ASSERT(index < count);
+        return elements[index];
+    }
+
+    T& last()
+    {
+        ASSERT(count);
+        return elements[count - 1];
+    }
+    const T& last() const
+    {
+        ASSERT(count);
+        return elements[count - 1];
+    }
+
+    T& add()
+    {
+        append(1, construct_elements);
+        return last();
+    }
+    void add(const T& value)
+    {
+        auto construct = [&](T* destination, size_t) {
+            ::new (Placement_New{}, destination) T(value);
+        };
+        append(1, construct);
+    }
+    void add(T&& value)
+    {
+        auto construct = [&](T* destination, size_t) {
+            ::new (Placement_New{}, destination) T(rvalue(value));
+        };
+        append(1, construct);
+    }
+    void add_all(Span<const T> values)
+    {
+        auto construct = [&](T* destination, size_t n) {
+            for (size_t i = 0; i < n; i++) {
+                ::new (Placement_New{}, destination + i) T(values[i]);
+            }
+        };
+        append(values.size, construct);
+    }
+
+    void reserve(size_t capacity)
+    {
+        if (capacity <= allocated) {
+            return;
+        }
+        T* new_elements = allocate_storage(capacity);
+        move_elements(new_elements, elements, count);
+        destroy_elements(elements, count);
+        free_storage(elements);
+        elements = new_elements;
+        allocated = capacity;
+    }
+
+    void resize(size_t size)
+    {
+        if (size < count) {
+            destroy_elements(elements + size, count - size);
+            count = size;
+            return;
+        }
+        append(size - count, construct_elements);
+    }
+
+    void clear()
+    {
+        destroy_elements(elements, count);
+        count = 0;
+    }
+
+    void swap(Array& other) noexcept
+    {
+        swap_values(elements, other.elements);
+        swap_values(count, other.count);
+        swap_values(allocated, other.allocated);
+    }
+
+    // Leaves newly added slots uninitialized. Construct them before any
+    // operation that reads, moves or destroys those elements
+    void resize_uninitialized(size_t size)
+    {
+        if (size < count) {
+            destroy_elements(elements + size, count - size);
+        }
+        else {
+            reserve(size);
+        }
+        count = size;
+    }
+
+    // Constructs an element in an uninitialized slot without changing size
+    template <typename... Args>
+    void construct_uninitialized_at(size_t index, Args&&... args)
+    {
+        ASSERT(index < count);
+        ::new (Placement_New{}, elements + index) T(static_cast<Args&&>(args)...);
+    }
+
+private:
+    T* elements = nullptr;
+    size_t count = 0;
+    size_t allocated = 0;
+
+    static T* allocate_storage(size_t capacity)
+    {
+        return static_cast<T*>(allocate_array_storage(capacity, sizeof(T), alignof(T)));
+    }
+    static void free_storage(T* data)
+    {
+        free_array_storage(data, alignof(T));
+    }
+    static void construct_elements(T* data, size_t size)
+    {
+        if constexpr (can_bitwise_zero_initialize<T>()) {
+            if (size) {
+                memset(data, 0, size * sizeof(T));
+            }
+        } else {
+            for (size_t i = 0; i < size; i++) {
+                ::new (Placement_New{}, data + i) T();
+            }
+        }
+    }
+    static void destroy_elements(T* data, size_t size)
+    {
+        if constexpr (!has_trivial_destructor<T>()) {
+            for (size_t i = size; i > 0; i--) {
+                data[i - 1].~T();
+            }
+        }
+    }
+    static void move_elements(T* destination, T* source, size_t size)
+    {
+        if constexpr (is_bitwise_copyable<T>()) {
+            if (size) {
+                memcpy(destination, source, size * sizeof(T));
+            }
+        } else {
+            for (size_t i = 0; i < size; i++) {
+                ::new (Placement_New{}, destination + i) T(rvalue(source[i]));
+            }
+        }
+    }
+    template <typename Construct>
+    void append(size_t size, Construct construct)
+    {
+        const size_t max_count = SIZE_MAX / sizeof(T);
+        if (size > max_count - count) {
+            abort();
+        }
+        const size_t new_count = count + size;
+        if (new_count <= allocated) {
+            construct(elements + count, size);
+            count = new_count;
+            return;
+        }
+        size_t capacity = allocated * 2;
+        if (capacity < new_count) {
+            capacity = new_count;
+        }
+        T* new_elements = allocate_storage(capacity);
+        // Construct additions first to support add(a[0]) and add_all(a.span())
+        construct(new_elements + count, size);
+        move_elements(new_elements, elements, count);
+        destroy_elements(elements, count);
+        free_storage(elements);
+        elements = new_elements;
+        count = new_count;
+        allocated = capacity;
+    }
 };
 
 // Non-owning reference to a callable. The callable must outlive this object.
@@ -226,19 +540,6 @@ struct Hasher
 // Misc utilities
 //
 template <typename T>
-T&& rvalue(T& value)
-{
-    return static_cast<T&&>(value);
-}
-
-// Uses a builtin supported by MSVC, GCC and Clang (including Apple Clang)
-template <typename To, typename From>
-To bit_cast(const From& value)
-{
-    return __builtin_bit_cast(To, value);
-}
-
-template <typename T>
 T min(T a, T b)
 {
     return b < a ? b : a;
@@ -260,4 +561,11 @@ T clamp(T value, T low, T high)
         return high;
     }
     return value;
+}
+
+template <typename To, typename From>
+To bit_cast(const From& value)
+{
+    // supported by MSVC, GCC and Clang (including Apple Clang)
+    return __builtin_bit_cast(To, value);
 }

@@ -2,6 +2,17 @@
 
 #include "minilib.h"
 
+template <typename T, typename U>
+bool contains(Span<T> values, const U& value)
+{
+    for (const T& element : values) {
+        if (element == value) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Returns the index of the first element >= value, or values.size if none exists.
 // Values must be sorted in ascending order
 template <typename T, typename U>
@@ -26,8 +37,6 @@ void reverse(Span<T> values)
 {
     for (size_t i = 0; i < values.size / 2; i++) {
         size_t j = values.size - 1 - i;
-        T temp = rvalue(values[i]);
-        values[i] = rvalue(values[j]);
-        values[j] = rvalue(temp);
+        swap_values(values[i], values[j]);
     }
 }

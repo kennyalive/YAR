@@ -129,6 +129,12 @@ struct Vector3 {
     }
 };
 
+template <>
+constexpr bool can_bitwise_zero_initialize<Vector3>()
+{
+    return true;
+}
+
 constexpr Vector3 Vector3_Zero = Vector3(0.f);
 
 inline Vector3 operator+(const Vector3& v1, const Vector3& v2) {
