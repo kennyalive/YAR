@@ -17,14 +17,14 @@
 #include "imgui/imgui_impl_glfw.h"
 
 void YAR::initialize(GLFWwindow* window, int gpu_index) {
-    std::array instance_extensions = {
+    const char* instance_extensions[] = {
         VK_KHR_SURFACE_EXTENSION_NAME,
 #ifdef VK_USE_PLATFORM_WIN32_KHR
         VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 #endif
         VK_EXT_DEBUG_UTILS_EXTENSION_NAME
     };
-    std::array device_extensions = {
+    const char* device_extensions[] = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME,
         VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, // nullDescriptor feature
         VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME, // imgui v1.90.6 WIP uses extension endpoints instead of core
@@ -35,7 +35,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     };
     // use non-srgb formats for swapchain images, so we can render to swapchain from compute,
     // also it means we should do srgb encoding manually.
-    std::array surface_formats = { VK_FORMAT_R8G8B8A8_UNORM };
+    const VkFormat surface_formats[] = { VK_FORMAT_R8G8B8A8_UNORM };
 
     // Specify required features.
     VkPhysicalDeviceFeatures2 features2{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };

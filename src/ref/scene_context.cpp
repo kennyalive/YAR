@@ -10,7 +10,7 @@
 constexpr int time_category_field_width = 21; // for printf 'width' specifier
 
 static Array<KdTree> load_geometry_kdtrees(const Scene& scene, const Array<Triangle_Mesh_Geometry_Data>& geometry_datas,
-    std::array<int, Geometry_Type_Count>* geometry_type_offsets, bool force_rebuild_cache)
+    Span<int> geometry_type_offsets, bool force_rebuild_cache)
 {
     String kdtree_cache_directory = path_join(path_join(get_data_directory(), "kdtree-cache"), get_project_unique_name(scene.path));
     bool cache_exists = fs_exists(kdtree_cache_directory);
@@ -70,8 +70,10 @@ static Array<KdTree> load_geometry_kdtrees(const Scene& scene, const Array<Trian
     Array<KdTree> kdtrees;
     kdtrees.reserve(scene.geometries.triangle_meshes.size());
 
-    geometry_type_offsets->fill(0);
-    (*geometry_type_offsets)[static_cast<int>(Geometry_Type::triangle_mesh)] = (int)kdtrees.size();
+    for (int& offset : geometry_type_offsets) {
+        offset = 0;
+    }
+    geometry_type_offsets[static_cast<int>(Geometry_Type::triangle_mesh)] = (int)kdtrees.size();
 
     for (size_t i = 0; i < geometry_datas.size(); i++) {
         String kdtree_file = path_join(kdtree_cache_directory, string_printf("%zu.kdtree", i));
@@ -108,13 +110,11 @@ void KdTree_Data::initialize(const Scene& scene, const Array<Image_Texture>& tex
         }
     }
 
-    std::array<int, Geometry_Type_Count> geometry_type_offsets;
-    geometry_kdtrees = load_geometry_kdtrees(scene, triangle_mesh_geometry_data, &geometry_type_offsets,
+    geometry_kdtrees = load_geometry_kdtrees(scene, triangle_mesh_geometry_data, scene_geometry_data.geometry_type_offsets,
         rebuild_kdtree_cache);
 
     scene_geometry_data.scene_objects = &scene.objects;
     scene_geometry_data.kdtrees = &geometry_kdtrees;
-    scene_geometry_data.geometry_type_offsets = geometry_type_offsets;
 
     Timestamp t_scene_kdtree;
     scene_kdtree = build_scene_kdtree(&scene_geometry_data);

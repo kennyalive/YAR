@@ -6,7 +6,7 @@
 
 const String pbrt3_scenes_directory = "h:/pbrt/pbrt-v3-scenes/";
 
-const std::array benchmark_scenes = {
+const char* benchmark_scenes[] = {
     "ecosys/ecosys.pbrt",
     "transparent-machines/frame675.pbrt",
     "sportscar/sportscar.pbrt",

@@ -27,8 +27,6 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
     const uint32_t endian_check = 1;
     ASSERT(*reinterpret_cast<const unsigned char*>(&endian_check) == 1);
 
-    const std::array magic = { 'S', 'C', 'A', 'T', 'F', 'U', 'N' };
-
     Array<uint8_t> data;
     if (!fs_load(bsdf_file, data)) {
         error("Failed to load BSDF file: %s", bsdf_file.data());
@@ -62,7 +60,7 @@ bool Pbrt3_Fourier_Material::load_bsdf_file()
     const auto& header = *reinterpret_cast<const Fourier_Bsdf_Header*>(ptr);
     ptr += sizeof(Fourier_Bsdf_Header);
 
-    if (memcmp(header.identifier, magic.data(), 7) != 0) {
+    if (memcmp(header.identifier, "SCATFUN", sizeof(header.identifier)) != 0) {
         return false;
     }
     if (header.version != 1) {

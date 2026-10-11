@@ -95,7 +95,7 @@ struct Scene_Geometry_Data {
 
     // Offsets in kdtrees array.
     // Each offset defines where the range of kdtrees for specific geometry type starts.
-    std::array<int, Geometry_Type_Count> geometry_type_offsets;
+    int geometry_type_offsets[Geometry_Type_Count]{};
 };
 
 struct KdTree {
