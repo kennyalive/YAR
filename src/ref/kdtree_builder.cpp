@@ -1,8 +1,7 @@
 #include "std.h"
 #include "lib/common.h"
-#include "lib/minilib.h"
+#include "lib/minilib_extra.h"
 #include "kdtree_builder.h"
-#include <algorithm>
 
 #include "lib/scene_object.h"
 #include "lib/triangle_mesh.h"
@@ -28,14 +27,17 @@ static void clip_bounds(const Triangle_Mesh& mesh, uint32_t triangle_index, floa
     Vector3 p[3];
     mesh.get_positions(triangle_index, p);
 
-    if (p[1][axis] < p[0][axis])
-        std::swap(p[1], p[0]);
+    if (p[1][axis] < p[0][axis]) {
+        swap_values(p[1], p[0]);
+    }
 
-    if (p[2][axis] < p[0][axis])
-        std::swap(p[2], p[0]);
+    if (p[2][axis] < p[0][axis]) {
+        swap_values(p[2], p[0]);
+    }
 
-    if (p[2][axis] < p[1][axis])
-        std::swap(p[2], p[1]);
+    if (p[2][axis] < p[1][axis]) {
+        swap_values(p[2], p[1]);
+    }
 
     // re-index sorted points:
     // A is a common vertex of 2 edges intersected by a splitting plane,
@@ -167,6 +169,7 @@ struct KdTree_Builder {
 
     // Intermediate storage
     Array<Edge> edges[3]; // edges for each axis
+    Array<Edge> sort_scratch;
     Array<Primitive_Info> primitive_buffer;
     Array<Primitive_Info> primitive_buffer2;
 
@@ -198,6 +201,8 @@ KdTree_Builder::KdTree_Builder(
 
     for (int i = 0; i < 3; i++)
         edges[i].resize(2 * total_primitive_count);
+
+    sort_scratch.resize(total_primitive_count);
 
     // Maximum theoretical size is [total_primitive_count*(build_params.max_depth + 1)] elements.
     // Algorithm starts with the following initial size and resizes later if necessary.
@@ -319,7 +324,7 @@ void KdTree_Builder::create_leaf(const Primitive_Info* primitives, uint32_t prim
         *indices++ = primitives[i].primitive;
     }
     // keep primitive indices ordered to simplify debugging/thinking
-    std::sort(indices - primitive_count, indices);
+    sort(Span<uint32_t>(indices - primitive_count, primitive_count));
 }
 
 int KdTree_Builder::select_split(const Bounding_Box& node_bounds, const Primitive_Info* primitives, uint32_t primitive_count, uint32_t* split_edge)
@@ -340,7 +345,7 @@ int KdTree_Builder::select_split(const Bounding_Box& node_bounds, const Primitiv
                 edges[axis][2 * i + 1].primitive_and_flags |= Edge::primitive_perpendicular_to_axis_flag;
             }
         }
-        std::stable_sort(edges[axis].data(), edges[axis].data() + 2 * primitive_count, Edge::less);
+        stable_sort(Span<Edge>(edges[axis].data(), 2 * primitive_count), sort_scratch.span(), [](Edge a, Edge b) { return Edge::less(a, b); });
 
         // select split position
         uint32_t edge;
