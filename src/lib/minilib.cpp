@@ -111,6 +111,38 @@ bool equals_ignore_case(String_View a, String_View b)
     return true;
 }
 
+bool parse_int(String_View text, int32_t& result)
+{
+    size_t i = 0;
+    const bool negative = text.size && text.data[0] == '-';
+    if (negative) {
+        i++;
+    }
+    if (i == text.size) {
+        return false;
+    }
+    int64_t value = 0;
+    for (; i < text.size; i++) {
+        const int32_t digit = text.data[i] - '0';
+        if (digit < 0 || digit > 9) {
+            return false;
+        }
+        value = value * 10 + digit;
+        // Bound the accumulator on long input while allowing INT32_MIN's magnitude
+        if (value > int64_t(INT32_MAX) + 1) {
+            return false;
+        }
+    }
+    if (negative) {
+        value = -value;
+    }
+    if (value > INT32_MAX) {
+        return false;
+    }
+    result = int32_t(value);
+    return true;
+}
+
 String::String(const char* s) : String(s, strlen(s)) {}
 
 String::String(const char* s, size_t n)

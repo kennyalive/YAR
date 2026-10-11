@@ -1,5 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
+#include "lib/minilib.h"
 #include "yar.h"
 
 #include "glfw/glfw3.h"
@@ -33,8 +34,7 @@ static Command_Line_Params parse_command_line(int argc, char** argv)
             }
             else {
                 String_View text = argv[i + 1];
-                auto parsed = std::from_chars(text.data, text.data + text.size, params.gpu_index);
-                if (parsed.ec != std::errc{} || parsed.ptr != text.data + text.size) {
+                if (!parse_int(text, params.gpu_index)) {
                     error("Invalid GPU index: %s", argv[i + 1]);
                 }
                 i++;

@@ -400,6 +400,10 @@ bool operator!=(String_View a, String_View b);
 bool operator<(String_View a, String_View b);
 bool equals_ignore_case(String_View a, String_View b);
 
+// Parses an entire signed 32-bit decimal string, allowing an optional '-' but no whitespace or '+'.
+// Returns false on invalid input or overflow, leaving result unchanged
+bool parse_int(String_View text, int32_t& result);
+
 // Immutable string that owns its characters.
 // There is no mutation API: build text elsewhere (string_printf, a local buffer).
 // data() is never null and always points to a zero-terminated sequence.

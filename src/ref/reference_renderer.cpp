@@ -1,5 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
+#include "lib/minilib.h"
 #include "lib/path.h"
 #include "reference_renderer.h"
 
@@ -218,8 +219,7 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
             error("Missing integer in checkpoint");
         }
         int result = 0;
-        auto parsed = std::from_chars(text.data, text.data + text.size, result);
-        if (parsed.ec != std::errc{} || parsed.ptr != text.data + text.size) {
+        if (!parse_int(text, result)) {
             error("Invalid checkpoint integer: %s", String(text).data());
         }
         return result;
