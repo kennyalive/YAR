@@ -572,9 +572,9 @@ void init_scene_context(Scene_Context& scene_ctx,
     scene_ctx.thread_count = config.thread_count;
     scene_ctx.render_region = scene.render_region;
 
-    scene_ctx.raytracer_config = overrides.raytracer_config ? *overrides.raytracer_config : scene.raytracer_config;
+    scene_ctx.raytracer_config = overrides.raytracer_config ? overrides.raytracer_config.value : scene.raytracer_config;
 
-    const Matrix3x4& camera_pose = overrides.camera_pose ? *overrides.camera_pose : scene.view_points[0];
+    const Matrix3x4& camera_pose = overrides.camera_pose ? overrides.camera_pose.value : scene.view_points[0];
     scene_ctx.camera = Camera(camera_pose, Vector2(scene.film_resolution), scene.camera_fov_y, scene.z_is_up);
 
     // Textures should be initialized before kdtrees,

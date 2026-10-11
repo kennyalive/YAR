@@ -488,6 +488,22 @@ struct Scoped_File : File
     Scoped_File& operator=(const Scoped_File&) = delete;
 };
 
+//
+// Optional value
+//
+template <typename T>
+struct Optional
+{
+    T value{};
+    bool has_value = false;
+
+    Optional() = default;
+    Optional(const T& value) : value(value), has_value(true) {}
+    Optional(T&& value) : value(rvalue(value)), has_value(true) {}
+
+    explicit operator bool() const { return has_value; }
+};
+
 // Hashing.
 // 
 // hash_value(x) returns a 64-bit hash whose bits look uniformly random

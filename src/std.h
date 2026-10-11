@@ -9,7 +9,6 @@
 #include <charconv>
 #include <map>
 #include <mutex>
-#include <optional>
 #include <thread>
 #include <unordered_map>
 

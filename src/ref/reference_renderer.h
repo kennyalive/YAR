@@ -23,8 +23,8 @@ struct Reference_Renderer_Config
 
 struct Scene_Overrides
 {
-    std::optional<Raytracer_Config> raytracer_config;
-    std::optional<Matrix3x4> camera_pose;
+    Optional<Raytracer_Config> raytracer_config;
+    Optional<Matrix3x4> camera_pose;
 };
 
 struct EXR_Attributes
