@@ -11,7 +11,7 @@
 //
 // Array storage
 //
-void* allocate_array_storage(size_t count, size_t element_size, size_t alignment)
+void* minilib_internal::allocate_array_storage(size_t count, size_t element_size, size_t alignment)
 {
     // For invalid large inputs, multiplication can wrap around to a small size
     // that can be allocated successfully, hiding the bug
@@ -39,7 +39,7 @@ void* allocate_array_storage(size_t count, size_t element_size, size_t alignment
     return data;
 }
 
-void free_array_storage(void* data, size_t alignment)
+void minilib_internal::free_array_storage(void* data, size_t alignment)
 {
 #ifdef _WIN32
     if (alignment > alignof(std::max_align_t)) {

@@ -14,14 +14,38 @@ constexpr int MINILIB_VERSION = 0;
 #endif
 
 #if ENABLE_ASSERT
-#define ASSERT(expression) if (expression) {} else __debugbreak()
+#if defined(_MSC_VER)
+#define ASSERT(expression) ((expression) ? (void)0 : __debugbreak())
+#elif defined(__clang__)
+#define ASSERT(expression) ((expression) ? (void)0 : __builtin_debugtrap())
 #else
+#include <signal.h>
+#define ASSERT(expression) ((expression) ? (void)0 : (void)::raise(SIGTRAP))
+#endif
+#else // Assertion is not enabled
 #define ASSERT(expression)
 #endif
 
+namespace minilib_internal {
+void* allocate_array_storage(size_t count, size_t element_size, size_t alignment);
+void free_array_storage(void* data, size_t alignment);
+}
+
 //
-// Basic type and value utilities
+// Basic definitions
 //
+
+// Custom placement new avoids including <new> in this header
+struct Placement_New {};
+inline void* operator new(size_t, Placement_New, void* data) noexcept { return data; }
+inline void operator delete(void*, Placement_New, void*) noexcept {}
+
+template <typename A, typename B> constexpr bool is_same_type = false;
+template <typename A> constexpr bool is_same_type<A, A> = true;
+
+template <typename T> constexpr bool is_raw_pointer = false;
+template <typename T> constexpr bool is_raw_pointer<T*> = true;
+
 template <typename T>
 T&& rvalue(T& value)
 {
@@ -45,9 +69,6 @@ constexpr bool has_trivial_destructor()
     return __is_trivially_destructible(T);
 #endif
 }
-
-template <typename T> constexpr bool is_raw_pointer = false;
-template <typename T> constexpr bool is_raw_pointer<T*> = true;
 
 // Whether zeroing the bytes is equivalent to T()
 // Specialize for custom types that satisfy this condition
@@ -108,14 +129,6 @@ struct Span
     T* end() const { return data + size; }
     bool empty() const { return size == 0; }
 };
-
-// Custom placement new avoids including <new> in this header
-struct Placement_New {};
-inline void* operator new(size_t, Placement_New, void* data) noexcept { return data; }
-inline void operator delete(void*, Placement_New, void*) noexcept {}
-
-void* allocate_array_storage(size_t count, size_t element_size, size_t alignment);
-void free_array_storage(void* data, size_t alignment);
 
 //
 // Dynamic array that owns its elements
@@ -298,11 +311,11 @@ private:
 
     static T* allocate_storage(size_t capacity)
     {
-        return static_cast<T*>(allocate_array_storage(capacity, sizeof(T), alignof(T)));
+        return static_cast<T*>(minilib_internal::allocate_array_storage(capacity, sizeof(T), alignof(T)));
     }
     static void free_storage(T* data)
     {
-        free_array_storage(data, alignof(T));
+        minilib_internal::free_array_storage(data, alignof(T));
     }
     static void construct_elements(T* data, size_t size)
     {
@@ -484,7 +497,7 @@ struct File
 };
 
 // Closes file automatically when it exits the scope
-struct Scoped_File : File
+struct [[nodiscard]] Scoped_File : File
 {
     Scoped_File(FILE* file = nullptr) : File(file) {}
     ~Scoped_File();

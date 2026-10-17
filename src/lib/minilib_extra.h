@@ -66,7 +66,7 @@ void reverse(Span<T> values)
     3. This notice may not be removed or altered from any source distribution.
 */
 // Adapted for minilib: contiguous spans, local helpers and a heapsort fallback
-namespace minilib_sort_detail {
+namespace minilib_internal {
     template <typename T>
     struct Partition_Result {
         T* first;
@@ -578,7 +578,47 @@ namespace minilib_sort_detail {
             leftmost = false;
         }
     }
-}
+
+    template <bool ConstructScratch, typename T, typename Compare>
+    void merge_sort(T* data, size_t count, T* scratch, Compare& less)
+    {
+        if (count <= 24) {
+            if (count > 1) {
+                insertion_sort(data, data + count, less);
+            }
+            return;
+        }
+        size_t middle = count / 2;
+        merge_sort<ConstructScratch>(data, middle, scratch, less);
+        merge_sort<ConstructScratch>(data + middle, count - middle, scratch, less);
+        if (!less(data[middle], data[middle - 1])) {
+            return;
+        }
+        for (size_t i = 0; i < middle; i++) {
+            if constexpr (ConstructScratch) {
+                ::new (Placement_New{}, scratch + i) T(::rvalue(data[i]));
+            } else {
+                scratch[i] = ::rvalue(data[i]);
+            }
+        }
+        size_t left = 0, right = middle, out = 0;
+        while (left < middle && right < count) {
+            if (less(data[right], scratch[left])) {
+                data[out++] = ::rvalue(data[right++]);
+            } else {
+                data[out++] = ::rvalue(scratch[left++]);
+            }
+        }
+        while (left < middle) {
+            data[out++] = ::rvalue(scratch[left++]);
+        }
+        if constexpr (ConstructScratch && !has_trivial_destructor<T>()) {
+            for (size_t i = middle; i > 0; i--) {
+                scratch[i - 1].~T();
+            }
+        }
+    }
+} // namespace minilib_internal
 
 // Unstable PDQsort, O(N log N) worst case, without heap allocation.
 // Branchless partitioning suits cheap comparisons; use sort<false> for expensive comparators.
@@ -593,59 +633,17 @@ requires requires(Compare& compare, T& a, T& b) { bool(compare(a, b)); }
         return;
     }
     if (values.size <= 32) {
-        minilib_sort_detail::insertion_sort(values.data, values.data + values.size, less);
+        minilib_internal::insertion_sort(values.data, values.data + values.size, less);
     } else {
-        minilib_sort_detail::pdqsort_loop<T, Compare, Branchless>(values.data, values.data + values.size, less,
-            minilib_sort_detail::log2(values.size));
+        minilib_internal::pdqsort_loop<T, Compare, Branchless>(values.data, values.data + values.size, less,
+            minilib_internal::log2(values.size));
     }
 }
 
 template <bool Branchless = true, typename T>
 void sort(Span<T> values)
 {
-    sort<Branchless>(values, minilib_sort_detail::Less<T>{});
-}
-
-namespace minilib_sort_detail {
-template <bool ConstructScratch, typename T, typename Compare>
-void merge_sort(T* data, size_t count, T* scratch, Compare& less)
-{
-    if (count <= 24) {
-        if (count > 1) {
-            insertion_sort(data, data + count, less);
-        }
-        return;
-    }
-    size_t middle = count / 2;
-    merge_sort<ConstructScratch>(data, middle, scratch, less);
-    merge_sort<ConstructScratch>(data + middle, count - middle, scratch, less);
-    if (!less(data[middle], data[middle - 1])) {
-        return;
-    }
-    for (size_t i = 0; i < middle; i++) {
-        if constexpr (ConstructScratch) {
-            ::new (Placement_New{}, scratch + i) T(::rvalue(data[i]));
-        } else {
-            scratch[i] = ::rvalue(data[i]);
-        }
-    }
-    size_t left = 0, right = middle, out = 0;
-    while (left < middle && right < count) {
-        if (less(data[right], scratch[left])) {
-            data[out++] = ::rvalue(data[right++]);
-        } else {
-            data[out++] = ::rvalue(scratch[left++]);
-        }
-    }
-    while (left < middle) {
-        data[out++] = ::rvalue(scratch[left++]);
-    }
-    if constexpr (ConstructScratch && !has_trivial_destructor<T>()) {
-        for (size_t i = middle; i > 0; i--) {
-            scratch[i - 1].~T();
-        }
-    }
-}
+    sort<Branchless>(values, minilib_internal::Less<T>{});
 }
 
 // Stable mergesort with O(N log N) worst-case work.
@@ -657,13 +655,13 @@ void stable_sort(Span<T> values, Span<T> scratch, Compare less)
 requires requires(Compare& compare, T& a, T& b) { bool(compare(a, b)); }
 {
     ASSERT(values.size <= 24 || scratch.size >= values.size / 2);
-    minilib_sort_detail::merge_sort<false>(values.data, values.size, scratch.data, less);
+    minilib_internal::merge_sort<false>(values.data, values.size, scratch.data, less);
 }
 
 template <typename T>
 void stable_sort(Span<T> values, Span<T> scratch)
 {
-    stable_sort(values, scratch, minilib_sort_detail::Less<T>{});
+    stable_sort(values, scratch, minilib_internal::Less<T>{});
 }
 
 // Allocates N/2 temporary slots for N > 24; T need not be default constructible
@@ -673,16 +671,16 @@ void stable_sort(Span<T> values, Compare less)
 requires requires(Compare& compare, T& a, T& b) { bool(compare(a, b)); }
 {
     if (values.size <= 24) {
-        minilib_sort_detail::merge_sort<false>(values.data, values.size, static_cast<T*>(nullptr), less);
+        minilib_internal::merge_sort<false>(values.data, values.size, static_cast<T*>(nullptr), less);
         return;
     }
-    T* scratch = static_cast<T*>(allocate_array_storage(values.size / 2, sizeof(T), alignof(T)));
-    minilib_sort_detail::merge_sort<true>(values.data, values.size, scratch, less);
-    free_array_storage(scratch, alignof(T));
+    T* scratch = static_cast<T*>(minilib_internal::allocate_array_storage(values.size / 2, sizeof(T), alignof(T)));
+    minilib_internal::merge_sort<true>(values.data, values.size, scratch, less);
+    minilib_internal::free_array_storage(scratch, alignof(T));
 }
 
 template <typename T>
 void stable_sort(Span<T> values)
 {
-    stable_sort(values, minilib_sort_detail::Less<T>{});
+    stable_sort(values, minilib_internal::Less<T>{});
 }
