@@ -12,11 +12,11 @@
 
 #include "lib/flying_camera.h"
 #include "lib/matrix.h"
+#include "lib/platform.h"
 #include "lib/scene.h"
+#include "ref/reference_renderer.h"
 
 struct GLFWwindow;
-struct Reference_Renderer_Config;
-struct Scene_Overrides;
 struct String;
 
 class YAR
@@ -36,8 +36,7 @@ public:
 
 private:
     void start_reference_renderer();
-    void do_run_reference_renderer(const Reference_Renderer_Config& reference_renderer_config, const Scene_Overrides& overrides);
-    void wait_for_reference_renderer();
+    void thread_run_reference_renderer();
 
     void create_resolution_dependent_resources();
     void destroy_resolution_dependent_resources();
@@ -49,8 +48,10 @@ private:
     void draw_imgui();
 
 private:
-    std::atomic_bool reference_renderer_running = false;
-    std::jthread reference_renderer_thread;
+    Atomic_Bool reference_renderer_running{false};
+    Thread reference_renderer_thread;
+    Reference_Renderer_Config reference_renderer_config;
+    Scene_Overrides reference_renderer_overrides;
 
     Descriptor_Heap_Layout descriptor_heap_layout;
     Descriptor_Heap descriptor_heap;

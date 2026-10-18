@@ -161,7 +161,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
 }
 
 void YAR::shutdown() {
-    wait_for_reference_renderer();
+    thread_join(reference_renderer_thread);
     VK_CHECK(vkDeviceWaitIdle(vk.device));
 
     ImGui_ImplVulkan_Shutdown();
@@ -275,7 +275,7 @@ void YAR::unload_project()
 {
     ASSERT(scene.type != Scene_Type::none);
 
-    wait_for_reference_renderer();
+    thread_join(reference_renderer_thread);
     VK_CHECK(vkDeviceWaitIdle(vk.device));
 
     gpu_scene.clear_descriptors(descriptor_heap, descriptor_heap_layout);
@@ -288,6 +288,9 @@ void YAR::unload_project()
 void YAR::run_frame()
 {
     ui.reference_renderer_running = reference_renderer_running.load();
+    if (!ui.reference_renderer_running) {
+        thread_join(reference_renderer_thread);
+    }
 
     if (ui.rendering_algorithm == 0) {
         timer_frame->nested_timers = {
@@ -448,14 +451,14 @@ void YAR::draw_imgui()
 void YAR::start_reference_renderer()
 {
     ASSERT(scene.type != Scene_Type::none);
-    ASSERT(!reference_renderer_running.load());
+    ASSERT(!reference_renderer_thread.handle);
 
-    Reference_Renderer_Config reference_renderer_config;
+    Reference_Renderer_Config config;
     int thread_count = ui.ref_params.thread_count;
     if (!thread_count) {
         thread_count = logical_processor_count();
     }
-    reference_renderer_config.thread_count = thread_count;
+    config.thread_count = thread_count;
 
     Raytracer_Config raytracer_config = scene.raytracer_config;
     int k = (int)std::ceil(std::sqrt(ui.ref_params.spp));
@@ -467,18 +470,19 @@ void YAR::start_reference_renderer()
     overrides.camera_pose = flying_camera.get_camera_pose();
 
     // Launch rendering thread
-    ASSERT(!reference_renderer_running.load());
+    reference_renderer_config = rvalue(config);
+    reference_renderer_overrides = overrides;
     reference_renderer_running.store(true);
-    reference_renderer_thread = std::jthread([this, reference_renderer_config, overrides]() {
-        do_run_reference_renderer(reference_renderer_config, overrides);
-    });
+    reference_renderer_thread = thread_start([](void* data) {
+        static_cast<YAR*>(data)->thread_run_reference_renderer();
+    }, this);
 }
 
-void YAR::do_run_reference_renderer(const Reference_Renderer_Config& reference_renderer_config, const Scene_Overrides& overrides)
+void YAR::thread_run_reference_renderer()
 {
     // Init scene context
     Scene_Context scene_ctx;
-    init_scene_context(scene_ctx, scene, reference_renderer_config, overrides);
+    init_scene_context(scene_ctx, scene, reference_renderer_config, reference_renderer_overrides);
 
     // Render
     double variance_estimate = 0.0;
@@ -495,12 +499,4 @@ void YAR::do_run_reference_renderer(const Reference_Renderer_Config& reference_r
         printf("Saved output image to %s\n\n", image_filename.data());
     }
     reference_renderer_running.store(false);
-}
-
-void YAR::wait_for_reference_renderer()
-{
-    if (reference_renderer_thread.joinable()) {
-        reference_renderer_thread.join();
-        reference_renderer_running.store(false);
-    }
 }

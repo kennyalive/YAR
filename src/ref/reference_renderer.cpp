@@ -25,7 +25,7 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
 {
     // Load textures.
     if (!scene.texture_descriptors.empty()) {
-        std::atomic_int texture_counter{ 0 };
+        Atomic_Int32 texture_counter{ 0 };
         scene_ctx.textures.resize(scene.texture_descriptors.size());
 
         auto load_texture_thread_func = [
@@ -61,16 +61,8 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
 
         // Start loading threads.
         {
-            int thread_count = logical_processor_count();
-            thread_count = min(thread_count, (int)scene.texture_descriptors.size());
-
-            Array<std::jthread> threads;
-            threads.reserve(thread_count - 1);
-
-            for (int i = 0; i < thread_count - 1; i++) {
-                threads.add(std::jthread(load_texture_thread_func));
-            }
-            load_texture_thread_func();
+            const uint32_t thread_count = min((uint32_t)scene.texture_descriptors.size(), logical_processor_count());
+            run_on_threads(load_texture_thread_func, thread_count);
         }
     }
 
@@ -303,7 +295,7 @@ static void write_tile_to_checkpoint_directory(const String& checkpoint_director
 }
 
 struct Rendering_Progress {
-    std::mutex progress_update_mutex;
+    Mutex progress_update_mutex;
     int finished_tile_count = 0;
 };
 
@@ -391,7 +383,7 @@ static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int t
 
     // Update rendering progress.
     {
-        std::lock_guard<std::mutex> lock(progress->progress_update_mutex);
+        Scoped_Lock lock(progress->progress_update_mutex);
 
         const int all_tile_count = film.get_tile_count();
         const int finished_tile_count = ++progress->finished_tile_count;
@@ -484,7 +476,7 @@ Image render_scene(const Scene_Context& scene_ctx, double* variance_estimate, fl
     Rendering_Progress progress;
     progress.finished_tile_count = film.get_tile_count() - (int)tiles_to_render.size();
 
-    std::atomic_int tile_counter{0};
+    Atomic_Int32 tile_counter{0};
 
     // Each rendering thread runs this function.
     // The function runs the loop where it grabs index of the next tile and renders it.
@@ -529,13 +521,7 @@ Image render_scene(const Scene_Context& scene_ctx, double* variance_estimate, fl
     //
     const int thread_count = min(scene_ctx.thread_count, (int)tiles_to_render.size());
     if (thread_count > 0) {
-        Array<std::jthread> threads;
-        threads.reserve(thread_count - 1);
-
-        for (int i = 0; i < thread_count - 1; i++)
-            threads.add(std::jthread(render_tile_thread_func));
-
-        render_tile_thread_func();
+        run_on_threads(render_tile_thread_func, thread_count);
     }
 
     //

@@ -33,7 +33,7 @@ static Array<KdTree> load_geometry_kdtrees(const Scene& scene, const Array<Trian
             error("Failed to create kdtree cache directory: %s", kdtree_cache_directory.data());
         }
 
-        std::atomic_int kdtree_counter{ 0 };
+        Atomic_Int32 kdtree_counter{ 0 };
         auto build_kdtree_func = [
             &kdtree_cache_directory,
                 &geometry_datas,
@@ -51,16 +51,8 @@ static Array<KdTree> load_geometry_kdtrees(const Scene& scene, const Array<Trian
             };
         // Start kdtree build threads.
         {
-            int thread_count = logical_processor_count();
-            thread_count = min(thread_count, (int)geometry_datas.size());
-
-            Array<std::jthread> threads;
-            threads.reserve(thread_count - 1);
-
-            for (int i = 0; i < thread_count - 1; i++) {
-                threads.add(std::jthread(build_kdtree_func));
-            }
-            build_kdtree_func();
+            const uint32_t thread_count = min((uint32_t)geometry_datas.size(), logical_processor_count());
+            run_on_threads(build_kdtree_func, thread_count);
         }
         printf("%.3f seconds\n", elapsed_seconds(t));
     }

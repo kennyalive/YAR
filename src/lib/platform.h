@@ -153,7 +153,8 @@ private:
 #ifdef _WIN32
     alignas(void*) unsigned char storage[sizeof(void*)]; // SRWLOCK
 #else
-    alignas(8) unsigned char storage[64]; // pthread_mutex_t; backend must verify size and alignment
+    // TODO: backend must verify size and alignment
+    alignas(8) unsigned char storage[64]; // pthread_mutex_t
 #endif
 };
 
