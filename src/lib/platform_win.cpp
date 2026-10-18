@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <limits.h>
 #include <malloc.h>
+#include <process.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <wchar.h>
@@ -251,14 +252,89 @@ void* allocate_aligned_memory(size_t size, size_t alignment)
 
 void free_aligned_memory(void* memory) { _aligned_free(memory); }
 
-int logical_processor_count()
+uint32_t logical_processor_count()
 {
     DWORD count = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
-    return count ? int(count) : 1;
+    return count ? uint32_t(count) : 1;
 }
 
 void enable_invalid_fp_exception()
 {
     _MM_SET_EXCEPTION_STATE(0);
     _MM_SET_EXCEPTION_MASK(_MM_MASK_MASK & ~_MM_MASK_INVALID);
+}
+
+//
+// Threads
+//
+struct Thread_Start
+{
+    void (*function)(void*);
+    void* context;
+};
+
+static unsigned thread_entry(void* data)
+{
+    const Thread_Start start = *static_cast<Thread_Start*>(data);
+    minilib_internal::free_array_storage(data, alignof(Thread_Start));
+    start.function(start.context);
+    return 0;
+}
+
+Thread thread_start(void (*function)(void*), void* data)
+{
+    static_assert(sizeof(Thread::handle) >= sizeof(HANDLE));
+    ASSERT(function);
+
+    void* storage = minilib_internal::allocate_array_storage(1, sizeof(Thread_Start), alignof(Thread_Start));
+    Thread_Start* start = ::new (Placement_New{}, storage) Thread_Start{function, data};
+
+    Thread thread;
+    thread.handle = _beginthreadex(nullptr, 0, thread_entry, start, 0, nullptr);
+    if (!thread.handle) {
+        abort();
+    }
+    return thread;
+}
+
+void thread_join(Thread& thread)
+{
+    if (!thread.handle) {
+        return;
+    }
+    HANDLE native_handle = reinterpret_cast<HANDLE>(thread.handle);
+    ASSERT(::GetThreadId(native_handle) != ::GetCurrentThreadId());
+
+    if (WaitForSingleObject(native_handle, INFINITE) != WAIT_OBJECT_0) {
+        abort();
+    }
+    if (!CloseHandle(native_handle)) {
+        abort();
+    }
+    thread.handle = 0;
+}
+
+//
+// Locks
+//
+Mutex::Mutex()
+{
+    static_assert(sizeof(storage) >= sizeof(SRWLOCK));
+    static_assert(alignof(Mutex) >= alignof(SRWLOCK));
+    InitializeSRWLock(reinterpret_cast<SRWLOCK*>(storage));
+}
+
+Mutex::~Mutex()
+{
+    // SRW locks need no cleanup
+}
+
+void Mutex::lock()
+{
+    AcquireSRWLockExclusive(reinterpret_cast<SRWLOCK*>(storage));
+}
+
+void Mutex::unlock()
+{
+    ReleaseSRWLockExclusive(reinterpret_cast<SRWLOCK*>(storage));
 }
