@@ -159,7 +159,7 @@ struct Checkpoint_Tile_Data {
 };
 
 struct Checkpoint {
-    std::map<int, Checkpoint_Tile_Data> finished_tiles; // tile_index -> tile
+    std::unordered_map<int, Checkpoint_Tile_Data> finished_tiles; // tile_index -> tile
     float previous_sessions_time = 0.f;
 };
 }

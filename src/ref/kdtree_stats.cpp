@@ -95,7 +95,7 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
 Array<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32_t node_index)
 {
     ASSERT(node_index >= 0 && node_index < kdtree.nodes.size());
-    std::map<uint32_t, uint32_t> parent_map;
+    std::unordered_map<uint32_t, uint32_t> parent_map;
     for (uint32_t i = 0; i < uint32_t(kdtree.nodes.size()); i++) {
         if (!kdtree.nodes[i].is_leaf()) {
             uint32_t below_child = i + 1;
