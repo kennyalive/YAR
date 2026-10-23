@@ -2,6 +2,22 @@
 
 #include "minilib.h"
 
+#ifndef MINILIB_HASH_MAP_USE_SSE2
+#if defined(_M_X64) || defined(__SSE2__)
+#define MINILIB_HASH_MAP_USE_SSE2 1
+#else
+#define MINILIB_HASH_MAP_USE_SSE2 0
+#endif
+#endif
+
+#if MINILIB_HASH_MAP_USE_SSE2
+#include <emmintrin.h> // SSE2 intrinsics
+#endif
+
+#if defined(_MSC_VER)
+#include <intrin.h> // _BitScanForward
+#endif
+
 template <typename T, typename U>
 bool contains(Span<T> values, const U& value)
 {
@@ -65,6 +81,7 @@ void reverse(Span<T> values)
 
     3. This notice may not be removed or altered from any source distribution.
 */
+// Upstream: https://github.com/orlp/pdqsort/blob/b1ef26a55cdb60d236a5cb199c4234c704f46726/pdqsort.h
 // Adapted for minilib: contiguous spans, local helpers and a heapsort fallback
 namespace minilib_internal {
     template <typename T>
@@ -137,7 +154,7 @@ namespace minilib_internal {
 
     // Returns floor(log2(n)), assumes n > 0
     template<class T>
-    inline int log2(T n) {
+    int log2(T n) {
         int log = 0;
         while (n >>= 1) ++log;
         return log;
@@ -145,7 +162,7 @@ namespace minilib_internal {
 
     // Sorts [begin, end) using insertion sort with the given comparison function
     template<class T, class Compare>
-    inline void insertion_sort(T* begin, T* end, Compare comp) {
+    void insertion_sort(T* begin, T* end, Compare comp) {
         if (begin == end) {
             return;
         }
@@ -169,7 +186,7 @@ namespace minilib_internal {
     // Sorts [begin, end) using insertion sort with the given comparison function. Assumes
     // *(begin - 1) is an element smaller than or equal to any element in [begin, end)
     template<class T, class Compare>
-    inline void unguarded_insertion_sort(T* begin, T* end, Compare comp) {
+    void unguarded_insertion_sort(T* begin, T* end, Compare comp) {
         if (begin == end) {
             return;
         }
@@ -224,7 +241,7 @@ namespace minilib_internal {
     }
 
     template<class T, class Compare>
-    inline void sort2(T* a, T* b, Compare comp) {
+    void sort2(T* a, T* b, Compare comp) {
         if (comp(*b, *a)) {
             swap_at(a, b);
         }
@@ -232,14 +249,14 @@ namespace minilib_internal {
 
     // Sorts the elements *a, *b and *c using comparison function comp
     template<class T, class Compare>
-    inline void sort3(T* a, T* b, T* c, Compare comp) {
+    void sort3(T* a, T* b, T* c, Compare comp) {
         sort2(a, b, comp);
         sort2(b, c, comp);
         sort2(a, b, comp);
     }
 
     template<class T>
-    inline T* align_cacheline(T* p) {
+    T* align_cacheline(T* p) {
         uintptr_t ip = reinterpret_cast<uintptr_t>(p);
         ip = (ip + cacheline_size - 1) & -cacheline_size;
         return reinterpret_cast<T*>(ip);
@@ -272,7 +289,7 @@ namespace minilib_internal {
     // pivot is a median of at least 3 elements and that [begin, end) is at least
     // insertion_sort_threshold long. Uses branchless partitioning
     template<class T, class Compare>
-    inline Partition_Result<T> partition_right_branchless(T* begin, T* end, Compare comp) {
+    Partition_Result<T> partition_right_branchless(T* begin, T* end, Compare comp) {
 
         // Move pivot into local for speed
         T pivot(::rvalue(*begin));
@@ -402,7 +419,7 @@ namespace minilib_internal {
     // pivot is a median of at least 3 elements and that [begin, end) is at least
     // insertion_sort_threshold long
     template<class T, class Compare>
-    inline Partition_Result<T> partition_right(T* begin, T* end, Compare comp) {
+    Partition_Result<T> partition_right(T* begin, T* end, Compare comp) {
 
         // Move pivot into local for speed
         T pivot(::rvalue(*begin));
@@ -449,7 +466,7 @@ namespace minilib_internal {
     // Since this is rarely used (the many equal case), and in that case pdqsort already has O(n)
     // performance, no block quicksort is applied here for simplicity
     template<class T, class Compare>
-    inline T* partition_left(T* begin, T* end, Compare comp) {
+    T* partition_left(T* begin, T* end, Compare comp) {
 
         T pivot(::rvalue(*begin));
         T* first = begin;
@@ -479,7 +496,7 @@ namespace minilib_internal {
 
 
     template<class T, class Compare, bool Branchless>
-    inline void pdqsort_loop(T* begin, T* end, Compare comp, int bad_allowed, bool leftmost = true) {
+    void pdqsort_loop(T* begin, T* end, Compare comp, int bad_allowed, bool leftmost = true) {
         typedef ptrdiff_t diff_t;
 
         // Use a while loop for tail recursion elimination
@@ -622,7 +639,7 @@ namespace minilib_internal {
 
 // Unstable PDQsort, O(N log N) worst case, without heap allocation.
 // Branchless partitioning suits cheap comparisons; use sort<false> for expensive comparators.
-// All sort overloads require a strict weak ordering and nonthrowing comparisons and moves.
+// All sort overloads require a strict weak ordering.
 // Floating-point comparisons must order NaNs explicitly if inputs can contain them
 //
 template <bool Branchless = true, typename T, typename Compare>
@@ -684,3 +701,265 @@ void stable_sort(Span<T> values)
 {
     stable_sort(values, minilib_internal::Less<T>{});
 }
+
+//
+// Hash map
+//
+
+// Swiss-table-style grouped probing: https://abseil.io/about/design/swisstables
+
+// Keep probing in the lookup and insertion callers
+#if defined(_MSC_VER)
+#define MINILIB_FORCE_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+#define MINILIB_FORCE_INLINE inline __attribute__((always_inline))
+#else
+#define MINILIB_FORCE_INLINE inline
+#endif
+
+namespace minilib_internal {
+    inline uint32_t hash_group_matches(const uint8_t* group, uint8_t value)
+    {
+#if MINILIB_HASH_MAP_USE_SSE2
+        __m128i bytes = _mm_loadu_si128(reinterpret_cast<const __m128i*>(group));
+        return uint32_t(_mm_movemask_epi8(_mm_cmpeq_epi8(bytes, _mm_set1_epi8(char(value)))));
+#else
+        uint32_t mask = 0;
+        for (uint32_t i = 0; i < 16; i++) {
+            mask |= uint32_t(group[i] == value) << i;
+        }
+        return mask;
+#endif
+    }
+
+    inline size_t hash_first_bit(uint32_t mask)
+    {
+        ASSERT(mask);
+#if defined(_MSC_VER)
+        unsigned long index;
+        _BitScanForward(&index, mask);
+        return index;
+#else
+        return size_t(__builtin_ctz(mask));
+#endif
+    }
+
+    template <typename Map, typename Entry>
+    struct Hash_Map_Iterator
+    {
+        Map* map;
+        size_t index;
+
+        Hash_Map_Iterator(Map* map, size_t index) : map(map), index(index) { skip_empty(); }
+        Entry& operator*() const { return map->entries[index]; }
+        Hash_Map_Iterator& operator++()
+        {
+            index++;
+            skip_empty();
+            return *this;
+        }
+        bool operator!=(const Hash_Map_Iterator& other) const { return map != other.map || index != other.index; }
+
+    private:
+        void skip_empty()
+        {
+            while (index < map->capacity && !map->occupied(index)) {
+                index++;
+            }
+        }
+    };
+} // namespace minilib_internal
+
+// Flat storage with 16-slot groups and a maximum load of 7/8.
+// Insertion can invalidate pointers, references and iterators. Keys must not be modified
+// Hash must distribute bits uniformly; equal keys must have equal hashes.
+//
+template <typename K, typename V, typename Hash = Hasher>
+struct Hash_Map
+{
+    struct Entry
+    {
+        K key;
+        V value;
+    };
+    using Iterator = minilib_internal::Hash_Map_Iterator<Hash_Map, Entry>;
+    using Const_Iterator = minilib_internal::Hash_Map_Iterator<const Hash_Map, const Entry>;
+
+    Hash_Map() = default;
+    Hash_Map(const Hash_Map&) = delete;
+    Hash_Map& operator=(const Hash_Map&) = delete;
+    Hash_Map(Hash_Map&& other) noexcept { swap(other); }
+    Hash_Map& operator=(Hash_Map&& other) noexcept
+    {
+        Hash_Map moved(rvalue(other));
+        swap(moved);
+        return *this;
+    }
+    ~Hash_Map()
+    {
+        clear();
+        free_storage();
+    }
+
+    size_t size() const { return element_count; }
+    bool empty() const { return element_count == 0; }
+    Iterator begin() { return {this, 0}; }
+    Iterator end() { return {this, capacity}; }
+    Const_Iterator begin() const { return {this, 0}; }
+    Const_Iterator end() const { return {this, capacity}; }
+
+    // Returns nullptr when the key is absent
+    V* find(const K& key)
+    {
+        Lookup result = locate(entries, metadata, capacity, key, hasher(key));
+        return result.found ? &entries[result.index].value : nullptr;
+    }
+    MINILIB_FORCE_INLINE const V* find(const K& key) const
+    {
+        Lookup result = locate(entries, metadata, capacity, key, hasher(key));
+        return result.found ? &entries[result.index].value : nullptr;
+    }
+    bool contains(const K& key) const { return find(key) != nullptr; }
+
+    // Returns the existing value, or inserts V{} when the key is absent
+    MINILIB_FORCE_INLINE V& get_or_insert(const K& key)
+    {
+        uint64_t hash = hasher(key);
+        Lookup result = locate(entries, metadata, capacity, key, hash);
+        if (result.found) {
+            return entries[result.index].value;
+        }
+        // Copy the key before growth in case it refers to an existing entry
+        Entry entry{key, V{}};
+        return add_new(rvalue(entry), hash, result.index)->value;
+    }
+    // Leaves the existing value unchanged when the key is already present
+    MINILIB_FORCE_INLINE void insert(Entry entry)
+    {
+        uint64_t hash = hasher(entry.key);
+        Lookup result = locate(entries, metadata, capacity, entry.key, hash);
+        if (!result.found) {
+            add_new(rvalue(entry), hash, result.index);
+        }
+    }
+    // Retains allocated storage for reuse
+    void clear()
+    {
+        if (!capacity) {
+            return;
+        }
+        if constexpr (!has_trivial_destructor<Entry>()) {
+            for (size_t i = 0; i < capacity; i++) {
+                if (occupied(i)) {
+                    entries[i].~Entry();
+                }
+            }
+        }
+        memset(metadata, empty_byte, capacity);
+        element_count = 0;
+    }
+
+private:
+    template <typename, typename> friend struct minilib_internal::Hash_Map_Iterator;
+    struct Lookup
+    {
+        size_t index;
+        bool found;
+    };
+    static constexpr uint8_t empty_byte = 0x80;
+    Entry* entries = nullptr;
+    uint8_t* metadata = nullptr;
+    size_t capacity = 0;
+    size_t element_count = 0;
+    Hash hasher{};
+
+    bool occupied(size_t index) const { return metadata[index] != empty_byte; }
+
+    static MINILIB_FORCE_INLINE Lookup locate(const Entry* entries, const uint8_t* metadata, size_t capacity, const K& key, uint64_t hash)
+    {
+        using minilib_internal::hash_group_matches;
+        using minilib_internal::hash_first_bit;
+        if (!capacity) {
+            return {0, false};
+        }
+        size_t group_mask = capacity / 16 - 1;
+        size_t group = size_t(hash >> 7) & group_mask;
+        size_t step = 0;
+        uint8_t tag = uint8_t(hash & 127);
+        for (;;) {
+            size_t start = group * 16;
+            uint32_t candidates = hash_group_matches(metadata + start, tag);
+            while (candidates) {
+                size_t index = start + hash_first_bit(candidates);
+                if (entries[index].key == key) {
+                    return {index, true};
+                }
+                candidates &= candidates - 1;
+            }
+            uint32_t empty = hash_group_matches(metadata + start, empty_byte);
+            if (empty) {
+                return {start + hash_first_bit(empty), false};
+            }
+            // Triangular steps visit every group in a power-of-two table
+            group = (group + ++step) & group_mask;
+        }
+    }
+    Entry* place(size_t index, Entry&& entry, uint64_t hash)
+    {
+        ::new (Placement_New{}, entries + index) Entry(rvalue(entry));
+        metadata[index] = uint8_t(hash & 127);
+        return entries + index;
+    }
+    MINILIB_FORCE_INLINE Entry* add_new(Entry&& entry, uint64_t hash, size_t index)
+    {
+        if (element_count == capacity - capacity / 8) {
+            grow();
+            index = locate(entries, metadata, capacity, entry.key, hash).index;
+        }
+        Entry* inserted = place(index, rvalue(entry), hash);
+        element_count++;
+        return inserted;
+    }
+    void grow()
+    {
+        using minilib_internal::allocate_array_storage;
+        using minilib_internal::free_array_storage;
+        const size_t max_capacity = SIZE_MAX / sizeof(Entry);
+        if (capacity > max_capacity / 2 || max_capacity < 16) {
+            abort();
+        }
+        Entry* old_entries = entries;
+        uint8_t* old_metadata = metadata;
+        size_t old_capacity = capacity;
+        capacity = capacity ? capacity * 2 : 16;
+        entries = static_cast<Entry*>(allocate_array_storage(capacity, sizeof(Entry), alignof(Entry)));
+        metadata = static_cast<uint8_t*>(allocate_array_storage(capacity, 1, alignof(uint8_t)));
+        memset(metadata, empty_byte, capacity);
+        for (size_t i = 0; i < old_capacity; i++) {
+            if (old_metadata[i] != empty_byte) {
+                uint64_t hash = hasher(old_entries[i].key);
+                size_t destination = locate(entries, metadata, capacity, old_entries[i].key, hash).index;
+                place(destination, rvalue(old_entries[i]), hash);
+                old_entries[i].~Entry();
+            }
+        }
+        free_array_storage(old_entries, alignof(Entry));
+        free_array_storage(old_metadata, alignof(uint8_t));
+    }
+    void free_storage()
+    {
+        using minilib_internal::free_array_storage;
+        free_array_storage(entries, alignof(Entry));
+        free_array_storage(metadata, alignof(uint8_t));
+    }
+    void swap(Hash_Map& other) noexcept
+    {
+        swap_values(entries, other.entries);
+        swap_values(metadata, other.metadata);
+        swap_values(capacity, other.capacity);
+        swap_values(element_count, other.element_count);
+        swap_values(hasher, other.hasher);
+    }
+};
+
+#undef MINILIB_FORCE_INLINE

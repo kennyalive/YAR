@@ -1,5 +1,7 @@
 #pragma once
 
+// minilib does not support exceptions
+
 constexpr int MINILIB_VERSION = 0;
 
 #include <stddef.h>
