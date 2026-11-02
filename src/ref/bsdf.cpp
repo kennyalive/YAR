@@ -1,4 +1,5 @@
 #include "std.h"
+#include <math.h>
 #include "lib/common.h"
 #include "bsdf.h"
 
@@ -130,7 +131,7 @@ float Diffuse_Transmission_BSDF::pdf(const Vector3& wo, const Vector3& wi) const
     float max_r = reflectance.max_component_value();
     float max_t = transmittance.max_component_value();
 
-    float cos_theta = std::abs(dot(normal, wi));
+    float cos_theta = fabsf(dot(normal, wi));
     float pdf = cosine_hemisphere_pdf(cos_theta);
 
     bool same_hemisphere = dot(wo, normal) * dot(wi, normal) > 0.f;

@@ -1,4 +1,5 @@
 #include "std.h"
+#include <math.h>
 #include "lib/common.h"
 #include "shading_context.h"
 
@@ -40,7 +41,7 @@ static bool adjust_shading_normal(const Vector3& wo, const Vector3& ng, Vector3*
 
     Vector3 tangent;
     if (b > 1e-4f) {
-        float distance_to_surface_along_normal = std::abs(a) / b;
+        float distance_to_surface_along_normal = fabsf(a) / b;
         tangent = R + distance_to_surface_along_normal * (*n);
         tangent.normalize();
     }
@@ -152,7 +153,7 @@ void Shading_Context::initialize_local_geometry(Thread_Context& thread_ctx, cons
         ASSERT(dpdv == Vector3_Zero);
         coordinate_system_from_vector(normal, &dpdu_shading, &dpdv_shading);
     }
-    else if (std::abs(dot(normal, geometric_normal) - 1.f) < 1e-6f) {
+    else if (fabsf(dot(normal, geometric_normal) - 1.f) < 1e-6f) {
         dpdu_shading = dpdu;
         dpdv_shading = dpdv;
     }
@@ -218,12 +219,12 @@ void Shading_Context::init_from_triangle_mesh_intersection(const Triangle_Inters
         };
 
         Vector3 bp[2] = { p[1] - p[0], p[2] - p[0] };
-        if (float det = solve_linear_system_2x2(a, bp, &dpdu, &dpdv); std::abs(det) < 1e-9f) {
+        if (float det = solve_linear_system_2x2(a, bp, &dpdu, &dpdv); fabsf(det) < 1e-9f) {
             coordinate_system_from_vector(geometric_normal, &dpdu, &dpdv);
         }
 
         Vector3 bn[2] = { n[1] - n[0], n[2] - n[0] };
-        if (float det = solve_linear_system_2x2(a, bn, &dndu, &dndv); std::abs(det) < 1e-9f) {
+        if (float det = solve_linear_system_2x2(a, bn, &dndu, &dndv); fabsf(det) < 1e-9f) {
             // NOTE: this is a pbrt's approximation
             Vector3 dn = cross(bn[1], bn[0]);
             // NOTE: length/squared_lenght can be zero even if the vector is non-zero but with small components.
@@ -259,12 +260,12 @@ void Shading_Context::calculate_dxdy_derivatives(const Differential_Rays& differ
     // Position derivatives.
     float plane_d = -dot(geometric_normal, position);
     float tx = ray_plane_intersection(differential_rays.dx_ray, geometric_normal, plane_d);
-    if (std::abs(tx) != Infinity) {
+    if (fabsf(tx) != Infinity) {
         Vector3 px = differential_rays.dx_ray.get_point(tx);
         dpdx = px - position;
     }
     float ty = ray_plane_intersection(differential_rays.dy_ray, geometric_normal, plane_d);
-    if (std::abs(ty) != Infinity) {
+    if (fabsf(ty) != Infinity) {
         Vector3 py = differential_rays.dy_ray.get_point(ty);
         dpdy = py - position;
     }
@@ -283,10 +284,10 @@ void Shading_Context::calculate_dxdy_derivatives(const Differential_Rays& differ
     // NOTE: this code is mostly designed to prevent unstable numerical calculations (which triggers asserts)
     // but is not a mean to disable bad differential rays early enough.
     // Raytracer_Config::max_differential_ray_specular_bounces should be used instead.
-    if (std::abs(dudx) > 1e9f ||
-        std::abs(dvdx) > 1e9f ||
-        std::abs(dudy) > 1e9f ||
-        std::abs(dvdy) > 1e9f)
+    if (fabsf(dudx) > 1e9f ||
+        fabsf(dvdx) > 1e9f ||
+        fabsf(dudy) > 1e9f ||
+        fabsf(dvdy) > 1e9f)
     {
         has_dxdy_derivatives = false;
         dpdx = dpdy = dwo_dx = dwo_dy = Vector3{};
@@ -346,12 +347,12 @@ float Shading_Context::compute_texture_lod(int mip_count, const Vector2& uv_scal
     // This is achieved implicitly by using bilinear filtering to sample mip levels.
     /*
     float filter_width = max(
-            max(std::abs(dUVdx_scaled.u), std::abs(dUVdx_scaled.v)),
-            max(std::abs(dUVdy_scaled.u), std::abs(dUVdy_scaled.v)));
+            max(fabsf(dUVdx_scaled.u), fabsf(dUVdx_scaled.v)),
+            max(fabsf(dUVdy_scaled.u), fabsf(dUVdy_scaled.v)));
     */
     float filter_width = max(dUVdx_scaled.length(), dUVdy_scaled.length());
 
-    return max(0.f, mip_count - 1 + log2(clamp(filter_width, 1e-6f, 1.0f)));
+    return max(0.f, mip_count - 1 + log2f(clamp(filter_width, 1e-6f, 1.0f)));
 }
 
 Differential_Rays Shading_Context::compute_differential_rays_for_specular_reflection(const Ray& reflected_ray) const
@@ -424,12 +425,12 @@ void Shading_Context::apply_bump_map(const Scene_Context& scene_ctx, Float_Param
         Vector2 duvdx = Vector2(dudx, dvdx);
         Vector2 duvdy = Vector2(dudy, dvdy);
 
-        float du = 0.5f * (std::abs(dudx) + std::abs(dudy));
+        float du = 0.5f * (fabsf(dudx) + fabsf(dudy));
         if (du == 0.f) du = 0.0005f;
         Vector2 uv_du = uv + Vector2(du, 0);
         float height_du = evaluate_float_parameter(scene_ctx, uv_du, duvdx, duvdy, bump_map);
 
-        float dv = 0.5f * (std::abs(dvdx) + std::abs(dvdy));
+        float dv = 0.5f * (fabsf(dvdx) + fabsf(dvdy));
         if (dv == 0.f) dv = 0.0005f;
         Vector2 uv_dv = uv + Vector2(0, dv);
         float height_dv = evaluate_float_parameter(scene_ctx, uv_dv, duvdx, duvdy, bump_map);

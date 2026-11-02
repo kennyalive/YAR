@@ -1,4 +1,5 @@
 #include "std.h"
+#include <math.h>
 #include "lib/common.h"
 #include "lib/minilib.h"
 #include "yar.h"
@@ -382,7 +383,7 @@ void YAR::draw_frame() {
     frame_params.swapchain_image_index = vk.swapchain_image_index;
     frame_params.camera_to_world = flying_camera.get_camera_pose();
     frame_params.viewport_size = { vk.surface_size.width, vk.surface_size.height };
-    frame_params.tan_fovy_over_2 = std::tan(radians(scene.camera_fov_y / 2.f));
+    frame_params.tan_fovy_over_2 = tanf(radians(scene.camera_fov_y / 2.f));
     frame_params.z_is_up = uint32_t(scene.z_is_up);
 
     VkPushDataInfoEXT push_data_info{ VK_STRUCTURE_TYPE_PUSH_DATA_INFO_EXT };
@@ -461,7 +462,7 @@ void YAR::start_reference_renderer()
     config.thread_count = thread_count;
 
     Raytracer_Config raytracer_config = scene.raytracer_config;
-    int k = (int)std::ceil(std::sqrt(ui.ref_params.spp));
+    int k = (int)ceil(sqrt(double(ui.ref_params.spp)));
     raytracer_config.x_pixel_sample_count = k;
     raytracer_config.y_pixel_sample_count = k;
 

@@ -1,4 +1,5 @@
 #include "std.h"
+#include <math.h>
 #include "lib/common.h"
 #include "path_tracing.h"
 
@@ -66,7 +67,7 @@ ColorRGB trace_path(Thread_Context& thread_ctx, const Ray& ray, const Differenti
             if (f.is_black())
                 break;
 
-            path_coeff *= f * (std::abs(dot(shading_ctx.normal, wi)) / (bsdf_pdf * shading_ctx.bsdf_layer_selection_probability));
+            path_coeff *= f * (fabsf(dot(shading_ctx.normal, wi)) / (bsdf_pdf * shading_ctx.bsdf_layer_selection_probability));
 
             current_ray.origin = shading_ctx.get_ray_origin_using_control_direction(wi);
             current_ray.direction = wi;

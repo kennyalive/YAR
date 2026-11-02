@@ -9,6 +9,8 @@
 
 #include "getopt/getopt.h"
 
+#include <math.h>
+
 constexpr int time_category_field_width = 21; // for printf 'width' specifier
 
 struct Command_Line_Options {
@@ -390,7 +392,7 @@ static void process_input_file(const String& input_file, const Command_Line_Opti
         scene.render_region = options.render_region;
     }
     if (options.samples_per_pixel > 0) {
-        int k = (int)std::ceil(std::sqrt(options.samples_per_pixel));
+        int k = (int)ceil(sqrt(double(options.samples_per_pixel)));
         scene.raytracer_config.x_pixel_sample_count = k;
         scene.raytracer_config.y_pixel_sample_count = k;
     }
@@ -423,7 +425,7 @@ static void process_input_file(const String& input_file, const Command_Line_Opti
 
     printf("%-*s %.3f seconds\n", 12, "Render time", render_time);
     printf("%-*s %.6f\n", 12, "Variance", variance_estimate);
-    printf("%-*s %.6f\n", 12, "StdDev", std::sqrt(variance_estimate));
+    printf("%-*s %.6f\n", 12, "StdDev", sqrt(variance_estimate));
 
     //
     // Save image

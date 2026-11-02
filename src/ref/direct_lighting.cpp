@@ -1,4 +1,5 @@
 #include "std.h"
+#include <math.h>
 #include "lib/common.h"
 #include "direct_lighting.h"
 
@@ -55,13 +56,13 @@ static ColorRGB direct_lighting_from_spot_light(const Scene_Context& scene_ctx, 
 
     Vector3 wi = vector_to_light / distance_to_light;
 
-    float cone_cos = std::cos(light.cone_angle);
+    float cone_cos = cosf(light.cone_angle);
     float wi_cos = dot(-wi, light.direction);
     if (wi_cos < cone_cos)
         return Color_Black; // outside of light cone
 
     float penumbra_attenuation = 1.f;
-    float penumbra_cos = std::cos(max(0.f, light.cone_angle - light.penumbra_angle));
+    float penumbra_cos = cosf(max(0.f, light.cone_angle - light.penumbra_angle));
     if (wi_cos < penumbra_cos) {
         float k = (wi_cos - cone_cos) / (penumbra_cos - cone_cos);
         penumbra_attenuation = (k * k) * (k * k);
@@ -84,7 +85,7 @@ static ColorRGB direct_lighting_from_spot_light(const Scene_Context& scene_ctx, 
     if (occluded)
         return Color_Black;
 
-    ColorRGB L = (light.intensity * f) * (penumbra_attenuation * std::abs(n_dot_wi) / (distance_to_light * distance_to_light));
+    ColorRGB L = (light.intensity * f) * (penumbra_attenuation * fabsf(n_dot_wi) / (distance_to_light * distance_to_light));
     return L;
 }
 
@@ -150,7 +151,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
                         float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, wi);
                         float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
 
-                        L += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
+                        L += (light.emitted_radiance * f) * (mis_weight * fabsf(n_dot_wi) / light_pdf);
                     }
                 }
             }
@@ -185,7 +186,7 @@ static ColorRGB direct_lighting_from_rectangular_light(
                     float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
                     float n_dot_wi = dot(shading_ctx.normal, wi);
 
-                    L += (light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / bsdf_pdf);
+                    L += (light.emitted_radiance * f) * (mis_weight * fabsf(n_dot_wi) / bsdf_pdf);
                 }
             }
         }
@@ -226,7 +227,7 @@ static ColorRGB direct_lighting_from_sphere_light(
                     float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, wi);
                     float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
 
-                    L += (light_sampler.light.emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
+                    L += (light_sampler.light.emitted_radiance * f) * (mis_weight * fabsf(n_dot_wi) / light_pdf);
                 }
             }
         }
@@ -251,7 +252,7 @@ static ColorRGB direct_lighting_from_sphere_light(
                     float light_pdf = light_sampler.cone_sampling_pdf;
                     float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
 
-                    L += (light_sampler.light.emitted_radiance * f) * (mis_weight * std::abs(dot(shading_ctx.normal, wi)) / bsdf_pdf);
+                    L += (light_sampler.light.emitted_radiance * f) * (mis_weight * fabsf(dot(shading_ctx.normal, wi)) / bsdf_pdf);
                 }
             }
         }
@@ -291,7 +292,7 @@ static ColorRGB direct_lighting_from_triangle_mesh_light(
                     if (!occluded) {
                         float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, wi);
                         float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
-                        L += (sampler.light->emitted_radiance * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
+                        L += (sampler.light->emitted_radiance * f) * (mis_weight * fabsf(n_dot_wi) / light_pdf);
                     }
                 }
             }
@@ -314,7 +315,7 @@ static ColorRGB direct_lighting_from_triangle_mesh_light(
             if (found_isect && isect.scene_object->area_light == light_handle) {
                 float light_pdf = sampler.pdf(position, wi, isect);
                 float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
-                L += (sampler.light->emitted_radiance * f) * (mis_weight * std::abs(dot(shading_ctx.normal, wi)) / bsdf_pdf);
+                L += (sampler.light->emitted_radiance * f) * (mis_weight * fabsf(dot(shading_ctx.normal, wi)) / bsdf_pdf);
             }
         }
     }
@@ -348,7 +349,7 @@ static ColorRGB direct_lighting_from_environment_light(
                     float bsdf_pdf = shading_ctx.bsdf->pdf(shading_ctx.wo, wi);
                     float mis_weight = mis_power_heuristic(light_pdf, bsdf_pdf);
 
-                    L += (Le * f) * (mis_weight * std::abs(n_dot_wi) / light_pdf);
+                    L += (Le * f) * (mis_weight * fabsf(n_dot_wi) / light_pdf);
                 }
             }
         }
@@ -375,7 +376,7 @@ static ColorRGB direct_lighting_from_environment_light(
                     float light_pdf = scene_ctx.environment_light_sampler.pdf(wi);
                     float mis_weight = mis_power_heuristic(bsdf_pdf, light_pdf);
 
-                    L += (Le * f) * (mis_weight * std::abs(dot(shading_ctx.normal, wi)) / bsdf_pdf);
+                    L += (Le * f) * (mis_weight * fabsf(dot(shading_ctx.normal, wi)) / bsdf_pdf);
                 }
             }
         }

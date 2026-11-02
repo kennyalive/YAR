@@ -103,7 +103,7 @@ inline float cos_delta_phi(const Vector2& a, const Vector2& b)
     if (a_len_sq == 0.f || b_len_sq == 0.f) {
         return 1.f;
     }
-    float cosine = dot2(a, b) / std::sqrt(a_len_sq * b_len_sq);
+    float cosine = dot2(a, b) / sqrtf(a_len_sq * b_len_sq);
     return clamp(cosine, -1.f, 1.f);
 }
 
@@ -115,8 +115,8 @@ inline float cos_delta_phi(const Vector3& a, const Vector3& b, const Vector3& ta
 }
 
 inline Vector3 get_direction_from_spherical_coordinates(float theta, float phi) {
-    float sin_theta = std::sin(theta);
-    return { sin_theta * std::cos(phi), sin_theta * std::sin(phi), std::cos(theta) };
+    float sin_theta = sinf(theta);
+    return { sin_theta * cosf(phi), sin_theta * sinf(phi), cosf(theta) };
 }
 
 inline Vector3 reflect(const Vector3& w, const Vector3& n) {
@@ -132,7 +132,7 @@ inline bool refract(const Vector3& w_incident, const Vector3& normal, float etaI
     if (sin_t_squared >= 1.f)
         return false;  // total internal reflection
 
-    float cos_t = std::sqrt(1.f - sin_t_squared);
+    float cos_t = sqrtf(1.f - sin_t_squared);
     *w_transmitted = -etaI_over_etaT * w_incident  + (etaI_over_etaT * cos_i - cos_t) * normal;
     return true;
 }

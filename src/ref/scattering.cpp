@@ -1,4 +1,5 @@
 #include "std.h"
+#include <math.h>
 #include "lib/common.h"
 #include "scattering.h"
 
@@ -9,21 +10,21 @@
 
 ColorRGB schlick_fresnel(const ColorRGB& R0, float cos_theta_i)
 {
-    float k = 1.f - std::abs(cos_theta_i);
+    float k = 1.f - fabsf(cos_theta_i);
     float k5 = (k * k) * (k * k) * k;
     return R0 + (ColorRGB(1) - R0) * k5;
 }
 
 float dielectric_fresnel(float cos_theta_i, float eta)
 {
-    cos_theta_i = min(std::abs(cos_theta_i), 1.f);
-    float sin_theta_i = std::sqrt(1.f - cos_theta_i * cos_theta_i);
+    cos_theta_i = min(fabsf(cos_theta_i), 1.f);
+    float sin_theta_i = sqrtf(1.f - cos_theta_i * cos_theta_i);
     float sin_theta_t = (1.f / eta) * sin_theta_i;
     if (sin_theta_t >= 1.f) {
         return 1.f;
     }
 
-    float cos_theta_t = std::sqrt(1.f - sin_theta_t * sin_theta_t);
+    float cos_theta_t = sqrtf(1.f - sin_theta_t * sin_theta_t);
 
     float Rp = (eta * cos_theta_i - cos_theta_t) /
                (eta * cos_theta_i + cos_theta_t);
@@ -38,7 +39,7 @@ float dielectric_fresnel(float cos_theta_i, float eta)
 
 ColorRGB conductor_fresnel(float cos_theta_i, float eta_i, const ColorRGB& eta_t, const ColorRGB& k_t)
 {
-    cos_theta_i = std::abs(clamp(cos_theta_i, -1.f, 1.f));
+    cos_theta_i = fabsf(clamp(cos_theta_i, -1.f, 1.f));
     float cos_theta_i2 = cos_theta_i * cos_theta_i;
     float sin_theta_i2 = 1.f - cos_theta_i2;
 
@@ -92,7 +93,7 @@ float microfacet_transmission(float F, float G, float D,
     float eta_o, float eta_i)
 {
     ASSERT(wo_dot_wh * wi_dot_wh <= 0.f);
-    float k = std::abs((wo_dot_wh * wi_dot_wh) / (wo_dot_n * wi_dot_n));
+    float k = fabsf((wo_dot_wh * wi_dot_wh) / (wo_dot_n * wi_dot_n));
     float k2 = eta_o * wo_dot_wh + eta_i * wi_dot_wh;
     float f = (eta_o * eta_o * k * G * D * (1.f - F)) / (k2 * k2);
     return f;
@@ -144,7 +145,7 @@ float microfacet_transmission_wi_pdf(const Vector3& wo, const Vector3& wi, const
     //  wi_pdf = wh_pdf * dwh/dwi
     //  dwh/dwi = eta_i^2 * abs(dot(wi, wh)) / (eta_o*dot(wo, wh) + eta_i*dot(wi, wh))^2
     float denom = eta_o * dot(wo, wh) + eta_i * dot(wi, wh);
-    float dwh_over_dwi = eta_i * eta_i * std::abs(dot(wi, wh)) / (denom * denom);
+    float dwh_over_dwi = eta_i * eta_i * fabsf(dot(wi, wh)) / (denom * denom);
 
     float wi_pdf = wh_pdf * dwh_over_dwi;
     return wi_pdf;
@@ -197,7 +198,7 @@ static float GGX_lambda(const Vector3& v, const Vector3& n, float alpha)
     float cos2_theta = cos_theta * cos_theta;
     float tan2_theta = max(0.f, (1.f - cos2_theta) / cos2_theta); // could be Infinity, that's fine
 
-    float lambda = 0.5f * (-1.f + std::sqrt(1.f + alpha * alpha * tan2_theta));
+    float lambda = 0.5f * (-1.f + sqrtf(1.f + alpha * alpha * tan2_theta));
     return lambda;
 }
 
@@ -213,7 +214,7 @@ static float GGX_lambda_anisotropic(const Vector3& v_local, float alpha_x, float
     float sin2_phi = (sin2_theta == 0.f) ? 0.f : (v_local.y * v_local.y) * sin2_theta_inv;
     float alpha2 = cos2_phi * alpha_x * alpha_x + sin2_phi * alpha_y * alpha_y;
 
-    float lambda = 0.5f * (-1.f + std::sqrt(1.f + alpha2 * tan2_theta));
+    float lambda = 0.5f * (-1.f + sqrtf(1.f + alpha2 * tan2_theta));
     return lambda;
 }
 
@@ -240,7 +241,7 @@ float GGX_Distribution::G1_anisotropic(const Vector3& v_local, float alpha_x, fl
 static float pbrt3_roughness_to_alpha(float roughness)
 {
     roughness = max(roughness, 1e-3f);
-    float x = std::log(roughness);
+    float x = logf(roughness);
     float alpha =
         1.621420000f +
         0.819955000f * x +
@@ -260,7 +261,7 @@ float GGX_Distribution::roughness_to_alpha(const Thread_Context& thread_ctx, flo
         alpha = pbrt3_roughness_to_alpha(roughness);
     }
     else if (thread_ctx.scene_context.pbrt4_scene) {
-        alpha = std::sqrt(roughness);
+        alpha = sqrtf(roughness);
     }
     else {
         alpha = roughness * roughness;

@@ -4,6 +4,7 @@
 
 #include "colorimetry.h"
 #include "math.h"
+#include <math.h>
 
 static float compute_average_value_for_range(const float* lambdas, const float* values, int n, float range_start, float range_end) {
     ASSERT(n >= 2);
@@ -92,7 +93,7 @@ Sampled_Spectrum Sampled_Spectrum::blackbody_normalized_spectrum(float temperatu
         const double lambda_squared = lambda * lambda;
         const double lambda_pow5 = lambda_squared * lambda_squared * lambda;
 
-        return (2 * h * c * c) / (lambda_pow5 * (std::exp((h * c) / (lambda * k * t)) - 1.0));
+        return (2 * h * c * c) / (lambda_pow5 * (exp((h * c) / (lambda * k * t)) - 1.0));
     };
 
     const double normalization_factor = 1.0 / blackbody_radiance(peak_lambda);

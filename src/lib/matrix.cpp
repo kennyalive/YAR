@@ -1,6 +1,7 @@
 #include "std.h"
 #include "common.h"
 #include "matrix.h"
+#include <math.h>
 
 const Matrix3x4 Matrix3x4::identity = [] {
     Matrix3x4 m{};
@@ -55,7 +56,7 @@ bool Matrix3x4::is_identity(float epsilon) const
 {
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 4; j++) {
-            float diff = std::abs(a[i][j] - (i == j ? 1.f : 0.f));
+            float diff = fabsf(a[i][j] - (i == j ? 1.f : 0.f));
             if (diff > epsilon)
                 return false;
         }
@@ -67,7 +68,7 @@ bool Matrix3x4::is_identity(float epsilon_3x3, float epsilon_translation) const
 {
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 4; j++) {
-            float diff = std::abs(a[i][j] - (i == j ? 1.f : 0.f));
+            float diff = fabsf(a[i][j] - (i == j ? 1.f : 0.f));
             if (diff > (j == 3 ? epsilon_translation : epsilon_3x3))
                 return false;
         }
@@ -127,8 +128,8 @@ Matrix4x4 operator*(const Matrix4x4& m1, const Matrix3x4& m2) {
 }
 
 Matrix3x4 rotate_x(const Matrix3x4& m, float angle) {
-    float cs = std::cos(angle);
-    float sn = std::sin(angle);
+    float cs = cosf(angle);
+    float sn = sinf(angle);
 
     Matrix3x4 m2;
     m2.a[0][0] = m.a[0][0];
@@ -149,8 +150,8 @@ Matrix3x4 rotate_x(const Matrix3x4& m, float angle) {
 }
 
 Matrix3x4 rotate_y(const Matrix3x4& m, float angle) {
-    float cs = std::cos(angle);
-    float sn = std::sin(angle);
+    float cs = cosf(angle);
+    float sn = sinf(angle);
 
     Matrix3x4 m2;
     m2.a[0][0] = cs*m.a[0][0] + sn*m.a[2][0];
@@ -171,8 +172,8 @@ Matrix3x4 rotate_y(const Matrix3x4& m, float angle) {
 }
 
 Matrix3x4 rotate_z(const Matrix3x4& m, float angle) {
-    float cs = std::cos(angle);
-    float sn = std::sin(angle);
+    float cs = cosf(angle);
+    float sn = sinf(angle);
 
     Matrix3x4 m2;
     m2.a[0][0] = cs*m.a[0][0] - sn*m.a[1][0];
@@ -242,7 +243,7 @@ Matrix3x4 look_at_transform(Vector3 from, Vector3 to, Vector3 up) {
     float d = f.length();
 
     // degenerated cases, just return matrix with identity orientation
-    if (d < 1e-5f || std::abs(dot(f, up) - 1.f) < 1e-3f) {
+    if (d < 1e-5f || fabsf(dot(f, up) - 1.f) < 1e-3f) {
         Matrix3x4 m = Matrix3x4::identity;
         m.set_column(3, from);
         return m;
@@ -273,7 +274,7 @@ void get_pbrt_lookat_from_camera_pose(const Matrix3x4& camera_pose, bool z_is_up
 }
 
 Matrix4x4 perspective_transform_opengl_z01(float fovy_radians, float aspect_ratio, float near, float far) {
-    float h = std::tan(fovy_radians/2.f) * near;
+    float h = tanf(fovy_radians/2.f) * near;
     float w = aspect_ratio * h;
 
     Matrix4x4 proj{};
@@ -298,12 +299,12 @@ Matrix3x4 get_inverse_transform(const Matrix3x4& m)
     a[2][4] = 0; a[2][5] = 0; a[2][6] = 1;
 
     for (int i = 0; i < 3; i++) {
-        float big = std::abs(a[i][i]);
+        float big = fabsf(a[i][i]);
         int i_pivot = i;
 
         for (int i2 = i + 1; i2 < 3; i2++) {
-            if (std::abs(a[i2][i]) > big) {
-                big = std::abs(a[i2][i]);
+            if (fabsf(a[i2][i]) > big) {
+                big = fabsf(a[i2][i]);
                 i_pivot = i2;
             }
         }

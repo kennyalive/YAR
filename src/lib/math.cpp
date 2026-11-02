@@ -3,6 +3,7 @@
 
 #include "ray.h"
 #include "vector.h"
+#include <math.h>
 
 template <typename T>
 float solve_linear_system_2x2(float a[2][2], T b[2], T* x1, T* x2) {
@@ -19,7 +20,7 @@ template float solve_linear_system_2x2<float>(float a[2][2], float b[2], float* 
 template float solve_linear_system_2x2<Vector3>(float a[2][2], Vector3 b[2], Vector3* x1, Vector3* x2);
 
 void coordinate_system_from_vector(const Vector3& v, Vector3* v1, Vector3* v2) {
-    *v1 = (std::abs(v.x) > std::abs(v.y)) ? Vector3(-v.z, 0, v.x) : Vector3(0, -v.z, v.y);
+    *v1 = (fabsf(v.x) > fabsf(v.y)) ? Vector3(-v.z, 0, v.x) : Vector3(0, -v.z, v.y);
     v1->normalize();
     *v2 = cross(v, *v1);
 }
@@ -72,9 +73,9 @@ Vector3 offset_ray_origin(const Vector3& p, const Vector3& geometric_normal) {
     const float origin = 1.0/32.0f;
     const float float_scale = 1.0/65536.0f;
     Vector3 p_adjusted;
-    p_adjusted.x = std::abs(p.x) < origin ? (p.x + float_scale*geometric_normal.x) : p_i.x;
-    p_adjusted.y = std::abs(p.y) < origin ? (p.y + float_scale*geometric_normal.y) : p_i.y;
-    p_adjusted.z = std::abs(p.z) < origin ? (p.z + float_scale*geometric_normal.z) : p_i.z;
+    p_adjusted.x = fabsf(p.x) < origin ? (p.x + float_scale*geometric_normal.x) : p_i.x;
+    p_adjusted.y = fabsf(p.y) < origin ? (p.y + float_scale*geometric_normal.y) : p_i.y;
+    p_adjusted.z = fabsf(p.z) < origin ? (p.z + float_scale*geometric_normal.z) : p_i.z;
     return p_adjusted;
 }
 
@@ -102,17 +103,17 @@ void offset_ray_origin_in_both_directions(const Vector3& p, const Vector3& geome
     p_adjusted_in_positive_direction->z = bit_cast<float>(p.z < 0 ? iz1 : iz2);
     p_adjusted_in_negative_direction->z = bit_cast<float>(p.z < 0 ? iz2 : iz1);
 
-    if (std::abs(p.x) < origin) {
+    if (fabsf(p.x) < origin) {
         float dx = float_scale * geometric_normal.x;
         p_adjusted_in_positive_direction->x = p.x + dx;
         p_adjusted_in_negative_direction->x = p.x - dx;
     }
-    if (std::abs(p.y) < origin) {
+    if (fabsf(p.y) < origin) {
         float dy = float_scale * geometric_normal.y;
         p_adjusted_in_positive_direction->y = p.y + dy;
         p_adjusted_in_negative_direction->y = p.y - dy;
     }
-    if (std::abs(p.z) < origin) {
+    if (fabsf(p.z) < origin) {
         float dz = float_scale * geometric_normal.z;
         p_adjusted_in_positive_direction->z = p.z + dz;
         p_adjusted_in_negative_direction->z = p.z - dz;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math.h"
+#include <math.h>
 
 struct Vector3;
 struct ColorRGB;
@@ -59,7 +60,7 @@ struct ColorRGB {
 
     static ColorRGB sqrt(const ColorRGB& c) {
         ASSERT(c.r >= 0 && c.g >= 0 && c.b >= 0);
-        return ColorRGB(std::sqrt(c.r), std::sqrt(c.g), std::sqrt(c.b));
+        return ColorRGB(sqrtf(c.r), sqrtf(c.g), sqrtf(c.b));
     }
 
     bool is_black() const {

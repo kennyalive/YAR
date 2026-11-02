@@ -2,6 +2,7 @@
 #include "lib/common.h"
 #include "lib/minilib_extra.h"
 #include "triangle_mesh.h"
+#include <math.h>
 
 void Triangle_Mesh::remove_degenerate_triangles() {
     Array<int32_t> good_triangle_indices;
@@ -109,7 +110,7 @@ static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_gro
     Array<Mask_Info> mask_infos; // mask infos are re-initialized for each vertex
     int mask_info_count;
 
-    const float crease_angle_cos = std::cos(crease_angle);
+    const float crease_angle_cos = cosf(crease_angle);
 
     for (const auto& entry : vertex_faces) {
         const Vector3 pos = entry.key;
@@ -316,17 +317,17 @@ void calculate_normals(const Normal_Calculation_Params& params, Triangle_Mesh& m
         if (params.averaging_mode == Normal_Averaging_Mode::angle) {
             Vector3 d1 = b - a;
             Vector3 d2 = c - a;
-            float angle = std::acos(clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
+            float angle = acosf(clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
             scaled_n_a = cross(d1, d2).normalized() * angle;
 
             d1 = c - b;
             d2 = a - b;
-            angle = std::acos(clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
+            angle = acosf(clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
             scaled_n_b = cross(d1, d2).normalized() * angle;
 
             d1 = a - c;
             d2 = b - c;
-            angle = std::acos(clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
+            angle = acosf(clamp(dot(d1.normalized(), d2.normalized()), -1.f, 1.f));
             scaled_n_c = cross(d1, d2).normalized() * angle;
         } else {
             ASSERT(params.averaging_mode == Normal_Averaging_Mode::area);

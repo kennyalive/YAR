@@ -6,6 +6,8 @@
 
 #include "lib/tessellation.h"
 
+#include <math.h>
+
 void test_watertightness() {
     printf("-------------\n");
     printf("Test: test_watertightness\n");
@@ -23,7 +25,7 @@ void test_watertightness() {
     {
         printf("Shooting %d rays against sphere of radius %.2f cm\n", ray_count, radius * 100);
         float average_triangle_area = 4 * Pi * radius * radius / mesh.get_triangle_count();
-        float triangle_characteristic_size = std::sqrt(average_triangle_area * 4.f / std::sqrt(3.f));
+        float triangle_characteristic_size = sqrtf(average_triangle_area * 4.f / sqrtf(3.f));
         printf("Sphere's triangle characteristic size %.3f mm\n", triangle_characteristic_size * 1000);
     }
 
@@ -39,9 +41,9 @@ void test_watertightness() {
     for (uint32_t i = 0; i < ray_count; i++) {
         // uniformly generate points insice a circle
         float phi = 2 * Pi * rng.get_float();
-        float r = point_generation_radius * std::sqrt(rng.get_float());
-        float x = r * std::cos(phi);
-        float y = r * std::sin(phi);
+        float r = point_generation_radius * sqrtf(rng.get_float());
+        float x = r * cosf(phi);
+        float y = r * sinf(phi);
 
         Vector3 ray_direction = (Vector3(x, y, 0) - ray_origin).normalized();
         Ray ray{ ray_origin, ray_direction };

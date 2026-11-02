@@ -1,4 +1,5 @@
 #include "std.h"
+#include <math.h>
 #include "lib/common.h"
 #include "lib/minilib_extra.h"
 #include "bsdf.h"
@@ -326,17 +327,17 @@ ColorRGB Pbrt3_Fourier_BSDF::evaluate(const Vector3& wo, const Vector3& wi) cons
     const float* coeffs = data.coeffs.data() + data.coeff_offset[index];
 
     float cos_phi = cos_delta_phi(wo, -wi, tangent, bitangent);
-    float phi = std::acos(cos_phi);
+    float phi = acosf(cos_phi);
 
     // the fourier series computes bsdf * abs(cos_i), so we need to remove cosine
-    float scale = (cos_i != 0.f) ? 1.f / std::abs(cos_i) : 0.f;
+    float scale = (cos_i != 0.f) ? 1.f / fabsf(cos_i) : 0.f;
 
     ASSERT(data.channel_count == 1 || data.channel_count == 3);
 
     if (data.channel_count == 1) {
         float y = 0.f;
         for (uint32_t i = 0; i < coeff_count; i++) {
-            float coeff_cos = std::cos(float(i) * phi);
+            float coeff_cos = cosf(float(i) * phi);
             y += coeffs[i] * coeff_cos;
         }
         ColorRGB f(y * scale);
@@ -347,7 +348,7 @@ ColorRGB Pbrt3_Fourier_BSDF::evaluate(const Vector3& wo, const Vector3& wi) cons
         float r = 0.f;
         float b = 0.f;
         for (uint32_t i = 0; i < coeff_count; i++) {
-            float coeff_cos = std::cos(float(i) * phi);
+            float coeff_cos = cosf(float(i) * phi);
             y += coeffs[i + 0 * coeff_count] * coeff_cos;
             r += coeffs[i + 1 * coeff_count] * coeff_cos;
             b += coeffs[i + 2 * coeff_count] * coeff_cos;

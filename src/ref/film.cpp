@@ -2,6 +2,8 @@
 #include "lib/common.h"
 #include "film.h"
 
+#include <math.h>
+
 constexpr int Tile_Size = 64;
 
 static Film_Pixel& get_tile_pixel(Film_Tile& tile, Vector2i p)
@@ -31,10 +33,10 @@ void Film_Tile::add_sample(const Film_Filter& filter, Vector2 film_pos, ColorRGB
 {
     // find pixels that are affected by the sample
     Bounds2i region;
-    region.p0.x = (int)std::ceil(film_pos.x - filter.radius - 0.5f);
-    region.p0.y = (int)std::ceil(film_pos.y - filter.radius - 0.5f);
-    region.p1.x = (int)std::floor(film_pos.x + filter.radius - 0.5f) + 1;
-    region.p1.y = (int)std::floor(film_pos.y + filter.radius - 0.5f) + 1;
+    region.p0.x = (int)ceilf(film_pos.x - filter.radius - 0.5f);
+    region.p0.y = (int)ceilf(film_pos.y - filter.radius - 0.5f);
+    region.p1.x = (int)floorf(film_pos.x + filter.radius - 0.5f) + 1;
+    region.p1.y = (int)floorf(film_pos.y + filter.radius - 0.5f) + 1;
 
     region = intersect_bounds(region, pixel_bounds);
 
@@ -60,12 +62,12 @@ Film::Film(Bounds2i render_region, Film_Filter filter)
 
     sample_region = Bounds2i {
         Vector2i {
-            (int32_t)std::floor(render_region.p0.x + 0.5f - filter.radius),
-            (int32_t)std::floor(render_region.p0.y + 0.5f - filter.radius)
+            (int32_t)floorf(render_region.p0.x + 0.5f - filter.radius),
+            (int32_t)floorf(render_region.p0.y + 0.5f - filter.radius)
         },
         Vector2i {
-            (int32_t)std::ceil(render_region.p1.x-1 + 0.5f + filter.radius),
-            (int32_t)std::ceil(render_region.p1.y-1 + 0.5f + filter.radius)
+            (int32_t)ceilf(render_region.p1.x-1 + 0.5f + filter.radius),
+            (int32_t)ceilf(render_region.p1.y-1 + 0.5f + filter.radius)
         }
     };
 
@@ -85,10 +87,10 @@ void Film::get_tile_bounds(int tile_index, Bounds2i& tile_sample_bounds, Bounds2
     tile_sample_bounds.p1.x = min(tile_sample_bounds.p0.x + Tile_Size, sample_region.p1.x);
     tile_sample_bounds.p1.y = min(tile_sample_bounds.p0.y + Tile_Size, sample_region.p1.y);
 
-    tile_pixel_bounds.p0.x = max((int)std::ceil(tile_sample_bounds.p0.x - filter.radius - 0.5f), render_region.p0.x);
-    tile_pixel_bounds.p0.y = max((int)std::ceil(tile_sample_bounds.p0.y - filter.radius - 0.5f), render_region.p0.y);
-    tile_pixel_bounds.p1.x = min((int)std::floor(tile_sample_bounds.p1.x + filter.radius - 0.5f) + 1, render_region.p1.x);
-    tile_pixel_bounds.p1.y = min((int)std::floor(tile_sample_bounds.p1.y + filter.radius - 0.5f) + 1, render_region.p1.y);
+    tile_pixel_bounds.p0.x = max((int)ceilf(tile_sample_bounds.p0.x - filter.radius - 0.5f), render_region.p0.x);
+    tile_pixel_bounds.p0.y = max((int)ceilf(tile_sample_bounds.p0.y - filter.radius - 0.5f), render_region.p0.y);
+    tile_pixel_bounds.p1.x = min((int)floorf(tile_sample_bounds.p1.x + filter.radius - 0.5f) + 1, render_region.p1.x);
+    tile_pixel_bounds.p1.y = min((int)floorf(tile_sample_bounds.p1.y + filter.radius - 0.5f) + 1, render_region.p1.y);
 }
 
 void Film::merge_tile(const Film_Tile& tile)
@@ -134,9 +136,9 @@ float Film_Filter::evaluate(Vector2 p) const
     case Type::box:
         return 1.f;
     case Type::gaussian:
-        return max(0.f, std::exp(-alpha * p.length_squared()) - zero_level);
+        return max(0.f, expf(-alpha * p.length_squared()) - zero_level);
     case Type::triangle:
-        return max(0.f, radius - std::abs(p.x)) * max(0.f, radius - std::abs(p.y));
+        return max(0.f, radius - fabsf(p.x)) * max(0.f, radius - fabsf(p.y));
     }
     ASSERT(!"Film_Filter::evaluate: Unknown filter type");
     return 0.f;
@@ -149,7 +151,7 @@ Film_Filter get_box_filter(float radius)
 
 Film_Filter get_gaussian_filter(float radius, float alpha)
 {
-    float zero_level = std::exp(-alpha*radius*radius);
+    float zero_level = expf(-alpha*radius*radius);
     return Film_Filter{ Film_Filter::Type::gaussian, radius, alpha, zero_level };
 }
 

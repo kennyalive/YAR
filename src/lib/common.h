@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform.h"
+#include <math.h>
 
 #define ENABLE_PROFILING 1
 #define ENABLE_INVALID_FP_EXCEPTION 1
@@ -87,14 +88,14 @@ inline float srgb_encode(float f) {
     if (f <= 0.0031308f)
         return 12.92f * f;
     else
-        return 1.055f * std::pow(f, 1.f/2.4f) - 0.055f;
+        return 1.055f * powf(f, 1.f/2.4f) - 0.055f;
 }
 
 inline float srgb_decode(float f) {
     if (f <= 0.04045f)
         return f / 12.92f;
     else
-        return std::pow((f + 0.055f) / 1.055f, 2.4f);
+        return powf((f + 0.055f) / 1.055f, 2.4f);
 }
 
 inline uint32_t count_leading_zeros(uint32_t k) {

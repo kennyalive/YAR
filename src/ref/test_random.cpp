@@ -3,6 +3,9 @@
 
 #include "lib/random.h"
 
+#include <math.h>
+#include <stdlib.h>
+
 void test_random_uint32_distribution() {
     const int n = 100'000'000;
 
@@ -28,7 +31,7 @@ void test_random_uint32_distribution() {
     const float estimated_bucket_item_count = float(n) / bucket_count;
     int failed_estimate_count = 0;
     for (int i = 0; i < bucket_count; i++) {
-        float error = std::abs(buckets[i] - estimated_bucket_item_count) /  estimated_bucket_item_count;
+        float error = fabsf(buckets[i] - estimated_bucket_item_count) /  estimated_bucket_item_count;
         if (error > error_tolerance_percentage)
             failed_estimate_count++;
     }
@@ -64,7 +67,7 @@ void test_random_uint32_distribution_multiple_streams() {
         }
 
         for (int i = 0; i < bucket_count; i++) {
-            float error = std::abs(buckets[i] - estimated_bucket_item_count) /  estimated_bucket_item_count;
+            float error = fabsf(buckets[i] - estimated_bucket_item_count) /  estimated_bucket_item_count;
             if (error > error_tolerance_percentage)
                 failed_estimate_count++;
         }
@@ -108,7 +111,7 @@ void test_random_bounded_uint32_distribution() {
 
             int failed_estimate_count = 0;
             for (int i = 0; i < (int)bound; i++) {
-                float error = std::abs(buckets[i] - estimated_bucket_item_count) / (float)estimated_bucket_item_count;
+                float error = abs(buckets[i] - estimated_bucket_item_count) / (float)estimated_bucket_item_count;
                 if (error > error_tolerance_percentage)
                     failed_estimate_count++;
             }
@@ -146,7 +149,7 @@ void test_random_float() {
     const float estimated_bucket_item_count = float(n) / bucket_count;
     int failed_estimate_count = 0;
     for (int i = 0; i < bucket_count; i++) {
-        float error = std::abs(buckets[i] - estimated_bucket_item_count) /  estimated_bucket_item_count;
+        float error = fabsf(buckets[i] - estimated_bucket_item_count) /  estimated_bucket_item_count;
         if (error > error_tolerance_percentage)
             failed_estimate_count++;
     }

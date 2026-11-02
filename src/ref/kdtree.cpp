@@ -8,6 +8,8 @@
 
 #include "lib/scene_object.h"
 
+#include <math.h>
+
 constexpr int max_traversal_depth = 40;
 
 static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
@@ -191,7 +193,7 @@ uint64_t KdTree::get_allocated_memory_size() const
 
 int KdTree::get_max_depth_limit(uint32_t primitive_count)
 {
-    int depth = std::lround(8.0 + 1.3 * std::floor(std::log2(primitive_count)));
+    int depth = lround(8.0 + 1.3 * floor(log2(double(primitive_count))));
     return min(depth, max_traversal_depth);
 }
 

@@ -4,6 +4,8 @@
 #include "intersection_simd.h"
 #include "lib/random.h"
 
+#include <math.h>
+
 void test_triangle_intersection()
 {
     printf("-------------\n");
@@ -162,7 +164,7 @@ void test_simd_triangle_intersection()
         _mm256_store_ps(t, isect8.t);
         for (int i = 0; i < 8; i++) {
             if (i != 0 && i != 5)
-                CHECK(std::abs(t[i] - 5.f) < 1e-5f);
+                CHECK(fabsf(t[i] - 5.f) < 1e-5f);
             else
                 CHECK(t[i] == Infinity);
         }
@@ -194,7 +196,7 @@ void test_simd_triangle_intersection()
         _mm_store_ps(t, isect4.t);
         for (int i = 0; i < 4; i++) {
             if (i != 1)
-                CHECK(std::abs(t[i] - 5.f) < 1e-5f);
+                CHECK(fabsf(t[i] - 5.f) < 1e-5f);
             else
                 CHECK(t[i] == Infinity);
         }
@@ -226,7 +228,7 @@ void test_simd_triangle_intersection()
         _mm256_store_ps(t, isect8.t);
         for (int i = 0; i < 8; i++) {
             if (i != 0 && i != 5)
-                CHECK(std::abs(5 - t[i] - pz[0].m256_f32[i]) < 1e-5f);
+                CHECK(fabsf(5 - t[i] - pz[0].m256_f32[i]) < 1e-5f);
             else
                 CHECK(t[i] == Infinity);
 
@@ -236,7 +238,7 @@ void test_simd_triangle_intersection()
         Vector3 b;
         uint32_t index;
         isect8.reduce(&closest_distance, &b, &index);
-        CHECK(std::abs(closest_distance - 3.f) < 1e-5f);
+        CHECK(fabsf(closest_distance - 3.f) < 1e-5f);
     }
 
     {
@@ -265,7 +267,7 @@ void test_simd_triangle_intersection()
         _mm_store_ps(t, isect4.t);
         for (int i = 0; i < 4; i++) {
             if (i != 1)
-                CHECK(std::abs(5 - t[i] - pz[0].m128_f32[i]) < 1e-5f);
+                CHECK(fabsf(5 - t[i] - pz[0].m128_f32[i]) < 1e-5f);
             else
                 CHECK(t[i] == Infinity);
 
@@ -275,7 +277,7 @@ void test_simd_triangle_intersection()
         Vector3 b;
         uint32_t index;
         isect4.reduce(&closest_distance, &b, &index);
-        CHECK(std::abs(closest_distance - 6.f) < 1e-5f);
+        CHECK(fabsf(closest_distance - 6.f) < 1e-5f);
     }
 
     printf("Success\n");

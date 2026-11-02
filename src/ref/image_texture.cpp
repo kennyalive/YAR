@@ -7,10 +7,12 @@
 #include "lib/math.h"
 #include "lib/vector.h"
 
+#include <math.h>
+
 static float lanczos_reconstruction_filter(float x, float radius) {
     // Take absolute value only to simplify comparisons below.
     // The function itself is symmetrical, so sign does not matter.
-    x = std::abs(x); 
+    x = fabsf(x);
 
     if (x < 1e-5f) 
         return 1.f;
@@ -18,7 +20,7 @@ static float lanczos_reconstruction_filter(float x, float radius) {
         return 0.f;
 
     x *= Pi;
-    return radius * std::sin(x) * std::sin(x/radius) / (x*x);
+    return radius * sinf(x) * sinf(x/radius) / (x*x);
 }
 
 // In this implementation we are using 'pre_aliasing_filter' suffix with a
@@ -41,7 +43,7 @@ static float lanczos_pre_aliasing_filter(float x, float radius, float sampling_f
 }
 
 static float mitchell_pre_aliasing_filter(float x, float B, float C, float sampling_frequency) {
-    x = std::abs(x);
+    x = fabsf(x);
     x *= sampling_frequency;
     if (x < 1) {
         return (1.f/6.f) * ((12 - 9*B - 6*C) * x*x*x + (-18 + 12*B + 6*C) * x*x + (6 - 2*B));
@@ -74,11 +76,11 @@ static float kaiser_window(float x, float alpha) {
         return float(sum);
     };
     ASSERT(x >= -1.f && x <= 1.f);
-    return bessel_I0(alpha * std::sqrt(1.f - x * x)) / bessel_I0(alpha);
+    return bessel_I0(alpha * sqrtf(1.f - x * x)) / bessel_I0(alpha);
 }
 
 static float kaiser_pre_aliasing_filter(float x, float radius, float alpha, float sampling_frequency) {
-    x = std::abs(x);
+    x = fabsf(x);
     x *= sampling_frequency;
 
     if (x < 1e-5f)
@@ -86,7 +88,7 @@ static float kaiser_pre_aliasing_filter(float x, float radius, float alpha, floa
     if (x >= radius) 
         return 0.f;
 
-    float sinc_value = std::sin(Pi*x) / (Pi*x);
+    float sinc_value = sinf(Pi*x) / (Pi*x);
     float window_value = kaiser_window(x/radius, alpha);
     return sinc_value * window_value;
 }
@@ -189,7 +191,7 @@ static Image generate_mip_level_with_separable_filter(const Image& base_image, i
 
     Array<float> weights(filter_pixel_count);
     {
-        float sampling_frequency = std::pow(0.5f, float(mip_level_to_generate));
+        float sampling_frequency = powf(0.5f, float(mip_level_to_generate));
         float sum = 0.f;
         float x = float(-filter_pixel_count/2) + 0.5f;
         for (int i = 0; i < filter_pixel_count; i++) {
@@ -447,10 +449,10 @@ ColorRGB Image_Texture::sample_bilinear(const Vector2& uv, int mip_level, Wrap_M
     float x = uv.x * float(image.width) - 0.5f;
     float y = uv.y * float(image.height) - 0.5f;
 
-    float x_floor = std::floor(x);
+    float x_floor = floorf(x);
     float wx = x - x_floor;
 
-    float y_floor = std::floor(y);
+    float y_floor = floorf(y);
     float wy = y - y_floor;
 
     int x0 = int(x_floor);
@@ -486,7 +488,7 @@ ColorRGB Image_Texture::sample_trilinear(const Vector2& uv, float lod, Wrap_Mode
     lod = clamp(lod, 0.f, float(mips.size() - 1));
 
     float lod_floor;
-    float t = std::modf(lod, &lod_floor);
+    float t = modff(lod, &lod_floor);
 
     int level0 = int(lod_floor);
     int level1 = min(level0 + 1, int(mips.size() - 1));
@@ -508,7 +510,7 @@ static ColorRGB do_EWA(const Image& image, Vector2 uv, Vector2 uv_axis1, Vector2
         Array<float> weights(table_size);
         for (int i = 0; i < int(weights.size()); i++) {
             float x = float(i) / float(table_size - 1);
-            weights[i] = std::exp(-alpha * x);
+            weights[i] = expf(-alpha * x);
         }
         return weights;
     }();
@@ -541,15 +543,15 @@ static ColorRGB do_EWA(const Image& image, Vector2 uv, Vector2 uv_axis1, Vector2
     float inv_det = 0.25f * F;
 
     // Determine ellipse bounding box.
-    float u_delta = 2 * std::sqrt(C * inv_det); // or std::sqrt(C * F)
+    float u_delta = 2 * sqrtf(C * inv_det); // or sqrtf(C * F)
     ASSERT(u_delta < 256.f); // filtering range sanity check
-    float x0 = std::ceil(uv[0] - u_delta);
-    float x1 = std::floor(uv[0] + u_delta);
+    float x0 = ceilf(uv[0] - u_delta);
+    float x1 = floorf(uv[0] + u_delta);
 
-    float v_delta = 2 * std::sqrt(A * inv_det); // or std::sqrt(A * F)
+    float v_delta = 2 * sqrtf(A * inv_det); // or sqrtf(A * F)
     ASSERT(v_delta < 256.f); // filtering range sanity check
-    float y0 = std::ceil(uv[1] - v_delta);
-    float y1 = std::floor(uv[1] + v_delta);
+    float y0 = ceilf(uv[1] - v_delta);
+    float y1 = floorf(uv[1] + v_delta);
 
     // Apply pixel's filter (projected into ellipse) to the texels inside the ellipse.
     ColorRGB sum;
@@ -588,8 +590,8 @@ ColorRGB Image_Texture::sample_EWA(Vector2 uv, Vector2 uv_axis1, Vector2 uv_axis
         std::swap(axis1_len_sq, axis2_len_sq);
     }
 
-    float major_length = std::sqrt(axis1_len_sq);
-    float minor_length = std::sqrt(axis2_len_sq);
+    float major_length = sqrtf(axis1_len_sq);
+    float minor_length = sqrtf(axis2_len_sq);
 
     if (minor_length < 1e-6f)
         return sample_bilinear(uv, 0, wrap_mode);
@@ -600,9 +602,9 @@ ColorRGB Image_Texture::sample_EWA(Vector2 uv, Vector2 uv_axis1, Vector2 uv_axis
         uv_axis2 *= scale;
     }
 
-    const float lod = max(0.f, int(mips.size()) - 1 + std::log2(minor_length));
+    const float lod = max(0.f, int(mips.size()) - 1 + log2f(minor_length));
     float lod_floor;
-    float t = std::modf(lod, &lod_floor);
+    float t = modff(lod, &lod_floor);
 
     int level0 = int(lod_floor);
     int level1 = level0 + 1;

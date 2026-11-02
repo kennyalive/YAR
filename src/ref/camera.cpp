@@ -1,4 +1,5 @@
 #include "std.h"
+#include <math.h>
 #include "camera.h"
 #include "lib/common.h"
 
@@ -7,7 +8,7 @@ Camera::Camera(const Matrix3x4 & camera_to_world, Vector2 image_extent, float fo
     , image_extent(image_extent)
     , z_is_up(z_is_up)
 {
-    float tan_fovy_over_2 = std::tan(radians(fovy/2.f));
+    float tan_fovy_over_2 = tanf(radians(fovy/2.f));
 
     vert_half_dist = tan_fovy_over_2;
     horz_half_dist = (image_extent.x / image_extent.y) * tan_fovy_over_2;

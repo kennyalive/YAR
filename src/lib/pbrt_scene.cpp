@@ -9,6 +9,7 @@
 
 #include "pbrtParser/Scene.h"
 #include "pbrt-parser/impl/syntactic/Scene.h"
+#include <math.h>
 
 namespace {
 struct Shape {
@@ -90,7 +91,7 @@ static bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size,
 
     int k = 0;
     for (; k < 3; k++) {
-        if (std::abs(dot(d[k], d[(k+1)%3])) < 1e-4f) {
+        if (fabsf(dot(d[k], d[(k+1)%3])) < 1e-4f) {
             break;
         }
     }
@@ -1040,9 +1041,9 @@ static void import_pbrt_camera(pbrt::Camera::SP pbrt_camera, Scene* scene) {
     // for "vertical" images the pbrt's fov represents horizontal fov,
     // which should be converted to our convention (fov_y).
     if (scene->film_resolution.y > scene->film_resolution.x) {
-        float fov_x_over_2_tan = std::tan(radians(pbrt_camera->fov / 2.f));
+        float fov_x_over_2_tan = tanf(radians(pbrt_camera->fov / 2.f));
         float fov_y_over_2_tan = fov_x_over_2_tan * float(scene->film_resolution.y) / float(scene->film_resolution.x);
-        scene->camera_fov_y = degrees(2.f * std::atan(fov_y_over_2_tan));
+        scene->camera_fov_y = degrees(2.f * atanf(fov_y_over_2_tan));
     }
     else {
         scene->camera_fov_y = pbrt_camera->fov;

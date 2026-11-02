@@ -89,7 +89,7 @@ struct Vector3 {
     }
 
     float length() const {
-        return std::sqrt(length_squared());
+        return sqrtf(length_squared());
     }
 
     float length_squared() const {
@@ -113,11 +113,11 @@ struct Vector3 {
     }
 
     bool is_normalized(float epsilon = 1e-5f) const {
-        return std::abs(length() - 1.f) < epsilon;
+        return fabsf(length() - 1.f) < epsilon;
     }
 
     Vector3 abs() const {
-        return Vector3(std::abs(x), std::abs(y), std::abs(z));
+        return Vector3(fabsf(x), fabsf(y), fabsf(z));
     }
 
     int max_dimension() const {
@@ -248,7 +248,7 @@ struct Vector2 {
     }
 
     float length() const {
-        return std::sqrt(length_squared());
+        return sqrtf(length_squared());
     }
 
     float length_squared() const {

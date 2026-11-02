@@ -1,4 +1,5 @@
 #include "std.h"
+#include <math.h>
 #include "lib/common.h"
 #include "light_sampling.h"
 
@@ -13,9 +14,9 @@ inline float transform_pdf_uv_to_solid_angle_measure(float pdf_uv, float sin_the
 }
 
 static Vector2 get_uv_from_direction(const Vector3& env_map_direction) {
-    float phi = std::atan2(env_map_direction.y, env_map_direction.x);
+    float phi = atan2f(env_map_direction.y, env_map_direction.x);
     phi = phi < 0 ? phi + Pi2 : phi;
-    float theta = std::acos(clamp(env_map_direction.z, -1.f, 1.f));
+    float theta = acosf(clamp(env_map_direction.z, -1.f, 1.f));
 
     Vector2 uv;
     uv[0] = clamp(phi * Pi2_Inv, 0.f, One_Minus_Epsilon);
@@ -34,10 +35,10 @@ ColorRGB Environment_Light_Sampler::sample(Vector2 u, Vector3* wi, float* pdf) c
     float phi = uv[0] * Pi2;
     float theta = uv[1] * Pi;
 
-    float sin_theta = std::sin(theta);
+    float sin_theta = sinf(theta);
     *pdf = transform_pdf_uv_to_solid_angle_measure(pdf_uv, sin_theta);
 
-    *wi = { sin_theta * std::cos(phi), sin_theta * std::sin(phi), std::cos(theta) };
+    *wi = { sin_theta * cosf(phi), sin_theta * sinf(phi), cosf(theta) };
     *wi = transform_vector(light->light_to_world, *wi);
 
     // Do not filter environment map to ensure that sampled radiance values match pdf distribution map.
@@ -64,7 +65,7 @@ float Environment_Light_Sampler::pdf(const Vector3& world_direction) const {
     Vector2 uv = get_uv_from_direction(env_map_direction);
     float pdf_uv = radiance_distribution.pdf_uv(uv);
 
-    float sin_theta = std::sqrt(max(0.f, 1.f -  env_map_direction.z * env_map_direction.z));
+    float sin_theta = sqrtf(max(0.f, 1.f -  env_map_direction.z * env_map_direction.z));
 
     float pdf = transform_pdf_uv_to_solid_angle_measure(pdf_uv, sin_theta);
     return pdf;
@@ -83,7 +84,7 @@ Diffuse_Sphere_Light_Sampler::Diffuse_Sphere_Light_Sampler(const Diffuse_Sphere_
     coordinate_system_from_vector(axes[2], &axes[0], &axes[1]);
 
     float sin_theta_max = light.radius / d_center;
-    cos_theta_max = std::sqrt(max(0.f, 1.f - sin_theta_max * sin_theta_max));
+    cos_theta_max = sqrtf(max(0.f, 1.f - sin_theta_max * sin_theta_max));
 
     cone_sampling_pdf = 1.f / (2.f * Pi * (1.f - cos_theta_max));
 }
@@ -100,15 +101,15 @@ Vector3 Diffuse_Sphere_Light_Sampler::sample(Vector2 u) const {
 
     // compute distance to the sample point, which is determined where (theta, phi) direction intersects the sphere
     float sin_theta2 = max(0.f, 1.f - cos_theta * cos_theta);
-    float d_sample = d_center * cos_theta - std::sqrt(max(0.f, radius2 - d_center2 * sin_theta2));
+    float d_sample = d_center * cos_theta - sqrtf(max(0.f, radius2 - d_center2 * sin_theta2));
     ASSERT(d_sample >= 0.f);
 
     // compute angle determined by the direction from the sphere center to the intersection point using the law of cosines
     float cos_alpha = (d_center2 + radius2 - d_sample * d_sample) / (2.f * d_center * light.radius);
-    float sin_alpha = std::sqrt(max(0.f, 1.f - cos_alpha * cos_alpha));
+    float sin_alpha = sqrtf(max(0.f, 1.f - cos_alpha * cos_alpha));
 
     // compute direction from the sphere center to the sampled point
-    Vector3 direction = (sin_alpha * std::cos(phi)) * axes[0] +  (sin_alpha * std::sin(phi)) * axes[1] + cos_alpha * axes[2];
+    Vector3 direction = (sin_alpha * cosf(phi)) * axes[0] +  (sin_alpha * sinf(phi)) * axes[1] + cos_alpha * axes[2];
 
     // finally we have a point on the sphere
     Vector3 p = light.radius * direction;
@@ -144,7 +145,7 @@ Vector3 Diffuse_Triangle_Mesh_Light_Sampler::sample(Vector2 u, const Vector3& sh
 
     const Vector3 light_vec = light_p - shading_pos;
     float distance_to_light_sq = light_vec.length_squared();
-    Vector3 wi = light_vec / std::sqrt(distance_to_light_sq);
+    Vector3 wi = light_vec / sqrtf(distance_to_light_sq);
 
     float light_n_dot_wi = dot(light_n, -wi);
     if (light_n_dot_wi <= 0.f) {

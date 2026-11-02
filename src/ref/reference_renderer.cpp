@@ -19,6 +19,8 @@
 
 #include "tinyexr/tinyexr.h"
 
+#include <math.h>
+
 constexpr int time_category_field_width = 21; // for printf 'width' specifier
 
 static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
@@ -95,7 +97,7 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
     if (rt_config.rendering_algorithm == Raytracer_Config::Rendering_Algorithm::direct_lighting) {
         scene_ctx.array2d_registry.rectangular_light_arrays.reserve(scene_ctx.lights.diffuse_rectangular_lights.size());
         for (const Diffuse_Rectangular_Light& light : scene_ctx.lights.diffuse_rectangular_lights) {
-            int k = (int)std::ceil(std::sqrt(light.sample_count));
+            int k = (int)ceil(sqrt(double(light.sample_count)));
             ASSERT(k * k >= light.sample_count);
             ASSERT((k - 1) * (k - 1) < light.sample_count);
 
@@ -108,7 +110,7 @@ static void init_pixel_sampler_config(Stratified_Pixel_Sampler_Configuration& pi
         }
         scene_ctx.array2d_registry.sphere_light_arrays.reserve(scene_ctx.lights.diffuse_sphere_lights.size());
         for (const Diffuse_Sphere_Light& light : scene_ctx.lights.diffuse_sphere_lights) {
-            int k = (int)std::ceil(std::sqrt(light.sample_count));
+            int k = (int)ceil(sqrt(double(light.sample_count)));
             ASSERT(k * k >= light.sample_count);
             ASSERT((k - 1) * (k - 1) < light.sample_count);
 
@@ -342,7 +344,7 @@ static Film_Tile render_tile(Thread_Context& thread_ctx, const Film& film, int t
                 // of the entire pixel. When we have many samples per pixel then we need to estimate footprint
                 // that corresponds to a single sample (more precisely the area of influence of the sample).
                 {
-                    float scale = 1.f / std::sqrt((float)scene_ctx.pixel_sampler_config.get_samples_per_pixel());
+                    float scale = 1.f / sqrtf((float)scene_ctx.pixel_sampler_config.get_samples_per_pixel());
                     differential_rays.dx_ray.direction = ray.direction + (differential_rays.dx_ray.direction - ray.direction) * scale;
                     differential_rays.dx_ray.direction.normalize();
                     differential_rays.dy_ray.direction = ray.direction + (differential_rays.dy_ray.direction - ray.direction) * scale;

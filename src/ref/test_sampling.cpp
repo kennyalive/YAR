@@ -7,6 +7,9 @@
 #include "lib/random.h"
 #include "lib/vector.h"
 
+#include <math.h>
+#include <stdlib.h>
+
 void test_uniform_sphere_sampling() {
     // the number of poins to sample on a sphere
     const int n = 25'000'000;
@@ -40,12 +43,12 @@ void test_uniform_sphere_sampling() {
         Vector2 u = rng.get_vector2();
         Vector3 p = sample_sphere_uniform(u);
 
-        ASSERT(std::abs(p.z) <= 1.f);
-        float theta = std::acos(p.z);
+        ASSERT(fabsf(p.z) <= 1.f);
+        float theta = acosf(p.z);
         theta = clamp(theta, 0.f, Pi);
         int theta_slice = clamp(int((theta / Pi) * theta_slice_count), 0, theta_slice_count - 1);
 
-        float phi = std::atan2(p.y, p.x);
+        float phi = atan2f(p.y, p.x);
         if (phi < 0)
             phi += Pi2;
         phi = clamp(phi, 0.f, Pi2);
@@ -60,12 +63,12 @@ void test_uniform_sphere_sampling() {
             float phi_start = radians(float(phi_slice * sector_angle_degrees));
 
             // Area = (phi2 - phi1) * (cos(theta1) - cos(theta2))
-            float area = sector_angle * (std::cos(theta_start) - std::cos(theta_start + sector_angle));
+            float area = sector_angle * (cosf(theta_start) - cosf(theta_start + sector_angle));
             float estimated_sample_count = area / (4 * Pi) * n;
 
             float sample_count = (float)sphere_sectors[theta_slice][phi_slice];
 
-            float error = std::abs(estimated_sample_count - sample_count) / estimated_sample_count;
+            float error = fabsf(estimated_sample_count - sample_count) / estimated_sample_count;
 
             if (error > error_tolerance_percentage)
                 failed_estimate_count++;
@@ -112,11 +115,11 @@ void test_uniform_hemisphere_sampling() {
         Vector3 p = sample_hemisphere_uniform(u);
 
         ASSERT(p.z >= 0 && p.z <= 1.f);
-        float theta = std::acos(p.z);
+        float theta = acosf(p.z);
         theta = clamp(theta, 0.f, 0.5f * Pi);
         int theta_slice = clamp(int((theta / (0.5f * Pi)) * theta_slice_count), 0, theta_slice_count - 1);
 
-        float phi = std::atan2(p.y, p.x);
+        float phi = atan2f(p.y, p.x);
         if (phi < 0)
             phi += Pi2;
         phi = clamp(phi, 0.f, Pi2);
@@ -131,12 +134,12 @@ void test_uniform_hemisphere_sampling() {
             float phi_start = radians(float(phi_slice * phi_sector_angle_degrees));
 
             // Area = (phi2 - phi1) * (cos(theta1) - cos(theta2))
-            float area = phi_sector_angle * (std::cos(theta_start) - std::cos(theta_start + theta_sector_angle));
+            float area = phi_sector_angle * (cosf(theta_start) - cosf(theta_start + theta_sector_angle));
             float estimated_sample_count = area / (2 * Pi) * n;
 
             float sample_count = (float)sphere_sectors[theta_slice][phi_slice];
 
-            float error = std::abs(estimated_sample_count - sample_count) / estimated_sample_count;
+            float error = fabsf(estimated_sample_count - sample_count) / estimated_sample_count;
 
             if (error > error_tolerance_percentage)
                 failed_estimate_count++;
@@ -183,11 +186,11 @@ void test_cosine_hemisphere_sampling() {
         Vector3 p = sample_hemisphere_cosine(u);
 
         ASSERT(p.z >= 0 && p.z <= 1.f);
-        float theta = std::acos(p.z);
+        float theta = acosf(p.z);
         theta = clamp(theta, 0.f, 0.5f * Pi);
         int theta_slice = clamp(int((theta / (0.5f * Pi)) * theta_slice_count), 0, theta_slice_count - 1);
 
-        float phi = std::atan2(p.y, p.x);
+        float phi = atan2f(p.y, p.x);
         if (phi < 0)
             phi += Pi2;
         phi = clamp(phi, 0.f, Pi2);
@@ -202,13 +205,13 @@ void test_cosine_hemisphere_sampling() {
             float phi_start = radians(float(phi_slice * phi_sector_angle_degrees));
 
             // Area = (phi2 - phi1) * (cos(theta1) - cos(theta2))
-            float area = phi_sector_angle * (std::cos(theta_start) - std::cos(theta_start + theta_sector_angle));
-            float cosine_factor = std::cos(theta_start + 0.5f * theta_sector_angle) / Pi;
+            float area = phi_sector_angle * (cosf(theta_start) - cosf(theta_start + theta_sector_angle));
+            float cosine_factor = cosf(theta_start + 0.5f * theta_sector_angle) / Pi;
             float estimated_sample_count = cosine_factor * area * n;
 
             float sample_count = (float)sphere_sectors[theta_slice][phi_slice];
 
-            float error = std::abs(estimated_sample_count - sample_count) / estimated_sample_count;
+            float error = fabsf(estimated_sample_count - sample_count) / estimated_sample_count;
 
             if (error > error_tolerance_percentage)
                 failed_estimate_count++;
@@ -251,7 +254,7 @@ void test_uniform_cdf_sampling() {
     const int bucket_estimate = int(Sample_Count / buckets.size());
     int failures = 0;
     for (int n : buckets) {
-        if (std::abs(bucket_estimate - n) > bucket_max_deviation)
+        if (abs(bucket_estimate - n) > bucket_max_deviation)
             failures++;
     }
 
@@ -303,7 +306,7 @@ void test_non_uniform_cdf_sampling() {
         int pdf_interval_index = int(float(i) / buckets.size() * N);
         int bucket_estimate = int((pdf[pdf_interval_index] * (1.f / buckets.size())) * Sample_Count);
         int bucket_max_deviation = int(bucket_estimate * error_tolerance);
-        if (std::abs(bucket_estimate - buckets[i]) > bucket_max_deviation)
+        if (abs(bucket_estimate - buckets[i]) > bucket_max_deviation)
             failures++;
     }
 
@@ -346,7 +349,7 @@ void test_uniform_2d_distribution_sampling() {
 
     int failures = 0;
     for (int n : buckets) {
-        if (std::abs(bucket_estimate - n) > bucket_max_deviation)
+        if (abs(bucket_estimate - n) > bucket_max_deviation)
             failures++;
     }   
     const float fail_threshold = 0.02f; 
@@ -393,7 +396,7 @@ void test_non_uniform_2d_distribution_sampling() {
 
         int bucket_estimate = int(values[i] / sum * Sample_Count);
         int bucket_max_deviation = int(bucket_estimate * error_tolerance);
-        if (std::abs(bucket_estimate - buckets[i]) > bucket_max_deviation)
+        if (abs(bucket_estimate - buckets[i]) > bucket_max_deviation)
             failures++;
     }
 

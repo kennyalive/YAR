@@ -5,6 +5,8 @@
 #include "kdtree_stats.h"
 #include "kdtree.h"
 
+#include <math.h>
+
 KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
 {
     KdTree_Stats stats;
@@ -88,7 +90,7 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
         float diff = (float)depth - stats.leaf_depth_mean;
         accum += diff * diff;
     }
-    stats.leaf_depth_std_dev = float(std::sqrt(accum / stats.leaf_count));
+    stats.leaf_depth_std_dev = float(sqrt(accum / stats.leaf_count));
     return stats;
 }
 

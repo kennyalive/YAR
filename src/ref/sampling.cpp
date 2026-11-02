@@ -1,4 +1,5 @@
 #include "std.h"
+#include <math.h>
 #include "lib/common.h"
 #include "sampling.h"
 
@@ -20,11 +21,11 @@ Vector3 sample_sphere_uniform(Vector2 u) {
     float z = 1.f - 2.f * u[0];
 
     ASSERT(1 - z * z >= 0);
-    float r = std::sqrt(1.f - z*z);
+    float r = sqrtf(1.f - z*z);
 
     float phi = 2.f * Pi * u[1];
-    float x = r * std::cos(phi);
-    float y = r * std::sin(phi);
+    float x = r * cosf(phi);
+    float y = r * sinf(phi);
     return {x, y, z};
 }
 
@@ -33,23 +34,23 @@ Vector3 sample_hemisphere_uniform(Vector2 u) {
     float z = u[0];
 
     ASSERT(1 - z * z >= 0);
-    float r = std::sqrt(1.f - z*z);
+    float r = sqrtf(1.f - z*z);
 
     float phi = 2.f * Pi * u[1];
-    float x = r * std::cos(phi);
-    float y = r * std::sin(phi);
+    float x = r * cosf(phi);
+    float y = r * sinf(phi);
     return {x, y, z};
 }
 
 Vector3 sample_hemisphere_cosine(Vector2 u) {
     ASSERT(u < Vector2(1));
-    float z = std::sqrt(1.f - u[0]);
+    float z = sqrtf(1.f - u[0]);
 
-    float r = std::sqrt(u[0]);
+    float r = sqrtf(u[0]);
 
     float phi = 2.f * Pi * u[1];
-    float x = r * std::cos(phi);
-    float y = r * std::sin(phi);
+    float x = r * cosf(phi);
+    float y = r * sinf(phi);
     return {x, y, z};
 }
 
@@ -57,10 +58,10 @@ Vector3 uniform_sample_cone(Vector2 u, float cos_theta_max) {
     ASSERT(u < Vector2(1));
     float cos_theta = (1.f - u[0]) + u[0] * cos_theta_max;
     ASSERT(cos_theta >= 0.f && cos_theta <= 1.f);
-    float sin_theta = std::sqrt(1.f - cos_theta * cos_theta);
+    float sin_theta = sqrtf(1.f - cos_theta * cos_theta);
 
     float phi = 2.f * Pi * u[1];
-    return {sin_theta * std::cos(phi), sin_theta * std::sin(phi), cos_theta};
+    return {sin_theta * cosf(phi), sin_theta * sinf(phi), cos_theta};
 }
 
 float uniform_cone_pdf(float cos_theta_max) {
@@ -69,7 +70,7 @@ float uniform_cone_pdf(float cos_theta_max) {
 
 Vector3 uniform_sample_triangle_baricentrics(Vector2 u)
 {
-    float a = std::sqrt(u[0]);
+    float a = sqrtf(u[0]);
     Vector3 b;
     b.x = 1 - a;
     b.y = u[1] * a;
@@ -241,7 +242,7 @@ void Distribution_2D::initialize_from_latitude_longitude_radiance_map(const Imag
     float* p = distribution_coeffs.data();
 
     for (int y = 0; y < image.height; y++) {
-        float sin_theta = std::sin((y + 0.5f) / image.height * Pi);
+        float sin_theta = sinf((y + 0.5f) / image.height * Pi);
         float v = (y + 0.5f) / image.height;
 
         for (int x = 0; x < image.width; x++, p++) {
@@ -292,7 +293,7 @@ float Distribution_2D::pdf_uv(Vector2 sample) const {
 
 // NO LONGER USED (renderer now samples the distribution of visible normals)
 Vector3 GGX_sample_microfacet_normal(Vector2 u, float alpha) {
-    float theta = std::atan(alpha * std::sqrt(u[0] / (1 - u[0])));
+    float theta = atanf(alpha * sqrtf(u[0] / (1 - u[0])));
     float phi = 2.f * Pi * u[1];
     ASSERT(theta >= 0.f && theta <= Pi_Over_2 + 1e-4f);
 
@@ -315,19 +316,19 @@ Vector3 GGX_sample_visible_microfacet_normal(Vector2 u, const Vector3& wo_local,
 
     // Orthonormal basis (with special case if cross product is zero)
     float len_sq = N.x * N.x + N.y * N.y;
-    Vector3 T1 = len_sq > 0.f ? (Vector3(-N.y, N.x, 0) / std::sqrt(len_sq)) : Vector3(1, 0, 0);
+    Vector3 T1 = len_sq > 0.f ? (Vector3(-N.y, N.x, 0) / sqrtf(len_sq)) : Vector3(1, 0, 0);
     Vector3 T2 = cross(N, T1);
 
     // Parameterization of the projected area
-    float r = std::sqrt(u[0]);
+    float r = sqrtf(u[0]);
     float phi = 2.f * Pi * u[1];
-    float t1 = r * std::cos(phi);
-    float t2 = r * std::sin(phi);
+    float t1 = r * cosf(phi);
+    float t2 = r * sinf(phi);
     float s = 0.5f * (1.f + N.z);
-    t2 = (1.f - s) * std::sqrt(1.f - t1 * t1) + s * t2;
+    t2 = (1.f - s) * sqrtf(1.f - t1 * t1) + s * t2;
 
     // Reprojection onto hemisphere
-    Vector3 nh = t1 * T1 + t2 * T2 + std::sqrt(max(0.f, 1.f - t1 * t1 - t2 * t2)) * N;
+    Vector3 nh = t1 * T1 + t2 * T2 + sqrtf(max(0.f, 1.f - t1 * t1 - t2 * t2)) * N;
 
     // Transforming the normal back to the ellipsoid configuration
     Vector3 wh_local = Vector3(alpha_x * nh.x, alpha_y * nh.y, max(1e-6f, nh.z)).normalized();
