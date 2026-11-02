@@ -121,7 +121,8 @@ void GPU_Scene::load(const Scene& scene)
     // Instance buffer.
     {
         Array<GPU_Types::Instance_Info> instance_info_data(scene.objects.size());
-        for (auto [i, scene_object] : enumerate(scene.objects)) {
+        for (size_t i = 0; i < scene.objects.size(); i++) {
+            const Scene_Object& scene_object = scene.objects[i];
             instance_info_data[i].material.init(scene_object.material);
             instance_info_data[i].geometry.init(scene_object.geometry);
             // TODO: this should be Light_Handle not just light_index, since we could have multiple types of area lights. 
@@ -145,8 +146,8 @@ void GPU_Scene::load(const Scene& scene)
         }
 
         Array<GPU_Types::Lambertian_Material> gpu_lambertian_materials(scene.materials.diffuse.size());
-        for (auto [i, lambertian] : enumerate(scene.materials.diffuse)) {
-            const RGB_Parameter& param = lambertian.reflectance;
+        for (size_t i = 0; i < scene.materials.diffuse.size(); i++) {
+            const RGB_Parameter& param = scene.materials.diffuse[i].reflectance;
             ASSERT(param.eval_mode == EvaluationMode::value);
             if (param.value.is_constant) {
                 gpu_lambertian_materials[i].r = param.value.constant.r;
@@ -181,8 +182,8 @@ void GPU_Scene::load(const Scene& scene)
         if (!scene.lights.point_lights.empty()) {
             found_supported_lights = true;
             Array<GPU_Types::Point_Light> lights(scene.lights.point_lights.size());
-            for (auto [i, data] : enumerate(scene.lights.point_lights)) {
-                lights[i].init(data);
+            for (size_t i = 0; i < scene.lights.point_lights.size(); i++) {
+                lights[i].init(scene.lights.point_lights[i]);
             }
             point_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -191,8 +192,8 @@ void GPU_Scene::load(const Scene& scene)
         if (!scene.lights.directional_lights.empty()) {
             found_supported_lights = true;
             Array<GPU_Types::Directional_Light> lights(scene.lights.directional_lights.size());
-            for (auto [i, data] : enumerate(scene.lights.directional_lights)) {
-                lights[i].init(data);
+            for (size_t i = 0; i < scene.lights.directional_lights.size(); i++) {
+                lights[i].init(scene.lights.directional_lights[i]);
             }
             directional_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -201,8 +202,8 @@ void GPU_Scene::load(const Scene& scene)
         if (!scene.lights.diffuse_rectangular_lights.empty()) {
             found_supported_lights = true;
             Array<GPU_Types::Rect_Light> lights(scene.lights.diffuse_rectangular_lights.size());
-            for (auto [i, data] : enumerate(scene.lights.diffuse_rectangular_lights)) {
-                lights[i].init(data);
+            for (size_t i = 0; i < scene.lights.diffuse_rectangular_lights.size(); i++) {
+                lights[i].init(scene.lights.diffuse_rectangular_lights[i]);
             }
             rect_lights = vk_create_buffer(lights.size() * sizeof(lights[0]),
                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
@@ -296,7 +297,8 @@ void GPU_Scene::write_descriptors(Descriptor_Heap& descriptor_heap, const Descri
     descriptor_heap.write_acceleration_structure_descriptor(accelerator.top_level_accel.device_address, layout.accelerator);
 
     // Image descriptors
-    for (auto [i, image] : enumerate(images)) {
+    for (size_t i = 0; i < images.size(); i++) {
+        const Vk_Image& image = images[i];
         const uint32_t image_index = uint32_t(Image_Descriptor_Index::first_project_image) + uint32_t(i);
         const uint32_t heap_offset = layout.images + uint32_t(image_index * vk_image_descriptor_size());
         descriptor_heap.write_image_descriptor(image.handle, image.format, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, heap_offset);

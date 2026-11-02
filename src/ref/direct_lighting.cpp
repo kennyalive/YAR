@@ -446,7 +446,8 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
             L += direct_lighting_from_directional_light(scene_ctx, shading_ctx, light);
         }
 
-        for (auto [light_index, light] : enumerate(scene_ctx.lights.diffuse_rectangular_lights)) {
+        for (size_t light_index = 0; light_index < scene_ctx.lights.diffuse_rectangular_lights.size(); light_index++) {
+            const Diffuse_Rectangular_Light& light = scene_ctx.lights.diffuse_rectangular_lights[light_index];
             Light_Handle light_handle = {Light_Type::diffuse_rectangular, (int)light_index};
 
             const MIS_Array_Info& array_info = scene_ctx.array2d_registry.rectangular_light_arrays[light_index];
@@ -463,7 +464,8 @@ ColorRGB estimate_direct_lighting(Thread_Context& thread_ctx, const Ray& ray, co
             L += L2;
         }
 
-        for (auto [light_index, light] : enumerate(scene_ctx.lights.diffuse_sphere_lights)) {
+        for (size_t light_index = 0; light_index < scene_ctx.lights.diffuse_sphere_lights.size(); light_index++) {
+            const Diffuse_Sphere_Light& light = scene_ctx.lights.diffuse_sphere_lights[light_index];
             Light_Handle light_handle = {Light_Type::diffuse_sphere, (int)light_index};
             Diffuse_Sphere_Light_Sampler sampler(light, shading_ctx.position);
 

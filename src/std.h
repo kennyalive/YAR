@@ -5,7 +5,6 @@
 #endif
 
 #include <iterator>
-#include <tuple>
 #include <utility>
 
 #ifdef _WIN32

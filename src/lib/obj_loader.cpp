@@ -125,7 +125,8 @@ Obj_Data load_obj(
     Obj_Data obj_data;
 
     obj_data.materials.resize(materials.size());
-    for (auto [i, tinyobj_mtl] : enumerate(materials)) {
+    for (size_t i = 0; i < materials.size(); i++) {
+        const tinyobj::material_t& tinyobj_mtl = materials[i];
         Obj_Material& mtl = obj_data.materials[i];
         mtl.k_diffuse = ColorRGB{tinyobj_mtl.diffuse};
         mtl.k_specular = ColorRGB{tinyobj_mtl.specular};

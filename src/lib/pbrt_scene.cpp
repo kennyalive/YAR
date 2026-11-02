@@ -683,7 +683,8 @@ static Geometry_Handle import_pbrt_triangle_mesh(const pbrt::TriangleMesh::SP pb
     Triangle_Mesh mesh;
 
     mesh.indices.resize(pbrt_mesh->index.size() * 3);
-    for (auto[i, triangle_indices] : enumerate(pbrt_mesh->index)) {
+    for (size_t i = 0; i < pbrt_mesh->index.size(); i++) {
+        const pbrt::vec3i& triangle_indices = pbrt_mesh->index[i];
         mesh.indices[i * 3 + 0] = triangle_indices.x;
         mesh.indices[i * 3 + 1] = triangle_indices.y;
         mesh.indices[i * 3 + 2] = triangle_indices.z;
