@@ -1,4 +1,3 @@
-#include "std.h"
 #include "lib/common.h"
 #include "patch_materials.h"
 

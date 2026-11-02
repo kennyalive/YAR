@@ -8,7 +8,6 @@
     <ClCompile Include="..\src\ref\kdtree_builder.cpp" />
     <ClCompile Include="..\src\ref\reference_renderer.cpp" />
     <ClCompile Include="..\src\ref\sampling.cpp" />
-    <ClCompile Include="..\src\std.cpp" />
     <ClCompile Include="..\src\ref\direct_lighting.cpp" />
     <ClCompile Include="..\src\ref\shading_context.cpp" />
     <ClCompile Include="..\src\ref\parameter_evaluation.cpp" />

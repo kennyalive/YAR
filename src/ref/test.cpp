@@ -1,4 +1,3 @@
-#include "std.h"
 #include "test.h"
 #include "lib/minilib.h"
 

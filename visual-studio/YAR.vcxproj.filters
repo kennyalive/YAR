@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\src\std.cpp" />
     <ClCompile Include="..\src\gpu\main.cpp" />
     <ClCompile Include="..\src\gpu\vk.cpp" />
     <ClCompile Include="..\src\gpu\kernels\copy_to_swapchain.cpp">
@@ -34,7 +33,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\std.h" />
     <ClInclude Include="..\src\gpu\vk.h" />
     <ClInclude Include="..\src\gpu\kernels\copy_to_swapchain.h">
       <Filter>kernels</Filter>

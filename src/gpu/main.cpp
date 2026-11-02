@@ -1,4 +1,3 @@
-#include "std.h"
 #include "lib/common.h"
 #include "lib/minilib.h"
 #include "yar.h"

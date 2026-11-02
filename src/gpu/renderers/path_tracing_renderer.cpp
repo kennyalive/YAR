@@ -1,4 +1,3 @@
-#include "std.h"
 #include "lib/common.h"
 #include "path_tracing_renderer.h"
 #include "../descriptor_heap.h"

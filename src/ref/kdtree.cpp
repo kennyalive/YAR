@@ -1,4 +1,3 @@
-#include "std.h"
 #include "lib/common.h"
 #include "kdtree.h"
 #include "lib/minilib.h"

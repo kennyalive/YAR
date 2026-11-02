@@ -1,4 +1,3 @@
-#include "std.h"
 #include "lib/common.h"
 #include "lib/minilib_extra.h"
 #include "triangle_mesh.h"

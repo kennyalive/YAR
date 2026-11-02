@@ -1,4 +1,3 @@
-#include "std.h"
 #include "common.h"
 #include "minilib_extra.h"
 

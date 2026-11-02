@@ -1,4 +1,3 @@
-#include "std.h"
 #include "lib/common.h"
 #include "apply_tone_mapping.h"
 

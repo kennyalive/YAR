@@ -1,4 +1,3 @@
-#include "std.h"
 #include "math.h"
 
 #include "ray.h"

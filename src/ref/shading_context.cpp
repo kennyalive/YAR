@@ -1,4 +1,3 @@
-#include "std.h"
 #include <math.h>
 #include "lib/common.h"
 #include "shading_context.h"

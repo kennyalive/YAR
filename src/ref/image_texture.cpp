@@ -1,4 +1,3 @@
-#include "std.h"
 #include "lib/common.h"
 #include "image_texture.h"
 #include "lib/minilib.h"

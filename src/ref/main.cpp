@@ -1,4 +1,3 @@
-#include "std.h"
 #include "lib/common.h"
 #include "lib/path.h"
 #include "reference_renderer.h"

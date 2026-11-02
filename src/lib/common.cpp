@@ -1,4 +1,3 @@
-#include "std.h"
 #include "common.h"
 #include "minilib.h"
 #include "path.h"

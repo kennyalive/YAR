@@ -36,6 +36,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="debug.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -59,8 +60,6 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PreprocessorDefinitions>_DEBUG;_GLFW_WIN32;_CRT_SECURE_NO_WARNINGS;VK_MINILIB_HEADER=&quot;lib/minilib.h&quot;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PrecompiledHeaderFile>std.h</PrecompiledHeaderFile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -83,8 +82,6 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PreprocessorDefinitions>NDEBUG;_GLFW_WIN32;_CRT_SECURE_NO_WARNINGS;VK_MINILIB_HEADER=&quot;lib/minilib.h&quot;;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PrecompiledHeaderFile>std.h</PrecompiledHeaderFile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -116,16 +113,7 @@
     </ClCompile>
     <ClCompile Include="..\src\gpu\kernels\direct_lighting.cpp" />
     <ClCompile Include="..\src\gpu\ui.cpp" />
-    <ClCompile Include="..\src\gpu\vk.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_ITERATOR_DEBUG_LEVEL=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
-    <ClCompile Include="..\src\std.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="..\src\gpu\vk.cpp" />
     <ClInclude Include="..\src\gpu\acceleration_structure.h" />
     <ClInclude Include="..\src\gpu\descriptor_heap_layout.h" />
     <ClInclude Include="..\src\gpu\descriptor_heap.h" />
@@ -141,7 +129,6 @@
     <ClInclude Include="..\src\gpu\kernels\direct_lighting.h" />
     <ClInclude Include="..\src\gpu\ui.h" />
     <ClInclude Include="..\src\gpu\vk.h" />
-    <ClInclude Include="..\src\std.h" />
     <SlangShader Include="..\src\shaders\apply_tone_mapping.slang" />
     <SlangShader Include="..\src\shaders\resources.slang" />
     <SlangShader Include="..\src\shaders\common.slang" />

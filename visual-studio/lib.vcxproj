@@ -38,6 +38,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="debug.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -63,9 +64,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)..\src;$(ProjectDir)..\third-party;$(ProjectDir)..\third-party\pbrt-parser\include</AdditionalIncludeDirectories>
-      <PrecompiledHeaderFile>std.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PrecompiledHeader>Use</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
@@ -79,13 +78,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>_ITERATOR_DEBUG_LEVEL=0;_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)..\src;$(ProjectDir)..\third-party;$(ProjectDir)..\third-party\pbrt-parser\include</AdditionalIncludeDirectories>
-      <PrecompiledHeaderFile>std.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -122,7 +119,6 @@
     <ClInclude Include="..\src\lib\spectrum.h" />
     <ClInclude Include="..\src\lib\triangle_mesh.h" />
     <ClInclude Include="..\src\lib\vector.h" />
-    <ClInclude Include="..\src\std.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\lib\color.cpp" />
@@ -133,20 +129,10 @@
     <ClCompile Include="..\src\lib\material_parameter.cpp" />
     <ClCompile Include="..\src\lib\material_pbrt.cpp" />
     <ClCompile Include="..\src\lib\math.cpp" />
-    <ClCompile Include="..\src\lib\minilib.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\src\lib\path.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\src\lib\platform_shared.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\src\lib\platform_win.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="..\src\lib\minilib.cpp" />
+    <ClCompile Include="..\src\lib\path.cpp" />
+    <ClCompile Include="..\src\lib\platform_shared.cpp" />
+    <ClCompile Include="..\src\lib\platform_win.cpp" />
     <ClCompile Include="..\src\lib\obj_loader.cpp" />
     <ClCompile Include="..\src\lib\tessellation.cpp" />
     <ClCompile Include="..\src\lib\utils.cpp" />
@@ -159,10 +145,6 @@
     <ClCompile Include="..\src\lib\scene_loader.cpp" />
     <ClCompile Include="..\src\lib\spectrum.cpp" />
     <ClCompile Include="..\src\lib\triangle_mesh.cpp" />
-    <ClCompile Include="..\src\std.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

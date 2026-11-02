@@ -1,4 +1,3 @@
-#include "std.h"
 #include "lib/common.h"
 #include "copy_to_swapchain.h"
 #include "../descriptor_heap_layout.h"

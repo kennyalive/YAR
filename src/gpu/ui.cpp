@@ -1,4 +1,3 @@
-#include "std.h"
 #include "ui.h"
 
 #include "gpu/vk.h"
