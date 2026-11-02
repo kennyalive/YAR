@@ -56,7 +56,7 @@ static void init_textures(const Scene& scene, Scene_Context& scene_ctx)
                 else {
                     ASSERT(false);
                 }
-                scene_ctx.textures[index] = std::move(texture);
+                scene_ctx.textures[index] = rvalue(texture);
                 index = texture_counter.fetch_add(1);
             }
         };
@@ -429,7 +429,7 @@ static Array<int> load_checkpoint(const String& checkpoint_directory, const Chec
             tiles_to_render.add(tile_index);
         }
         else {
-            (*tiles)[tile_index] = std::move(finished_tile->tile);
+            (*tiles)[tile_index] = rvalue(finished_tile->tile);
             (*tile_variance_accumulators)[tile_index] = finished_tile->tile_variance_accumulator;
         }
     }

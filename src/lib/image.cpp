@@ -270,7 +270,7 @@ void Image::flip_horizontally()
         ColorRGB* here = row;
         ColorRGB* there = row + width - 1;
         while (here < there) {
-            std::swap(*here++, *there--);
+            swap_values(*here++, *there--);
         }
         row += width;
     }

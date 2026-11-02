@@ -150,7 +150,7 @@ void shuffle(T* data, int n, RNG& rng) {
     ASSERT(n > 0);
     for (int i = n; i > 1; i--) {
         uint32_t k = rng.get_bounded_uint_fast_and_biased(i);
-        std::swap(data[i-1], data[k]);
+        swap_values(data[i-1], data[k]);
     }
 }
 

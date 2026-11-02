@@ -758,7 +758,7 @@ static Geometry_Handle import_pbrt_sphere(const pbrt::Sphere::SP pbrt_sphere, Ma
     }
 
     Triangle_Mesh sphere = create_sphere_mesh(pbrt_sphere->radius, 6, true);
-    scene->geometries.triangle_meshes.add(std::move(sphere));
+    scene->geometries.triangle_meshes.add(rvalue(sphere));
     Geometry_Handle sphere_geometry_handle = { Geometry_Type::triangle_mesh, int(scene->geometries.triangle_meshes.size() - 1) };
     scene->radius_to_sphere_geometry.insert({pbrt_sphere->radius, sphere_geometry_handle});
     return sphere_geometry_handle;

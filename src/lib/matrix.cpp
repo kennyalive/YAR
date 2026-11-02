@@ -311,7 +311,7 @@ Matrix3x4 get_inverse_transform(const Matrix3x4& m)
         ASSERT(big != 0.f);
         if (i_pivot != i) {
             for (int k = i; k < 7; k++)
-                std::swap(a[i][k], a[i_pivot][k]);
+                swap_values(a[i][k], a[i_pivot][k]);
         }
 
         float inv_pivot = 1.f / a[i][i];

@@ -43,7 +43,7 @@ struct Bounding_Box {
             float slab_t0 = (min_p[i] - ray.origin[i]) * inv_dir;
             float slab_t1 = (max_p[i] - ray.origin[i]) * inv_dir;
             if (inv_dir < 0.f)
-                std::swap(slab_t0, slab_t1);
+                swap_values(slab_t0, slab_t1);
 
             // Intersect ranges [t0, t1] and [slab_t0, slab_t1]
             t0 = slab_t0 > t0 ? slab_t0 : t0;
@@ -68,7 +68,7 @@ struct Bounding_Box {
                 float slab_t0 = (min_p[i] - ray.origin[i]) * inv_dir;
                 float slab_t1 = (max_p[i] - ray.origin[i]) * inv_dir;
                 if (inv_dir < 0.f)
-                    std::swap(slab_t0, slab_t1);
+                    swap_values(slab_t0, slab_t1);
 
                 t0 = slab_t0 > t0 ? slab_t0 : t0;
                 t1 = slab_t1 < t1 ? slab_t1 : t1;

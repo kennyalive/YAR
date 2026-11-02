@@ -164,9 +164,9 @@ Triangle_Mesh create_sphere_mesh(float radius, int subdivision_level, bool textu
     }
 
     Triangle_Mesh mesh;
-    mesh.vertices = std::move(vertices);
-    mesh.indices = std::move(indices);
-    mesh.uvs = std::move(uvs);
+    mesh.vertices = rvalue(vertices);
+    mesh.indices = rvalue(indices);
+    mesh.uvs = rvalue(uvs);
 
     calculate_normals(Normal_Calculation_Params{}, mesh);
     return mesh;

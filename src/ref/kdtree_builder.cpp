@@ -442,7 +442,7 @@ KdTree build_triangle_mesh_kdtree(const Triangle_Mesh_Geometry_Data* triangle_me
     KdTree tree;
     tree.bounds = builder.total_bounds;
     tree.geometry_data_hash = KdTree::compute_triangle_mesh_hash(*mesh);
-    tree.nodes = std::move(builder.nodes);
+    tree.nodes = rvalue(builder.nodes);
     tree.set_geometry_data(triangle_mesh_geometry_data);
     return tree;
 }
@@ -464,7 +464,7 @@ KdTree build_scene_kdtree(const Scene_Geometry_Data* scene_geometry_data)
     KdTree tree;
     tree.bounds = builder.total_bounds;
     tree.geometry_data_hash = KdTree::compute_scene_kdtree_data_hash(*scene_geometry_data);
-    tree.nodes = std::move(builder.nodes);
+    tree.nodes = rvalue(builder.nodes);
     tree.set_geometry_data(scene_geometry_data);
     return tree;
 }

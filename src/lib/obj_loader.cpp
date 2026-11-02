@@ -161,7 +161,7 @@ Obj_Data load_obj(
     if (params.invert_winding_order) {
         for (Obj_Mesh& obj_mesh: obj_data.meshes) {
             for (int i = 0; i < (int)obj_mesh.mesh.indices.size(); i += 3)
-                std::swap(obj_mesh.mesh.indices[i], obj_mesh.mesh.indices[i+1]);
+                swap_values(obj_mesh.mesh.indices[i], obj_mesh.mesh.indices[i+1]);
         }
     }
     return obj_data;

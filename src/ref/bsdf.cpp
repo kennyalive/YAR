@@ -617,15 +617,15 @@ static BSDF* create_mix_bsdf(Thread_Context& thread_ctx, Material_Handle materia
 
     if (!bsdf1) {
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Scaled_BSDF>();
-        return new (bsdf_allocation) Scaled_BSDF(thread_ctx, bsdf2, 1.f - mix_amount);
+        return ::new (Placement_New{}, bsdf_allocation) Scaled_BSDF(thread_ctx, bsdf2, 1.f - mix_amount);
     }
     else if (!bsdf2) {
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Scaled_BSDF>();
-        return new (bsdf_allocation) Scaled_BSDF(thread_ctx, bsdf1, mix_amount);
+        return ::new (Placement_New{}, bsdf_allocation) Scaled_BSDF(thread_ctx, bsdf1, mix_amount);
     }
     else {
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Mix_BSDF>();
-        return new (bsdf_allocation) Mix_BSDF(thread_ctx, bsdf1, bsdf2, params.mix_amount);
+        return ::new (Placement_New{}, bsdf_allocation) Mix_BSDF(thread_ctx, bsdf1, bsdf2, params.mix_amount);
     }
 }
 
@@ -638,21 +638,21 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
         const Diffuse_Material& params = scene_ctx.materials.diffuse[material.index];
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Diffuse_BRDF>();
-        return new (bsdf_allocation) Diffuse_BRDF(thread_ctx, params);
+        return ::new (Placement_New{}, bsdf_allocation) Diffuse_BRDF(thread_ctx, params);
     }
     case Material_Type::diffuse_transmission:
     {
         const Diffuse_Transmission_Material& params = scene_ctx.materials.diffuse_transmission[material.index];
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Diffuse_Transmission_BSDF>();
-        return new (bsdf_allocation) Diffuse_Transmission_BSDF(thread_ctx, params);
+        return ::new (Placement_New{}, bsdf_allocation) Diffuse_Transmission_BSDF(thread_ctx, params);
     }
     case Material_Type::metal:
     {
         const Metal_Material& params = scene_ctx.materials.metal[material.index];
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Metal_BRDF>();
-        return new (bsdf_allocation) Metal_BRDF(thread_ctx, params);
+        return ::new (Placement_New{}, bsdf_allocation) Metal_BRDF(thread_ctx, params);
     }
     case Material_Type::plastic:
     {
@@ -660,11 +660,11 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         if (thread_ctx.scene_context.pbrt3_scene) {
             void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Plastic_BRDF>();
-            return new (bsdf_allocation) Pbrt3_Plastic_BRDF(thread_ctx, params);
+            return ::new (Placement_New{}, bsdf_allocation) Pbrt3_Plastic_BRDF(thread_ctx, params);
         }
         else {
             void* bsdf_allocation = thread_ctx.memory_pool.allocate<Plastic_BRDF>();
-            return new (bsdf_allocation) Plastic_BRDF(thread_ctx, params);
+            return ::new (Placement_New{}, bsdf_allocation) Plastic_BRDF(thread_ctx, params);
         }
     }
     case Material_Type::coated_diffuse:
@@ -672,14 +672,14 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
         const Coated_Diffuse_Material& params = scene_ctx.materials.coated_diffuse[material.index];
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Ashikhmin_Shirley_Phong_BRDF>();
-        return new (bsdf_allocation) Ashikhmin_Shirley_Phong_BRDF(thread_ctx, params);
+        return ::new (Placement_New{}, bsdf_allocation) Ashikhmin_Shirley_Phong_BRDF(thread_ctx, params);
     }
     case Material_Type::glass:
     {
         const Glass_Material& params = scene_ctx.materials.glass[material.index];
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Rough_Glass_BSDF>();
-        return new (bsdf_allocation) Rough_Glass_BSDF(thread_ctx, params);
+        return ::new (Placement_New{}, bsdf_allocation) Rough_Glass_BSDF(thread_ctx, params);
     }
     case Material_Type::mix:
     {
@@ -691,20 +691,20 @@ const BSDF* create_bsdf(Thread_Context& thread_ctx, Material_Handle material) {
         const Pbrt3_Uber_Material& params = scene_ctx.materials.pbrt3_uber[material.index];
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Uber_BRDF>();
-        return new (bsdf_allocation) Pbrt3_Uber_BRDF(thread_ctx, params);
+        return ::new (Placement_New{}, bsdf_allocation) Pbrt3_Uber_BRDF(thread_ctx, params);
     }
     case Material_Type::pbrt3_translucent:
     {
         const Pbrt3_Translucent_Material& params = scene_ctx.materials.pbrt3_translucent[material.index];
         shading_ctx.apply_bump_map(scene_ctx, params.bump_map);
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Translucent_BSDF>();
-        return new (bsdf_allocation) Pbrt3_Translucent_BSDF(thread_ctx, params);
+        return ::new (Placement_New{}, bsdf_allocation) Pbrt3_Translucent_BSDF(thread_ctx, params);
     }
     case Material_Type::pbrt3_fourier:
     {
         const Pbrt3_Fourier_Material& params = scene_ctx.materials.pbrt3_fourier[material.index];
         void* bsdf_allocation = thread_ctx.memory_pool.allocate<Pbrt3_Fourier_BSDF>();
-        return new (bsdf_allocation) Pbrt3_Fourier_BSDF(thread_ctx, params);
+        return ::new (Placement_New{}, bsdf_allocation) Pbrt3_Fourier_BSDF(thread_ctx, params);
     }
     default:
     {

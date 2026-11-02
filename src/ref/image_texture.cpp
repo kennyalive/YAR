@@ -279,7 +279,7 @@ void Image_Texture::initialize_from_file(const String& image_path, const Image_T
         mip_count = log2_int(round_up_to_power_of_2(max_size)) + 1;
     }
     mips.resize(mip_count);
-    mips[0] = std::move(base_mip);
+    mips[0] = rvalue(base_mip);
 
     // Ensure that base mip level has power of two resolution.
     if (!is_power_of_2(mips[0].width) || !is_power_of_2(mips[0].height))
@@ -586,8 +586,8 @@ ColorRGB Image_Texture::sample_EWA(Vector2 uv, Vector2 uv_axis1, Vector2 uv_axis
     float axis1_len_sq = uv_axis1.length_squared();
     float axis2_len_sq = uv_axis2.length_squared();
     if (axis1_len_sq < axis2_len_sq) {
-        std::swap(uv_axis1, uv_axis2);
-        std::swap(axis1_len_sq, axis2_len_sq);
+        swap_values(uv_axis1, uv_axis2);
+        swap_values(axis1_len_sq, axis2_len_sq);
     }
 
     float major_length = sqrtf(axis1_len_sq);

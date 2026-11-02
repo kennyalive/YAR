@@ -216,7 +216,7 @@ static Array<Triangle_Mesh> create_custom_meshes() {
             4, 5, 6,
             6, 7, 4
         };
-        meshes.add(std::move(mesh));
+        meshes.add(rvalue(mesh));
     }
     // mesh 1
     {
@@ -241,7 +241,7 @@ static Array<Triangle_Mesh> create_custom_meshes() {
             6, 7, 8,
             9, 10, 11
         };
-        meshes.add(std::move(mesh));
+        meshes.add(rvalue(mesh));
     }
 
     return meshes;
@@ -270,7 +270,7 @@ static void process_kdrees(Function_Ref<void(const KdTree&, const Operation_Info
         if (!info.mesh_file_name.empty()) {
             Obj_Data obj_data = load_obj(info.mesh_file_name);
             ASSERT(!obj_data.meshes.empty());
-            mesh = std::move(obj_data.meshes[0].mesh);
+            mesh = rvalue(obj_data.meshes[0].mesh);
         }
         else {
             ASSERT(info.custom_mesh != nullptr);

@@ -71,7 +71,7 @@ static Array<KdTree> load_geometry_kdtrees(const Scene& scene, const Array<Trian
         String kdtree_file = path_join(kdtree_cache_directory, string_printf("%zu.kdtree", i));
         KdTree kdtree = KdTree::load(kdtree_file);
         kdtree.set_geometry_data(&geometry_datas[i]);
-        kdtrees.add(std::move(kdtree));
+        kdtrees.add(rvalue(kdtree));
     }
     printf("%-*s %.3f seconds\n", time_category_field_width, "Load KdTree cache", elapsed_seconds(t_kdtree_cache));
     return kdtrees;
