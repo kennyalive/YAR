@@ -3,7 +3,3 @@
 #ifdef _MSC_VER
 #define _ITERATOR_DEBUG_LEVEL 0
 #endif
-
-#ifdef _WIN32
-#include <intrin.h>
-#endif

@@ -75,34 +75,7 @@ inline float srgb_decode(float f) {
         return powf((f + 0.055f) / 1.055f, 2.4f);
 }
 
-inline uint32_t count_leading_zeros(uint32_t k) {
-#ifdef _MSC_VER
-    // LZCNT instruction is exactly what we need but it's not supported on pre-Haswell Intel CPUs.
-    // Example implementation with LZCNT instruction:
-    // return __lzcnt(k);
-
-    unsigned long index;
-    unsigned char result = _BitScanReverse(&index, k);
-    return result ? (31 - (uint32_t)index) : 32;
-#else
-    uint32_t n = 0;
-    while (k > 0) {
-        k >>= 1;
-        n++;
-    }
-    return 32 - n;
-#endif
-}
-
-inline uint32_t most_significant_bit_index(uint32_t k) {
-#ifdef _MSC_VER
-    unsigned long index;
-    unsigned char result = _BitScanReverse(&index, k);
-    return result ? (uint32_t)index : 32;
-#else
-#error most_significant_bit_index is not implemented for non-MSVC compiler
-#endif
-}
+uint32_t most_significant_bit_index(uint32_t k);
 
 inline float to_MB(uint64_t bytes) {
     return float(double(bytes) / (1024.0 * 1024.0));
@@ -110,12 +83,6 @@ inline float to_MB(uint64_t bytes) {
 
 // These functions control per-thread state.
 void initialize_fp_state();
-
-inline void prefetch(const void* ptr) {
-#if ENABLE_PREFETCH
-    _mm_prefetch((const char*)ptr, _MM_HINT_T0);
-#endif
-}
 
 // Workaround for static_assert(false). It should be used like this: static_assert(dependent_false_v<T>)
 template<typename>

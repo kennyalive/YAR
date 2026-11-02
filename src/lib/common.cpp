@@ -5,6 +5,9 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 #include "immintrin.h"
 #include "meow-hash/meow_hash_x64_aesni.h"
 
@@ -73,6 +76,16 @@ double get_cpu_frequency_ghz() {
     return CPU_FREQ_GHZ;
 #else
     return get_base_cpu_frequency_ghz();
+#endif
+}
+
+uint32_t most_significant_bit_index(uint32_t k)
+{
+#ifdef _MSC_VER
+    uint32_t zeros = __lzcnt(k);
+    return zeros == 32 ? 32 : 31 - zeros;
+#else
+#error most_significant_bit_index is not implemented for non-MSVC compiler
 #endif
 }
 

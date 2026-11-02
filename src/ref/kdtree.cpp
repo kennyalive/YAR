@@ -9,8 +9,15 @@
 #include "lib/scene_object.h"
 
 #include <math.h>
+#include <xmmintrin.h>
 
 constexpr int max_traversal_depth = 40;
+
+static inline void prefetch(const void* ptr) {
+#if ENABLE_PREFETCH
+    _mm_prefetch((const char*)ptr, _MM_HINT_T0);
+#endif
+}
 
 static void intersect_triangle_mesh_geometry_data(const Ray& ray, const void* geometry_data, uint32_t primitive_index, Intersection& intersection)
 {
