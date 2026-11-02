@@ -508,7 +508,7 @@ static double D65[97] = {
 
 // Converts given Color Matching Function to Sampled_Spectrum representation.
 static Sampled_Spectrum compute_CIE_sampled_spectrum(int cmf_index) {
-    constexpr int n = (int)std::size(CIE_1931_2_Degree);
+    constexpr int n = (int)array_size(CIE_1931_2_Degree);
     float l[n];
     float v[n];
 
@@ -520,7 +520,7 @@ static Sampled_Spectrum compute_CIE_sampled_spectrum(int cmf_index) {
 }
 
 static Sampled_Spectrum compute_D65_sampled_spectrum() {
-    constexpr int n = (int)std::size(D65);
+    constexpr int n = (int)array_size(D65);
     float l[n];
     float v[n];
 

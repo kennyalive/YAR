@@ -120,9 +120,9 @@ void Direct_Lighting::create_pipeline(const Array<VkDescriptorSetAndBindingMappi
 
         VkRayTracingPipelineCreateInfoKHR create_info{ VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR };
         create_info.pNext = &flags_create_info;
-        create_info.stageCount = (uint32_t)std::size(stage_infos);
+        create_info.stageCount = (uint32_t)array_size(stage_infos);
         create_info.pStages = stage_infos;
-        create_info.groupCount = (uint32_t)std::size(shader_groups);
+        create_info.groupCount = (uint32_t)array_size(shader_groups);
         create_info.pGroups = shader_groups;
         create_info.maxPipelineRayRecursionDepth = 2;
         VK_CHECK(vkCreateRayTracingPipelinesKHR(vk.device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));

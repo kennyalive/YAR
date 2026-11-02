@@ -942,7 +942,7 @@ VkPipeline vk_create_graphics_pipeline(const Vk_Graphics_Pipeline_State& state,
 
     VkGraphicsPipelineCreateInfo create_info { VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
     create_info.pNext                                   = &rendering_create_info;
-    create_info.stageCount                              = (uint32_t)std::size(shader_stages_state);
+    create_info.stageCount                              = (uint32_t)array_size(shader_stages_state);
     create_info.pStages                                 = shader_stages_state;
     create_info.pVertexInputState                       = &vertex_input_state;
     create_info.pInputAssemblyState                     = &state.input_assembly_state;

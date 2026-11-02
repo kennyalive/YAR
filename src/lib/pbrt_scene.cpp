@@ -617,7 +617,7 @@ static Material_Handle import_pbrt_material(const pbrt::Material::SP pbrt_materi
             mtl.bump_map = import_pbrt_texture_float(uber->map_bump, scene);
         }
 
-        ASSERT(mtl.component_count <= std::size(mtl.components));
+        ASSERT(mtl.component_count <= array_size(mtl.components));
 
         // u/v roughness initialization follows pbrt3 logic:
         // if u_roughness is not specified then u_roughness it's roughness

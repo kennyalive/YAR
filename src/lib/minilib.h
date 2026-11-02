@@ -95,6 +95,12 @@ void swap_values(T& a, T& b)
     b = rvalue(temp);
 }
 
+template <typename T, size_t N>
+constexpr size_t array_size(const T(&)[N])
+{
+    return N;
+}
+
 //
 // Non-owning view of contiguous elements
 //

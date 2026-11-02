@@ -4,7 +4,6 @@
 #define _ITERATOR_DEBUG_LEVEL 0
 #endif
 
-#include <iterator>
 #include <utility>
 
 #ifdef _WIN32

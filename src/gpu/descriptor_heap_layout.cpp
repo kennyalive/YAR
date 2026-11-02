@@ -46,7 +46,7 @@ void Descriptor_Heap_Layout::initialize()
         &directional_lights,
         &rect_lights
     };
-    storage_buffer_descriptor_offsets.reserve(std::size(p_offsets));
+    storage_buffer_descriptor_offsets.reserve(array_size(p_offsets));
     for (uint32_t* p_offset : p_offsets) {
         // Write into offset variable (e.g. instance_infos)
         *p_offset = next_buffer_descriptor_offset(resource_heap_offset);
