@@ -1,6 +1,7 @@
 #include "std.h"
 #include "common.h"
 #include "path.h"
+#include "minilib_extra.h"
 
 #include "obj_loader.h"
 
@@ -34,7 +35,7 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
     const Triangle_Mesh_Load_Params params, Array<Obj_Mesh>& obj_meshes)
 {
     int current_material_id = shape.mesh.material_ids.empty() ? -1 : shape.mesh.material_ids[0];
-    std::unordered_map<Mesh_Vertex, uint32_t, Mesh_Vertex_Hasher> unique_vertices;
+    Hash_Map<Mesh_Vertex, uint32_t, Mesh_Vertex_Hasher> unique_vertices;
     bool has_normals = true;
 
     obj_meshes.add();
@@ -91,14 +92,14 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
         }
 
         uint32_t vertex_index;
-        if (unique_vertices.count(vertex) == 0) {
+        if (!unique_vertices.contains(vertex)) {
             vertex_index = (uint32_t)mesh->vertices.size();
-            unique_vertices[vertex] = (uint32_t)mesh->vertices.size();
+            unique_vertices.get_or_insert(vertex) = (uint32_t)mesh->vertices.size();
             mesh->vertices.add(vertex.pos);
             mesh->normals.add(vertex.normal);
             mesh->uvs.add(vertex.uv);
         } else {
-            vertex_index = unique_vertices[vertex];
+            vertex_index = *unique_vertices.find(vertex);
         }
         mesh->indices.add(vertex_index);
     }

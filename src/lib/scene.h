@@ -1,6 +1,6 @@
 #pragma once
 
-#include "minilib.h"
+#include "minilib_extra.h"
 #include "path.h"
 #include "geometry.h"
 #include "light.h"
@@ -52,7 +52,7 @@ struct Scene
     Array<Matrix3x4> view_points;
 
     // Cache of tesselated spheres with different radius
-    std::unordered_map<float, Geometry_Handle, Hasher> radius_to_sphere_geometry;
+    Hash_Map<float, Geometry_Handle> radius_to_sphere_geometry;
 
     //
     // Description of the virtual environment.

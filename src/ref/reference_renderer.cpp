@@ -1,6 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
-#include "lib/minilib.h"
+#include "lib/minilib_extra.h"
 #include "lib/path.h"
 #include "reference_renderer.h"
 
@@ -159,7 +159,7 @@ struct Checkpoint_Tile_Data {
 };
 
 struct Checkpoint {
-    std::unordered_map<int, Checkpoint_Tile_Data> finished_tiles; // tile_index -> tile
+    Hash_Map<int, Checkpoint_Tile_Data> finished_tiles; // tile_index -> tile
     float previous_sessions_time = 0.f;
 };
 }
@@ -237,7 +237,7 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
             return;
         }
         int tile_index = str_to_int({filename.data + 5, filename.size - 5});
-        Checkpoint_Tile_Data& tile_data = checkpoint.finished_tiles[tile_index];
+        Checkpoint_Tile_Data& tile_data = checkpoint.finished_tiles.get_or_insert(tile_index);
 
         Array<uint8_t> content;
         if (!fs_load(path, content)) {
@@ -422,13 +422,13 @@ static Array<int> load_checkpoint(const String& checkpoint_directory, const Chec
     Array<int> tiles_to_render;
     tiles_to_render.reserve(info.total_tile_count - checkpoint.finished_tiles.size());
     for (int tile_index = 0; tile_index < info.total_tile_count; tile_index++) {
-        auto it = checkpoint.finished_tiles.find(tile_index);
-        if (it == checkpoint.finished_tiles.end()) {
+        Checkpoint_Tile_Data* finished_tile = checkpoint.finished_tiles.find(tile_index);
+        if (!finished_tile) {
             tiles_to_render.add(tile_index);
         }
         else {
-            (*tiles)[tile_index] = std::move(it->second.tile);
-            (*tile_variance_accumulators)[tile_index] = it->second.tile_variance_accumulator;
+            (*tiles)[tile_index] = std::move(finished_tile->tile);
+            (*tile_variance_accumulators)[tile_index] = finished_tile->tile_variance_accumulator;
         }
     }
     *previous_sessions_time = checkpoint.previous_sessions_time;

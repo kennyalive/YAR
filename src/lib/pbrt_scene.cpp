@@ -18,6 +18,12 @@ struct Shape {
     // TODO: remove this field after we separate material from shape in pbrt parser
     Material_Handle material;
 };
+
+struct Shape_Hasher {
+    size_t operator()(const pbrt::Shape::SP& shape) const {
+        return size_t(hash_mix(uintptr_t(shape.get())));
+    }
+};
 }
 
 static Matrix3x4 to_matrix3x4(const pbrt::affine3f& pbrt_transform) {
@@ -745,14 +751,14 @@ static Geometry_Handle import_pbrt_sphere(const pbrt::Sphere::SP pbrt_sphere, Ma
     *sphere_transform = to_matrix3x4(pbrt_sphere->transform);
 
     // Check the cache of tesselated spheres. We tesselarate sphere only once for the given radius value.
-    if (auto it = scene->radius_to_sphere_geometry.find(pbrt_sphere->radius); it != scene->radius_to_sphere_geometry.end()) {
-        return it->second;
+    if (Geometry_Handle* geometry = scene->radius_to_sphere_geometry.find(pbrt_sphere->radius)) {
+        return *geometry;
     }
 
     Triangle_Mesh sphere = create_sphere_mesh(pbrt_sphere->radius, 6, true);
     scene->geometries.triangle_meshes.add(std::move(sphere));
     Geometry_Handle sphere_geometry_handle = { Geometry_Type::triangle_mesh, int(scene->geometries.triangle_meshes.size() - 1) };
-    scene->radius_to_sphere_geometry.insert(std::make_pair(pbrt_sphere->radius, sphere_geometry_handle));
+    scene->radius_to_sphere_geometry.insert({pbrt_sphere->radius, sphere_geometry_handle});
     return sphere_geometry_handle;
 }
 
@@ -1055,7 +1061,7 @@ void load_pbrt_scene(Scene& scene) {
     // duplicated for each new material. pbrt-parser have to introduce primitive
     // abstraction that combines shape and material.
 
-    std::unordered_map<pbrt::Shape::SP, Shape> shape_cache;
+    Hash_Map<pbrt::Shape::SP, Shape, Shape_Hasher> shape_cache;
     for (pbrt::Instance::SP instance : pbrt_scene->world->instances) {
         ASSERT(instance->object->instances.empty()); // enforced by makeSingleLevel
         Matrix3x4 instance_transform = to_matrix3x4(instance->xfm);
@@ -1063,8 +1069,8 @@ void load_pbrt_scene(Scene& scene) {
         // Import pbrt shapes.
         for (pbrt::Shape::SP pbrt_shape : instance->object->shapes) {
             Shape shape;
-            if (auto it = shape_cache.find(pbrt_shape); it != shape_cache.end()) {
-                shape = it->second;
+            if (Shape* cached = shape_cache.find(pbrt_shape)) {
+                shape = *cached;
             }
             else {
                 shape = import_pbrt_shape(pbrt_shape, instance_transform, &scene);

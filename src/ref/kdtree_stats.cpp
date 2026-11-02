@@ -95,23 +95,23 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
 Array<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32_t node_index)
 {
     ASSERT(node_index >= 0 && node_index < kdtree.nodes.size());
-    std::unordered_map<uint32_t, uint32_t> parent_map;
+    Hash_Map<uint32_t, uint32_t> parent_map;
     for (uint32_t i = 0; i < uint32_t(kdtree.nodes.size()); i++) {
         if (!kdtree.nodes[i].is_leaf()) {
             uint32_t below_child = i + 1;
             uint32_t above_child = kdtree.nodes[i].get_above_child();
-            parent_map[below_child] = i;
-            parent_map[above_child] = i;
+            parent_map.get_or_insert(below_child) = i;
+            parent_map.get_or_insert(above_child) = i;
         }
         else {
             i += kdtree.nodes[i].get_primitive_count() / 2; // skip nodes that store array of indices
         }
     }
     Array<uint32_t> path{ node_index };
-    auto it = parent_map.find(node_index);
-    while (it != parent_map.cend()) {
-        path.add(it->second);
-        it = parent_map.find(it->second);
+    const uint32_t* parent = parent_map.find(node_index);
+    while (parent) {
+        path.add(*parent);
+        parent = parent_map.find(*parent);
     }
     reverse(Span<uint32_t>(path));
     return path;
@@ -152,7 +152,7 @@ static bool is_strictly_increasing(Span<const uint32_t> indices)
 }
 
 static Array<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree, uint32_t node_index,
-    std::unordered_map<uint32_t, uint32_t>& node_index_to_primitive_count)
+    Hash_Map<uint32_t, uint32_t>& node_index_to_primitive_count)
 {
     Array<uint32_t> subtree_primitive_indices;
 
@@ -160,7 +160,7 @@ static Array<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree, uint3
     if (node->is_leaf()) {
         const uint32_t pc = node->get_primitive_count();
         subtree_primitive_indices.resize(pc);
-        node_index_to_primitive_count[node_index] = pc;
+        node_index_to_primitive_count.get_or_insert(node_index) = pc;
         for (uint32_t k = 0; k < pc; k++) {
             subtree_primitive_indices[k] = node->get_primitive_indices_array()[k];
         }
@@ -173,18 +173,18 @@ static Array<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree, uint3
         auto above_primitive_indices = get_subtree_primitive_indices(kdtree, above_node, node_index_to_primitive_count);
 
         subtree_primitive_indices = merge_primitive_indices(below_primitive_indices, above_primitive_indices);
-        node_index_to_primitive_count[node_index] = (uint32_t)subtree_primitive_indices.size();
+        node_index_to_primitive_count.get_or_insert(node_index) = (uint32_t)subtree_primitive_indices.size();
     }
     ASSERT(is_strictly_increasing(subtree_primitive_indices));
     return subtree_primitive_indices;
 }
 
 static void print_primitive_subdivisions_for_subtree(const KdTree& kdtree, const String& current_path, uint32_t node_index,
-    const std::unordered_map<uint32_t, uint32_t>& node_index_to_primitive_count)
+    const Hash_Map<uint32_t, uint32_t>& node_index_to_primitive_count)
 {
-    auto it = node_index_to_primitive_count.find(node_index);
-    ASSERT(it != node_index_to_primitive_count.end());
-    uint32_t primitive_count = it->second;
+    const uint32_t* count = node_index_to_primitive_count.find(node_index);
+    ASSERT(count);
+    uint32_t primitive_count = *count;
     String path = string_concat(current_path, current_path.empty() ? "" : " ", string_printf("%u", primitive_count));
     KdNode node = kdtree.nodes[node_index];
     if (node.is_leaf()) {
@@ -211,7 +211,7 @@ static void print_primitive_subdivisions_for_subtree(const KdTree& kdtree, const
 
 void kdtree_print_primitive_subdivisions_from_root_to_leaves(const KdTree& kdtree)
 {
-    std::unordered_map<uint32_t, uint32_t> node_index_to_primitive_count;
+    Hash_Map<uint32_t, uint32_t> node_index_to_primitive_count;
     get_subtree_primitive_indices(kdtree, 0, node_index_to_primitive_count);
     print_primitive_subdivisions_for_subtree(kdtree, "", 0, node_index_to_primitive_count);
 }

@@ -1,6 +1,6 @@
 #include "std.h"
 #include "lib/common.h"
-#include "lib/minilib.h"
+#include "lib/minilib_extra.h"
 #include "triangle_mesh.h"
 
 void Triangle_Mesh::remove_degenerate_triangles() {
@@ -88,11 +88,11 @@ static void convert_to_mesh_with_face_normals(Triangle_Mesh& mesh) {
 static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_groups(Array<uint64_t>& normal_groups, float crease_angle, Triangle_Mesh& mesh) {
     normal_groups.resize(mesh.vertices.size());
 
-    std::unordered_map<Vector3, Array<int>, Hasher> vertex_faces;
+    Hash_Map<Vector3, Array<int>> vertex_faces;
     for (int i = 0, face = 0; i < (int)mesh.indices.size(); i += 3, face++) {
-        vertex_faces[mesh.vertices[mesh.indices[i + 0]]].add(face);
-        vertex_faces[mesh.vertices[mesh.indices[i + 1]]].add(face);
-        vertex_faces[mesh.vertices[mesh.indices[i + 2]]].add(face);
+        vertex_faces.get_or_insert(mesh.vertices[mesh.indices[i + 0]]).add(face);
+        vertex_faces.get_or_insert(mesh.vertices[mesh.indices[i + 1]]).add(face);
+        vertex_faces.get_or_insert(mesh.vertices[mesh.indices[i + 2]]).add(face);
     }
 
     auto get_face_normal = [&mesh](int face) {
@@ -112,8 +112,8 @@ static void duplicate_vertices_due_to_crease_angle_threshold_and_init_normal_gro
     const float crease_angle_cos = std::cos(crease_angle);
 
     for (const auto& entry : vertex_faces) {
-        const Vector3 pos = entry.first;
-        const Array<int>& faces = entry.second;
+        const Vector3 pos = entry.key;
+        const Array<int>& faces = entry.value;
         ASSERT(faces.size() <= 64);
 
         // reset mask infos
@@ -249,18 +249,16 @@ static void adjust_normal_for_duplicated_vertices(const Array<uint64_t>& normal_
         Array<int> indices;
     };
 
-    std::unordered_map<Vertex_Info, Siblings, Vertex_Info_Hasher> duplicated_vertices;
+    Hash_Map<Vertex_Info, Siblings, Vertex_Info_Hasher> duplicated_vertices;
     for (int i = 0; i < (int)mesh.vertices.size(); i++) {
         Vertex_Info v_info = { mesh.vertices[i], normal_groups.empty() ? 0 : normal_groups[i] };
-        auto it = duplicated_vertices.find(v_info);
-        if (it != duplicated_vertices.end()) {
-            Siblings& s = it->second;
-            if (s.index != -1) {
-                s.indices.add(s.index);
-                s.index = -1;
+        if (Siblings* s = duplicated_vertices.find(v_info)) {
+            if (s->index != -1) {
+                s->indices.add(s->index);
+                s->index = -1;
                 
             }
-            s.indices.add(i);
+            s->indices.add(i);
         }
         else {
             duplicated_vertices.insert({v_info, {i}});
@@ -268,7 +266,7 @@ static void adjust_normal_for_duplicated_vertices(const Array<uint64_t>& normal_
     }
 
     for (const auto& entry : duplicated_vertices) {
-        const Siblings& siblings = entry.second;
+        const Siblings& siblings = entry.value;
         if (siblings.indices.empty()) {
             ASSERT(siblings.index != -1);
             continue;
