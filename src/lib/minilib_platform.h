@@ -5,10 +5,33 @@
 
 //
 // File IO
-//
+// 
 // The paths are UTF-8. File loads leave the output unchanged on failure.
 // Text files are read and written as-is (newlines and BOMs are preserved).
 //
+ 
+// FILE* wrapper with convenience helpers.
+// Does NOT close file automatically
+struct File
+{
+    FILE* file = nullptr;
+
+    File(FILE* file = nullptr) : file(file) {}
+    operator FILE* () const { return file; }
+
+    bool close();
+    bool read(void* destination, size_t size);
+    bool write(const void* source, size_t size);
+};
+
+// Closes file automatically when it exits the scope
+struct [[nodiscard]] Scoped_File : File
+{
+    Scoped_File(FILE* file = nullptr) : File(file) {}
+    ~Scoped_File();
+    Scoped_File(const Scoped_File&) = delete;
+    Scoped_File& operator=(const Scoped_File&) = delete;
+};
 
 // Like fopen, but accepts UTF-8 paths
 FILE* fs_open(String_View path, const char* mode);

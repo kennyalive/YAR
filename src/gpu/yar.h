@@ -12,7 +12,7 @@
 
 #include "lib/flying_camera.h"
 #include "lib/matrix.h"
-#include "lib/platform.h"
+#include "lib/minilib_platform.h"
 #include "lib/scene.h"
 #include "ref/reference_renderer.h"
 

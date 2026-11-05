@@ -1,5 +1,6 @@
 #include "test.h"
 #include "lib/minilib.h"
+#include <stdio.h>
 
 void test_random();
 void test_sampling();

@@ -1,5 +1,6 @@
 #define VMA_IMPLEMENTATION
 #include "vk.h"
+#include "lib/minilib_platform.h"
 
 #include <stdio.h>
 #include <string.h>

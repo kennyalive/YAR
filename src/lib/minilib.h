@@ -6,7 +6,6 @@ constexpr int MINILIB_VERSION = 0;
 
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <initializer_list>
@@ -530,29 +529,6 @@ String path_replace_extension(String_View path, String_View extension);
 // "dir/file" for ("dir", "file"). A '/' is inserted unless a is empty
 // or already ends with a separator
 String path_join(String_View a, String_View b);
-
-// FILE* wrapper with convenience helpers.
-// Does NOT close file automatically
-struct File
-{
-    FILE* file = nullptr;
-
-    File(FILE* file = nullptr) : file(file) {}
-    operator FILE* () const { return file; }
-
-    bool close();
-    bool read(void* destination, size_t size);
-    bool write(const void* source, size_t size);
-};
-
-// Closes file automatically when it exits the scope
-struct [[nodiscard]] Scoped_File : File
-{
-    Scoped_File(FILE* file = nullptr) : File(file) {}
-    ~Scoped_File();
-    Scoped_File(const Scoped_File&) = delete;
-    Scoped_File& operator=(const Scoped_File&) = delete;
-};
 
 //
 // Optional value

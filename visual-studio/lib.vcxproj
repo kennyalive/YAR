@@ -105,7 +105,7 @@
     <ClInclude Include="..\src\lib\minilib.h" />
     <ClInclude Include="..\src\lib\minilib_extra.h" />
     <ClInclude Include="..\src\lib\obj_loader.h" />
-    <ClInclude Include="..\src\lib\platform.h" />
+    <ClInclude Include="..\src\lib\minilib_platform.h" />
     <ClInclude Include="..\src\lib\material_parameter.h" />
     <ClInclude Include="..\src\lib\raytracer_config.h" />
     <ClInclude Include="..\src\lib\scene_loader.h" />
@@ -129,8 +129,8 @@
     <ClCompile Include="..\src\lib\material_pbrt.cpp" />
     <ClCompile Include="..\src\lib\math.cpp" />
     <ClCompile Include="..\src\lib\minilib.cpp" />
-    <ClCompile Include="..\src\lib\platform_shared.cpp" />
-    <ClCompile Include="..\src\lib\platform_win.cpp" />
+    <ClCompile Include="..\src\lib\minilib_platform.cpp" />
+    <ClCompile Include="..\src\lib\minilib_platform_win.cpp" />
     <ClCompile Include="..\src\lib\obj_loader.cpp" />
     <ClCompile Include="..\src\lib\tessellation.cpp" />
     <ClCompile Include="..\src\lib\utils.cpp" />

@@ -1,4 +1,4 @@
-#include "platform.h"
+#include "minilib_platform.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX

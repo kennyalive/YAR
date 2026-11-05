@@ -1,6 +1,6 @@
 #pragma once
 
-#include "platform.h"
+#include "minilib_platform.h"
 #include <math.h>
 
 #define ENABLE_PROFILING 1

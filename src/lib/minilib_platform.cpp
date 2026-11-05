@@ -1,6 +1,38 @@
-#include "platform.h"
+#include "minilib_platform.h"
 #include <atomic>
 #include <chrono>
+
+//
+// File IO
+//
+bool File::close()
+{
+    if (!file) {
+        return true;
+    }
+    bool closed = (fclose(file) == 0);
+    file = nullptr;
+    return closed;
+}
+
+bool File::read(void* destination, size_t size)
+{
+    ASSERT(file);
+    ASSERT(destination || !size);
+    return !size || fread(destination, 1, size, file) == size;
+}
+
+bool File::write(const void* source, size_t size)
+{
+    ASSERT(file);
+    ASSERT(source || !size);
+    return !size || fwrite(source, 1, size, file) == size;
+}
+
+Scoped_File::~Scoped_File()
+{
+    close();
+}
 
 bool fs_load(String_View path, Array<uint8_t>& bytes)
 {
