@@ -2,7 +2,6 @@
 #include "lib/math.h"
 #include "lib/minilib.h"
 #include "lib/obj_loader.h"
-#include "lib/path.h"
 #include "lib/random.h"
 #include "lib/triangle_mesh.h"
 #include "lib/vector.h"

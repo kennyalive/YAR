@@ -1,7 +1,6 @@
 #pragma once
 
 #include "minilib_extra.h"
-#include "path.h"
 #include "geometry.h"
 #include "light.h"
 #include "material.h"

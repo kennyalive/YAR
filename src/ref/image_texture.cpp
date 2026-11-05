@@ -1,7 +1,6 @@
 #include "lib/common.h"
 #include "image_texture.h"
 #include "lib/minilib.h"
-#include "lib/path.h"
 
 #include "lib/math.h"
 #include "lib/vector.h"

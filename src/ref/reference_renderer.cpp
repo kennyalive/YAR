@@ -1,6 +1,5 @@
 #include "lib/common.h"
 #include "lib/minilib_extra.h"
-#include "lib/path.h"
 #include "reference_renderer.h"
 
 #include "camera.h"

@@ -1,5 +1,4 @@
 #include "lib/common.h"
-#include "lib/path.h"
 #include "scene_context.h"
 
 #include "kdtree_builder.h"

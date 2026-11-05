@@ -105,7 +105,6 @@
     <ClInclude Include="..\src\lib\minilib.h" />
     <ClInclude Include="..\src\lib\minilib_extra.h" />
     <ClInclude Include="..\src\lib\obj_loader.h" />
-    <ClInclude Include="..\src\lib\path.h" />
     <ClInclude Include="..\src\lib\platform.h" />
     <ClInclude Include="..\src\lib\material_parameter.h" />
     <ClInclude Include="..\src\lib\raytracer_config.h" />
@@ -130,7 +129,6 @@
     <ClCompile Include="..\src\lib\material_pbrt.cpp" />
     <ClCompile Include="..\src\lib\math.cpp" />
     <ClCompile Include="..\src\lib\minilib.cpp" />
-    <ClCompile Include="..\src\lib\path.cpp" />
     <ClCompile Include="..\src\lib\platform_shared.cpp" />
     <ClCompile Include="..\src\lib\platform_win.cpp" />
     <ClCompile Include="..\src\lib\obj_loader.cpp" />

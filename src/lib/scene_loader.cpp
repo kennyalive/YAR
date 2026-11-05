@@ -1,5 +1,4 @@
 #include "common.h"
-#include "path.h"
 #include "scene_loader.h"
 
 #include "stb/stb_image.h"

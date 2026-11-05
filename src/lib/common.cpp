@@ -1,6 +1,5 @@
 #include "common.h"
 #include "minilib.h"
-#include "path.h"
 
 #include <stdarg.h>
 #include <stdlib.h>

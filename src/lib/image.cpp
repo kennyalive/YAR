@@ -1,7 +1,6 @@
 #include "common.h"
 #include "image.h"
 #include "minilib.h"
-#include "path.h"
 
 #include "color.h"
 

@@ -1,5 +1,4 @@
 #include "common.h"
-#include "path.h"
 #include "minilib_extra.h"
 
 #include "obj_loader.h"

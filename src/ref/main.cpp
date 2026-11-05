@@ -1,5 +1,4 @@
 #include "lib/common.h"
-#include "lib/path.h"
 #include "reference_renderer.h"
 #include "scene_context.h"
 #include "test.h"
