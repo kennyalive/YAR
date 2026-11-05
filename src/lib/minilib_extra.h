@@ -15,7 +15,7 @@
 #endif
 
 #if defined(_MSC_VER)
-#include <intrin.h> // _BitScanForward
+#include <intrin0.h> // _BitScanForward
 #endif
 
 template <typename T, typename U>

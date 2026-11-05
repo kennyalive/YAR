@@ -2,7 +2,6 @@
 #include "stdarg.h"
 #include "stdio.h"
 #include "string.h"
-#include <cstddef> // std::max_align_t
 
 #ifdef _WIN32
 #include <malloc.h>
@@ -11,6 +10,8 @@
 //
 // Array storage
 //
+constexpr size_t malloc_alignment = alignof(long double);
+
 void* minilib_internal::allocate_array_storage(size_t count, size_t element_size, size_t alignment)
 {
     // For invalid large inputs, multiplication can wrap around to a small size
@@ -21,7 +22,7 @@ void* minilib_internal::allocate_array_storage(size_t count, size_t element_size
 
     const size_t size = count * element_size;
     void* data;
-    if (alignment <= alignof(std::max_align_t)) {
+    if (alignment <= malloc_alignment) {
         data = malloc(size);
     }
     else {
@@ -42,7 +43,7 @@ void* minilib_internal::allocate_array_storage(size_t count, size_t element_size
 void minilib_internal::free_array_storage(void* data, size_t alignment)
 {
 #ifdef _WIN32
-    if (alignment > alignof(std::max_align_t)) {
+    if (alignment > malloc_alignment) {
         _aligned_free(data);
         return;
     }

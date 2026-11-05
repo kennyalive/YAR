@@ -1181,7 +1181,7 @@ void vk_set_debug_name(Vk_Object_Type object, const char* name)
     VkObjectType object_type;
 
 #define IF_TYPE_THEN_ENUM(vk_type, vk_object_type_enum) \
-    if constexpr (std::is_same_v<Vk_Object_Type, vk_type>) object_type = vk_object_type_enum;
+    if constexpr (is_same_type<Vk_Object_Type, vk_type>) object_type = vk_object_type_enum;
 
     IF_TYPE_THEN_ENUM(VkInstance, VK_OBJECT_TYPE_INSTANCE)
     else IF_TYPE_THEN_ENUM(VkPhysicalDevice, VK_OBJECT_TYPE_PHYSICAL_DEVICE)
