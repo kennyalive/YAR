@@ -7,6 +7,10 @@
 #include <malloc.h>
 #endif
 
+#if MINILIB_USE_NAMESPACE
+namespace mini {
+#endif
+
 //
 // Memory allocation
 //
@@ -38,7 +42,7 @@ void free_aligned_memory(void* memory)
 
 constexpr size_t malloc_alignment = alignof(long double);
 
-void* minilib_internal::allocate_array_storage(size_t count, size_t element_size, size_t alignment)
+void* mini_internal::allocate_array_storage(size_t count, size_t element_size, size_t alignment)
 {
     ASSERT(count > 0);
 
@@ -62,7 +66,7 @@ void* minilib_internal::allocate_array_storage(size_t count, size_t element_size
     return data;
 }
 
-void minilib_internal::free_array_storage(void* data, size_t alignment)
+void mini_internal::free_array_storage(void* data, size_t alignment)
 {
     if (alignment <= malloc_alignment) {
         free(data);
@@ -419,3 +423,7 @@ uint64_t hash_value(float v)
     memcpy(&bits, &v, sizeof(bits));
     return hash_mix(bits);
 }
+
+#if MINILIB_USE_NAMESPACE
+} // namespace mini
+#endif

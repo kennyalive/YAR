@@ -3,6 +3,10 @@
 #include "minilib.h"
 #include <stdio.h>
 
+#if MINILIB_USE_NAMESPACE
+namespace mini {
+#endif
+
 //
 // File IO
 // 
@@ -119,7 +123,7 @@ uint32_t logical_processor_count(); // at least one
 // Supported scalar types are lock-free.
 // All operations are sequentially consistent
 //
-namespace minilib_internal {
+namespace mini_internal {
 template <typename T>
 struct Atomic
 {
@@ -149,13 +153,13 @@ private:
 
 template <> bool Atomic<bool>::fetch_add(bool) = delete;
 template <> bool Atomic<bool>::fetch_sub(bool) = delete;
-} // namespace minilib_internal
+} // namespace mini_internal
 
-using Atomic_Bool = minilib_internal::Atomic<bool>;
-using Atomic_Int32 = minilib_internal::Atomic<int32_t>;
-using Atomic_UInt32 = minilib_internal::Atomic<uint32_t>;
-using Atomic_Int64 = minilib_internal::Atomic<int64_t>;
-using Atomic_UInt64 = minilib_internal::Atomic<uint64_t>;
+using Atomic_Bool = mini_internal::Atomic<bool>;
+using Atomic_Int32 = mini_internal::Atomic<int32_t>;
+using Atomic_UInt32 = mini_internal::Atomic<uint32_t>;
+using Atomic_Int64 = mini_internal::Atomic<int64_t>;
+using Atomic_UInt64 = mini_internal::Atomic<uint64_t>;
 
 //
 // Locks
@@ -189,3 +193,7 @@ struct [[nodiscard]] Scoped_Lock
 private:
     Mutex& mutex;
 };
+
+#if MINILIB_USE_NAMESPACE
+} // namespace mini
+#endif

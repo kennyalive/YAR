@@ -18,6 +18,10 @@
 #include <intrin0.h> // _BitScanForward
 #endif
 
+#if MINILIB_USE_NAMESPACE
+namespace mini {
+#endif
+
 //
 // Sorting
 //
@@ -44,7 +48,7 @@
 */
 // Upstream: https://github.com/orlp/pdqsort/blob/b1ef26a55cdb60d236a5cb199c4234c704f46726/pdqsort.h
 // Adapted for minilib: contiguous spans, local helpers and a heapsort fallback
-namespace minilib_internal {
+namespace mini_internal {
     template <typename T>
     struct Partition_Result {
         T* first;
@@ -65,7 +69,7 @@ namespace minilib_internal {
     template <typename T, typename Compare>
     void sift_down(T* data, size_t root, size_t count, Compare comp)
     {
-        T value = ::rvalue(data[root]);
+        T value = rvalue(data[root]);
         while (root < count / 2) {
             size_t child = root * 2 + 1;
             if (child + 1 < count && comp(data[child], data[child + 1])) {
@@ -74,10 +78,10 @@ namespace minilib_internal {
             if (!comp(value, data[child])) {
                 break;
             }
-            data[root] = ::rvalue(data[child]);
+            data[root] = rvalue(data[child]);
             root = child;
         }
-        data[root] = ::rvalue(value);
+        data[root] = rvalue(value);
     }
 
     template <typename T, typename Compare>
@@ -134,12 +138,12 @@ namespace minilib_internal {
 
             // Compare first so we can avoid 2 moves for an element already positioned correctly
             if (comp(*sift, *sift_1)) {
-                T tmp = ::rvalue(*sift);
+                T tmp = rvalue(*sift);
 
-                do { *sift-- = ::rvalue(*sift_1); }
+                do { *sift-- = rvalue(*sift_1); }
                 while (sift != begin && comp(tmp, *--sift_1));
 
-                *sift = ::rvalue(tmp);
+                *sift = rvalue(tmp);
             }
         }
     }
@@ -158,12 +162,12 @@ namespace minilib_internal {
 
             // Compare first so we can avoid 2 moves for an element already positioned correctly
             if (comp(*sift, *sift_1)) {
-                T tmp = ::rvalue(*sift);
+                T tmp = rvalue(*sift);
 
-                do { *sift-- = ::rvalue(*sift_1); }
+                do { *sift-- = rvalue(*sift_1); }
                 while (comp(tmp, *--sift_1));
 
-                *sift = ::rvalue(tmp);
+                *sift = rvalue(tmp);
             }
         }
     }
@@ -184,12 +188,12 @@ namespace minilib_internal {
 
             // Compare first so we can avoid 2 moves for an element already positioned correctly
             if (comp(*sift, *sift_1)) {
-                T tmp = ::rvalue(*sift);
+                T tmp = rvalue(*sift);
 
-                do { *sift-- = ::rvalue(*sift_1); }
+                do { *sift-- = rvalue(*sift_1); }
                 while (sift != begin && comp(tmp, *--sift_1));
 
-                *sift = ::rvalue(tmp);
+                *sift = rvalue(tmp);
                 limit += cur - sift;
             }
 
@@ -235,12 +239,12 @@ namespace minilib_internal {
             }
         } else if (num > 0) {
             T* l = first + offsets_l[0]; T* r = last - offsets_r[0];
-            T tmp(::rvalue(*l)); *l = ::rvalue(*r);
+            T tmp(rvalue(*l)); *l = rvalue(*r);
             for (size_t i = 1; i < num; ++i) {
-                l = first + offsets_l[i]; *r = ::rvalue(*l);
-                r = last - offsets_r[i]; *l = ::rvalue(*r);
+                l = first + offsets_l[i]; *r = rvalue(*l);
+                r = last - offsets_r[i]; *l = rvalue(*r);
             }
-            *r = ::rvalue(tmp);
+            *r = rvalue(tmp);
         }
     }
 
@@ -253,7 +257,7 @@ namespace minilib_internal {
     Partition_Result<T> partition_right_branchless(T* begin, T* end, Compare comp) {
 
         // Move pivot into local for speed
-        T pivot(::rvalue(*begin));
+        T pivot(rvalue(*begin));
         T* first = begin;
         T* last = end;
 
@@ -366,8 +370,8 @@ namespace minilib_internal {
 
         // Put the pivot in the right place
         T* pivot_pos = first - 1;
-        *begin = ::rvalue(*pivot_pos);
-        *pivot_pos = ::rvalue(pivot);
+        *begin = rvalue(*pivot_pos);
+        *pivot_pos = rvalue(pivot);
 
         return Partition_Result<T>{pivot_pos, already_partitioned};
     }
@@ -383,7 +387,7 @@ namespace minilib_internal {
     Partition_Result<T> partition_right(T* begin, T* end, Compare comp) {
 
         // Move pivot into local for speed
-        T pivot(::rvalue(*begin));
+        T pivot(rvalue(*begin));
 
         T* first = begin;
         T* last = end;
@@ -416,8 +420,8 @@ namespace minilib_internal {
 
         // Put the pivot in the right place
         T* pivot_pos = first - 1;
-        *begin = ::rvalue(*pivot_pos);
-        *pivot_pos = ::rvalue(pivot);
+        *begin = rvalue(*pivot_pos);
+        *pivot_pos = rvalue(pivot);
 
         return Partition_Result<T>{pivot_pos, already_partitioned};
     }
@@ -429,7 +433,7 @@ namespace minilib_internal {
     template<class T, class Compare>
     T* partition_left(T* begin, T* end, Compare comp) {
 
-        T pivot(::rvalue(*begin));
+        T pivot(rvalue(*begin));
         T* first = begin;
         T* last = end;
 
@@ -449,8 +453,8 @@ namespace minilib_internal {
         }
 
         T* pivot_pos = last;
-        *begin = ::rvalue(*pivot_pos);
-        *pivot_pos = ::rvalue(pivot);
+        *begin = rvalue(*pivot_pos);
+        *pivot_pos = rvalue(pivot);
 
         return pivot_pos;
     }
@@ -574,21 +578,21 @@ namespace minilib_internal {
         }
         for (size_t i = 0; i < middle; i++) {
             if constexpr (ConstructScratch) {
-                ::new (Placement_New{}, scratch + i) T(::rvalue(data[i]));
+                ::new (Placement_New{}, scratch + i) T(rvalue(data[i]));
             } else {
-                scratch[i] = ::rvalue(data[i]);
+                scratch[i] = rvalue(data[i]);
             }
         }
         size_t left = 0, right = middle, out = 0;
         while (left < middle && right < count) {
             if (less(data[right], scratch[left])) {
-                data[out++] = ::rvalue(data[right++]);
+                data[out++] = rvalue(data[right++]);
             } else {
-                data[out++] = ::rvalue(scratch[left++]);
+                data[out++] = rvalue(scratch[left++]);
             }
         }
         while (left < middle) {
-            data[out++] = ::rvalue(scratch[left++]);
+            data[out++] = rvalue(scratch[left++]);
         }
         if constexpr (ConstructScratch && !has_trivial_destructor<T>()) {
             for (size_t i = middle; i > 0; i--) {
@@ -596,7 +600,7 @@ namespace minilib_internal {
             }
         }
     }
-} // namespace minilib_internal
+} // namespace mini_internal
 
 // Unstable PDQsort, O(N log N) worst case, without heap allocation.
 // Branchless partitioning suits cheap comparisons; use sort<false> for expensive comparators.
@@ -609,17 +613,17 @@ void sort(Span<T> values, Compare less)
         return;
     }
     if (values.count <= 32) {
-        minilib_internal::insertion_sort(values.elements, values.elements + values.count, less);
+        mini_internal::insertion_sort(values.elements, values.elements + values.count, less);
     } else {
-        minilib_internal::pdqsort_loop<T, Compare, Branchless>(values.elements, values.elements + values.count, less,
-            minilib_internal::log2(values.count));
+        mini_internal::pdqsort_loop<T, Compare, Branchless>(values.elements, values.elements + values.count, less,
+            mini_internal::log2(values.count));
     }
 }
 
 template <bool Branchless = true, typename T>
 void sort(Span<T> values)
 {
-    sort<Branchless>(values, minilib_internal::Less<T>{});
+    sort<Branchless>(values, mini_internal::Less<T>{});
 }
 
 // Stable mergesort with O(N log N) worst-case work.
@@ -629,13 +633,13 @@ template <typename T, typename Compare>
 void stable_sort(Span<T> values, Span<T> scratch, Compare less)
 {
     ASSERT(values.count <= 24 || scratch.count >= values.count / 2);
-    minilib_internal::merge_sort<false>(values.elements, values.count, scratch.elements, less);
+    mini_internal::merge_sort<false>(values.elements, values.count, scratch.elements, less);
 }
 
 template <typename T>
 void stable_sort(Span<T> values, Span<T> scratch)
 {
-    stable_sort(values, scratch, minilib_internal::Less<T>{});
+    stable_sort(values, scratch, mini_internal::Less<T>{});
 }
 
 // Allocates N/2 temporary slots for N > 24; T need not be default constructible
@@ -646,18 +650,18 @@ void stable_sort(Span<T> values, Compare less)
     requires requires(T& a, T& b) { bool(less(a, b)); }
 {
     if (values.count <= 24) {
-        minilib_internal::merge_sort<false>(values.elements, values.count, static_cast<T*>(nullptr), less);
+        mini_internal::merge_sort<false>(values.elements, values.count, static_cast<T*>(nullptr), less);
         return;
     }
-    T* scratch = static_cast<T*>(minilib_internal::allocate_array_storage(values.count / 2, sizeof(T), alignof(T)));
-    minilib_internal::merge_sort<true>(values.elements, values.count, scratch, less);
-    minilib_internal::free_array_storage(scratch, alignof(T));
+    T* scratch = static_cast<T*>(mini_internal::allocate_array_storage(values.count / 2, sizeof(T), alignof(T)));
+    mini_internal::merge_sort<true>(values.elements, values.count, scratch, less);
+    mini_internal::free_array_storage(scratch, alignof(T));
 }
 
 template <typename T>
 void stable_sort(Span<T> values)
 {
-    stable_sort(values, minilib_internal::Less<T>{});
+    stable_sort(values, mini_internal::Less<T>{});
 }
 
 //
@@ -675,7 +679,7 @@ void stable_sort(Span<T> values)
 #define MINILIB_FORCE_INLINE inline
 #endif
 
-namespace minilib_internal {
+namespace mini_internal {
     inline uint32_t hash_group_matches(const uint8_t* group, uint8_t value)
     {
 #if MINILIB_HASH_MAP_USE_SSE2
@@ -726,7 +730,7 @@ namespace minilib_internal {
             }
         }
     };
-} // namespace minilib_internal
+} // namespace mini_internal
 
 // Flat storage with 16-slot groups and a maximum load of 7/8.
 // Insertion can invalidate pointers, references and iterators. Keys must not be modified
@@ -739,8 +743,8 @@ struct Hash_Map
         K key;
         V value;
     };
-    using Iterator = minilib_internal::Hash_Map_Iterator<Hash_Map, Entry>;
-    using Const_Iterator = minilib_internal::Hash_Map_Iterator<const Hash_Map, const Entry>;
+    using Iterator = mini_internal::Hash_Map_Iterator<Hash_Map, Entry>;
+    using Const_Iterator = mini_internal::Hash_Map_Iterator<const Hash_Map, const Entry>;
 
     Hash_Map() = default;
     Hash_Map(const Hash_Map&) = delete;
@@ -817,7 +821,7 @@ struct Hash_Map
     }
 
 private:
-    template <typename, typename> friend struct minilib_internal::Hash_Map_Iterator;
+    template <typename, typename> friend struct mini_internal::Hash_Map_Iterator;
     struct Lookup
     {
         size_t index;
@@ -834,8 +838,8 @@ private:
 
     static MINILIB_FORCE_INLINE Lookup locate(const Entry* entries, const uint8_t* metadata, size_t capacity, const K& key, uint64_t hash)
     {
-        using minilib_internal::hash_group_matches;
-        using minilib_internal::hash_first_bit;
+        using mini_internal::hash_group_matches;
+        using mini_internal::hash_first_bit;
         if (!capacity) {
             return {0, false};
         }
@@ -879,8 +883,6 @@ private:
     }
     void grow()
     {
-        using minilib_internal::allocate_array_storage;
-        using minilib_internal::free_array_storage;
         const size_t max_capacity = SIZE_MAX / sizeof(Entry);
         if (capacity > max_capacity / 2 || max_capacity < 16) {
             abort();
@@ -889,8 +891,8 @@ private:
         uint8_t* old_metadata = metadata;
         size_t old_capacity = capacity;
         capacity = capacity ? capacity * 2 : 16;
-        entries = static_cast<Entry*>(allocate_array_storage(capacity, sizeof(Entry), alignof(Entry)));
-        metadata = static_cast<uint8_t*>(allocate_array_storage(capacity, 1, alignof(uint8_t)));
+        entries = static_cast<Entry*>(mini_internal::allocate_array_storage(capacity, sizeof(Entry), alignof(Entry)));
+        metadata = static_cast<uint8_t*>(mini_internal::allocate_array_storage(capacity, 1, alignof(uint8_t)));
         memset(metadata, empty_byte, capacity);
         for (size_t i = 0; i < old_capacity; i++) {
             if (old_metadata[i] != empty_byte) {
@@ -900,12 +902,12 @@ private:
                 old_entries[i].~Entry();
             }
         }
-        free_array_storage(old_entries, alignof(Entry));
-        free_array_storage(old_metadata, alignof(uint8_t));
+        mini_internal::free_array_storage(old_entries, alignof(Entry));
+        mini_internal::free_array_storage(old_metadata, alignof(uint8_t));
     }
     void free_storage()
     {
-        using minilib_internal::free_array_storage;
+        using mini_internal::free_array_storage;
         free_array_storage(entries, alignof(Entry));
         free_array_storage(metadata, alignof(uint8_t));
     }
@@ -920,3 +922,7 @@ private:
 };
 
 #undef MINILIB_FORCE_INLINE
+
+#if MINILIB_USE_NAMESPACE
+} // namespace mini
+#endif

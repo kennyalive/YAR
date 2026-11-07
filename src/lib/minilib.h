@@ -19,6 +19,11 @@ constexpr int MINILIB_VERSION = 0;
 #include <string.h>
 #include <initializer_list>
 
+// Set to 1 to put minilib in namespace mini
+#ifndef MINILIB_USE_NAMESPACE
+#define MINILIB_USE_NAMESPACE 0
+#endif
+
 #ifndef ENABLE_ASSERT
 #define ENABLE_ASSERT 1
 #endif
@@ -36,7 +41,16 @@ constexpr int MINILIB_VERSION = 0;
 #define ASSERT(expression)
 #endif
 
-namespace minilib_internal {
+// Custom placement new avoids including <new> in this header
+struct Placement_New {};
+inline void* operator new(size_t, Placement_New, void* data) noexcept { return data; }
+inline void operator delete(void*, Placement_New, void*) noexcept {}
+
+#if MINILIB_USE_NAMESPACE
+namespace mini {
+#endif
+
+namespace mini_internal {
 void* allocate_array_storage(size_t count, size_t element_size, size_t alignment);
 void free_array_storage(void* data, size_t alignment);
 }
@@ -44,11 +58,6 @@ void free_array_storage(void* data, size_t alignment);
 //
 // Basic definitions
 //
-
-// Custom placement new avoids including <new> in this header
-struct Placement_New {};
-inline void* operator new(size_t, Placement_New, void* data) noexcept { return data; }
-inline void operator delete(void*, Placement_New, void*) noexcept {}
 
 // Alignment must be a power of two.
 // Returns null on failure or when size is zero
@@ -334,11 +343,11 @@ private:
 
     static T* allocate_storage(size_t capacity)
     {
-        return static_cast<T*>(minilib_internal::allocate_array_storage(capacity, sizeof(T), alignof(T)));
+        return static_cast<T*>(mini_internal::allocate_array_storage(capacity, sizeof(T), alignof(T)));
     }
     static void free_storage(T* data)
     {
-        minilib_internal::free_array_storage(data, alignof(T));
+        mini_internal::free_array_storage(data, alignof(T));
     }
     static void construct_elements(T* data, size_t size)
     {
@@ -667,3 +676,7 @@ void reverse(Span<T> values)
         swap_values(values[i], values[j]);
     }
 }
+
+#if MINILIB_USE_NAMESPACE
+} // namespace mini
+#endif

@@ -2,6 +2,22 @@
 #include <atomic>
 #include <chrono>
 
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#include <limits.h>
+#include <process.h>
+#include <share.h>
+#include <sys/stat.h>
+#include <wchar.h>
+#include <xmmintrin.h>
+#endif
+
+#if MINILIB_USE_NAMESPACE
+namespace mini {
+#endif
+
 // ============================================================================
 // Shared implementation
 // ============================================================================
@@ -152,7 +168,7 @@ void run_on_threads(Function_Ref<void()> function, uint32_t thread_count)
 //
 // Atomics
 //
-namespace minilib_internal {
+namespace mini_internal {
 template <typename T>
 static std::atomic_ref<T> atomic_value(T& value)
 {
@@ -202,21 +218,12 @@ template struct Atomic<int32_t>;
 template struct Atomic<uint32_t>;
 template struct Atomic<int64_t>;
 template struct Atomic<uint64_t>;
-} // namespace minilib_internal
+} // namespace mini_internal
 
 #if defined(_WIN32)
 // ============================================================================
 // Windows implementation
 // ============================================================================
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#include <limits.h>
-#include <process.h>
-#include <share.h>
-#include <sys/stat.h>
-#include <wchar.h>
-#include <xmmintrin.h>
 
 struct Wide_String
 {
@@ -466,7 +473,7 @@ struct Thread_Start
 static unsigned thread_entry(void* data)
 {
     const Thread_Start start = *static_cast<Thread_Start*>(data);
-    minilib_internal::free_array_storage(data, alignof(Thread_Start));
+    mini_internal::free_array_storage(data, alignof(Thread_Start));
     start.function(start.context);
     return 0;
 }
@@ -476,7 +483,7 @@ Thread thread_start(void (*function)(void*), void* data)
     static_assert(sizeof(Thread::handle) >= sizeof(HANDLE));
     ASSERT(function);
 
-    void* storage = minilib_internal::allocate_array_storage(1, sizeof(Thread_Start), alignof(Thread_Start));
+    void* storage = mini_internal::allocate_array_storage(1, sizeof(Thread_Start), alignof(Thread_Start));
     Thread_Start* start = ::new (Placement_New{}, storage) Thread_Start{function, data};
 
     Thread thread;
@@ -536,4 +543,8 @@ void Mutex::unlock()
 }
 #else
 #error platform backend is not implemented
+#endif
+
+#if MINILIB_USE_NAMESPACE
+} // namespace mini
 #endif
