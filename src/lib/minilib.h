@@ -111,35 +111,37 @@ constexpr size_t array_size(const T(&)[N])
 template <typename T>
 struct Span
 {
-    T* data = nullptr;
-    size_t size = 0;
+    T* elements = nullptr;
+    size_t count = 0;
 
     Span() = default;
-    Span& operator=(std::initializer_list<T>) = delete;
-    Span(T* data, size_t size) : data(data), size(size) {}
+    Span(T* elements, size_t count) : elements(elements), count(count) {}
     template <size_t N>
-    Span(T(&array)[N]) : data(array), size(N) {}
+    Span(T(&array)[N]) : elements(array), count(N) {}
     template <typename U>
-    Span(const Span<U>& other) : data(other.data), size(other.size) {}
+    Span(const Span<U>& other) : elements(other.elements), count(other.count) {}
+    Span& operator=(std::initializer_list<T>) = delete;
 
+    // The requires clause excludes arrays. Without it, int a[3]; Span<const int> s(a);
+    // would pick this overload (no const conversion) over the array constructor,
+    // then fail on a.data()
     template <typename Container>
-    // Prevent this overload from being chosen when copying a Span
-    requires requires(Container& container) { container.data(); container.size(); }
     Span(Container& container)
-    : data(container.data()), size(container.size()) {}
+        requires requires { container.data(); container.size(); }
+    : elements(container.data()), count(container.size()) {}
 
-    // Allows calls like foo({1, 2, 3}) without declaring a separate array.
-    // The initializer list storage expires at the end of the full expression.
-    // Do not retain the resulting Span.
+    // A span made from initializer list does not extend the temporary array's lifetime.
+    // Do not retain the resulting Span
     Span(std::initializer_list<T> values)
-    // initializer_list elements are const, so mutable spans are rejected
-    requires requires(const T* data) { static_cast<T*>(data); }
-    : data(values.begin()), size(values.size()) {}
+        requires is_same_type<T, const T>
+    : elements(values.begin()), count(values.size()) {}
 
-    T& operator[](size_t index) const { return data[index]; }
-    T* begin() const { return data; }
-    T* end() const { return data + size; }
-    bool empty() const { return size == 0; }
+    T& operator[](size_t index) const { return elements[index]; }
+    T* begin() const { return elements; }
+    T* end() const { return elements + count; }
+    bool empty() const { return count == 0; }
+    T* data() const { return elements; }
+    size_t size() const { return count; }
 };
 
 //
@@ -256,7 +258,7 @@ struct Array
                 ::new (Placement_New{}, destination + i) T(values[i]);
             }
         };
-        append(values.size, construct);
+        append(values.count, construct);
     }
 
     void reserve(size_t capacity)
@@ -629,13 +631,13 @@ bool contains(Span<T> values, const U& value)
     return false;
 }
 
-// Returns the index of the first element >= value, or values.size if none exists.
+// Returns the index of the first element >= value, or values.count if none exists.
 // Values must be sorted in ascending order
 template <typename T, typename U>
 size_t find_first_greater_or_equal(Span<T> sorted_values, const U& value)
 {
     size_t first = 0;
-    size_t last = sorted_values.size;
+    size_t last = sorted_values.count;
 
     while (first < last) {
         size_t middle = first + (last - first) / 2;
@@ -651,8 +653,8 @@ size_t find_first_greater_or_equal(Span<T> sorted_values, const U& value)
 template <typename T>
 void reverse(Span<T> values)
 {
-    for (size_t i = 0; i < values.size / 2; i++) {
-        size_t j = values.size - 1 - i;
+    for (size_t i = 0; i < values.count / 2; i++) {
+        size_t j = values.count - 1 - i;
         swap_values(values[i], values[j]);
     }
 }

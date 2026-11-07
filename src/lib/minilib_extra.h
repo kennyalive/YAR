@@ -602,19 +602,17 @@ namespace minilib_internal {
 // Branchless partitioning suits cheap comparisons; use sort<false> for expensive comparators.
 // All sort overloads require a strict weak ordering.
 // Floating-point comparisons must order NaNs explicitly if inputs can contain them
-//
 template <bool Branchless = true, typename T, typename Compare>
 void sort(Span<T> values, Compare less)
-requires requires(Compare& compare, T& a, T& b) { bool(compare(a, b)); }
 {
-    if (values.size < 2) {
+    if (values.count < 2) {
         return;
     }
-    if (values.size <= 32) {
-        minilib_internal::insertion_sort(values.data, values.data + values.size, less);
+    if (values.count <= 32) {
+        minilib_internal::insertion_sort(values.elements, values.elements + values.count, less);
     } else {
-        minilib_internal::pdqsort_loop<T, Compare, Branchless>(values.data, values.data + values.size, less,
-            minilib_internal::log2(values.size));
+        minilib_internal::pdqsort_loop<T, Compare, Branchless>(values.elements, values.elements + values.count, less,
+            minilib_internal::log2(values.count));
     }
 }
 
@@ -627,13 +625,11 @@ void sort(Span<T> values)
 // Stable mergesort with O(N log N) worst-case work.
 // For N > 24, scratch must contain at least N/2 live objects, disjoint from values.
 // Scratch contents are overwritten and may be moved from on return
-//
 template <typename T, typename Compare>
 void stable_sort(Span<T> values, Span<T> scratch, Compare less)
-requires requires(Compare& compare, T& a, T& b) { bool(compare(a, b)); }
 {
-    ASSERT(values.size <= 24 || scratch.size >= values.size / 2);
-    minilib_internal::merge_sort<false>(values.data, values.size, scratch.data, less);
+    ASSERT(values.count <= 24 || scratch.count >= values.count / 2);
+    minilib_internal::merge_sort<false>(values.elements, values.count, scratch.elements, less);
 }
 
 template <typename T>
@@ -643,17 +639,18 @@ void stable_sort(Span<T> values, Span<T> scratch)
 }
 
 // Allocates N/2 temporary slots for N > 24; T need not be default constructible
-//
 template <typename T, typename Compare>
 void stable_sort(Span<T> values, Compare less)
-requires requires(Compare& compare, T& a, T& b) { bool(compare(a, b)); }
+    // Prevents stable_sort<T>(values, scratch_array) from picking this overload
+    // over the scratch overload, which needs a conversion to Span<T>
+    requires requires(T& a, T& b) { bool(less(a, b)); }
 {
-    if (values.size <= 24) {
-        minilib_internal::merge_sort<false>(values.data, values.size, static_cast<T*>(nullptr), less);
+    if (values.count <= 24) {
+        minilib_internal::merge_sort<false>(values.elements, values.count, static_cast<T*>(nullptr), less);
         return;
     }
-    T* scratch = static_cast<T*>(minilib_internal::allocate_array_storage(values.size / 2, sizeof(T), alignof(T)));
-    minilib_internal::merge_sort<true>(values.data, values.size, scratch, less);
+    T* scratch = static_cast<T*>(minilib_internal::allocate_array_storage(values.count / 2, sizeof(T), alignof(T)));
+    minilib_internal::merge_sort<true>(values.elements, values.count, scratch, less);
     minilib_internal::free_array_storage(scratch, alignof(T));
 }
 
@@ -734,7 +731,6 @@ namespace minilib_internal {
 // Flat storage with 16-slot groups and a maximum load of 7/8.
 // Insertion can invalidate pointers, references and iterators. Keys must not be modified
 // Hash must distribute bits uniformly; equal keys must have equal hashes.
-//
 template <typename K, typename V, typename Hash = Hasher>
 struct Hash_Map
 {

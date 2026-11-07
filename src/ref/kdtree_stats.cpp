@@ -123,7 +123,7 @@ static Array<uint32_t> merge_primitive_indices(Span<const uint32_t> below, Span<
     Array<uint32_t> indices;
     size_t i = 0;
     size_t j = 0;
-    while (i < below.size && j < above.size) {
+    while (i < below.count && j < above.count) {
         uint32_t index = min(below[i], above[j]);
         indices.add(index);
         if (below[i] == index) {
@@ -133,10 +133,10 @@ static Array<uint32_t> merge_primitive_indices(Span<const uint32_t> below, Span<
             j++;
         }
     }
-    while (i < below.size) {
+    while (i < below.count) {
         indices.add(below[i++]);
     }
-    while (j < above.size) {
+    while (j < above.count) {
         indices.add(above[j++]);
     }
     return indices;
@@ -144,7 +144,7 @@ static Array<uint32_t> merge_primitive_indices(Span<const uint32_t> below, Span<
 
 static bool is_strictly_increasing(Span<const uint32_t> indices)
 {
-    for (size_t i = 1; i < indices.size; i++) {
+    for (size_t i = 1; i < indices.count; i++) {
         if (indices[i - 1] >= indices[i]) {
             return false;
         }
