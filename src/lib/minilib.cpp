@@ -8,8 +8,34 @@
 #endif
 
 //
-// Array storage
+// Memory allocation
 //
+void* allocate_aligned_memory(size_t size, size_t alignment)
+{
+    if (size == 0 || alignment == 0 || (alignment & (alignment - 1))) {
+        return nullptr;
+    }
+#ifdef _WIN32
+    return _aligned_malloc(size, alignment);
+#else
+    // POSIX requires alignment to be at least sizeof(void*)
+    void* memory;
+    if (posix_memalign(&memory, max(alignment, sizeof(void*)), size) != 0) {
+        return nullptr;
+    }
+    return memory;
+#endif
+}
+
+void free_aligned_memory(void* memory)
+{
+#ifdef _WIN32
+    _aligned_free(memory);
+#else
+    free(memory);
+#endif
+}
+
 constexpr size_t malloc_alignment = alignof(long double);
 
 void* minilib_internal::allocate_array_storage(size_t count, size_t element_size, size_t alignment)
@@ -26,13 +52,7 @@ void* minilib_internal::allocate_array_storage(size_t count, size_t element_size
         data = malloc(size);
     }
     else {
-#ifdef _WIN32
-        data = _aligned_malloc(size, alignment);
-#else
-        if (posix_memalign(&data, alignment, size) != 0) {
-            data = nullptr;
-        }
-#endif
+        data = allocate_aligned_memory(size, alignment);
     }
     if (!data) {
         abort();
@@ -42,14 +62,12 @@ void* minilib_internal::allocate_array_storage(size_t count, size_t element_size
 
 void minilib_internal::free_array_storage(void* data, size_t alignment)
 {
-#ifdef _WIN32
-    if (alignment > malloc_alignment) {
-        _aligned_free(data);
-        return;
+    if (alignment <= malloc_alignment) {
+        free(data);
     }
-#endif
-    (void)alignment;
-    free(data);
+    else {
+        free_aligned_memory(data);
+    }
 }
 
 //

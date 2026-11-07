@@ -41,6 +41,11 @@ struct Placement_New {};
 inline void* operator new(size_t, Placement_New, void* data) noexcept { return data; }
 inline void operator delete(void*, Placement_New, void*) noexcept {}
 
+// Alignment must be a power of two.
+// Returns null on failure or when size is zero
+void* allocate_aligned_memory(size_t size, size_t alignment);
+void free_aligned_memory(void* memory);
+
 template <typename A, typename B> constexpr bool is_same_type = false;
 template <typename A> constexpr bool is_same_type<A, A> = true;
 

@@ -209,7 +209,6 @@ template struct Atomic<uint64_t>;
 #define NOMINMAX
 #include <windows.h>
 #include <limits.h>
-#include <malloc.h>
 #include <process.h>
 #include <sys/stat.h>
 #include <wchar.h>
@@ -444,16 +443,6 @@ bool fs_is_directory_empty(String_View directory)
     }, &scan_error);
     return empty && !scan_error;
 }
-
-void* allocate_aligned_memory(size_t size, size_t alignment)
-{
-    if (size == 0 || alignment == 0 || (alignment & (alignment - 1))) {
-        return nullptr;
-    }
-    return _aligned_malloc(size, alignment);
-}
-
-void free_aligned_memory(void* memory) { _aligned_free(memory); }
 
 uint32_t logical_processor_count()
 {

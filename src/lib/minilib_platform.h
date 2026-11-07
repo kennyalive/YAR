@@ -78,11 +78,6 @@ int64_t elapsed_nanoseconds(Timestamp start);
 int64_t elapsed_milliseconds(Timestamp start);
 float elapsed_seconds(Timestamp start);
 
-// Alignment must be a power of two.
-// Returns null on failure or when size is zero
-void* allocate_aligned_memory(size_t size, size_t alignment);
-void free_aligned_memory(void* memory);
-
 uint32_t logical_processor_count(); // at least one
 void enable_invalid_fp_exception(); // calling thread only
 
