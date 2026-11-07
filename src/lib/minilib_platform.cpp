@@ -213,6 +213,7 @@ template struct Atomic<uint64_t>;
 #include <windows.h>
 #include <limits.h>
 #include <process.h>
+#include <share.h>
 #include <sys/stat.h>
 #include <wchar.h>
 #include <xmmintrin.h>
@@ -333,7 +334,7 @@ FILE* fs_open(String_View path, const char* mode)
     if (!wide_mode) {
         return nullptr;
     }
-    return _wfopen(name, wide_mode);
+    return _wfsopen(name, wide_mode, _SH_DENYNO);
 }
 
 bool fs_file_size(FILE* file, size_t& size)

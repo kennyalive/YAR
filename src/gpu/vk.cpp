@@ -812,7 +812,7 @@ Vk_Image vk_load_texture(const String& texture_file)
 
 static bool read_binary_file(const String& file_name, Array<uint8_t>& bytes)
 {
-    Scoped_File file = fopen(file_name.data(), "rb");
+    Scoped_File file = fs_open(file_name, "rb");
     if (!file) {
         return false;
     }
