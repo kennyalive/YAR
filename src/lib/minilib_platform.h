@@ -68,6 +68,9 @@ void fs_for_each_file(String_View directory, Function_Ref<void(String_View path)
 bool fs_exists(String_View path);
 bool fs_is_directory_empty(String_View directory);
 
+//
+// Timing
+//
 struct Timestamp
 {
     Timestamp(); // captures the current time
@@ -78,7 +81,6 @@ int64_t elapsed_nanoseconds(Timestamp start);
 int64_t elapsed_milliseconds(Timestamp start);
 float elapsed_seconds(Timestamp start);
 
-uint32_t logical_processor_count(); // at least one
 void enable_invalid_fp_exception(); // calling thread only
 
 //
@@ -87,7 +89,6 @@ void enable_invalid_fp_exception(); // calling thread only
 // Every started thread must be joined, even after it finishes.
 // Destruction does not join.
 //
-
 struct Thread
 {
     uintptr_t handle = 0;
@@ -109,6 +110,8 @@ void thread_join(Thread& thread);
 // Joins before returning. A thread_count of zero uses all logical cores,
 // including the caller.
 void run_on_threads(Function_Ref<void()> function, uint32_t thread_count = 0);
+
+uint32_t logical_processor_count(); // at least one
 
 //
 // Atomics

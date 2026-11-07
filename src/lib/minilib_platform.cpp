@@ -85,6 +85,9 @@ bool fs_save_text(String_View path, String_View text)
     return fs_save(path, text.data, text.size);
 }
 
+//
+// Timing
+//
 Timestamp::Timestamp()
     : nanoseconds(std::chrono::duration_cast<std::chrono::nanoseconds>(
           std::chrono::steady_clock::now().time_since_epoch()).count())
@@ -444,12 +447,6 @@ bool fs_is_directory_empty(String_View directory)
     return empty && !scan_error;
 }
 
-uint32_t logical_processor_count()
-{
-    DWORD count = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
-    return count ? uint32_t(count) : 1;
-}
-
 void enable_invalid_fp_exception()
 {
     _MM_SET_EXCEPTION_STATE(0);
@@ -504,6 +501,12 @@ void thread_join(Thread& thread)
         abort();
     }
     thread.handle = 0;
+}
+
+uint32_t logical_processor_count()
+{
+    DWORD count = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+    return count ? uint32_t(count) : 1;
 }
 
 //

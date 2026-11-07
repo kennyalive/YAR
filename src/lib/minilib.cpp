@@ -40,6 +40,8 @@ constexpr size_t malloc_alignment = alignof(long double);
 
 void* minilib_internal::allocate_array_storage(size_t count, size_t element_size, size_t alignment)
 {
+    ASSERT(count > 0);
+
     // For invalid large inputs, multiplication can wrap around to a small size
     // that can be allocated successfully, hiding the bug
     if (count > SIZE_MAX / element_size) {
