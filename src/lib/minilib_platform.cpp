@@ -201,18 +201,16 @@ template struct Atomic<int64_t>;
 template struct Atomic<uint64_t>;
 } // namespace minilib_internal
 
+#if defined(_WIN32)
 // ============================================================================
 // Windows implementation
 // ============================================================================
-#ifdef _WIN32
-
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
 #include <limits.h>
 #include <malloc.h>
 #include <process.h>
-#include <string.h>
 #include <sys/stat.h>
 #include <wchar.h>
 #include <xmmintrin.h>
@@ -543,5 +541,6 @@ void Mutex::unlock()
 {
     ReleaseSRWLockExclusive(reinterpret_cast<SRWLOCK*>(storage));
 }
-
-#endif // _WIN32
+#else
+#error platform backend is not implemented
+#endif
