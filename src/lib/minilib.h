@@ -1,7 +1,16 @@
+// MINILIB
+// (C) Artem Kharytoniuk 2026
+// MIT License (see LICENSE)
+//
+// C++ 20, 64-bit targets.
+// Minilib does not support exceptions.
+// Assertions are enabled by default. Define ENABLE_ASSERT=0 to disable them
+
 #pragma once
 
-// minilib does not support exceptions
-
+// The version increases with each change in the minilib repository.
+// Local copies record their base minilib version with a negative sign.
+// Modify local copies freely without changing their version number
 constexpr int MINILIB_VERSION = 0;
 
 #include <stddef.h>
