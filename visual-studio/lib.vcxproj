@@ -130,7 +130,6 @@
     <ClCompile Include="..\src\lib\math.cpp" />
     <ClCompile Include="..\src\lib\minilib.cpp" />
     <ClCompile Include="..\src\lib\minilib_platform.cpp" />
-    <ClCompile Include="..\src\lib\minilib_platform_win.cpp" />
     <ClCompile Include="..\src\lib\obj_loader.cpp" />
     <ClCompile Include="..\src\lib\tessellation.cpp" />
     <ClCompile Include="..\src\lib\utils.cpp" />
