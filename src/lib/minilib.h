@@ -4,7 +4,9 @@
 //
 // C++ 20, 64-bit targets.
 // Minilib does not support exceptions.
-// Assertions are enabled by default. Define ENABLE_ASSERT=0 to disable them
+// Assertions are enabled by default. Define ENABLE_ASSERT=0 to disable them.
+// Names are global by default. Define MINILIB_USE_NAMESPACE=1 project-wide
+// to put them in namespace mini.
 
 #pragma once
 
@@ -22,7 +24,6 @@ constexpr int MINILIB_VERSION = 0;
 // The good news this std header is small
 #include <initializer_list>
 
-// Set to 1 to put minilib in namespace mini
 #ifndef MINILIB_USE_NAMESPACE
 #define MINILIB_USE_NAMESPACE 0
 #endif
@@ -140,7 +141,7 @@ constexpr size_t array_size(const T(&)[N])
 }
 
 //
-// Non-owning view of contiguous elements
+// Span: non-owning view of contiguous elements
 //
 template <typename T>
 struct Span
@@ -179,7 +180,7 @@ struct Span
 };
 
 //
-// Dynamic array that owns its elements
+// Array: dynamic array that owns its elements
 //
 template <typename T>
 struct Array
@@ -457,12 +458,13 @@ bool equals_ignore_case(String_View a, String_View b);
 // Returns false on invalid input or overflow, leaving result unchanged
 bool parse_int(String_View text, int32_t& result);
 
-// Immutable string that owns its characters.
+// String: immutable string that owns its characters
+//
 // There is no mutation API: build text elsewhere (string_printf, a local buffer).
-// data() is never null and always points to a zero-terminated sequence.
+// data() is never null and always points to a zero-terminated sequence
 //
 // Strings of up to max_small characters (31 by default) live inside the object.
-// Longer strings use heap storage. A String object occupies 32 bytes.
+// Longer strings use heap storage. A String object occupies 32 bytes
 struct String
 {
     String() { reset_storage(); }
@@ -526,15 +528,15 @@ String string_to_lower(String_View s); // ASCII letters only, other bytes unchan
 // Paths
 //
 // Path helpers. They look only at the characters and never touch the filesystem.
-// Both '/' and '\\' are directory separators on every platform.
+// Both '/' and '\\' are directory separators on every platform
 //
 // Extension rule: the extension is the text after the last dot of the last path
 // component, not including the dot. Dots at the start of a name do not count,
 // so ".hidden", "." and ".." have no extension, while ".hidden.txt" has "txt".
-// Examples: "a.tar.gz" -> "gz", "dir.d/scene" -> none, "file." -> none.
+// Examples: "a.tar.gz" -> "gz", "dir.d/scene" -> none, "file." -> none
 //
 // Functions returning String_View return a view into the input, so the result
-// is valid exactly as long as the input characters are.
+// is valid exactly as long as the input characters are
 
 // "pbrt" for "dir/scene.pbrt".
 // Empty if there is no extension
@@ -579,12 +581,12 @@ struct Optional
     explicit operator bool() const { return has_value; }
 };
 
-// Hashing.
+// Hashing
 // 
 // hash_value(x) returns a 64-bit hash whose bits look uniformly random
 // even for structured inputs (round floats, small integers).
 // Types add support by overloading hash_value.
-// Compound types fold member hashes with hash_combine.
+// Compound types fold member hashes with hash_combine
 //
 // hash_mix is the SplitMix64 finalizer (bijection on 64-bit values)
 inline uint64_t hash_mix(uint64_t h)
