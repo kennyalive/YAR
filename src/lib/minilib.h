@@ -58,17 +58,62 @@ namespace mini {
 //
 // Basics
 //
-template <typename A, typename B> constexpr bool is_same_type = false;
-template <typename A> constexpr bool is_same_type<A, A> = true;
-
-template <typename T> constexpr bool is_raw_pointer = false;
-template <typename T> constexpr bool is_raw_pointer<T*> = true;
-
 template <typename T>
 T&& rvalue(T& value)
 {
     return static_cast<T&&>(value);
 }
+
+template <typename T>
+void swap_values(T& a, T& b)
+{
+    T temp = rvalue(a);
+    a = rvalue(b);
+    b = rvalue(temp);
+}
+
+template <typename T>
+T min(T a, T b)
+{
+    return b < a ? b : a;
+}
+
+template <typename T>
+T max(T a, T b)
+{
+    return a < b ? b : a;
+}
+
+template <typename T>
+T clamp(T value, T low, T high)
+{
+    if (value < low) {
+        return low;
+    }
+    if (value > high) {
+        return high;
+    }
+    return value;
+}
+
+template <typename T, size_t N>
+constexpr size_t array_size(const T(&)[N])
+{
+    return N;
+}
+
+template <typename To, typename From>
+To bit_cast(const From& value)
+{
+    // supported by MSVC, GCC and Clang (including Apple Clang)
+    return __builtin_bit_cast(To, value);
+}
+
+template <typename A, typename B> constexpr bool is_same_type = false;
+template <typename A> constexpr bool is_same_type<A, A> = true;
+
+template <typename T> constexpr bool is_raw_pointer = false;
+template <typename T> constexpr bool is_raw_pointer<T*> = true;
 
 template <typename T>
 constexpr bool is_bitwise_copyable()
@@ -101,51 +146,6 @@ constexpr bool can_bitwise_zero_initialize()
         return __is_trivially_assignable(T&, int);
     }
     return false;
-}
-
-template <typename T>
-void swap_values(T& a, T& b)
-{
-    T temp = rvalue(a);
-    a = rvalue(b);
-    b = rvalue(temp);
-}
-
-template <typename T, size_t N>
-constexpr size_t array_size(const T(&)[N])
-{
-    return N;
-}
-
-template <typename T>
-T min(T a, T b)
-{
-    return b < a ? b : a;
-}
-
-template <typename T>
-T max(T a, T b)
-{
-    return a < b ? b : a;
-}
-
-template <typename T>
-T clamp(T value, T low, T high)
-{
-    if (value < low) {
-        return low;
-    }
-    if (value > high) {
-        return high;
-    }
-    return value;
-}
-
-template <typename To, typename From>
-To bit_cast(const From& value)
-{
-    // supported by MSVC, GCC and Clang (including Apple Clang)
-    return __builtin_bit_cast(To, value);
 }
 
 //
