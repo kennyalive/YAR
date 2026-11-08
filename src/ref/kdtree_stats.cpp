@@ -93,6 +93,15 @@ KdTree_Stats kdtree_calculate_stats(const KdTree& kdtree)
     return stats;
 }
 
+template <typename T>
+static void reverse(Span<T> values)
+{
+    for (size_t i = 0; i < values.count / 2; i++) {
+        size_t j = values.count - 1 - i;
+        swap_values(values[i], values[j]);
+    }
+}
+
 Array<uint32_t> kdtree_calculate_path_to_node(const KdTree& kdtree, uint32_t node_index)
 {
     ASSERT(node_index >= 0 && node_index < kdtree.nodes.size());
