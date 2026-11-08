@@ -54,20 +54,32 @@ inline void operator delete(void*, Placement_New, void*) noexcept {}
 namespace mini {
 #endif
 
-namespace mini_internal {
-void* allocate_array_storage(size_t count, size_t element_size, size_t alignment);
-void free_array_storage(void* data, size_t alignment);
+//
+// Memory allocation
+//
+
+// Aligned allocation. Alignment must be a power of two
+void* allocate_aligned_memory(size_t size, size_t alignment);
+void free_aligned_memory(void* memory);
+
+// Allocates storage without initializing it or calling constructors
+template <typename T>
+T* allocate_storage(size_t count)
+{
+    extern void* allocate_storage(size_t count, size_t element_size, size_t alignment);
+    return static_cast<T*>(allocate_storage(count, sizeof(T), alignof(T)));
+}
+// Frees storage without calling destructors. T must match the allocation's element type
+template <typename T>
+void free_storage(T* data)
+{
+    extern void free_storage(void* data, size_t alignment);
+    free_storage(data, alignof(T));
 }
 
 //
 // Basic definitions
 //
-
-// Alignment must be a power of two.
-// Returns null on failure or when size is zero
-void* allocate_aligned_memory(size_t size, size_t alignment);
-void free_aligned_memory(void* memory);
-
 template <typename A, typename B> constexpr bool is_same_type = false;
 template <typename A> constexpr bool is_same_type<A, A> = true;
 
@@ -288,7 +300,7 @@ struct Array
         if (capacity <= allocated) {
             return;
         }
-        T* new_elements = allocate_storage(capacity);
+        T* new_elements = allocate_storage<T>(capacity);
         move_elements(new_elements, elements, count);
         destroy_elements(elements, count);
         free_storage(elements);
@@ -345,14 +357,6 @@ private:
     size_t count = 0;
     size_t allocated = 0;
 
-    static T* allocate_storage(size_t capacity)
-    {
-        return static_cast<T*>(mini_internal::allocate_array_storage(capacity, sizeof(T), alignof(T)));
-    }
-    static void free_storage(T* data)
-    {
-        mini_internal::free_array_storage(data, alignof(T));
-    }
     static void construct_elements(T* data, size_t size)
     {
         if constexpr (can_bitwise_zero_initialize<T>()) {
@@ -402,7 +406,7 @@ private:
         if (capacity < new_count) {
             capacity = new_count;
         }
-        T* new_elements = allocate_storage(capacity);
+        T* new_elements = allocate_storage<T>(capacity);
         // Construct additions first to support add(a[0]) and add_all(a.span())
         construct(new_elements + count, size);
         move_elements(new_elements, elements, count);

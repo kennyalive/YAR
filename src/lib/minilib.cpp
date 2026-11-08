@@ -14,6 +14,8 @@ namespace mini {
 //
 // Memory allocation
 //
+constexpr size_t malloc_alignment = alignof(long double);
+
 void* allocate_aligned_memory(size_t size, size_t alignment)
 {
     if (size == 0 || alignment == 0 || (alignment & (alignment - 1))) {
@@ -40,9 +42,7 @@ void free_aligned_memory(void* memory)
 #endif
 }
 
-constexpr size_t malloc_alignment = alignof(long double);
-
-void* mini_internal::allocate_array_storage(size_t count, size_t element_size, size_t alignment)
+void* allocate_storage(size_t count, size_t element_size, size_t alignment)
 {
     ASSERT(count > 0);
 
@@ -66,7 +66,7 @@ void* mini_internal::allocate_array_storage(size_t count, size_t element_size, s
     return data;
 }
 
-void mini_internal::free_array_storage(void* data, size_t alignment)
+void free_storage(void* data, size_t alignment)
 {
     if (alignment <= malloc_alignment) {
         free(data);

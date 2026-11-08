@@ -472,8 +472,9 @@ struct Thread_Start
 
 static unsigned thread_entry(void* data)
 {
-    const Thread_Start start = *static_cast<Thread_Start*>(data);
-    mini_internal::free_array_storage(data, alignof(Thread_Start));
+    Thread_Start* storage = static_cast<Thread_Start*>(data);
+    const Thread_Start start = *storage;
+    delete storage;
     start.function(start.context);
     return 0;
 }
@@ -483,8 +484,7 @@ Thread thread_start(void (*function)(void*), void* data)
     static_assert(sizeof(Thread::handle) >= sizeof(HANDLE));
     ASSERT(function);
 
-    void* storage = mini_internal::allocate_array_storage(1, sizeof(Thread_Start), alignof(Thread_Start));
-    Thread_Start* start = ::new (Placement_New{}, storage) Thread_Start{function, data};
+    Thread_Start* start = new Thread_Start{function, data};
 
     Thread thread;
     thread.handle = _beginthreadex(nullptr, 0, thread_entry, start, 0, nullptr);

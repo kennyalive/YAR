@@ -653,9 +653,9 @@ void stable_sort(Span<T> values, Compare less)
         mini_internal::merge_sort<false>(values.elements, values.count, static_cast<T*>(nullptr), less);
         return;
     }
-    T* scratch = static_cast<T*>(mini_internal::allocate_array_storage(values.count / 2, sizeof(T), alignof(T)));
+    T* scratch = allocate_storage<T>(values.count / 2);
     mini_internal::merge_sort<true>(values.elements, values.count, scratch, less);
-    mini_internal::free_array_storage(scratch, alignof(T));
+    free_storage(scratch);
 }
 
 template <typename T>
@@ -759,7 +759,8 @@ struct Hash_Map
     ~Hash_Map()
     {
         clear();
-        free_storage();
+        free_storage(entries);
+        delete[] metadata;
     }
 
     size_t size() const { return element_count; }
@@ -891,8 +892,8 @@ private:
         uint8_t* old_metadata = metadata;
         size_t old_capacity = capacity;
         capacity = capacity ? capacity * 2 : 16;
-        entries = static_cast<Entry*>(mini_internal::allocate_array_storage(capacity, sizeof(Entry), alignof(Entry)));
-        metadata = static_cast<uint8_t*>(mini_internal::allocate_array_storage(capacity, 1, alignof(uint8_t)));
+        entries = allocate_storage<Entry>(capacity);
+        metadata = new uint8_t[capacity];
         memset(metadata, empty_byte, capacity);
         for (size_t i = 0; i < old_capacity; i++) {
             if (old_metadata[i] != empty_byte) {
@@ -902,14 +903,8 @@ private:
                 old_entries[i].~Entry();
             }
         }
-        mini_internal::free_array_storage(old_entries, alignof(Entry));
-        mini_internal::free_array_storage(old_metadata, alignof(uint8_t));
-    }
-    void free_storage()
-    {
-        using mini_internal::free_array_storage;
-        free_array_storage(entries, alignof(Entry));
-        free_array_storage(metadata, alignof(uint8_t));
+        free_storage(old_entries);
+        delete[] old_metadata;
     }
     void swap(Hash_Map& other) noexcept
     {
