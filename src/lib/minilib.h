@@ -56,29 +56,6 @@ namespace mini {
 #endif
 
 //
-// Memory allocation
-//
-
-// Aligned allocation. Alignment must be a power of two
-void* allocate_aligned_memory(size_t size, size_t alignment);
-void free_aligned_memory(void* memory);
-
-// Allocates storage without initializing it or calling constructors
-template <typename T>
-T* allocate_storage(size_t count)
-{
-    extern void* allocate_storage(size_t count, size_t element_size, size_t alignment);
-    return static_cast<T*>(allocate_storage(count, sizeof(T), alignof(T)));
-}
-// Frees storage without calling destructors. T must match the allocation's element type
-template <typename T>
-void free_storage(T* data)
-{
-    extern void free_storage(void* data, size_t alignment);
-    free_storage(data, alignof(T));
-}
-
-//
 // Basics
 //
 template <typename A, typename B> constexpr bool is_same_type = false;
@@ -101,13 +78,13 @@ constexpr bool is_bitwise_copyable()
 }
 
 template <typename T>
-constexpr bool has_trivial_destructor()
+constexpr bool needs_destruction()
 {
 #if defined(__GNUC__) && !defined(__clang__)
-    return __has_trivial_destructor(T);
+    return !__has_trivial_destructor(T);
 #else
     // MSVC and Clang (including Apple Clang)
-    return __is_trivially_destructible(T);
+    return !__is_trivially_destructible(T);
 #endif
 }
 
@@ -169,6 +146,29 @@ To bit_cast(const From& value)
 {
     // supported by MSVC, GCC and Clang (including Apple Clang)
     return __builtin_bit_cast(To, value);
+}
+
+//
+// Memory
+//
+
+// Aligned allocation. Alignment must be a power of two
+void* allocate_aligned_memory(size_t size, size_t alignment);
+void free_aligned_memory(void* memory);
+
+// Allocates storage without initializing it or calling constructors
+template <typename T>
+T* allocate_storage(size_t count)
+{
+    extern void* allocate_storage(size_t count, size_t element_size, size_t alignment);
+    return static_cast<T*>(allocate_storage(count, sizeof(T), alignof(T)));
+}
+// Frees storage without calling destructors. T must match the allocation's element type
+template <typename T>
+void free_storage(T* data)
+{
+    extern void free_storage(void* data, size_t alignment);
+    free_storage(data, alignof(T));
 }
 
 //
@@ -403,7 +403,7 @@ private:
     }
     static void destroy_elements(T* data, size_t size)
     {
-        if constexpr (!has_trivial_destructor<T>()) {
+        if constexpr (needs_destruction<T>()) {
             for (size_t i = size; i > 0; i--) {
                 data[i - 1].~T();
             }

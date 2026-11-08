@@ -12,7 +12,7 @@ namespace mini {
 #endif
 
 //
-// Memory allocation
+// Memory
 //
 constexpr size_t malloc_alignment = alignof(long double);
 

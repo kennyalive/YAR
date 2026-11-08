@@ -594,7 +594,7 @@ namespace mini_internal {
         while (left < middle) {
             data[out++] = rvalue(scratch[left++]);
         }
-        if constexpr (ConstructScratch && !has_trivial_destructor<T>()) {
+        if constexpr (ConstructScratch && needs_destruction<T>()) {
             for (size_t i = middle; i > 0; i--) {
                 scratch[i - 1].~T();
             }
@@ -810,7 +810,7 @@ struct Hash_Map
         if (!capacity) {
             return;
         }
-        if constexpr (!has_trivial_destructor<Entry>()) {
+        if constexpr (needs_destruction<Entry>()) {
             for (size_t i = 0; i < capacity; i++) {
                 if (occupied(i)) {
                     entries[i].~Entry();
