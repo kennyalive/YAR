@@ -17,6 +17,9 @@ constexpr int MINILIB_VERSION = 0;
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+
+// Needed by the compiler. It is the only std functinality exposed by the minilib headers.
+// The good news this std header is small
 #include <initializer_list>
 
 // Set to 1 to put minilib in namespace mini
@@ -24,22 +27,23 @@ constexpr int MINILIB_VERSION = 0;
 #define MINILIB_USE_NAMESPACE 0
 #endif
 
+// Assertion configuration
+#ifndef ASSERT
 #ifndef ENABLE_ASSERT
 #define ENABLE_ASSERT 1
 #endif
-
 #if ENABLE_ASSERT
 #if defined(_MSC_VER)
 #define ASSERT(expression) ((expression) ? (void)0 : __debugbreak())
 #elif defined(__clang__)
 #define ASSERT(expression) ((expression) ? (void)0 : __builtin_debugtrap())
 #else
-#include <signal.h>
-#define ASSERT(expression) ((expression) ? (void)0 : (void)::raise(SIGTRAP))
+#define ASSERT(expression) ((expression) ? (void)0 : __builtin_trap())
 #endif
 #else // Assertion is not enabled
 #define ASSERT(expression)
 #endif
+#endif // ASSERT
 
 // Custom placement new avoids including <new> in this header
 struct Placement_New {};
