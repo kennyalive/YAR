@@ -632,6 +632,7 @@ inline uint64_t hash_mix(uint64_t h)
 inline uint64_t hash_value(uint32_t v) { return hash_mix(v); }
 inline uint64_t hash_value(int32_t v) { return hash_mix(uint32_t(v)); }
 inline uint64_t hash_value(uint64_t v) { return hash_mix(v); }
+inline uint64_t hash_value(int64_t v) { return hash_mix(uint64_t(v)); }
 uint64_t hash_value(float v);
 
 // Boost hash_combine with a 64-bit constant. Inputs must already be well mixed hashes

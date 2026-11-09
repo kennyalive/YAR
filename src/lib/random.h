@@ -60,9 +60,7 @@ struct RNG {
     // [0, 1)
     float get_float() {
         uint32_t i = (pcg32_random_r(&pcg_state) >> 9) | 0x3f800000u;
-        float f;
-        memcpy(&f, &i, sizeof(uint32_t));
-        return f - 1.0f;
+        return bit_cast<float>(i) - 1.0f;
     }
 
     // [0, 1)^2

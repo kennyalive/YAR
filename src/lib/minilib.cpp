@@ -421,12 +421,10 @@ String path_join(String_View a, String_View b)
 //
 uint64_t hash_value(float v)
 {
-    if (v == 0.f) {
+    if (v == -0.f) {
         v = 0.f; // -0 and +0 compare equal, so they must hash equal
     }
-    uint32_t bits;
-    memcpy(&bits, &v, sizeof(bits));
-    return hash_mix(bits);
+    return hash_mix(bit_cast<uint32_t>(v));
 }
 
 #if MINILIB_USE_NAMESPACE
