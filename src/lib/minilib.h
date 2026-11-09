@@ -554,6 +554,7 @@ String string_concat(String_View a, String_View b);
 String string_concat(String_View a, String_View b, String_View c);
 String string_concat(String_View a, String_View b, String_View c, String_View d);
 String string_to_lower(String_View s); // ASCII letters only, other bytes unchanged
+bool string_starts_with(String_View text, String_View prefix);
 
 //
 // Paths

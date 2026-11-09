@@ -233,7 +233,7 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
     Checkpoint checkpoint;
     fs_for_each_file(checkpoint_directory, [&](String_View path) {
         String_View filename = path_stem(path);
-        if (filename.size < 5 || String_View(filename.data, 5) != "tile_") {
+        if (!string_starts_with(filename, "tile_")) {
             return;
         }
         int tile_index = str_to_int({filename.data + 5, filename.size - 5});

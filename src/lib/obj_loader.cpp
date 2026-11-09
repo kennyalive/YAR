@@ -36,10 +36,10 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
     Hash_Map<Mesh_Vertex, uint32_t, Mesh_Vertex_Hasher> unique_vertices;
     bool has_normals = true;
 
-    obj_meshes.add();
-    obj_meshes.last().name = String(shape.name.data(), shape.name.size());
-    obj_meshes.last().material_index = current_material_id;
-    Triangle_Mesh* mesh = &obj_meshes.last().mesh;
+    Obj_Mesh& first_mesh = obj_meshes.add();
+    first_mesh.name = String(shape.name.data(), shape.name.size());
+    first_mesh.material_index = current_material_id;
+    Triangle_Mesh* mesh = &first_mesh.mesh;
 
     for (int i = 0; i < (int)shape.mesh.indices.size(); i++) {
         const tinyobj::index_t& index = shape.mesh.indices[i];
@@ -52,10 +52,10 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
                 if (!has_normals || params.force_normal_calculation)
                     calculate_normals(params.normal_calculation_params, *mesh);
 
-                obj_meshes.add();
-                obj_meshes.last().name = String(shape.name.data(), shape.name.size());
-                obj_meshes.last().material_index = material_id;
-                mesh = &obj_meshes.last().mesh;
+                Obj_Mesh& next_mesh = obj_meshes.add();
+                next_mesh.name = String(shape.name.data(), shape.name.size());
+                next_mesh.material_index = material_id;
+                mesh = &next_mesh.mesh;
                 current_material_id = material_id;
                 unique_vertices.clear();
                 has_normals = true;

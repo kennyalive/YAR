@@ -313,7 +313,7 @@ ColorRGB Pbrt3_Fourier_BSDF::evaluate(const Vector3& wo, const Vector3& wi) cons
 
     auto find_index = [this](float cos_theta) -> int {
         const auto& cosines = data.zenith_angle_discretization;
-        size_t index = find_first_greater_or_equal(Span<const float>(cosines), cos_theta);
+        size_t index = find_first_greater_or_equal(cosines.span(), cos_theta);
         ASSERT(index != cosines.size());
         return int(index);
         };

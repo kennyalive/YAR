@@ -169,11 +169,8 @@ static Array<uint32_t> get_subtree_primitive_indices(const KdTree& kdtree, uint3
     const KdNode* node = &kdtree.nodes[node_index];
     if (node->is_leaf()) {
         const uint32_t pc = node->get_primitive_count();
-        subtree_primitive_indices.resize(pc);
+        subtree_primitive_indices.add_all({node->get_primitive_indices_array(), pc});
         node_index_to_primitive_count.get_or_insert(node_index) = pc;
-        for (uint32_t k = 0; k < pc; k++) {
-            subtree_primitive_indices[k] = node->get_primitive_indices_array()[k];
-        }
     }
     else {
         uint32_t below_node = node_index + 1;

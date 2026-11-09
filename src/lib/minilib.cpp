@@ -318,6 +318,11 @@ String string_to_lower(String_View s)
     return str;
 }
 
+bool string_starts_with(String_View text, String_View prefix)
+{
+    return text.size >= prefix.size && String_View(text.data, prefix.size) == prefix;
+}
+
 //
 // Paths
 //
