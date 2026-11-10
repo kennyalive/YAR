@@ -561,10 +561,12 @@ namespace mini_internal {
         }
     }
 
+    constexpr size_t merge_sort_cutoff = 24;
+
     template <bool ConstructScratch, typename T, typename Compare>
     void merge_sort(T* data, size_t count, T* scratch, Compare& less)
     {
-        if (count <= 24) {
+        if (count <= merge_sort_cutoff) {
             if (count > 1) {
                 insertion_sort(data, data + count, less);
             }
@@ -626,7 +628,7 @@ void sort(Span<T> values, Compare less = {})
 template <typename T, typename Compare = mini_internal::Less<T>>
 void stable_sort(Span<T> values, Span<T> scratch, Compare less = {})
 {
-    ASSERT(values.count <= 24 || scratch.count >= values.count / 2);
+    ASSERT(values.count <= mini_internal::merge_sort_cutoff || scratch.count >= values.count / 2);
     mini_internal::merge_sort<false>(values.elements, values.count, scratch.elements, less);
 }
 
@@ -637,7 +639,7 @@ void stable_sort(Span<T> values, Compare less = {})
     // over the scratch overload, which needs a conversion to Span<T>
     requires requires(T& a, T& b) { bool(less(a, b)); }
 {
-    if (values.count <= 24) {
+    if (values.count <= mini_internal::merge_sort_cutoff) {
         mini_internal::merge_sort<false>(values.elements, values.count, static_cast<T*>(nullptr), less);
         return;
     }
