@@ -606,8 +606,8 @@ namespace mini_internal {
 // Branchless partitioning suits cheap comparisons; use sort<false> for expensive comparators.
 // All sort overloads require a strict weak ordering.
 // Floating-point comparisons must order NaNs explicitly if inputs can contain them
-template <bool Branchless = true, typename T, typename Compare>
-void sort(Span<T> values, Compare less)
+template <bool Branchless = true, typename T, typename Compare = mini_internal::Less<T>>
+void sort(Span<T> values, Compare less = {})
 {
     if (values.count < 2) {
         return;
@@ -620,31 +620,19 @@ void sort(Span<T> values, Compare less)
     }
 }
 
-template <bool Branchless = true, typename T>
-void sort(Span<T> values)
-{
-    sort<Branchless>(values, mini_internal::Less<T>{});
-}
-
 // Stable mergesort with O(N log N) worst-case work.
 // For N > 24, scratch must contain at least N/2 live objects, disjoint from values.
 // Scratch contents are overwritten and may be moved from on return
-template <typename T, typename Compare>
-void stable_sort(Span<T> values, Span<T> scratch, Compare less)
+template <typename T, typename Compare = mini_internal::Less<T>>
+void stable_sort(Span<T> values, Span<T> scratch, Compare less = {})
 {
     ASSERT(values.count <= 24 || scratch.count >= values.count / 2);
     mini_internal::merge_sort<false>(values.elements, values.count, scratch.elements, less);
 }
 
-template <typename T>
-void stable_sort(Span<T> values, Span<T> scratch)
-{
-    stable_sort(values, scratch, mini_internal::Less<T>{});
-}
-
 // Allocates N/2 temporary slots for N > 24; T need not be default constructible
-template <typename T, typename Compare>
-void stable_sort(Span<T> values, Compare less)
+template <typename T, typename Compare = mini_internal::Less<T>>
+void stable_sort(Span<T> values, Compare less = {})
     // Prevents stable_sort<T>(values, scratch_array) from picking this overload
     // over the scratch overload, which needs a conversion to Span<T>
     requires requires(T& a, T& b) { bool(less(a, b)); }
@@ -656,12 +644,6 @@ void stable_sort(Span<T> values, Compare less)
     T* scratch = allocate_storage<T>(values.count / 2);
     mini_internal::merge_sort<true>(values.elements, values.count, scratch, less);
     free_storage(scratch);
-}
-
-template <typename T>
-void stable_sort(Span<T> values)
-{
-    stable_sort(values, mini_internal::Less<T>{});
 }
 
 //
