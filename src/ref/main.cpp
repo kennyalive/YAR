@@ -231,7 +231,7 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
         }
         else if (opt == '+') {
             String filename = ctx.current_opt_arg;
-            if (equals_ignore_case(path_extension(filename), "list")) {
+            if (string_equals_ignore_case(path_extension(filename), "list")) {
                 auto filenames = read_list_file(filename);
                 files.add_all(filenames);
             }
@@ -311,7 +311,7 @@ static Parsed_Command_Line parse_command_line(int argc, char** argv)
             }
             else {
                 String_View arg = ctx.current_opt_arg;
-                auto is = [&](const char* name) { return equals_ignore_case(arg, name); };
+                auto is = [&](const char* name) { return string_equals_ignore_case(arg, name); };
                 if (is("720p") || is("hd")) {
                     options.film_resolution = Vector2i{ 1280, 720 };
                 }

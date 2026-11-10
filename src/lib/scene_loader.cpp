@@ -28,7 +28,7 @@ Scene load_scene(const String& input_file) {
     String_View extension = path_extension(input_file);
     if (extension.size == 0)
         error("Unknown file type because there is no extension: %s. The supported file type is: pbrt", input_file.data());
-    if (!equals_ignore_case(extension, "pbrt"))
+    if (!string_equals_ignore_case(extension, "pbrt"))
         error("Unsupported file extension: %.*s", (int)extension.size, extension.data);
 
     Scene scene;

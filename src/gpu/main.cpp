@@ -33,7 +33,7 @@ static Command_Line_Params parse_command_line(int argc, char** argv)
             }
             else {
                 String_View text = argv[i + 1];
-                if (!parse_int(text, params.gpu_index)) {
+                if (!string_parse_int(text, params.gpu_index)) {
                     error("Invalid GPU index: %s", argv[i + 1]);
                 }
                 i++;

@@ -450,27 +450,10 @@ private:
     }
 };
 
-// Non-owning reference to a callable. The callable must outlive this object.
-// Mutable lambdas are intentionally unsupported. Capture mutable state by reference instead.
-template <typename> struct Function_Ref;
-template <typename R, typename... Args>
-struct Function_Ref<R(Args...)>
-{
-    const void* object;
-    R(*invoke)(const void*, Args...);
-    R operator()(Args... args) const { return invoke(object, static_cast<Args&&>(args)...); }
-
-    template <typename F>
-    Function_Ref(const F& f)
-        : object(&f)
-        , invoke([](const void* object, Args... args) -> R {
-            return (*static_cast<const F*>(object))(static_cast<Args&&>(args)...);
-        })
-    {}
-};
-
-// Non-owning string. The characters must outlive the view.
-// The characters need not be zero-terminated.
+//
+// String_View: non-owning string.
+// The characters must outlive the view.
+// The characters need not be zero-terminated
 struct String_View
 {
     const char* data = nullptr;
@@ -483,12 +466,11 @@ struct String_View
 bool operator==(String_View a, String_View b);
 bool operator!=(String_View a, String_View b);
 bool operator<(String_View a, String_View b);
-bool equals_ignore_case(String_View a, String_View b);
+bool string_equals_ignore_case(String_View a, String_View b);
+bool string_starts_with(String_View text, String_View prefix);
+bool string_parse_int(String_View text, int32_t& result);
 
-// Parses an entire signed 32-bit decimal string, allowing an optional '-' but no whitespace or '+'.
-// Returns false on invalid input or overflow, leaving result unchanged
-bool parse_int(String_View text, int32_t& result);
-
+//
 // String: immutable string that owns its characters
 //
 // There is no mutation API: build text elsewhere (string_printf, a local buffer).
@@ -554,7 +536,77 @@ String string_concat(String_View a, String_View b);
 String string_concat(String_View a, String_View b, String_View c);
 String string_concat(String_View a, String_View b, String_View c, String_View d);
 String string_to_lower(String_View s); // ASCII letters only, other bytes unchanged
-bool string_starts_with(String_View text, String_View prefix);
+
+//
+// Optional value
+//
+template <typename T>
+struct Optional
+{
+    T value{};
+    bool has_value = false;
+
+    Optional() = default;
+    Optional(const T& value) : value(value), has_value(true) {}
+    Optional(T&& value) : value(rvalue(value)), has_value(true) {}
+
+    explicit operator bool() const { return has_value; }
+};
+
+//
+// Function_Ref: non-owning reference to a callable.
+// The callable must outlive this object. Mutable lambdas are not supported
+//
+template <typename> struct Function_Ref;
+template <typename R, typename... Args>
+struct Function_Ref<R(Args...)>
+{
+    const void* object;
+    R(*invoke)(const void*, Args...);
+    R operator()(Args... args) const { return invoke(object, static_cast<Args&&>(args)...); }
+
+    template <typename F>
+    Function_Ref(const F& f)
+        : object(&f)
+        , invoke([](const void* object, Args... args) -> R {
+            return (*static_cast<const F*>(object))(static_cast<Args&&>(args)...);
+        })
+    {}
+};
+
+// Hashing
+// 
+// hash_value(x) returns a 64-bit hash whose bits look uniformly random
+// even for structured inputs (round floats, small integers).
+// Types add support by overloading hash_value.
+// Compound types fold member hashes with hash_combine
+//
+// hash_mix is the SplitMix64 finalizer (bijection on 64-bit values)
+inline uint64_t hash_mix(uint64_t h)
+{
+    h ^= h >> 30; h *= 0xbf58476d1ce4e5b9ull;
+    h ^= h >> 27; h *= 0x94d049bb133111ebull;
+    h ^= h >> 31;
+    return h;
+}
+
+inline uint64_t hash_value(uint32_t v) { return hash_mix(v); }
+inline uint64_t hash_value(int32_t v) { return hash_mix(uint32_t(v)); }
+inline uint64_t hash_value(uint64_t v) { return hash_mix(v); }
+inline uint64_t hash_value(int64_t v) { return hash_mix(uint64_t(v)); }
+uint64_t hash_value(float v);
+
+// Boost hash_combine with a 64-bit constant. Inputs must already be well mixed hashes
+inline void hash_combine(uint64_t& seed, uint64_t hash)
+{
+    seed ^= hash + 0x9e3779b97f4a7c15ull + (seed << 6) + (seed >> 2);
+}
+
+struct Hasher
+{
+    template <typename T>
+    size_t operator()(const T& v) const { return size_t(hash_value(v)); }
+};
 
 //
 // Paths
@@ -596,56 +648,6 @@ String path_replace_extension(String_View path, String_View extension);
 // "dir/file" for ("dir", "file"). A '/' is inserted unless a is empty
 // or already ends with a separator
 String path_join(String_View a, String_View b);
-
-//
-// Optional value
-//
-template <typename T>
-struct Optional
-{
-    T value{};
-    bool has_value = false;
-
-    Optional() = default;
-    Optional(const T& value) : value(value), has_value(true) {}
-    Optional(T&& value) : value(rvalue(value)), has_value(true) {}
-
-    explicit operator bool() const { return has_value; }
-};
-
-// Hashing
-// 
-// hash_value(x) returns a 64-bit hash whose bits look uniformly random
-// even for structured inputs (round floats, small integers).
-// Types add support by overloading hash_value.
-// Compound types fold member hashes with hash_combine
-//
-// hash_mix is the SplitMix64 finalizer (bijection on 64-bit values)
-inline uint64_t hash_mix(uint64_t h)
-{
-    h ^= h >> 30; h *= 0xbf58476d1ce4e5b9ull;
-    h ^= h >> 27; h *= 0x94d049bb133111ebull;
-    h ^= h >> 31;
-    return h;
-}
-
-inline uint64_t hash_value(uint32_t v) { return hash_mix(v); }
-inline uint64_t hash_value(int32_t v) { return hash_mix(uint32_t(v)); }
-inline uint64_t hash_value(uint64_t v) { return hash_mix(v); }
-inline uint64_t hash_value(int64_t v) { return hash_mix(uint64_t(v)); }
-uint64_t hash_value(float v);
-
-// Boost hash_combine with a 64-bit constant. Inputs must already be well mixed hashes
-inline void hash_combine(uint64_t& seed, uint64_t hash)
-{
-    seed ^= hash + 0x9e3779b97f4a7c15ull + (seed << 6) + (seed >> 2);
-}
-
-struct Hasher
-{
-    template <typename T>
-    size_t operator()(const T& v) const { return size_t(hash_value(v)); }
-};
 
 //
 // Utilities

@@ -211,7 +211,7 @@ Checkpoint start_or_resume_checkpoint(const String& checkpoint_directory, const 
             error("Missing integer in checkpoint");
         }
         int result = 0;
-        if (!parse_int(text, result)) {
+        if (!string_parse_int(text, result)) {
             error("Invalid checkpoint integer: %s", String(text).data());
         }
         return result;

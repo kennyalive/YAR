@@ -123,7 +123,7 @@ static char ascii_to_lower(char c)
 }
 
 // Case is ignored for ascii letters only, other bytes must match exactly
-bool equals_ignore_case(String_View a, String_View b)
+bool string_equals_ignore_case(String_View a, String_View b)
 {
     if (a.size != b.size) {
         return false;
@@ -136,7 +136,12 @@ bool equals_ignore_case(String_View a, String_View b)
     return true;
 }
 
-bool parse_int(String_View text, int32_t& result)
+bool string_starts_with(String_View text, String_View prefix)
+{
+    return text.size >= prefix.size && String_View(text.data, prefix.size) == prefix;
+}
+
+bool string_parse_int(String_View text, int32_t& result)
 {
     size_t i = 0;
     const bool negative = text.size && text.data[0] == '-';
@@ -318,9 +323,15 @@ String string_to_lower(String_View s)
     return str;
 }
 
-bool string_starts_with(String_View text, String_View prefix)
+//
+// Hashing
+//
+uint64_t hash_value(float v)
 {
-    return text.size >= prefix.size && String_View(text.data, prefix.size) == prefix;
+    if (v == -0.f) {
+        v = 0.f; // -0 and +0 compare equal, so they must hash equal
+    }
+    return hash_mix(bit_cast<uint32_t>(v));
 }
 
 //
@@ -414,17 +425,6 @@ String path_join(String_View a, String_View b)
         return string_concat(a, b);
     }
     return string_concat(a, "/", b);
-}
-
-//
-// Hashing
-//
-uint64_t hash_value(float v)
-{
-    if (v == -0.f) {
-        v = 0.f; // -0 and +0 compare equal, so they must hash equal
-    }
-    return hash_mix(bit_cast<uint32_t>(v));
 }
 
 #if MINILIB_USE_NAMESPACE
