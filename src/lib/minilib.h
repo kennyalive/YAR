@@ -55,9 +55,9 @@ inline void operator delete(void*, Placement_New, void*) noexcept {}
 namespace mini {
 #endif
 
-//
-// Basics
-//
+// ╭────────────────────────────────────────────────────────
+// │  Basics
+// ╰────────────────────────────────────────────────────────
 template <typename T>
 T&& rvalue(T& value)
 {
@@ -148,10 +148,9 @@ constexpr bool can_bitwise_zero_initialize()
     return false;
 }
 
-//
-// Memory
-//
-
+// ╭────────────────────────────────────────────────────────
+// │  Memory
+// ╰────────────────────────────────────────────────────────
 // Aligned allocation. Alignment must be a power of two
 void* allocate_aligned_memory(size_t size, size_t alignment);
 void free_aligned_memory(void* memory);
@@ -171,9 +170,9 @@ void free_storage(T* data)
     free_storage(data, alignof(T));
 }
 
-//
-// Span: non-owning view of contiguous elements
-//
+// ╭────────────────────────────────────────────────────────
+// │  Span: non-owning view of contiguous elements
+// ╰────────────────────────────────────────────────────────
 template <typename T>
 struct Span
 {
@@ -215,9 +214,9 @@ struct Span
     size_t size() const { return count; }
 };
 
-//
-// Array: dynamic array that owns its elements
-//
+// ╭────────────────────────────────────────────────────────
+// │  Array: dynamic array that owns its elements
+// ╰────────────────────────────────────────────────────────
 template <typename T>
 struct Array
 {
@@ -455,9 +454,10 @@ private:
     }
 };
 
-//
-// String_View: non-owning string.
-// The characters must outlive the view.
+// ╭────────────────────────────────────────────────────────
+// │  String_View: non-owning string
+// ╰────────────────────────────────────────────────────────
+// The characters must outlive the view
 // The characters need not be zero-terminated
 struct String_View
 {
@@ -475,9 +475,9 @@ bool string_equals_ignore_case(String_View a, String_View b);
 bool string_starts_with(String_View text, String_View prefix);
 bool string_parse_int(String_View text, int32_t& result);
 
-//
-// String: immutable string that owns its characters
-//
+// ╭────────────────────────────────────────────────────────
+// │  String: immutable string that owns its characters
+// ╰────────────────────────────────────────────────────────
 // There is no mutation API: build text elsewhere (string_printf, a local buffer).
 // data() is never null and always points to a zero-terminated sequence
 //
@@ -542,9 +542,9 @@ String string_concat(String_View a, String_View b, String_View c);
 String string_concat(String_View a, String_View b, String_View c, String_View d);
 String string_to_lower(String_View s); // ASCII letters only, other bytes unchanged
 
-//
-// Optional value
-//
+// ╭────────────────────────────────────────────────────────
+// │  Optional value
+// ╰────────────────────────────────────────────────────────
 template <typename T>
 struct Optional
 {
@@ -558,10 +558,10 @@ struct Optional
     explicit operator bool() const { return has_value; }
 };
 
-//
-// Function_Ref: non-owning reference to a callable.
+// ╭────────────────────────────────────────────────────────
+// │  Function_Ref: non-owning reference to a callable
+// ╰────────────────────────────────────────────────────────
 // The callable must outlive this object. Mutable lambdas are not supported
-//
 template <typename> struct Function_Ref;
 template <typename R, typename... Args>
 struct Function_Ref<R(Args...)>
@@ -579,13 +579,13 @@ struct Function_Ref<R(Args...)>
     {}
 };
 
-// Hashing
-// 
+// ╭────────────────────────────────────────────────────────
+// │  Hashing
+// ╰────────────────────────────────────────────────────────
 // hash_value(x) returns a 64-bit hash whose bits look uniformly random
 // even for structured inputs (round floats, small integers).
 // Types add support by overloading hash_value.
 // Compound types fold member hashes with hash_combine
-//
 // hash_mix is the SplitMix64 finalizer (bijection on 64-bit values)
 inline uint64_t hash_mix(uint64_t h)
 {
@@ -613,9 +613,9 @@ struct Hasher
     size_t operator()(const T& v) const { return size_t(hash_value(v)); }
 };
 
-//
-// Paths
-//
+// ╭────────────────────────────────────────────────────────
+// │  Paths
+// ╰────────────────────────────────────────────────────────
 // Path helpers. They look only at the characters and never touch the filesystem.
 // Both '/' and '\\' are directory separators on every platform
 //
@@ -654,9 +654,9 @@ String path_replace_extension(String_View path, String_View extension);
 // or already ends with a separator
 String path_join(String_View a, String_View b);
 
-//
-// Utilities
-//
+// ╭────────────────────────────────────────────────────────
+// │  Utilities
+// ╰────────────────────────────────────────────────────────
 template <typename T, typename U>
 bool contains(Span<T> values, const U& value)
 {

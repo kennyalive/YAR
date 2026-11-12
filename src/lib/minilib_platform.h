@@ -7,12 +7,11 @@
 namespace mini {
 #endif
 
-//
-// File IO
-// 
+// ╭────────────────────────────────────────────────────────
+// │  File IO
+// ╰────────────────────────────────────────────────────────
 // The paths are UTF-8. File loads leave the output unchanged on failure.
 // Text files are read and written as-is (newlines and BOMs are preserved).
-//
  
 // FILE* wrapper with convenience helpers.
 // Does NOT close file automatically
@@ -72,9 +71,9 @@ void fs_for_each_file(String_View directory, Function_Ref<void(String_View path)
 bool fs_exists(String_View path);
 bool fs_is_directory_empty(String_View directory);
 
-//
-// Timing
-//
+// ╭────────────────────────────────────────────────────────
+// │  Timing
+// ╰────────────────────────────────────────────────────────
 struct Timestamp
 {
     Timestamp(); // captures the current time
@@ -87,12 +86,11 @@ float elapsed_seconds(Timestamp start);
 
 void enable_invalid_fp_exception(); // calling thread only
 
-//
-// Threads
-//
+// ╭────────────────────────────────────────────────────────
+// │  Threads
+// ╰────────────────────────────────────────────────────────
 // Every started thread must be joined, even after it finishes.
 // Destruction does not join.
-//
 struct Thread
 {
     uintptr_t handle = 0;
@@ -117,12 +115,11 @@ void run_on_threads(Function_Ref<void()> function, uint32_t thread_count = 0);
 
 uint32_t logical_processor_count(); // at least one
 
-//
-// Atomics
-//
+// ╭────────────────────────────────────────────────────────
+// │  Atomics
+// ╰────────────────────────────────────────────────────────
 // Supported scalar types are lock-free.
 // All operations are sequentially consistent
-//
 namespace mini_internal {
 template <typename T>
 struct Atomic
@@ -161,9 +158,9 @@ using Atomic_UInt32 = mini_internal::Atomic<uint32_t>;
 using Atomic_Int64 = mini_internal::Atomic<int64_t>;
 using Atomic_UInt64 = mini_internal::Atomic<uint64_t>;
 
-//
-// Locks
-//
+// ╭────────────────────────────────────────────────────────
+// │  Locks
+// ╰────────────────────────────────────────────────────────
 struct Mutex // non-recursive
 {
     Mutex();
