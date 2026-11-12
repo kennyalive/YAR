@@ -717,7 +717,7 @@ namespace mini_internal {
 } // namespace mini_internal
 
 // Flat storage with 16-slot groups and a maximum load of 7/8.
-// Insertion can invalidate pointers, references and iterators. Keys must not be modified
+// Insertion and reserve can invalidate pointers, references and iterators. Keys must not be modified
 // Hash must distribute bits uniformly; equal keys must have equal hashes.
 template <typename K, typename V, typename Hash = Hasher>
 struct Hash_Map
@@ -753,6 +753,23 @@ struct Hash_Map
     Iterator end() { return {this, capacity}; }
     Const_Iterator begin() const { return {this, 0}; }
     Const_Iterator end() const { return {this, capacity}; }
+
+    // Reserves space for count total entries without shrinking
+    void reserve(size_t count)
+    {
+        if (count <= capacity - capacity / 8) {
+            return;
+        }
+        const size_t max_capacity = SIZE_MAX / sizeof(Entry);
+        size_t new_capacity = capacity ? capacity : 16;
+        while (count > new_capacity - new_capacity / 8) {
+            if (new_capacity > max_capacity / 2) {
+                abort();
+            }
+            new_capacity *= 2;
+        }
+        grow(new_capacity);
+    }
 
     // Returns nullptr when the key is absent
     V* find(const K& key)
@@ -866,16 +883,19 @@ private:
         element_count++;
         return inserted;
     }
-    void grow()
+    void grow(size_t new_capacity = 0)
     {
+        if (!new_capacity) {
+            new_capacity = capacity ? capacity * 2 : 16;
+        }
         const size_t max_capacity = SIZE_MAX / sizeof(Entry);
-        if (capacity > max_capacity / 2 || max_capacity < 16) {
+        if (new_capacity <= capacity || new_capacity > max_capacity) {
             abort();
         }
         Entry* old_entries = entries;
         uint8_t* old_metadata = metadata;
         size_t old_capacity = capacity;
-        capacity = capacity ? capacity * 2 : 16;
+        capacity = new_capacity;
         entries = allocate_storage<Entry>(capacity);
         metadata = new uint8_t[capacity];
         memset(metadata, empty_byte, capacity);
