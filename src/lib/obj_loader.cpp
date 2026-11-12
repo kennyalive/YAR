@@ -90,14 +90,14 @@ static void convert_tinyobj_shape_to_meshes(const tinyobj::shape_t& shape, tinyo
         }
 
         uint32_t vertex_index;
-        if (!unique_vertices.contains(vertex)) {
+        if (const uint32_t* existing_index = unique_vertices.find(vertex)) {
+            vertex_index = *existing_index;
+        } else {
             vertex_index = (uint32_t)mesh->vertices.size();
-            unique_vertices.get_or_insert(vertex) = (uint32_t)mesh->vertices.size();
+            unique_vertices.get_or_insert(vertex) = vertex_index;
             mesh->vertices.add(vertex.pos);
             mesh->normals.add(vertex.normal);
             mesh->uvs.add(vertex.uv);
-        } else {
-            vertex_index = *unique_vertices.find(vertex);
         }
         mesh->indices.add(vertex_index);
     }

@@ -202,7 +202,12 @@ struct Span
         requires is_same_type<T, const T>
     : elements(values.begin()), count(values.size()) {}
 
-    T& operator[](size_t index) const { return elements[index]; }
+    T& operator[](size_t index) const
+    {
+        ASSERT(index < count);
+        return elements[index];
+    }
+
     T* begin() const { return elements; }
     T* end() const { return elements + count; }
     bool empty() const { return count == 0; }
