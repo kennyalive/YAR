@@ -20,7 +20,7 @@ constexpr int MINILIB_VERSION = 0;
 #include <stdlib.h>
 #include <string.h>
 
-// Needed by the compiler. It is the only std functinality exposed by the minilib headers.
+// Needed by the compiler. It is the only std functionality exposed by the minilib headers.
 // The good news this std header is small
 #include <initializer_list>
 
@@ -471,7 +471,10 @@ struct String_View
 bool operator==(String_View a, String_View b);
 bool operator!=(String_View a, String_View b);
 bool operator<(String_View a, String_View b);
+
+// Ignores case for ASCII letters only
 bool string_equals_ignore_case(String_View a, String_View b);
+
 bool string_starts_with(String_View text, String_View prefix);
 bool string_parse_int(String_View text, int32_t& result);
 
@@ -496,7 +499,7 @@ struct String
     String& operator=(String&& other) noexcept;
     operator String_View() const { return {data(), size()}; }
 
-    const char* data() const { return is_small() ? storage.small : storage.heap.chars; }
+    const char* data() const { return is_small() ? storage.mini : storage.heap.chars; }
     size_t size() const { return is_small() ? max_small - last_byte() : storage.heap.count; }
     bool empty() const { return size() == 0; }
     const char* begin() const { return data(); }
@@ -525,12 +528,12 @@ struct String
         }
     };
     union Storage {
-        char small[object_size];
+        char mini[object_size];
         Heap heap;
     } storage;
 
 private:
-    void reset_storage() { storage.small[0] = 0; storage.small[max_small] = char(max_small); }
+    void reset_storage() { storage.mini[0] = 0; storage.mini[max_small] = char(max_small); }
     uint8_t last_byte() const { return ((const unsigned char*)&storage)[object_size - 1]; }
     bool is_small() const { return last_byte() != heap_tag; }
 };
@@ -562,6 +565,7 @@ struct Optional
 // │  Function_Ref: non-owning reference to a callable
 // ╰────────────────────────────────────────────────────────
 // The callable must outlive this object. Mutable lambdas are not supported
+// Pass functions by address: &function
 template <typename> struct Function_Ref;
 template <typename R, typename... Args>
 struct Function_Ref<R(Args...)>
@@ -668,7 +672,7 @@ bool contains(Span<T> values, const U& value)
     return false;
 }
 
-// Returns the index of the first element >= value, or values.count if none exists.
+// Returns the index of the first element >= value, or sorted_values.count if none exists.
 // Values must be sorted in ascending order
 template <typename T, typename U>
 size_t find_first_greater_or_equal(Span<T> sorted_values, const U& value)

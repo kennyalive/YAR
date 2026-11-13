@@ -122,7 +122,6 @@ static char ascii_to_lower(char c)
     return (c >= 'A' && c <= 'Z') ? char(c + ('a' - 'A')) : c;
 }
 
-// Case is ignored for ascii letters only, other bytes must match exactly
 bool string_equals_ignore_case(String_View a, String_View b)
 {
     if (a.size != b.size) {
@@ -179,12 +178,12 @@ String::String(const char* s, size_t n)
 {
     if (n <= max_small) {
         if (n != 0) {
-            memcpy(storage.small, s, n);
+            memcpy(storage.mini, s, n);
         }
-        storage.small[n] = 0;
+        storage.mini[n] = 0;
         // Write remaining small storage space.
         // It is the terminator itself when n == max_small
-        storage.small[max_small] = char(max_small - n);
+        storage.mini[max_small] = char(max_small - n);
     }
     else {
         const char* p = heap_copy(s, n);
@@ -278,7 +277,7 @@ static String concat(const String_View* parts, size_t count)
     String result;
     char* p;
     if (total <= String::max_small) {
-        p = result.storage.small;
+        p = result.storage.mini;
         p[String::max_small] = char(String:: max_small - total);
     }
     else {

@@ -1,3 +1,5 @@
+// MINILIB: sorting and Hash_Map
+
 #pragma once
 
 #include "minilib.h"
@@ -22,9 +24,9 @@
 namespace mini {
 #endif
 
-//
-// Sorting
-//
+// ╭────────────────────────────────────────────────────────
+// │  Sorting
+// ╰────────────────────────────────────────────────────────
 
 /*
     pdqsort.h - Pattern-defeating quicksort.
@@ -648,9 +650,9 @@ void stable_sort(Span<T> values, Compare less = {})
     free_storage(scratch);
 }
 
-//
-// Hash map
-//
+// ╭────────────────────────────────────────────────────────
+// │  Hash map
+// ╰────────────────────────────────────────────────────────
 
 // Swiss-table-style grouped probing: https://abseil.io/about/design/swisstables
 

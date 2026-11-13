@@ -1,3 +1,6 @@
+// MINILIB: files, timing and concurrency
+// The current platform backend supports Windows only
+
 #pragma once
 
 #include "minilib.h"
@@ -54,6 +57,7 @@ bool fs_save_text(String_View path, String_View text);
 bool fs_create_directory(String_View path);
 
 // Removes a directory and all its contents, or a single file.
+// Links and junctions are removed without following them.
 // A missing path is not a failure
 bool fs_remove_tree(String_View path);
 
@@ -64,7 +68,8 @@ bool fs_rename_file(String_View from, String_View to);
 // A missing path is not a failure
 bool fs_remove_file(String_View path);
 
-// Nonrecursive. Skips directories.
+// Nonrecursive. Visits paths joined with directory and skips subdirectories.
+// Directory scan errors are not reported
 void fs_for_each_file(String_View directory, Function_Ref<void(String_View path)> visit);
 
 // Returns false if the answer is no or cannot be determined
