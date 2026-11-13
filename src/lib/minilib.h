@@ -10,10 +10,10 @@
 
 #pragma once
 
-// The version increases with each change in the minilib repository.
-// Local copies record their base minilib version with a negative sign.
-// Modify local copies freely without changing their version number
-constexpr int MINILIB_VERSION = 0;
+// Increment the version when committing changes to the minilib repository.
+// Project copies keep that version until the first local edit makes it
+// negative. Further local edits leave the negative version unchanged
+constexpr int MINILIB_VERSION = 1;
 
 #include <stddef.h>
 #include <stdint.h>
