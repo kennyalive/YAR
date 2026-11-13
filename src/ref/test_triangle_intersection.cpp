@@ -17,7 +17,7 @@ void test_triangle_intersection()
     int fail_count_watertight = 0;
     int fail_count_watertight_8x = 0;
     int fail_count_watertight_4x = 0;
-    int fail_count_möller_trumbore = 0;
+    int fail_count_mÃ¶ller_trumbore = 0;
     RNG rng;
 
     for (int i = 0; i < N; i++) {
@@ -112,22 +112,22 @@ void test_triangle_intersection()
             }
         }
 
-        // Möller-trumbore algorithm.
+        // MÃ¶ller-trumbore algorithm.
         {
             Vector3 b;
-            float t = intersect_triangle_möller_trumbore(ray, p0, p1, p2, &b);
+            float t = intersect_triangle_mÃ¶ller_trumbore(ray, p0, p1, p2, &b);
             if (t != Infinity) {
                 Vector3 isect_p = b[0]*p0 + b[1]*p1 + b[2]*p2;
                 Vector3 isect_p2 = ray.origin + t * ray.direction;
                 float delta = (isect_p - isect_p2).length();
-                fail_count_möller_trumbore += (delta > 1e-3f); // 1mm precision for ~1m sized triangles
+                fail_count_mÃ¶ller_trumbore += (delta > 1e-3f); // 1mm precision for ~1m sized triangles
             }
         }
     }
     printf("Fail count (watertight): %d\n", fail_count_watertight);
     printf("Fail count (watertight_8x): %d\n", fail_count_watertight_8x);
     printf("Fail count (watertight_4x): %d\n", fail_count_watertight_4x);
-    printf("Fail count (möller-trumbore): %d\n", fail_count_möller_trumbore);
+    printf("Fail count (mÃ¶ller-trumbore): %d\n", fail_count_mÃ¶ller_trumbore);
 }
 
 void test_simd_triangle_intersection()

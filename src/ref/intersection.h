@@ -5,7 +5,7 @@
 struct Ray;
 struct Scene_Object;
 
-float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, Vector3* barycentrics);
+float intersect_triangle_mÃ¶ller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, Vector3* barycentrics);
 float intersect_triangle_watertight(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, Vector3* barycentrics);
 
 struct Triangle_Intersection {

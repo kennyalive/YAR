@@ -5,10 +5,10 @@
 #include "lib/triangle_mesh.h"
 
 //
-// Möller-Trumbore triangle intersection algorithm.
+// MÃ¶ller-Trumbore triangle intersection algorithm.
 // https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf
 //
-float intersect_triangle_möller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, Vector3* barycentrics)
+float intersect_triangle_mÃ¶ller_trumbore(const Ray& ray, const Vector3& p0, const Vector3& p1, const Vector3& p2, Vector3* barycentrics)
 {
     Vector3 edge1 = p1 - p0;
     Vector3 edge2 = p2 - p0;

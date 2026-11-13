@@ -16,15 +16,15 @@ void benchmark_triangle_intersection()
     printf("Benchmark: triangle_intersection\n");
     printf("Benchmark measures time to shoot %.1fM rays against a triangle\n", N / 1e6f);
     printf("Benchmark assumes CPU frequency is %.2f GHz\n", cpu_freq_ghz);
-    printf("Möller-Trumbore algorithm:\n");
+    printf("MÃ¶ller-Trumbore algorithm:\n");
     {
         Timestamp t;
         Vector3 b;
         for (int i = 0; i < N/4; i++) {
-            intersect_triangle_möller_trumbore(ray, p0, p1, p2, &b);
-            intersect_triangle_möller_trumbore(ray, p0, p1, p2, &b);
-            intersect_triangle_möller_trumbore(ray, p0, p1, p2, &b);
-            intersect_triangle_möller_trumbore(ray, p0, p1, p2, &b);
+            intersect_triangle_mÃ¶ller_trumbore(ray, p0, p1, p2, &b);
+            intersect_triangle_mÃ¶ller_trumbore(ray, p0, p1, p2, &b);
+            intersect_triangle_mÃ¶ller_trumbore(ray, p0, p1, p2, &b);
+            intersect_triangle_mÃ¶ller_trumbore(ray, p0, p1, p2, &b);
         }
         int64_t ns = elapsed_nanoseconds(t);
 
