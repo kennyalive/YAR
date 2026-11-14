@@ -39,10 +39,10 @@ void Direct_Lighting::create_pipeline(const Array<VkDescriptorSetAndBindingMappi
 {
     // pipeline
     {
-        Vk_Shader_Module rgen_shader(get_spirv_file("raytrace_scene.rgen"));
-        Vk_Shader_Module miss_shader(get_spirv_file("raytrace_scene.miss"));
-        Vk_Shader_Module chit_shader(get_spirv_file("raytrace_scene.chit"));
-        Vk_Shader_Module shadow_ray_chit_shader(get_spirv_file("raytrace_scene_shadow_ray.chit"));
+        Vk_Shader_Module rgen_shader(load_spirv("raytrace_scene.rgen"));
+        Vk_Shader_Module miss_shader(load_spirv("raytrace_scene.miss"));
+        Vk_Shader_Module chit_shader(load_spirv("raytrace_scene.chit"));
+        Vk_Shader_Module shadow_ray_chit_shader(load_spirv("raytrace_scene_shadow_ray.chit"));
 
         VkPipelineShaderStageCreateInfo stage_infos[4] {};
         stage_infos[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

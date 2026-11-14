@@ -1,9 +1,5 @@
 #define VMA_IMPLEMENTATION
 #include "vk.h"
-#include "lib/minilib_platform.h"
-
-#include <stdio.h>
-#include <string.h>
 
 #include "stb/stb_image.h"
 #include "glfw/glfw3.h"
@@ -57,7 +53,7 @@ template<typename> constexpr bool vk_dependent_false_v = false;
 //
 Vk_Instance vk;
 
-static void create_instance(Span<const char* const> instance_extensions)
+static void create_instance(Span<const char*> instance_extensions)
 {
     uint32_t count = 0;
     VK_CHECK(vkEnumerateInstanceExtensionProperties(nullptr, &count, nullptr));
@@ -810,38 +806,8 @@ Vk_Image vk_load_texture(const String& texture_file)
     return texture;
 }
 
-static bool read_binary_file(const String& file_name, Array<uint8_t>& bytes)
+VkShaderModule vk_create_shader_module(const Array<uint8_t>& bytes)
 {
-    Scoped_File file = fs_open(file_name, "rb");
-    if (!file) {
-        return false;
-    }
-    if (fseek(file, 0, SEEK_END) != 0) {
-        return false;
-    }
-    long size = ftell(file);
-    if (size < 0 || fseek(file, 0, SEEK_SET) != 0) {
-        return false;
-    }
-    Array<uint8_t> content;
-    content.resize_uninitialized(size_t(size));
-    bool read = file.read(content.data(), content.size());
-    bool closed = file.close();
-    if (!read || !closed) {
-        return false;
-    }
-    bytes = rvalue(content);
-    return true;
-}
-
-VkShaderModule vk_load_spirv(const String& spirv_file)
-{
-    Array<uint8_t> bytes;
-    if (!read_binary_file(spirv_file, bytes)) {
-        vk.error(string_concat("failed to read file: ", spirv_file));
-        return VK_NULL_HANDLE;
-    }
-
     if (bytes.size() % 4 != 0) {
         vk.error("Vulkan: SPIR-V binary buffer size is not multiple of 4");
         return VK_NULL_HANDLE;
@@ -1249,9 +1215,9 @@ SET_NAME_SPECIALIZATION(VkAccelerationStructureKHR)
 // Misc Vulkan utilities section
 //
 //*****************************************************************************
-Vk_Shader_Module::Vk_Shader_Module(const String& spirv_file)
+Vk_Shader_Module::Vk_Shader_Module(const Array<uint8_t>& bytes)
 {
-    handle = vk_load_spirv(spirv_file);
+    handle = vk_create_shader_module(bytes);
 }
 
 Vk_Shader_Module::~Vk_Shader_Module()

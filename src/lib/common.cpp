@@ -54,10 +54,14 @@ String get_project_unique_name(const String& scene_path) {
     return string_concat(string_printf("%08x", hash_32), "-", file_name);
 }
 
-String get_spirv_file(const char* spirv_base_name)
+Array<uint8_t> load_spirv(const char* spirv_base_name)
 {
     String path = path_join(path_join(get_data_directory(), "spirv"), string_concat(spirv_base_name, ".spv"));
-    return path;
+    Array<uint8_t> bytes;
+    if (!fs_load(path, bytes)) {
+        error(string_concat("failed to read file: ", path));
+    }
+    return bytes;
 }
 
 double get_base_cpu_frequency_ghz() {

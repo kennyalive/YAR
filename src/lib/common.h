@@ -24,7 +24,7 @@ String get_data_directory();
 // scene's additional data between multiple projects.
 String get_project_unique_name(const String& scene_path);
 
-String get_spirv_file(const char* spirv_base_name);
+Array<uint8_t> load_spirv(const char* spirv_base_name);
 
 double get_base_cpu_frequency_ghz();
 double get_cpu_frequency_ghz();

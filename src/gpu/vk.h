@@ -1,6 +1,6 @@
 #pragma once
 
-constexpr int VK_VERSION = -4;
+constexpr int VK_VERSION = 5;
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -28,8 +28,8 @@ struct Vk_Init_Params {
     Vk_Error_Func error_reporter = nullptr;
     int physical_device_index = -1;
     bool vsync = false;
-    Span<const char* const> instance_extensions;
-    Span<const char* const> device_extensions;
+    Span<const char*> instance_extensions;
+    Span<const char*> device_extensions;
     const VkBaseInStructure* device_create_info_pnext = nullptr;
     Span<const VkFormat> supported_surface_formats;
     VkImageUsageFlags surface_usage_flags = 0;
@@ -111,7 +111,7 @@ Vk_Image vk_create_image(int width, int height, VkFormat format, VkImageUsageFla
 Vk_Image vk_create_texture(int width, int height, VkFormat format, bool generate_mipmaps, const uint8_t* pixels, int bytes_per_pixel, const char*  name);
 Vk_Image vk_load_texture(const String& texture_file);
 
-VkShaderModule vk_load_spirv(const String& spirv_file);
+VkShaderModule vk_create_shader_module(const Array<uint8_t>& bytes);
 
 Vk_Graphics_Pipeline_State get_default_graphics_pipeline_state();
 
@@ -228,7 +228,7 @@ struct Vk_PNexer {
 };
 
 struct Vk_Shader_Module {
-    Vk_Shader_Module(const String& spirv_file);
+    Vk_Shader_Module(const Array<uint8_t>& bytes);
     ~Vk_Shader_Module();
     VkShaderModule handle;
 };
