@@ -416,9 +416,8 @@ void vk_create_swapchain(bool vsync)
     // we should not try to create a swapchain when window is minimized
     assert(vk.surface_size.width != 0 && vk.surface_size.height != 0);
 
-    // VK_IMAGE_USAGE_TRANSFER_DST_BIT is required by image clear operations.
-    if ((surface_caps.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0) {
-        vk.error("vk_create_swapchain: VK_IMAGE_USAGE_TRANSFER_DST_BIT is not supported by the swapchain");
+    if ((surface_caps.supportedUsageFlags & vk.surface_usage_flags) != vk.surface_usage_flags) {
+        vk.error("vk_create_swapchain: requested image usage flags are not supported by the swapchain");
     }
 
     // determine present mode and swapchain image count
@@ -426,20 +425,22 @@ void vk_create_swapchain(bool vsync)
     uint32_t min_image_count = max(2u, surface_caps.minImageCount);
 
     if (!vsync) {
-        uint32_t present_mode_count;
+        uint32_t present_mode_count{};
         VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, vk.surface, &present_mode_count, nullptr));
         Array<VkPresentModeKHR> present_modes(present_mode_count);
         VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(vk.physical_device, vk.surface, &present_mode_count, present_modes.data()));
 
         for (auto pm : present_modes) {
-            if (pm == VK_PRESENT_MODE_MAILBOX_KHR) {
-                present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
-                min_image_count = max(3u, surface_caps.minImageCount);
-                break; // mailbox is preferred mode
-            }
             if (pm == VK_PRESENT_MODE_IMMEDIATE_KHR) {
                 present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
                 min_image_count = max(2u, surface_caps.minImageCount);
+                // Prefer IMMEDIATE for VSync off.
+                // As of November 2026, MAILBOX can cap FPS at the display refresh rate on Windows/NVIDIA
+                break;
+            }
+            if (pm == VK_PRESENT_MODE_MAILBOX_KHR) {
+                present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+                min_image_count = max(3u, surface_caps.minImageCount);
             }
         }
     }

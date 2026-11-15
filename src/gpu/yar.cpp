@@ -89,7 +89,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
     vk_init_params.device_extensions = device_extensions;
     vk_init_params.device_create_info_pnext = (const VkBaseInStructure*)&features2;
     vk_init_params.supported_surface_formats = surface_formats;
-    vk_init_params.surface_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+    vk_init_params.surface_usage_flags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
     vk_initialize(window, vk_init_params);
 
     // Device properties.
