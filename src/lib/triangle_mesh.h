@@ -166,3 +166,5 @@ struct Triangle_Mesh_Load_Params {
 
     bool invert_winding_order = false;
 };
+
+bool check_if_mesh_is_rectangle(const Triangle_Mesh& mesh, Vector2& size, Matrix3x4& transform);
