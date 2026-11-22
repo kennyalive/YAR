@@ -139,6 +139,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\third-party\cgltf\cgltf.h" />
     <ClInclude Include="..\third-party\getopt\getopt.h" />
     <ClInclude Include="..\third-party\glfw\egl_context.h" />
     <ClInclude Include="..\third-party\glfw\glfw3.h" />
