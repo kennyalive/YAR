@@ -3,7 +3,7 @@
 
 #include "stb/stb_image.h"
 
-// defined in pbrt_scene.cpp
+void load_gltf_scene(Scene& scene);
 void load_pbrt_scene(Scene& scene);
 
 static void finalize_scene(Scene& scene) {
@@ -25,22 +25,29 @@ static void finalize_scene(Scene& scene) {
 }
 
 Scene load_scene(const String& input_file) {
-    String_View extension = path_extension(input_file);
-    if (extension.size == 0)
-        error("Unknown file type because there is no extension: %s. The supported file type is: pbrt", input_file.data());
-    if (!string_equals_ignore_case(extension, "pbrt"))
-        error("Unsupported file extension: %.*s", (int)extension.size, extension.data);
-
     Scene scene;
-    scene.type = Scene_Type::pbrt;
     scene.path = input_file;
 
-    load_pbrt_scene(scene);
+    String_View extension = path_extension(input_file);
+    if (string_equals_ignore_case(extension, "pbrt")) {
+        scene.type = Scene_Type::pbrt;
+        load_pbrt_scene(scene);
 
-    // In pbrt texture coordinate space has(0, 0) at the lower left corner.
-    // Workaround with flipping texture coordinates instead is not robust
-    // enough because it doesn't handle procedural texturing case.
-    stbi_set_flip_vertically_on_load(true);
+        // In pbrt texture coordinate space has(0, 0) at the lower left corner.
+        // Workaround with flipping texture coordinates instead is not robust
+        // enough because it doesn't handle procedural texturing case.
+        stbi_set_flip_vertically_on_load(true);
+    }
+    else if (string_equals_ignore_case(extension, "gltf") || string_equals_ignore_case(extension, "glb")) {
+        scene.type = Scene_Type::gltf;
+        load_gltf_scene(scene);
+    }
+    else if (extension.size == 0) {
+        error("Missing scene file extension: %s (expected .pbrt, .gltf or .glb)", input_file.data());
+    }
+    else {
+        error("Unsupported file extension: %.*s", (int)extension.size, extension.data);
+    }
 
     if (scene.film_resolution == Vector2i{})
         scene.film_resolution = Vector2i{ 1920, 1080 };

@@ -12,6 +12,7 @@ enum class Scene_Type
 {
     none, // not initialize scene
     pbrt,
+    gltf,
 };
 
 struct Texture_Descriptor

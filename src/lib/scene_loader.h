@@ -4,7 +4,7 @@
 
 struct String;
 
-// Supported file formats: pbrt
+// Supported file formats: pbrt, gltf, glb
 Scene load_scene(const String& input_file);
 
 // Scene loader utilities
