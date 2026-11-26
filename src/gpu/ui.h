@@ -14,6 +14,7 @@ struct UI_Actions
 
 struct UI
 {
+    static void apply_style();
     UI_Actions run_imgui();
 
     bool show_ui = true;

@@ -151,7 +151,7 @@ void YAR::initialize(GLFWwindow* window, int gpu_index) {
         init_info.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &vk.surface_format.format;
 
         ImGui_ImplVulkan_Init(&init_info);
-        ImGui::StyleColorsDark();
+        UI::apply_style();
     }
 
     timer_frame = time_keeper.allocate_timer("frame");
